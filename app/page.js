@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import HomePageComponent from '@/components/home'; 
+import Home from '@/components/home';
 import AppInterface from '@/components/app-interface';
 
-export default function Page() { // Renommé de Home à Page
+export default function Page() {
   const { isConnected } = useAccount();
   const [showInterface, setShowInterface] = useState(false);
 
@@ -20,13 +19,10 @@ export default function Page() { // Renommé de Home à Page
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="p-4 flex justify-end">
-        <ConnectButton />
-      </div>
       {showInterface ? (
         <AppInterface />
       ) : (
-        <HomePageComponent />
+        <Home />
       )}
     </div>
   );
