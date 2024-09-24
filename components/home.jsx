@@ -51,11 +51,11 @@ export default function Home() {
 
   return (
     (<div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-      <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200 relative overflow-hidden">
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-zinc-400 dark:text-gray-200 transition-colors duration-200 relative overflow-hidden">
         {/* Starry background */}
         <div className="absolute inset-0 z-0">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill={darkMode ? "#0f172a" : "#f1f5f9"} />
+            <rect width="100%" height="100%" fill={darkMode ? "#070000b3" : "#ececec"} />
             {[...Array(100)].map((_, i) => (
               <motion.circle
                 key={i}
@@ -78,7 +78,7 @@ export default function Home() {
 
         {/* Success constellation */}
         <svg className="absolute inset-0 z-0" xmlns="http://www.w3.org/2000/svg">
-          <g stroke={darkMode ? "#4287f5" : "#1652F0"} strokeWidth="0.5" fill="none">
+          <g stroke={darkMode ? "#b9f542" : "#7cf503"} strokeWidth="0.5" fill="none">
             <motion.path
               d="M20,20 L40,40 L60,30 L80,50 L100,40"
               initial={{ pathLength: 0, opacity: 0 }}
@@ -124,7 +124,7 @@ export default function Home() {
         
         {/* Animated laser bridge */}
         <motion.div
-          className="absolute inset-0 z-0 opacity-20"
+          className="absolute inset-0 z-0 opacity-60"
           initial={{ pathLength: 0, pathOffset: 1 }}
           animate={{ pathLength: 1, pathOffset: 0 }}
           transition={{ duration: 10, repeat: Infinity, ease: "linear" }}>
@@ -135,7 +135,7 @@ export default function Home() {
             preserveAspectRatio="none">
             <motion.path
               d="M0,50 Q50,0 100,50 Q50,100 0,50"
-              stroke={darkMode ? "#4287f5" : "#1652F0"}
+              stroke={darkMode ? "#a3e635" : "#a3e635"}
               strokeWidth="0.5"
               fill="none"
               initial={{ pathLength: 0, pathOffset: 1 }}
@@ -150,7 +150,7 @@ export default function Home() {
           </div>
           <div className="flex items-center space-x-4">
             <a
-              href="https://twitter.com"
+              href="https://x.com/FinibusApp"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
@@ -188,28 +188,28 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}>
                 <motion.div
-                  className="inline-block rounded-lg bg-blue-600 px-3 py-1 text-sm text-white"
-                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  className="inline-block rounded-lg bg-lime-400 px-3 py-1 text-sm text-black"
+                  animate={{ opacity: [0.5, 5, 0.5] }}
                   transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
                   Defi Crowdfunding 
                 </motion.div>
                 <motion.div
-                  className="p-6 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+                  className="p-6 rounded-lg bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm"
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.8 }}>
+                  animate={{ opacity: 2 }}
+                  transition={{ delay: 0.1, duration: 0.05 }}>
                   <motion.h1
-                    className="text-3xl font-bold tracking-tighter md:text-4xl/tight mb-4"
+                    className="text-4xl font-bold tracking-tighter md:text-4xl/tight mb-4"
                     animate={{ y: [0, -10, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
-                    Support the future of the internet.
+                    transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}>
+                    Support the future of the ecosysteme.
                   </motion.h1>
                   <motion.p
-                    className="max-w-[600px] text-gray-700 dark:text-gray-300 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed mb-6"
+                    className="max-w-[900px] text-zinc-700 dark:text-zinc-50 md:text-xl/relaxed lg:text-base/relaxed xxl:text-xl/relaxed mb-8"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4, duration: 0.8 }}>
-                    Contribute to the development of cutting-edge Web3 technologies and be a part of the decentralized revolution.
+                   Contribute to the development of cutting-edge Web3 technologies and be a part of the decentralized revolution.
                   </motion.p>
                   <motion.div
                     className="flex justify-center"
@@ -218,7 +218,7 @@ export default function Home() {
                     transition={{ delay: 0.6, duration: 0.8 }}>
                     <Button
                       variant="default"
-                      className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                      className="bg-lime-400 text-black hover:bg-lime-50 dark:bg)lime-400 dark:hover:bg-lime-50"
                       onClick={() => setShowSignup(true)}>
                       Create Account
                     </Button>
@@ -230,7 +230,7 @@ export default function Home() {
         </main>
 
         <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 relative z-10 bg-transparent">
-          <p className="text-xs text-gray-600 dark:text-gray-400">&copy; 2024 Acme Web3. All rights reserved.</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">&copy; 2024 django. All rights reserved.</p>
           <nav className="sm:ml-auto flex gap-4 sm:gap-6">
             <a
               href="#"
@@ -248,10 +248,10 @@ export default function Home() {
       <AnimatePresence>
         {showSignup && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}>
+            exit={{ opacity: 50 }}>
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -264,7 +264,7 @@ export default function Home() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      className="text-gray-900 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-600"
                       onClick={() => setShowSignup(false)}>
                       <X size={24} />
                     </Button>
@@ -292,7 +292,7 @@ export default function Home() {
                     <div>
                       <Label
                         htmlFor="username"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</Label>
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-700">Username</Label>
                       <Input
                         id="username"
                         name="username"
@@ -325,7 +325,7 @@ export default function Home() {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">Create Account</Button>
+                      className="w-full bg-lime-400 text-black hover:bg-lime-100 dark:bg-lime-400 dark:hover:bg-lime-100">Create Account</Button>
                   </form>
                 </CardContent>
               </Card>
