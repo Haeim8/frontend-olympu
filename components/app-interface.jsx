@@ -12,11 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { InfoIcon, Home, Wallet, MessageSquare, Newspaper, Sun, Moon, Share2, FileText, X, ArrowLeft, Bell, Star, ChevronDown, Upload } from "lucide-react";
+import { InfoIcon, Home, Wallet, MessageSquare, Newspaper, Sun, Moon, Share2, FileText, X, ArrowLeft, Bell, Star, ChevronDown, Upload, Menu } from "lucide-react"
 
 export default function AppInterface() {
   const [activePage, setActivePage] = useState('home')
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
   const [selectedProject, setSelectedProject] = useState(null)
   const [shareCount, setShareCount] = useState(1)
   const [showCreateCampaign, setShowCreateCampaign] = useState(false)
@@ -38,6 +38,7 @@ export default function AppInterface() {
   })
   const [favorites, setFavorites] = useState([])
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
 
   const projects = [
     { id: 1, name: "Projet A", sector: "Tech", sharePrice: 100, raised: 500, goal: 1000, endDate: "2023-12-31" },
@@ -66,6 +67,7 @@ export default function AppInterface() {
   const changePage = (page) => {
     setActivePage(page)
     setShowCreateCampaign(false)
+    setShowMobileMenu(false)
   }
 
   const toggleDarkMode = () => {
@@ -140,7 +142,7 @@ export default function AppInterface() {
         (<Card className="w-full bg-white dark:bg-gray-950 shadow-lg">
           <CardHeader>
             <CardTitle
-              className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+              className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
@@ -361,17 +363,19 @@ export default function AppInterface() {
     switch (activePage) {
       case 'home':
         return (<>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Projets en cours de financement</h2>
+          <div
+            className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <h2
+              className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-0">Projets en cours de financement</h2>
             <Button
               onClick={() => setShowCreateCampaign(true)}
-              className="bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
+              className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
               Créer campagne
             </Button>
           </div>
           <div className="space-y-6">
             <div
-              className="grid grid-cols-6 gap-4 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-t-lg">
+              className="hidden md:grid grid-cols-6 gap-4 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-t-lg">
               <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Nom</div>
               <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Secteur</div>
               <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Prix unitaire</div>
@@ -384,8 +388,8 @@ export default function AppInterface() {
               <Card
                 key={project.id}
                 className="w-full bg-white dark:bg-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="grid grid-cols-6 gap-4 items-center p-4">
-                  <div className="text-gray-900 dark:text-gray-100">{project.name}</div>
+                <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4">
+                  <div className="text-gray-900 dark:text-gray-100 font-semibold">{project.name}</div>
                   <div className="text-gray-700 dark:text-gray-300">{project.sector}</div>
                   <div className="text-gray-900 dark:text-gray-100">{project.sharePrice} USDC</div>
                   <div className="text-gray-900 dark:text-gray-100">
@@ -393,10 +397,10 @@ export default function AppInterface() {
                     <Progress value={(project.raised / project.goal) * 100} className="h-2 mt-1" />
                   </div>
                   <div className="text-gray-900 dark:text-gray-100">{project.goal} USDC</div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-start md:justify-end mt-2 md:mt-0">
                     <Button
                       onClick={() => setSelectedProject(project)}
-                      className="bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
+                      className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
                       Voir détails
                     </Button>
                   </div>
@@ -408,8 +412,9 @@ export default function AppInterface() {
       case 'wallet':
         return (
           (<div className="space-y-8">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Votre portefeuille</h2>
-            <div className="grid grid-cols-4 gap-6">
+            <h2
+              className="text-xl md:text-2xl font-bold mb-6 text-gray-750 dark:text-gray-50">Votre portefeuille</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card
                 className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
@@ -484,7 +489,8 @@ export default function AppInterface() {
         return (
           (<Card className="bg-white dark:bg-gray-950 shadow-md">
             <CardContent>
-              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Discussions</h2>
+              <h2
+                className="text-xl md:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Discussions</h2>
               <p className="text-gray-700 dark:text-gray-300">Fonctionnalité de discussions à implémenter.</p>
             </CardContent>
           </Card>)
@@ -493,7 +499,8 @@ export default function AppInterface() {
         return (
           (<Card className="bg-white dark:bg-gray-950 shadow-md">
             <CardContent>
-              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Actualités</h2>
+              <h2
+                className="text-xl md:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Actualités</h2>
               <p className="text-gray-700 dark:text-gray-300">Fonctionnalité d'actualités à implémenter.</p>
             </CardContent>
           </Card>)
@@ -501,21 +508,22 @@ export default function AppInterface() {
       case 'favorites':
         return (
           (<div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Levées de fonds favorites</h2>
+            <h2
+              className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Levées de fonds favorites</h2>
             {projects.filter(project => favorites.includes(project.id)).map((project) => (
               <Card
                 key={project.id}
                 className="w-full bg-white dark:bg-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="grid grid-cols-6 gap-4 items-center p-4">
-                  <div className="text-gray-900 dark:text-gray-100">{project.name}</div>
+                <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4">
+                  <div className="text-gray-900 dark:text-gray-100 font-semibold">{project.name}</div>
                   <div className="text-gray-700 dark:text-gray-300">{project.sector}</div>
                   <div className="text-gray-900 dark:text-gray-100">{project.sharePrice} USDC</div>
                   <div className="text-gray-900 dark:text-gray-100">{project.raised} USDC</div>
                   <div className="text-gray-900 dark:text-gray-100">{project.goal} USDC</div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-start md:justify-end mt-2 md:mt-0">
                     <Button
                       onClick={() => setSelectedProject(project)}
-                      className="bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
+                      className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
                       Voir détails
                     </Button>
                   </div>
@@ -530,103 +538,115 @@ export default function AppInterface() {
   }
 
   return (
-    (<div className={`flex h-screen ${darkMode ? 'dark' : ''}`}>
-      <aside
-        className="w-16 border-r flex flex-col items-center py-6 space-y-6 bg-white dark:bg-gray-950 dark:border-gray-800">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => changePage('home')}
-          className={`text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 ${activePage === 'home' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-          <Home className="h-6 w-6" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => changePage('wallet')}
-          className={`text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 ${activePage === 'wallet' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-          <Wallet className="h-6 w-6" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => changePage('discussions')}
-          className={`text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 ${activePage === 'discussions' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-          <MessageSquare className="h-6 w-6" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => changePage('news')}
-          className={`text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 ${activePage === 'news' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-          <Newspaper className="h-6 w-6" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => changePage('favorites')}
-          className={`text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 ${activePage === 'favorites' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-          <Star className="h-6 w-6" />
-        </Button>
-      </aside>
-      <div
-        className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
-        <header
-          className="p-6 flex justify-between items-center bg-white dark:bg-gray-950 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">CryptoComfort</h1>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100">
-                <Bell className="h-5 w-5" />
-              </Button>
-              {showNotifications && (
-                <div
-                  className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-950 rounded-md shadow-lg z-10">
-                  <div className="p-2">
-                    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Notifications</h3>
-                    {notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className="mb-2 p-2 bg-gray-100 dark:bg-gray-900 rounded">
-                        <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">{notification.date}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+    (<div className={`flex flex-col h-screen ${darkMode ? 'dark' : ''}`}>
+      <header
+        className="p-4 md:p-6 flex justify-between items-center bg-white dark:bg-gray-950 shadow-sm">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 mr-2">
+            <Menu className="h-6 w-6" />
+          </Button>
+          <h1
+            className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">CryptoComfort</h1>
+        </div>
+        <div className="flex items-center space-x-2 md:space-x-4">
+          <div className="relative">
             <Button
               variant="ghost"
               size="icon"
-              onClick={toggleDarkMode}
+              onClick={() => setShowNotifications(!showNotifications)}
               className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100">
-              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              <Bell className="h-5 w-5" />
             </Button>
-            <div className="relative">
-              <Button variant="ghost" className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700" />
-                <span className="text-gray-900 dark:text-gray-100">John Doe</span>
-                <ChevronDown className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-              </Button>
-              {/* Dropdown menu for user profile can be added here */}
-            </div>
+            {showNotifications && (
+              <div
+                className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-950 rounded-md shadow-lg z-10">
+                <div className="p-2">
+                  <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Notifications</h3>
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="mb-2 p-2 bg-gray-100 dark:bg-gray-900 rounded">
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{notification.date}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </header>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleDarkMode}
+            className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100">
+            {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+          <div className="relative">
+            <Button variant="ghost" className="hidden md:flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700" />
+              <span className="text-gray-900 dark:text-gray-100">John Doe</span>
+              <ChevronDown className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+            </Button>
+            {/* Dropdown menu for user profile can be added here */}
+          </div>
+        </div>
+      </header>
+      <div className="flex flex-1 overflow-hidden">
+        <aside
+          className={`${showMobileMenu ? 'block' : 'hidden'} md:block w-64 border-r flex-shrink-0 bg-white dark:bg-gray-950 dark:border-gray-800 overflow-y-auto`}>
+          <nav className="flex flex-col p-4 space-y-2">
+            <Button
+              variant="ghost"
+              onClick={() => changePage('home')}
+              className={`justify-start ${activePage === 'home' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
+              <Home className="h-5 w-5 mr-2" />
+              Accueil
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => changePage('wallet')}
+              className={`justify-start ${activePage === 'wallet' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
+              <Wallet className="h-5 w-5 mr-2" />
+              Portefeuille
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => changePage('discussions')}
+              className={`justify-start ${activePage === 'discussions' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
+              <MessageSquare className="h-5 w-5 mr-2" />
+              Discussions
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => changePage('news')}
+              className={`justify-start ${activePage === 'news' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
+              <Newspaper className="h-5 w-5 mr-2" />
+              Actualités
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => changePage('favorites')}
+              className={`justify-start ${activePage === 'favorites' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
+              <Star className="h-5 w-5 mr-2" />
+              Favoris
+            </Button>
+          </nav>
+        </aside>
+
         <main
-          className="flex-1 p-8 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+          className="flex-1 p-4 md:p-8 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
           {renderContent()}
         </main>
       </div>
       {selectedProject && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <Card
-            className="w-full max-w-3xl relative bg-white dark:bg-gray-950 shadow-2xl">
+            className="w-full max-w-3xl relative bg-white dark:bg-gray-950 shadow-2xl max-h-[90vh] overflow-y-auto">
             <Button
               className="absolute top-2 right-2 p-1 rounded-full transition-all duration-300 ease-in-out bg-red-600 hover:bg-red-700 text-white"
               onClick={() => setSelectedProject(null)}>
@@ -634,9 +654,9 @@ export default function AppInterface() {
             </Button>
             <CardHeader>
               <CardTitle
-                className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex justify-between items-center">
+                className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center">
                 {selectedProject.name}
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mt-2 md:mt-0">
                   <Button
                     variant="outline"
                     size="sm"
