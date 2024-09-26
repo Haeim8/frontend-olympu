@@ -72,6 +72,7 @@ export default function AppInterface() {
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
+    console.log("Mode sombre:", !darkMode)
     if (darkMode) {
       document.documentElement.classList.remove('dark')
     } else {
@@ -88,6 +89,7 @@ export default function AppInterface() {
     e.preventDefault()
     console.log('Formulaire soumis:', campaignForm)
     // Logique de création de campagne à implémenter
+    setShowCreateCampaign(false)
   }
 
   const handleInputChange = (e) => {
@@ -126,7 +128,8 @@ export default function AppInterface() {
     setFavorites(prev => 
       prev.includes(projectId)
         ? prev.filter(id => id !== projectId)
-        : [...prev, projectId])
+        : [...prev, projectId]
+    )
   }
 
   useEffect(() => {
@@ -139,10 +142,9 @@ export default function AppInterface() {
   const renderContent = () => {
     if (showCreateCampaign) {
       return (
-        (<Card className="w-full bg-white dark:bg-gray-950 shadow-lg">
+        <Card className="w-full bg-white dark:bg-gray-950 shadow-lg">
           <CardHeader>
-            <CardTitle
-              className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+            <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
@@ -154,8 +156,7 @@ export default function AppInterface() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Alert
-              className="mb-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <Alert className="mb-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
               <InfoIcon className="h-4 w-4 text-blue-700 dark:text-blue-300" />
               <AlertTitle className="text-blue-900 dark:text-blue-100">Information importante</AlertTitle>
               <AlertDescription className="text-blue-800 dark:text-blue-200">
@@ -171,7 +172,8 @@ export default function AppInterface() {
                   value={campaignForm.campaignName}
                   onChange={handleInputChange}
                   required
-                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                />
               </div>
               <div>
                 <Label htmlFor="startup" className="text-gray-800 dark:text-gray-200">Adresse de la startup</Label>
@@ -181,15 +183,13 @@ export default function AppInterface() {
                   value={campaignForm.startup}
                   onChange={handleInputChange}
                   required
-                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                />
               </div>
               <div>
                 <Label htmlFor="sector" className="text-gray-800 dark:text-gray-200">Secteur d'activité</Label>
-                <Select
-                  name="sector"
-                  onValueChange={(value) => handleSelectChange("sector", value)}>
-                  <SelectTrigger
-                    className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700">
+                <Select name="sector" onValueChange={(value) => handleSelectChange("sector", value)}>
+                  <SelectTrigger className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700">
                     <SelectValue placeholder="Sélectionnez un secteur" />
                   </SelectTrigger>
                   <SelectContent>
@@ -209,7 +209,8 @@ export default function AppInterface() {
                   value={campaignForm.description}
                   onChange={handleInputChange}
                   required
-                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                />
               </div>
               <div>
                 <Label htmlFor="sharePrice" className="text-gray-800 dark:text-gray-200">Prix par part (en USDC)</Label>
@@ -220,7 +221,8 @@ export default function AppInterface() {
                   value={campaignForm.sharePrice}
                   onChange={handleInputChange}
                   required
-                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                />
               </div>
               <div>
                 <Label htmlFor="totalShares" className="text-gray-800 dark:text-gray-200">Nombre total de parts</Label>
@@ -231,7 +233,8 @@ export default function AppInterface() {
                   value={campaignForm.totalShares}
                   onChange={handleInputChange}
                   required
-                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                />
               </div>
               <div>
                 <Label htmlFor="endTime" className="text-gray-800 dark:text-gray-200">Date de fin</Label>
@@ -242,7 +245,8 @@ export default function AppInterface() {
                   value={campaignForm.endTime}
                   onChange={handleInputChange}
                   required
-                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                  className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                />
               </div>
               <div>
                 <Label htmlFor="documents" className="text-gray-800 dark:text-gray-200">Documents de la campagne</Label>
@@ -253,11 +257,13 @@ export default function AppInterface() {
                     type="file"
                     onChange={handleFileChange}
                     multiple
-                    className="hidden" />
+                    className="hidden"
+                  />
                   <Button
                     type="button"
                     onClick={() => document.getElementById('documents')?.click()}
-                    className="bg-lime-500 hover:bg-lime-600 text-white font-bold">
+                    className="bg-lime-500 hover:bg-lime-600 text-white font-bold"
+                  >
                     <Upload className="w-4 h-4 mr-2" />
                     Parcourir
                   </Button>
@@ -266,8 +272,7 @@ export default function AppInterface() {
                   </span>
                 </div>
                 {campaignForm.documents.length > 0 && (
-                  <ScrollArea
-                    className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-50 dark:bg-gray-900">
+                  <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-50 dark:bg-gray-900">
                     {campaignForm.documents.map((file, index) => (
                       <div key={index} className="flex justify-between items-center py-1">
                         <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
@@ -276,7 +281,8 @@ export default function AppInterface() {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeDocument(index)}
-                          className="text-red-500 hover:text-red-700">
+                          className="text-red-500 hover:text-red-700"
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -290,7 +296,8 @@ export default function AppInterface() {
                   name="lawyer"
                   checked={campaignForm.lawyer}
                   onCheckedChange={(checked) => setCampaignForm(prev => ({ ...prev, lawyer: checked }))}
-                  className="text-lime-500 dark:text-lime-400" />
+                  className="text-lime-500 dark:text-lime-400"
+                />
                 <Label htmlFor="lawyer" className="text-gray-800 dark:text-gray-200">Campagne avec avocat</Label>
               </div>
               {campaignForm.lawyer && (
@@ -303,7 +310,8 @@ export default function AppInterface() {
                       value={campaignForm.lawyerWallet}
                       onChange={handleInputChange}
                       required
-                      className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                      className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="lawyerContact" className="text-gray-800 dark:text-gray-200">Contact de l'avocat</Label>
@@ -313,7 +321,8 @@ export default function AppInterface() {
                       value={campaignForm.lawyerContact}
                       onChange={handleInputChange}
                       required
-                      className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                      className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="lawyerFirm" className="text-gray-800 dark:text-gray-200">Cabinet d'avocats</Label>
@@ -323,7 +332,8 @@ export default function AppInterface() {
                       value={campaignForm.lawyerFirm}
                       onChange={handleInputChange}
                       required
-                      className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                      className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="lawyerInfo" className="text-gray-800 dark:text-gray-200">Informations supplémentaires sur l'avocat</Label>
@@ -332,7 +342,8 @@ export default function AppInterface() {
                       name="lawyerInfo"
                       value={campaignForm.lawyerInfo}
                       onChange={handleInputChange}
-                      className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                      className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                    />
                   </div>
                 </>
               )}
@@ -343,80 +354,79 @@ export default function AppInterface() {
                   checked={campaignForm.termsAccepted}
                   onCheckedChange={(checked) => setCampaignForm(prev => ({ ...prev, termsAccepted: checked }))}
                   required
-                  className="text-lime-500 dark:text-lime-400" />
+                  className="text-lime-500 dark:text-lime-400"
+                />
                 <Label htmlFor="termsAccepted" className="text-gray-800 dark:text-gray-200">
                   J'accepte les conditions générales d'utilisation et je décharge l'application de toute responsabilité
                 </Label>
               </div>
-              <Button
-                type="submit"
-                className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold"
-                disabled={!campaignForm.termsAccepted}>
+              <Button type="submit" className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold" disabled={!campaignForm.termsAccepted}>
                 Créer la campagne
               </Button>
             </form>
           </CardContent>
-        </Card>)
-      );
+        </Card>
+      )
     }
 
     switch (activePage) {
       case 'home':
-        return (<>
-          <div
-            className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-            <h2
-              className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-0">Projets en cours de financement</h2>
-            <Button
-              onClick={() => setShowCreateCampaign(true)}
-              className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
-              Créer campagne
-            </Button>
-          </div>
-          <div className="space-y-6">
-            <div
-              className="hidden md:grid grid-cols-6 gap-4 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-t-lg">
-              <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Nom</div>
-              <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Secteur</div>
-              <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Prix unitaire</div>
-              <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Levée en cours</div>
-              <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Objectif</div>
-              <div
-                className="font-semibold text-sm text-gray-700 dark:text-gray-300 text-right">Action</div>
+        return (
+          <>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-0">Projets en cours de financement</h2>
+              <Button 
+                onClick={() => setShowCreateCampaign(true)}
+                className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105"
+              >
+                Créer campagne
+              </Button>
             </div>
-            {projects.map((project) => (
-              <Card
-                key={project.id}
-                className="w-full bg-white dark:bg-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4">
-                  <div className="text-gray-900 dark:text-gray-100 font-semibold">{project.name}</div>
-                  <div className="text-gray-700 dark:text-gray-300">{project.sector}</div>
-                  <div className="text-gray-900 dark:text-gray-100">{project.sharePrice} USDC</div>
-                  <div className="text-gray-900 dark:text-gray-100">
-                    {project.raised} USDC
-                    <Progress value={(project.raised / project.goal) * 100} className="h-2 mt-1" />
-                  </div>
-                  <div className="text-gray-900 dark:text-gray-100">{project.goal} USDC</div>
-                  <div className="flex justify-start md:justify-end mt-2 md:mt-0">
-                    <Button
-                      onClick={() => setSelectedProject(project)}
-                      className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
-                      Voir détails
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>);
+            <div className="space-y-6">
+              <div className="hidden md:grid grid-cols-6 gap-4 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-t-lg">
+                <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Nom</div>
+                <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Secteur</div>
+                <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Prix unitaire</div>
+                <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Levée en cours</div>
+                <div className="font-semibold text-sm text-gray-700 dark:text-gray-300">Objectif</div>
+                <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 text-right">Action</div>
+              </div>
+              {projects.map((project) => (
+                <Card key={project.id} className="w-full bg-white dark:bg-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
+                  <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4">
+                    <div className="text-gray-900 dark:text-gray-100 font-semibold">{project.name}</div>
+                    <div className="text-gray-700 dark:text-gray-300">{project.sector}</div>
+                    <div className="text-gray-900 dark:text-gray-100">{project.sharePrice} USDC</div>
+                    <div className="text-gray-900 dark:text-gray-100">
+                      {project.raised} USDC
+                      <Progress 
+                        value={(project.raised / project.goal) * 100} 
+                        className="h-2 mt-1 bg-gray-200 dark:bg-gray-700"
+                      >
+                        <div className="h-full bg-lime-400" style={{ width: `${(project.raised / project.goal) * 100}%` }} />
+                      </Progress>
+                    </div>
+                    <div className="text-gray-900 dark:text-gray-100">{project.goal} USDC</div>
+                    <div className="flex justify-start md:justify-end mt-2 md:mt-0">
+                      <Button 
+                        onClick={() => setSelectedProject(project)}
+                        className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105"
+                      >
+                        Voir détails
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
+        );
       case 'wallet':
         return (
-          (<div className="space-y-8">
-            <h2
-              className="text-xl md:text-2xl font-bold mb-6 text-gray-750 dark:text-gray-50">Votre portefeuille</h2>
+          <div className="space-y-8">
+            <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Votre portefeuille</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card
-                className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">PNL</CardTitle>
                 </CardHeader>
@@ -424,8 +434,7 @@ export default function AppInterface() {
                   <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.pnl}</p>
                 </CardContent>
               </Card>
-              <Card
-                className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Valeur investie</CardTitle>
                 </CardHeader>
@@ -433,8 +442,7 @@ export default function AppInterface() {
                   <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.investedValue}</p>
                 </CardContent>
               </Card>
-              <Card
-                className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Projets investis</CardTitle>
                 </CardHeader>
@@ -442,8 +450,7 @@ export default function AppInterface() {
                   <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.projectsInvested}</p>
                 </CardContent>
               </Card>
-              <Card
-                className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
                   <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Temps avant déblocage</CardTitle>
                 </CardHeader>
@@ -452,8 +459,7 @@ export default function AppInterface() {
                 </CardContent>
               </Card>
             </div>
-            <Card
-              className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md">
+            <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Historique des transactions</CardTitle>
               </CardHeader>
@@ -471,8 +477,7 @@ export default function AppInterface() {
                     <tbody>
                       {transactions.map((tx) => (
                         <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-800">
-                          <td
-                            className={`py-2 ${tx.type === 'Achat' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.type}</td>
+                          <td className={`py-2 ${tx.type === 'Achat' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.type}</td>
                           <td className="py-2 text-gray-900 dark:text-gray-100">{tx.project}</td>
                           <td className="py-2 text-gray-900 dark:text-gray-100">{tx.amount}</td>
                           <td className="py-2 text-gray-900 dark:text-gray-100">{tx.date}</td>
@@ -483,37 +488,32 @@ export default function AppInterface() {
                 </ScrollArea>
               </CardContent>
             </Card>
-          </div>)
+          </div>
         );
       case 'discussions':
         return (
-          (<Card className="bg-white dark:bg-gray-950 shadow-md">
+          <Card className="bg-white dark:bg-gray-950 shadow-md">
             <CardContent>
-              <h2
-                className="text-xl md:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Discussions</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Discussions</h2>
               <p className="text-gray-700 dark:text-gray-300">Fonctionnalité de discussions à implémenter.</p>
             </CardContent>
-          </Card>)
+          </Card>
         );
       case 'news':
         return (
-          (<Card className="bg-white dark:bg-gray-950 shadow-md">
+          <Card className="bg-white dark:bg-gray-950 shadow-md">
             <CardContent>
-              <h2
-                className="text-xl md:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Actualités</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Actualités</h2>
               <p className="text-gray-700 dark:text-gray-300">Fonctionnalité d'actualités à implémenter.</p>
             </CardContent>
-          </Card>)
+          </Card>
         );
       case 'favorites':
         return (
-          (<div className="space-y-6">
-            <h2
-              className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Levées de fonds favorites</h2>
+          <div className="space-y-6">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Levées de fonds favorites</h2>
             {projects.filter(project => favorites.includes(project.id)).map((project) => (
-              <Card
-                key={project.id}
-                className="w-full bg-white dark:bg-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
+              <Card key={project.id} className="w-full bg-white dark:bg-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
                 <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4">
                   <div className="text-gray-900 dark:text-gray-100 font-semibold">{project.name}</div>
                   <div className="text-gray-700 dark:text-gray-300">{project.sector}</div>
@@ -521,16 +521,17 @@ export default function AppInterface() {
                   <div className="text-gray-900 dark:text-gray-100">{project.raised} USDC</div>
                   <div className="text-gray-900 dark:text-gray-100">{project.goal} USDC</div>
                   <div className="flex justify-start md:justify-end mt-2 md:mt-0">
-                    <Button
+                    <Button 
                       onClick={() => setSelectedProject(project)}
-                      className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105">
+                      className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105"
+                    >
                       Voir détails
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
-          </div>)
+          </div>
         );
       default:
         return <Card className="bg-white dark:bg-gray-950 shadow-md"><CardContent><p className="text-gray-900 dark:text-gray-100">Page non trouvée</p></CardContent></Card>;
@@ -538,9 +539,8 @@ export default function AppInterface() {
   }
 
   return (
-    (<div className={`flex flex-col h-screen ${darkMode ? 'dark' : ''}`}>
-      <header
-        className="p-4 md:p-6 flex justify-between items-center bg-white dark:bg-gray-950 shadow-sm">
+    <div className={`flex flex-col h-screen ${darkMode ? 'dark' : ''}`}>
+      <header className="p-4 md:p-6 flex justify-between items-center bg-white dark:bg-gray-950 shadow-sm">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -549,8 +549,7 @@ export default function AppInterface() {
             className="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 mr-2">
             <Menu className="h-6 w-6" />
           </Button>
-          <h1
-            className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">CryptoComfort</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">CryptoComfort</h1>
         </div>
         <div className="flex items-center space-x-2 md:space-x-4">
           <div className="relative">
@@ -562,14 +561,11 @@ export default function AppInterface() {
               <Bell className="h-5 w-5" />
             </Button>
             {showNotifications && (
-              <div
-                className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-950 rounded-md shadow-lg z-10">
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-950 rounde d-md shadow-lg z-10">
                 <div className="p-2">
                   <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Notifications</h3>
                   {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className="mb-2 p-2 bg-gray-100 dark:bg-gray-900 rounded">
+                    <div key={notification.id} className="mb-2 p-2 bg-gray-100 dark:bg-gray-900 rounded">
                       <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">{notification.date}</p>
                     </div>
@@ -591,85 +587,86 @@ export default function AppInterface() {
               <span className="text-gray-900 dark:text-gray-100">John Doe</span>
               <ChevronDown className="h-4 w-4 text-gray-700 dark:text-gray-300" />
             </Button>
-            {/* Dropdown menu for user profile can be added here */}
           </div>
         </div>
       </header>
       <div className="flex flex-1 overflow-hidden">
-        <aside
-          className={`${showMobileMenu ? 'block' : 'hidden'} md:block w-64 border-r flex-shrink-0 bg-white dark:bg-gray-950 dark:border-gray-800 overflow-y-auto`}>
-          <nav className="flex flex-col p-4 space-y-2">
+        <aside className={`${showMobileMenu ? 'block' : 'hidden'} md:block w-16 border-r flex-shrink-0 bg-white dark:bg-gray-950 dark:border-gray-800 overflow-y-auto`}>
+          <nav className="flex flex-col p-4 space-y-4">
             <Button
               variant="ghost"
+              size="icon"
               onClick={() => changePage('home')}
-              className={`justify-start ${activePage === 'home' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-              <Home className="h-5 w-5 mr-2" />
-              Accueil
+              className={`justify-center ${activePage === 'home' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}
+              title="Accueil">
+              <Home className="h-5 w-5 text-lime-400" />
             </Button>
             <Button
               variant="ghost"
+              size="icon"
               onClick={() => changePage('wallet')}
-              className={`justify-start ${activePage === 'wallet' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-              <Wallet className="h-5 w-5 mr-2" />
-              Portefeuille
+              className={`justify-center ${activePage === 'wallet' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}
+              title="Portefeuille">
+              <Wallet className="h-5 w-5 text-lime-400" />
             </Button>
             <Button
               variant="ghost"
+              size="icon"
               onClick={() => changePage('discussions')}
-              className={`justify-start ${activePage === 'discussions' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-              <MessageSquare className="h-5 w-5 mr-2" />
-              Discussions
+              className={`justify-center ${activePage === 'discussions' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}
+              title="Discussions">
+              <MessageSquare className="h-5 w-5 text-lime-400" />
             </Button>
             <Button
               variant="ghost"
+              size="icon"
               onClick={() => changePage('news')}
-              className={`justify-start ${activePage === 'news' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-              <Newspaper className="h-5 w-5 mr-2" />
-              Actualités
+              className={`justify-center ${activePage === 'news' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}
+              title="Actualités">
+              <Newspaper className="h-5 w-5 text-lime-400" />
             </Button>
             <Button
               variant="ghost"
+              size="icon"
               onClick={() => changePage('favorites')}
-              className={`justify-start ${activePage === 'favorites' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}>
-              <Star className="h-5 w-5 mr-2" />
-              Favoris
+              className={`justify-center ${activePage === 'favorites' ? 'bg-gray-200 dark:bg-gray-800' : ''}`}
+              title="Favoris">
+              <Star className="h-5 w-5 text-lime-400" />
             </Button>
           </nav>
         </aside>
 
-        <main
-          className="flex-1 p-4 md:p-8 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+        <main className="flex-1 p-4 md:p-8 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
           {renderContent()}
         </main>
       </div>
       {selectedProject && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <Card
-            className="w-full max-w-3xl relative bg-white dark:bg-gray-950 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <Button
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-3xl relative bg-white dark:bg-gray-950 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <Button 
               className="absolute top-2 right-2 p-1 rounded-full transition-all duration-300 ease-in-out bg-red-600 hover:bg-red-700 text-white"
-              onClick={() => setSelectedProject(null)}>
+              onClick={() => setSelectedProject(null)}
+            >
               <X className="h-4 w-4" />
             </Button>
             <CardHeader>
-              <CardTitle
-                className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center">
+              <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center">
                 {selectedProject.name}
                 <div className="flex items-center space-x-2 mt-2 md:mt-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
                     onClick={() => toggleFavorite(selectedProject.id)}
-                    className={`flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border-gray-300 dark:border-gray-700 ${favorites.includes(selectedProject.id) ? 'bg-yellow-100 dark:bg-yellow-900' : ''}`}>
-                    <Star
-                      className={`h-4 w-4 ${favorites.includes(selectedProject.id) ? 'fill-current text-yellow-500' : ''}`} />
+                    className={`flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 ${favorites.includes(selectedProject.id) ? 'bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800' : ''}`}
+                  >
+                    <Star className={`h-4 w-4 ${favorites.includes(selectedProject.id) ? 'fill-current text-yellow-500' : ''}`} />
                     {favorites.includes(selectedProject.id) ? 'Favori' : 'Ajouter aux favoris'}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border-gray-300 dark:border-gray-700">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
                     <Share2 className="h-4 w-4" />
                     Partager
                   </Button>
@@ -679,15 +676,9 @@ export default function AppInterface() {
             <CardContent>
               <Tabs defaultValue="details" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-900">
-                  <TabsTrigger
-                    value="details"
-                    className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Détails</TabsTrigger>
-                  <TabsTrigger
-                    value="team"
-                    className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Équipe</TabsTrigger>
-                  <TabsTrigger
-                    value="roadmap"
-                    className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Roadmap</TabsTrigger>
+                  <TabsTrigger value="details" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Détails</TabsTrigger>
+                  <TabsTrigger value="team" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Équipe</TabsTrigger>
+                  <TabsTrigger value="roadmap" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Roadmap</TabsTrigger>
                 </TabsList>
                 <TabsContent value="details">
                   <div className="space-y-4">
@@ -708,9 +699,9 @@ export default function AppInterface() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Progression de la levée de fonds</h3>
-                      <Progress
-                        value={(selectedProject.raised / selectedProject.goal) * 100}
-                        className="w-full" />
+                      <Progress value={(selectedProject.raised / selectedProject.goal) * 100} className="w-full bg-gray-200 dark:bg-gray-700">
+                        <div className="h-full bg-lime-400" style={{ width: `${(selectedProject.raised / selectedProject.goal) * 100}%` }} />
+                      </Progress>
                       <p className="mt-2 text-gray-700 dark:text-gray-300">
                         {selectedProject.raised} / {selectedProject.goal} USDC ({((selectedProject.raised / selectedProject.goal) * 100).toFixed(2)}%)
                       </p>
@@ -746,8 +737,7 @@ export default function AppInterface() {
                 </TabsContent>
               </Tabs>
             </CardContent>
-            <CardFooter
-              className="flex flex-col items-start space-y-4 border-t pt-4 border-gray-200 dark:border-gray-800">
+            <CardFooter className="flex flex-col items-start space-y-4 border-t pt-4 border-gray-200 dark:border-gray-800">
               <div className="w-full">
                 <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Documents légaux</h3>
                 <div className="flex items-center space-x-2">
@@ -762,20 +752,19 @@ export default function AppInterface() {
               <div className="flex flex-col space-y-4 w-full">
                 <div className="flex items-center space-x-4">
                   <label htmlFor="shareCount" className="text-gray-800 dark:text-gray-200">Nombre de parts :</label>
-                  <Input
+                  <Input 
                     id="shareCount"
-                    type="number"
-                    value={shareCount}
+                    type="number" 
+                    value={shareCount} 
                     onChange={(e) => setShareCount(Math.max(1, parseInt(e.target.value) || 1))}
                     min="1"
-                    className="w-24 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700" />
+                    className="w-24 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
+                  />
                 </div>
                 <div className="text-gray-800 dark:text-gray-200">
                   Montant total : {(shareCount * selectedProject.sharePrice).toFixed(2)} USDC
                 </div>
-                <Button
-                  onClick={handleInvest}
-                  className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-2 px-4 rounded transition-all duration-300 ease-in-out transform hover:scale-105">
+                <Button onClick={handleInvest} className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-2 px-4 rounded transition-all duration-300 ease-in-out transform hover:scale-105">
                   Investir maintenant
                 </Button>
               </div>
@@ -783,6 +772,6 @@ export default function AppInterface() {
           </Card>
         </div>
       )}
-    </div>)
-  );
+    </div>
+  )
 }

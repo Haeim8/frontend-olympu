@@ -1,3 +1,7 @@
+/* @tailwind base; */
+/* @tailwind components; */
+/* @tailwind utilities; */
+
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
@@ -25,6 +29,28 @@
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
   }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
 }
 
 @layer base {
@@ -41,4 +67,24 @@
   .font-body {
     @apply font-sans; /* Assurez-vous que cette classe existe dans votre configuration Tailwind */
   }
+
+  .btn-outline {
+    @apply bg-white text-gray-700 hover:bg-gray-100 border-gray-300;
+  }
+
+  .dark .btn-outline {
+    @apply bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-600;
+  }
+}
+
+/* Ces styles peuvent être supprimés si vous utilisez la classe .btn-outline définie ci-dessus */
+.dark .btn-outline {
+  background-color: rgb(31 41 55); /* gray-800 */
+  color: rgb(209 213 219); /* gray-300 */
+  border-color: rgb(75 85 99); /* gray-600 */
+}
+
+.dark .btn-outline:hover {
+  background-color: rgb(55 65 81); /* gray-700 */
+  color: rgb(243 244 246); /* gray-100 */
 }
