@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useAccount } from 'wagmi'; // Import wagmi
+import { useUser } from '@/components/shared/UserContext'; // Importer le contexte utilisateur
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,14 +14,17 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { InfoIcon, Home, Wallet, MessageSquare, Newspaper, Sun, Moon, Share2, FileText, X, ArrowLeft, Bell, Star, ChevronDown, Upload, Menu } from "lucide-react"
+import { InfoIcon, Home, Wallet, MessageSquare, Newspaper, Sun, Moon, Share2, FileText, X, ArrowLeft, Bell, Star, ChevronDown, Upload, Menu } from "lucide-react";
 
 export default function AppInterface() {
-  const [activePage, setActivePage] = useState('home')
-  const [darkMode, setDarkMode] = useState(true)
-  const [selectedProject, setSelectedProject] = useState(null)
-  const [shareCount, setShareCount] = useState(1)
-  const [showCreateCampaign, setShowCreateCampaign] = useState(false)
+  const { user } = useUser(); // Accéder au pseudonyme
+  const { address, isConnected } = useAccount(); // Accéder à l'adresse du wallet
+
+  const [activePage, setActivePage] = useState('home');
+  const [darkMode, setDarkMode] = useState(true);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [shareCount, setShareCount] = useState(1);
+  const [showCreateCampaign, setShowCreateCampaign] = useState(false);
   const [campaignForm, setCampaignForm] = useState({
     campaignName: '',
     startup: '',
@@ -35,109 +40,127 @@ export default function AppInterface() {
     lawyerInfo: '',
     termsAccepted: false,
     documents: []
-  })
-  const [favorites, setFavorites] = useState([])
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  });
+  const [favorites, setFavorites] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  const [nfts, setNfts] = useState([]);
+  const [selectedNFT, setSelectedNFT] = useState(null);
 
   const projects = [
     { id: 1, name: "Projet A", sector: "Tech", sharePrice: 100, raised: 500, goal: 1000, endDate: "2023-12-31" },
     { id: 2, name: "Projet B", sector: "Finance", sharePrice: 50, raised: 200, goal: 500, endDate: "2023-11-30" },
-  ]
+  ];
 
   const walletInfo = {
     pnl: "+500 USDC",
     investedValue: "2000 USDC",
     projectsInvested: 5,
     unlockTime: "30 jours"
-  }
+  };
 
   const transactions = [
     { id: 1, type: 'Achat', project: 'Projet A', amount: '100 USDC', date: '2023-09-01' },
     { id: 2, type: 'Vente', project: 'Projet B', amount: '50 USDC', date: '2023-09-15' },
     { id: 3, type: 'Achat', project: 'Projet C', amount: '200 USDC', date: '2023-09-30' },
-  ]
+  ];
 
   const notifications = [
     { id: 1, message: "Nouvelle campagne lancée : Projet X", date: "2023-09-25" },
     { id: 2, message: "Votre investissement dans Projet A a été confirmé", date: "2023-09-24" },
     { id: 3, message: "Rappel : La campagne Projet B se termine dans 3 jours", date: "2023-09-23" },
-  ]
+  ];
 
   const changePage = (page) => {
-    setActivePage(page)
-    setShowCreateCampaign(false)
-    setShowMobileMenu(false)
-  }
+    setActivePage(page);
+    setShowCreateCampaign(false);
+    setShowMobileMenu(false);
+  };
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-    console.log("Mode sombre:", !darkMode)
+    setDarkMode(!darkMode);
+    console.log("Mode sombre:", !darkMode);
     if (darkMode) {
-      document.documentElement.classList.remove('dark')
+      document.documentElement.classList.remove('dark');
     } else {
-      document.documentElement.classList.add('dark')
+      document.documentElement.classList.add('dark');
     }
-  }
+  };
 
   const handleInvest = () => {
-    console.log(`Investissement de ${shareCount} parts dans ${selectedProject.name}`)
+    console.log(`Investissement de ${shareCount} parts dans ${selectedProject.name}`);
     // Logique d'investissement à implémenter
-  }
+  };
 
   const handleCreateCampaign = (e) => {
-    e.preventDefault()
-    console.log('Formulaire soumis:', campaignForm)
+    e.preventDefault();
+    console.log('Formulaire soumis:', campaignForm);
     // Logique de création de campagne à implémenter
-    setShowCreateCampaign(false)
-  }
+    setShowCreateCampaign(false);
+  };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setCampaignForm(prev => ({
       ...prev,
       [name]: value
-    }))
-  }
+    }));
+  };
 
   const handleSelectChange = (name, value) => {
     setCampaignForm(prev => ({
       ...prev,
       [name]: value
-    }))
-  }
+    }));
+  };
 
   const handleFileChange = (e) => {
     if (e.target.files) {
-      const newDocuments = Array.from(e.target.files)
+      const newDocuments = Array.from(e.target.files);
       setCampaignForm(prev => ({
         ...prev,
         documents: [...prev.documents, ...newDocuments]
-      }))
+      }));
     }
-  }
+  };
 
   const removeDocument = (index) => {
     setCampaignForm(prev => ({
       ...prev,
       documents: prev.documents.filter((_, i) => i !== index)
-    }))
-  }
+    }));
+  };
 
   const toggleFavorite = (projectId) => {
     setFavorites(prev => 
       prev.includes(projectId)
         ? prev.filter(id => id !== projectId)
         : [...prev, projectId]
-    )
-  }
+    );
+  };
 
   useEffect(() => {
-    const sharePrice = parseFloat(campaignForm.sharePrice) || 0
-    const totalShares = parseInt(campaignForm.totalShares) || 0
-    const targetAmount = sharePrice * totalShares
-    console.log(`Montant cible calculé: ${targetAmount} USDC`)
-  }, [campaignForm.sharePrice, campaignForm.totalShares])
+    const sharePrice = parseFloat(campaignForm.sharePrice) || 0;
+    const totalShares = parseInt(campaignForm.totalShares) || 0;
+    const targetAmount = sharePrice * totalShares;
+    console.log(`Montant cible calculé: ${targetAmount} USDC`);
+  }, [campaignForm.sharePrice, campaignForm.totalShares]);
+
+  useEffect(() => {
+    // Simuler la récupération des NFTs depuis une API ou un contrat intelligent
+    const fetchNFTs = async () => {
+      // Remplacez ceci par votre logique de récupération réelle
+      const fetchedNFTs = [
+        { id: 1, name: "Campagne Alpha", logo: "/images/nft-alpha.png", minted: 150 },
+        { id: 2, name: "Campagne Beta", logo: "/images/nft-beta.png", minted: 75 },
+        { id: 3, name: "Campagne Gamma", logo: "/images/nft-gamma.png", minted: 200 },
+      ];
+      setNfts(fetchedNFTs);
+    };
+
+    fetchNFTs();
+  }, []);
 
   const renderContent = () => {
     if (showCreateCampaign) {
@@ -459,35 +482,32 @@ export default function AppInterface() {
                 </CardContent>
               </Card>
             </div>
-            <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Historique des transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[200px]">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-left text-gray-700 dark:text-gray-300">
-                        <th className="pb-2">Type</th>
-                        <th className="pb-2">Projet</th>
-                        <th className="pb-2">Montant</th>
-                        <th className="pb-2">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.map((tx) => (
-                        <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-800">
-                          <td className={`py-2 ${tx.type === 'Achat' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.type}</td>
-                          <td className="py-2 text-gray-900 dark:text-gray-100">{tx.project}</td>
-                          <td className="py-2 text-gray-900 dark:text-gray-100">{tx.amount}</td>
-                          <td className="py-2 text-gray-900 dark:text-gray-100">{tx.date}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+
+            {/* Section des NFTs */}
+            <div className="mt-8">
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Vos NFTs</h3>
+              {nfts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {nfts.map((nft) => (
+                    <Card
+                      key={nft.id}
+                      className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                      onClick={() => setSelectedNFT(nft)}
+                    >
+                      <CardContent className="flex items-center space-x-4 p-4">
+                        <img src={nft.logo} alt={`${nft.name} Logo`} className="w-12 h-12 object-contain" />
+                        <div>
+                          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">{nft.name}</h4>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">NFTs Mintés : {nft.minted}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">Vous n'avez aucun NFT pour le moment.</p>
+              )}
+            </div>
           </div>
         );
       case 'discussions':
@@ -561,7 +581,7 @@ export default function AppInterface() {
               <Bell className="h-5 w-5" />
             </Button>
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-950 rounde d-md shadow-lg z-10">
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-950 rounded-md shadow-lg z-10">
                 <div className="p-2">
                   <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Notifications</h3>
                   {notifications.map((notification) => (
@@ -584,7 +604,12 @@ export default function AppInterface() {
           <div className="relative">
             <Button variant="ghost" className="hidden md:flex items-center space-x-2">
               <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700" />
-              <span className="text-gray-900 dark:text-gray-100">John Doe</span>
+              <span className="text-gray-900 dark:text-gray-100">{user.username || 'Utilisateur'}</span> {/* Afficher le pseudonyme */}
+              {isConnected && address && (
+                <span className="text-gray-600 dark:text-gray-300 ml-2 truncate w-24" title={address}>
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </span>
+              )}
               <ChevronDown className="h-4 w-4 text-gray-700 dark:text-gray-300" />
             </Button>
           </div>
@@ -640,138 +665,31 @@ export default function AppInterface() {
           {renderContent()}
         </main>
       </div>
-      {selectedProject && (
+      
+      {/* Modale pour le NFT Sélectionné */}
+      {selectedNFT && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <Card className="w-full max-w-3xl relative bg-white dark:bg-gray-950 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <Button 
+          <Card className="w-full max-w-lg relative bg-white dark:bg-gray-950 shadow-2xl p-6">
+            <Button
               className="absolute top-2 right-2 p-1 rounded-full transition-all duration-300 ease-in-out bg-red-600 hover:bg-red-700 text-white"
-              onClick={() => setSelectedProject(null)}
+              onClick={() => setSelectedNFT(null)}
             >
               <X className="h-4 w-4" />
             </Button>
             <CardHeader>
-              <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center">
-                {selectedProject.name}
-                <div className="flex items-center space-x-2 mt-2 md:mt-0">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => toggleFavorite(selectedProject.id)}
-                    className={`flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 ${favorites.includes(selectedProject.id) ? 'bg-yellow-100 dark:bg-yellow-900 hover:bg-yellow-200 dark:hover:bg-yellow-800' : ''}`}
-                  >
-                    <Star className={`h-4 w-4 ${favorites.includes(selectedProject.id) ? 'fill-current text-yellow-500' : ''}`} />
-                    {favorites.includes(selectedProject.id) ? 'Favori' : 'Ajouter aux favoris'}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    <Share2 className="h-4 w-4" />
-                    Partager
-                  </Button>
-                </div>
-              </CardTitle>
+              <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedNFT.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-900">
-                  <TabsTrigger value="details" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Détails</TabsTrigger>
-                  <TabsTrigger value="team" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Équipe</TabsTrigger>
-                  <TabsTrigger value="roadmap" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 text-gray-900 dark:text-gray-100">Roadmap</TabsTrigger>
-                </TabsList>
-                <TabsContent value="details">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Résumé du projet</h3>
-                      <p className="text-gray-700 dark:text-gray-300">
-                        {selectedProject.sector} - Objectif de levée : {selectedProject.goal} USDC
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Détails de l'investissement</h3>
-                      <p className="text-gray-700 dark:text-gray-300">
-                        Prix par part : {selectedProject.sharePrice} USDC
-                      </p>
-                      <p className="text-gray-700 dark:text-gray-300">
-                        Montant déjà levé : {selectedProject.raised} USDC
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Progression de la levée de fonds</h3>
-                      <Progress value={(selectedProject.raised / selectedProject.goal) * 100} className="w-full bg-gray-200 dark:bg-gray-700">
-                        <div className="h-full bg-lime-400" style={{ width: `${(selectedProject.raised / selectedProject.goal) * 100}%` }} />
-                      </Progress>
-                      <p className="mt-2 text-gray-700 dark:text-gray-300">
-                        {selectedProject.raised} / {selectedProject.goal} USDC ({((selectedProject.raised / selectedProject.goal) * 100).toFixed(2)}%)
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Description du projet</h3>
-                      <p className="text-gray-700 dark:text-gray-300">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisi vel consectetur
-                        interdum, nisl nunc egestas nunc, vitae tincidunt nisl nunc euismod nunc.
-                      </p>
-                    </div>
-                  </div>
-                </TabsContent>
-                <TabsContent value="team">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Équipe</h3>
-                    <p className="text-gray-700 dark:text-gray-300">
-                      John Doe - CEO
-                      <br />
-                      Jane Smith - CTO
-                    </p>
-                  </div>
-                </TabsContent>
-                <TabsContent value="roadmap">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Roadmap</h3>
-                    <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
-                      <li>Phase 1 : Développement du prototype</li>
-                      <li>Phase 2 : Tests et validation</li>
-                      <li>Phase 3 : Lancement sur le marché</li>
-                    </ul>
-                  </div>
-                </TabsContent>
-              </Tabs>
+              <img src={selectedNFT.logo} alt={`${selectedNFT.name} Logo`} className="w-24 h-24 object-contain mx-auto mb-4" />
+              <p className="text-gray-700 dark:text-gray-300">NFTs Mintés : {selectedNFT.minted}</p>
+              {/* Ajoutez ici plus de détails si nécessaire */}
             </CardContent>
-            <CardFooter className="flex flex-col items-start space-y-4 border-t pt-4 border-gray-200 dark:border-gray-800">
-              <div className="w-full">
-                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Documents légaux</h3>
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                  <a href="#" className="text-lime-600 dark:text-lime-400 hover:underline">Whitepaper.pdf</a>
-                </div>
-                <div className="flex items-center space-x-2 mt-2">
-                  <FileText className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                  <a href="#" className="text-lime-600 dark:text-lime-400 hover:underline">Termes_et_conditions.pdf</a>
-                </div>
-              </div>
-              <div className="flex flex-col space-y-4 w-full">
-                <div className="flex items-center space-x-4">
-                  <label htmlFor="shareCount" className="text-gray-800 dark:text-gray-200">Nombre de parts :</label>
-                  <Input 
-                    id="shareCount"
-                    type="number" 
-                    value={shareCount} 
-                    onChange={(e) => setShareCount(Math.max(1, parseInt(e.target.value) || 1))}
-                    min="1"
-                    className="w-24 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
-                  />
-                </div>
-                <div className="text-gray-800 dark:text-gray-200">
-                  Montant total : {(shareCount * selectedProject.sharePrice).toFixed(2)} USDC
-                </div>
-                <Button onClick={handleInvest} className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-2 px-4 rounded transition-all duration-300 ease-in-out transform hover:scale-105">
-                  Investir maintenant
-                </Button>
-              </div>
-            </CardFooter>
           </Card>
         </div>
       )}
+
+      {/* Modale pour la Déconnexion (Optionnel) */}
+      {/* Vous pouvez ajouter une modale pour la déconnexion si nécessaire */}
     </div>
   )
 }
