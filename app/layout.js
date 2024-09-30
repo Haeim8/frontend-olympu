@@ -1,17 +1,16 @@
-import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider"
-import "@/app/globals.css"
-import { Inter as FontSans } from "next/font/google" 
-import { cn } from "@/lib/utils"
+"use client";
+
+import React from 'react';
+import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider";
+import "@/app/globals.css";
+import { Inter as FontSans } from "next/font/google";
+import { cn } from "@/lib/utils";
 import { UserProvider } from "@/components/shared/UserContext"; // Importer UserProvider
 
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
-})
-export const metadata = {
-  title: "CryptoComfort",
-  description: "Crowdfunding pour projets Web3",
-};
+});
 
 export default function RootLayout({ children }) {
   return (
@@ -24,8 +23,8 @@ export default function RootLayout({ children }) {
         )}
       >
         <UserProvider>
-          <RainbowKitAndWagmiProvider> 
-            { children } 
+          <RainbowKitAndWagmiProvider>
+            {children}
           </RainbowKitAndWagmiProvider>
         </UserProvider>
       </body>
