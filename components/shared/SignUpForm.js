@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useUser } from './shared/UserContext';
+import { useUser } from './UserContext';
 import { useAccount } from 'wagmi';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
