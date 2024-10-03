@@ -1,9 +1,9 @@
 import React from 'react';
-import HomePage from '@/components/pages/Home';
-import WalletPage from '@/components/pages/Wallet';
-import DiscussionsPage from '@/components/pages/Discussions';
-import NewsPage from '@/components/pages/News';
-import FavoritesPage from '@/components/pages/Favorites';
+import HomePage from '@/components/Pages/Home';
+import WalletPage from '@/components/Pages/Wallet';
+import DiscussionsPage from '@/components/Pages/Discussions';
+import NewsPage from '@/components/Pages/News';
+import FavoritesPage from '@/components/Pages/Favorites';
 import Campaign from '@/components/Pages/Campaign';
 
 export default function PageContent({ 
