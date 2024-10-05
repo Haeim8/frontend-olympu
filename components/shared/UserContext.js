@@ -1,7 +1,7 @@
-// components/shared/UserContext.js
+'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, db } from '../../lib/firebase/firebase'; // Chemin corrigé
+import { auth, db } from '../../lib/firebase/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 

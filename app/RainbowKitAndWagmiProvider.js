@@ -1,11 +1,7 @@
 'use client';
 
 import '@rainbow-me/rainbowkit/styles.css';
-import {
-  getDefaultWallets,
-  RainbowKitProvider,
-  darkTheme,
-} from '@rainbow-me/rainbowkit';
+import { getDefaultWallets,RainbowKitProvider,darkTheme,} from '@rainbow-me/rainbowkit';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import { mainnet, sepolia, baseGoerli, hardhat } from 'wagmi/chains';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
@@ -19,7 +15,7 @@ const { chains, publicClient } = configureChains(
 
 // Configuration des portefeuilles par défaut avec RainbowKit
 const { connectors } = getDefaultWallets({
-  appName: 'My RainbowKit App',
+  appName: 'Devar',
   projectId: '0f0b011f456e2fc37f8cf2cc696aed5c',
   chains,
 });

@@ -71,7 +71,7 @@ export default function AppInterface() {
           showMobileMenu={showMobileMenu}
           setShowMobileMenu={setShowMobileMenu}
         />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-950">
           <MainContent
             activePage={activePage}
             projects={projects}

@@ -1,32 +1,37 @@
-"use client";
-
 import React from 'react';
+import { ThemeProvider } from 'next-themes';
 import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider";
 import "@/app/globals.css";
 import { Inter as FontSans } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { UserProvider } from "@/components/shared/UserContext"; // Importer UserProvider
+import { UserProvider } from "@/components/shared/UserContext";
 
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
 });
 
+export const metadata = {
+  title: 'Devar',
+  description: 'Description de votre application',
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <head />
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
           fontSans.variable
         )}
       >
-        <UserProvider>
-          <RainbowKitAndWagmiProvider>
-            {children}
-          </RainbowKitAndWagmiProvider>
-        </UserProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <UserProvider>
+            <RainbowKitAndWagmiProvider>
+              {children}
+            </RainbowKitAndWagmiProvider>
+          </UserProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
