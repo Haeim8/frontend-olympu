@@ -42,7 +42,7 @@ export default function Wallet() {
     <div className="space-y-8">
       <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Votre portefeuille</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">PNL</CardTitle>
           </CardHeader>
@@ -50,7 +50,7 @@ export default function Wallet() {
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.pnl}</p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Valeur investie</CardTitle>
           </CardHeader>
@@ -58,7 +58,7 @@ export default function Wallet() {
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.investedValue}</p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Projets investis</CardTitle>
           </CardHeader>
@@ -66,7 +66,7 @@ export default function Wallet() {
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.projectsInvested}</p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Temps avant déblocage</CardTitle>
           </CardHeader>
@@ -75,7 +75,7 @@ export default function Wallet() {
           </CardContent>
         </Card>
       </div>
-      <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md">
+      <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Solde des Tokens</CardTitle>
         </CardHeader>
@@ -100,7 +100,7 @@ export default function Wallet() {
           </div>
         </CardContent>
       </Card>
-      <Card className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-md">
+      <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Historique des transactions</CardTitle>
         </CardHeader>

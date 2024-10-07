@@ -8,7 +8,7 @@ export default function ProjectCard({ project, isFavorite, toggleFavorite, onVie
   const progress = (project.currentRaise / project.goal) * 100;
 
   return (
-    <Card className="bg-white dark:bg-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
+    <Card className="bg-white dark:bg-neutral-900 shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardContent className="p-4">
         <div className="md:hidden mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{project.name}</h3>

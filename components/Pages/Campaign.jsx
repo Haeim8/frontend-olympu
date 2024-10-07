@@ -60,7 +60,7 @@ export default function Campaign() {
       return;
     }
     alert(`Distribution de ${amount} ${distributeForm.token} confirmée. Message : ${distributeForm.message}`);
-    setDistributeForm({ amount: "", token: "USDC", message: "" });
+    setDistributeForm({ amount: "", token: "ETH", message: "" });
   };
 
   const calculateDividendPerNFT = () => {

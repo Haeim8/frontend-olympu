@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Bell, Sun, Moon, ChevronDown, Menu } from 'lucide-react';
@@ -42,7 +44,7 @@ export default function Header({
   ];
 
   return (
-    <header className="p-4 md:p-6 flex justify-between items-center bg-white dark:bg-gray-950 shadow-sm">
+    <header className="p-4 md:p-6 flex justify-between items-center bg-white dark:bg-neutral-950 shadow-sm border-b-2 border-lime-400">
       <div className="flex items-center">
         <Button
           variant="ghost"
@@ -53,7 +55,7 @@ export default function Header({
         >
           <Menu className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Devar</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-lime-400">Devar</h1>
       </div>
       <div className="flex items-center space-x-2 md:space-x-4">
         <div className="relative">

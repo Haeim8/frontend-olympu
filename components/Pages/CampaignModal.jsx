@@ -142,7 +142,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
 
   return (
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
-      <DialogContent className="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-gray-50 max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Créer une nouvelle campagne</DialogTitle>
         </DialogHeader>
@@ -173,7 +173,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               name="creatorAddress"
               value={campaignForm.creatorAddress}
               onChange={handleInputChange}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -188,7 +188,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               name="name"
               value={campaignForm.name}
               onChange={handleInputChange}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -199,7 +199,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               <InfoTooltip content="Choisissez le secteur qui correspond le mieux à votre projet." />
             </div>
             <Select onValueChange={(value) => handleSelectChange(value, 'sector')} required>
-              <SelectTrigger className="bg-gray-100 dark:bg-gray-800">
+              <SelectTrigger className="bg-gray-50 dark:bg-neutral-900">
                 <SelectValue placeholder="Sélectionnez un secteur" />
               </SelectTrigger>
               <SelectContent>
@@ -223,7 +223,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               value={campaignForm.description}
               onChange={handleInputChange}
               placeholder="Veuillez renseigner ce champ."
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -239,7 +239,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               type="number"
               value={campaignForm.sharePrice}
               onChange={handleInputChange}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -255,7 +255,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               type="number"
               value={campaignForm.totalShares}
               onChange={handleInputChange}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -271,7 +271,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               type="number"
               value={campaignForm.goal}
               onChange={handleInputChange}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -287,7 +287,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               type="date"
               value={campaignForm.endDate}
               onChange={handleInputChange}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -304,7 +304,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                   name="name"
                   value={campaignForm.lawyer.name}
                   onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  className="bg-gray-100 dark:bg-gray-800"
+                  className="bg-gray-50 dark:bg-neutral-900"
                   required
                 />
               </div>
@@ -318,7 +318,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                   name="contact"
                   value={campaignForm.lawyer.contact}
                   onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  className="bg-gray-100 dark:bg-gray-800"
+                  className="bg-gray-50 dark:bg-neutral-900"
                   required
                 />
               </div>
@@ -332,7 +332,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                   name="phone"
                   value={campaignForm.lawyer.phone}
                   onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  className="bg-gray-100 dark:bg-gray-800"
+                  className="bg-gray-50 dark:bg-neutral-900"
                   required
                 />
               </div>
@@ -349,7 +349,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               name="remunerationType"
               value={campaignForm.investmentTerms.remunerationType}
               onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -364,7 +364,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               name="roi"
               value={campaignForm.investmentTerms.roi}
               onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
@@ -390,7 +390,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               type="number"
               value={campaignForm.companyShares.percentageMinted}
               onChange={(e) => handleNestedInputChange(e, 'companyShares')}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-gray-900"
               required
             />
           </div>
@@ -405,7 +405,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               name="vertePortalLink"
               value={campaignForm.companyShares.vertePortalLink}
               onChange={(e) => handleNestedInputChange(e, 'companyShares')}
-              className="bg-gray-100 dark:bg-gray-800"
+              className="bg-gray-50 dark:bg-gray-900"
               required
             />
           </div>
@@ -416,30 +416,30 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               <InfoTooltip content="Ajoutez les membres clés de votre équipe et leurs rôles." />
             </div>
             {campaignForm.teamMembers.map((member, index) => (
-              <div key={index} className="mt-2 space-y-2 p-4 bg-gray-100 dark:bg-gray-800 rounded-md">
+              <div key={index} className="mt-2 space-y-2 p-4 bg-gray-100 dark:bg-neutral-900 rounded-md">
                 <Input
                   placeholder="Nom"
                   value={member.name}
                   onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
-                  className="bg-white dark:bg-gray-700"
+                  className="bg-white dark:bg-neutral-900"
                 />
                 <Input
                   placeholder="Rôle"
                   value={member.role}
                   onChange={(e) => handleTeamMemberChange(index, 'role', e.target.value)}
-                  className="bg-white dark:bg-gray-700"
+                  className="bg-white dark:bg-neutral-900"
                 />
                 <Input
                   placeholder="Twitter"
                   value={member.twitter}
                   onChange={(e) => handleTeamMemberChange(index, 'twitter', e.target.value)}
-                  className="bg-white dark:bg-gray-700"
+                  className="bg-white dark:bg-neutral-900"
                 />
                 <Input
                   placeholder="Facebook"
                   value={member.facebook}
                   onChange={(e) => handleTeamMemberChange(index, 'facebook', e.target.value)}
-                  className="bg-white dark:bg-gray-700"
+                  className="bg-white dark:bg-neutral-900"
                 />
                 <Button
                   type="button"
@@ -454,7 +454,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             <Button
               type="button"
               onClick={addTeamMember}
-              className="mt-2 bg-lime-500 hover:bg-lime-600 text-white"
+              className="mt-2 bg-lime-500 hover:bg-lime-400 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Ajouter un membre
@@ -478,7 +478,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               <Button
                 type="button"
                 onClick={() => document.getElementById('documents').click()}
-                className="bg-lime-500 hover:bg-lime-600 text-white font-bold"
+                className="bg-lime-500 hover:bg-lime-400 text-white font-bold"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Parcourir
@@ -488,10 +488,10 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               </span>
             </div>
             {campaignForm.documents.length > 0 && (
-              <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-100 dark:bg-gray-800">
+              <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-50 dark:bg-neutral-900">
                 {campaignForm.documents.map((file, index) => (
                   <div key={index} className="flex justify-between items-center py-1">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
+                    <span className="text-sm text-neutral-900 dark:text-gray-300">{file.name}</span>
                     <Button
                       type="button"
                       variant="ghost"
@@ -525,7 +525,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               <Button
                 type="button"
                 onClick={() => document.getElementById('media').click()}
-                className="bg-lime-500 hover:bg-lime-600 text-white font-bold"
+                className="bg-lime-500 hover:bg-lime-400 text-white font-bold"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Ajouter des médias
@@ -535,10 +535,10 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               </span>
             </div>
             {campaignForm.media.length > 0 && (
-              <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-100 dark:bg-gray-800">
+              <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-100 dark:bg-neutral-900">
                 {campaignForm.media.map((file, index) => (
                   <div key={index} className="flex justify-between items-center py-1">
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
+                    <span className="text-sm text-neutral-900 dark:text-gray-300">{file.name}</span>
                     <Button
                       type="button"
                       variant="ghost"

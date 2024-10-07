@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Eye, ArrowRight } from 'lucide-react';
 import CampaignModal from './CampaignModal';
 import ProjectDetails from './ProjectDetails';
 
@@ -16,7 +16,7 @@ export default function Home() {
       id: 1, 
       name: "Projet A", 
       sector: "Tech", 
-      sharePrice: 100, 
+      sharePrice: 0.01, 
       raised: 500, 
       goal: 1000, 
       endDate: "2023-12-31",
@@ -57,7 +57,7 @@ export default function Home() {
       id: 2, 
       name: "Projet B", 
       sector: "Finance", 
-      sharePrice: 50, 
+      sharePrice: 0.50, 
       raised: 200, 
       goal: 500, 
       endDate: "2023-11-30",
@@ -99,48 +99,57 @@ export default function Home() {
   };
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-3 md:p-1">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-0">Projets en cours de financement</h2>
         <Button 
           onClick={() => setShowCreateCampaign(true)}
-          className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105"
+          className="w-full md:w-auto bg-lime-400 hover:bg-lime-400 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-100"
         >
           Créer campagne
         </Button>
       </div>
       <div className="space-y-6">
-        <div className="hidden md:grid grid-cols-6 gap-4 px-4 py-2 bg-gray-100 dark:bg-gray-950 rounded-t-lg">
+        <div className="hidden md:grid grid-cols-6 gap-4 px-4 py-2 bg-gray-50 dark:bg-neutral-950 rounded-t-lg">
           <div className="font-semibold text-sm text-gray-950 dark:text-gray-300">Nom</div>
           <div className="font-semibold text-sm text-gray-950 dark:text-gray-300">Secteur</div>
           <div className="font-semibold text-sm text-gray-950 dark:text-gray-300">Prix unitaire</div>
           <div className="font-semibold text-sm text-gray-950 dark:text-gray-300">Levée en cours</div>
           <div className="font-semibold text-sm text-gray-950 dark:text-gray-300">Objectif</div>
-          <div className="font-semibold text-sm text-gray-950 dark:text-gray-300 text-right">Action</div>
+          <div className="font-semibold text-sm text-gray-700 dark:text-gray-300 text-right">Action</div>
         </div>
         {projects.map((project) => (
-          <Card key={project.id} className="w-full bg-white dark:bg-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
+          <Card 
+            key={project.id} 
+            className="w-full bg-white dark:bg-neutral-950 shadow-md hover:shadow-lg transition-all duration-300 border-spacing-0.5 border-gray-700 rounded-lg overflow-hidden"
+          >
             <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4">
               <div className="text-gray-900 dark:text-gray-100 font-semibold">{project.name}</div>
               <div className="text-gray-700 dark:text-gray-300">{project.sector}</div>
-              <div className="text-gray-900 dark:text-gray-100">{project.sharePrice} USDC</div>
+              <div className="text-gray-900 dark:text-gray-100">{project.sharePrice} ETH</div>
               <div className="text-gray-900 dark:text-gray-100">
                 {project.raised} USDC
-                <Progress 
-                  value={(project.raised / project.goal) * 100} 
-                  className="h-2 mt-1 bg-gray-200 dark:bg-gray-700"
-                >
-                  <div className="h-full bg-lime-400" style={{ width: `${(project.raised / project.goal) * 100}%` }} />
-                </Progress>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-1">
+                  <div 
+                    className={`h-2.5 rounded-full ${project.raised >= 500 ? 'bg-lime-400' : 'bg-lime-400'}`}
+                    style={{ width: `${(project.raised / project.goal) * 100}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="text-gray-900 dark:text-gray-100">{project.goal} USDC</div>
-              <div className="flex justify-start md:justify-end mt-2 md:mt-0">
-                <Button 
-                  onClick={() => setSelectedProject(project)}
-                  className="w-full md:w-auto bg-lime-500 hover:bg-lime-600 text-white font-bold transition-all duration-300 ease-in-out transform hover:scale-105"
-                >
-                  Voir détails
-                </Button>
+              <div className="text-gray-900 dark:text-gray-100">{project.goal} ETH</div>
+              <div 
+                className="flex justify-start md:justify-end mt-2 md:mt-0"
+                onClick={() => setSelectedProject(project)}
+              >
+                <div className="group relative inline-flex items-center justify-center p-2 overflow-hidden font-medium text-lime-400 rounded-lg shadow-xl transition duration-300 ease-out bg-gray-50 dark:bg-neutral-900 hover:bg-lime-50 dark:hover:bg-lime-900">
+                  <span className="absolute inset-0 flex items-center justify-center w-full h-full text-white duration-300 -translate-x-full bg-lime-600 group-hover:translate-x-0 ease">
+                    <ArrowRight className="w-5 h-5" />
+                  </span>
+                  <span className="absolute flex items-center justify-center w-full h-full text-lime-400 dark:text-lime-400 transition-all duration-300 transform group-hover:translate-x-full ease">
+                    <Eye className="w-5 h-5 mr-2" />learn
+                  </span>
+                  <span className="relative invisible">Voir détails</span>
+                </div>
               </div>
             </CardContent>
           </Card>

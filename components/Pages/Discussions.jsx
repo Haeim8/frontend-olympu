@@ -1,5 +1,4 @@
-// components/pages/Discussions.jsx
-"use client";
+'use client'
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -14,7 +13,7 @@ export default function Discussions({ projects = [] }) {
     <div className="space-y-6">
       <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Discussions</h2>
       {/* Chat Général */}
-      <Card className="bg-white dark:bg-gray-950 shadow-md">
+      <Card className="bg-white dark:bg-neutral-950 shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">Chat Général</CardTitle>
         </CardHeader>
