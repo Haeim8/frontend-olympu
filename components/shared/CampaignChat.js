@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useUser } from '../shared/UserContext';
+import { useUser } from '../shared/UserContext'; // Assurez-vous que ce contexte passe bien les infos utilisateur
 import { db } from '@/lib/firebase/firebase';
 import { collection, addDoc, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { Send } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Send } from 'lucide-react';
 export default function CampaignChat({ project }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const { user } = useUser();
+  const { user } = useUser(); // On récupère l'utilisateur depuis le contexte
 
   useEffect(() => {
     const q = query(collection(db, `projects/${project.id}/chat`), orderBy("timestamp", "desc"), limit(50));
@@ -34,7 +34,7 @@ export default function CampaignChat({ project }) {
     try {
       await addDoc(collection(db, `projects/${project.id}/chat`), {
         text: newMessage,
-        username: user?.username || 'Anonyme',
+        username: user?.username || 'Utilisateur', // On utilise le pseudo, sinon "Utilisateur"
         timestamp: new Date(),
       });
       setNewMessage('');

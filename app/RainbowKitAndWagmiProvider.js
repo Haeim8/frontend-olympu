@@ -1,50 +1,35 @@
-'use client';
+"use client";
 
-import '@rainbow-me/rainbowkit/styles.css';
-import { getDefaultWallets,RainbowKitProvider,darkTheme,} from '@rainbow-me/rainbowkit';
-import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { mainnet, sepolia, baseGoerli, hardhat } from 'wagmi/chains';
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { publicProvider } from 'wagmi/providers/public';
+import React from 'react';
+import { ThemeProvider } from 'next-themes';
+import ThirdwebProviderWrapper from "./ThirdwebProviderWrapper"; // Assure-toi que l'importation est correcte
+import "@/app/globals.css";
+import { Inter as FontSans } from "next/font/google";
+import { cn } from "@/lib/utils";
+import { UserProvider } from "@/components/shared/UserContext";
 
-// Configuration des chaînes avec `publicProvider`
-const { chains, publicClient } = configureChains(
-  [mainnet, sepolia, baseGoerli, hardhat],
-  [publicProvider()]
-);
-
-// Configuration des portefeuilles par défaut avec RainbowKit
-const { connectors } = getDefaultWallets({
-  appName: 'Devar',
-  projectId: '0f0b011f456e2fc37f8cf2cc696aed5c',
-  chains,
+const fontSans = FontSans({
+  subsets: ["latin"],
+  variable: "--font-sans",
 });
 
-// Création de la configuration Wagmi
-const config = createConfig({
-  autoConnect: true,
-  connectors,
-  publicClient,
-});
-
-const queryClient = new QueryClient();
-
-const RainbowKitAndWagmiProvider = ({ children }) => {
+export default function RootLayout({ children }) {
   return (
-    <WagmiConfig config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          chains={chains}
-          theme={darkTheme({
-            accentColor: 'white',
-            accentColorForeground: 'black',
-          })}
-        >
-          {children}
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiConfig>
+    <html lang="fr" suppressHydrationWarning>
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          fontSans.variable
+        )}
+      >
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <ThirdwebProviderWrapper>
+            <UserProvider>
+              {children}
+            </UserProvider>
+          </ThirdwebProviderWrapper>
+        </ThemeProvider>
+      </body>
+    </html>
   );
-};
-
-export default RainbowKitAndWagmiProvider;
+}

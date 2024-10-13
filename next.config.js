@@ -4,13 +4,8 @@ const nextConfig = {
   webpack: (config) => {
     // Ajouter les extensions au resolve
     config.resolve.extensions = ['.js', '.jsx', '.ts', '.tsx', ...config.resolve.extensions];
-    
-    // Ajouter un alias pour wagmi
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      wagmi: require('path').resolve(__dirname, 'node_modules/wagmi/dist'),
-    };
-    
+
+    // Supprimer l'alias wagmi
     return config;
   },
 };

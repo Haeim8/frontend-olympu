@@ -1,28 +1,25 @@
+'use client';
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAccount, useBalance } from 'wagmi';
-import { formatUnits } from 'ethers/lib/utils';
+import { useAddress, useBalance } from '@thirdweb-dev/react'; // Importation des hooks Thirdweb
+import { ethers } from 'ethers'; // Utilisation de ethers pour formater les unités
 
 export default function Wallet() {
-  const { address } = useAccount();
+  const address = useAddress(); // Utilisation de useAddress pour récupérer l'adresse du portefeuille
 
-  // Hooks pour les balances
-  const ethBalance = useBalance({
-    address: address,
-    watch: true,
+  // Hook pour obtenir les balances ETH
+  const { data: ethBalance, isLoading: ethLoading } = useBalance();
+  
+  // Hook pour obtenir les balances WETH
+  const { data: wethBalance, isLoading: wethLoading } = useBalance({
+    tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // Adresse WETH Mainnet
   });
 
-  const wethBalance = useBalance({
-    address: address,
-    token: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // Adresse WETH Mainnet
-    watch: true,
-  });
-
-  const usdtBalance = useBalance({
-    address: address,
-    token: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // Adresse USDT Mainnet
-    watch: true,
+  // Hook pour obtenir les balances USDT
+  const { data: usdtBalance, isLoading: usdtLoading } = useBalance({
+    tokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // Adresse USDT Mainnet
   });
 
   const walletInfo = {
@@ -83,19 +80,19 @@ export default function Wallet() {
           <div className="flex justify-between items-center">
             <span className="text-gray-700 dark:text-gray-300">ETH</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {ethBalance.isLoading ? '...' : ethBalance.data ? parseFloat(formatUnits(ethBalance.data.value, ethBalance.data.decimals)).toFixed(4) : '0.0000'} ETH
+              {ethLoading ? '...' : ethBalance ? parseFloat(ethers.utils.formatUnits(ethBalance.value, ethBalance.decimals)).toFixed(4) : '0.0000'} ETH
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-700 dark:text-gray-300">WETH</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {wethBalance.isLoading ? '...' : wethBalance.data ? parseFloat(formatUnits(wethBalance.data.value, wethBalance.data.decimals)).toFixed(4) : '0.0000'} WETH
+              {wethLoading ? '...' : wethBalance ? parseFloat(ethers.utils.formatUnits(wethBalance.value, wethBalance.decimals)).toFixed(4) : '0.0000'} WETH
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-700 dark:text-gray-300">USDT</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {usdtBalance.isLoading ? '...' : usdtBalance.data ? parseFloat(formatUnits(usdtBalance.data.value, usdtBalance.data.decimals)).toFixed(2) : '0.00'} USDT
+              {usdtLoading ? '...' : usdtBalance ? parseFloat(ethers.utils.formatUnits(usdtBalance.value, usdtBalance.decimals)).toFixed(2) : '0.00'} USDT
             </span>
           </div>
         </CardContent>

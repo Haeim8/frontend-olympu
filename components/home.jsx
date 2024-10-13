@@ -1,56 +1,93 @@
-import { useState, useEffect } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Moon, Sun, Twitter, MessageCircle, X } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { motion, AnimatePresence } from 'framer-motion'
-import { ConnectButton } from '@rainbow-me/rainbowkit'; // Importer ConnectButton
+"use client";
+
+import { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Moon, Sun, Twitter, MessageCircle, X } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion, AnimatePresence } from 'framer-motion';
+import { ConnectWallet, useAddress } from "@thirdweb-dev/react"; // Utilisation de Thirdweb
+import { db } from '@/lib/firebase/firebase'; // Importer Firestore
+import { doc, getDoc, setDoc } from 'firebase/firestore'; // Firebase Firestore
+import { useRouter } from "next/navigation"; // Importer le hook useRouter pour la navigation
 
 export default function Home() {
-  const [darkMode, setDarkMode] = useState(false)
-  const [showSignup, setShowSignup] = useState(false)
+  const [darkMode, setDarkMode] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+  const [userExists, setUserExists] = useState(false); // Vérifier si le profil existe déjà
   const [formData, setFormData] = useState({
     photo: '',
     username: '',
     xAccount: '',
     socialMedia: ''
-  })
+  });
+  const address = useAddress(); // Récupérer l'adresse du wallet
+  const router = useRouter(); // Utiliser useRouter pour la redirection
 
   useEffect(() => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    setDarkMode(isDark)
-  }, [])
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setDarkMode(isDark);
+  }, []);
+
+  useEffect(() => {
+    // Si l'utilisateur est connecté via Thirdweb (adresse disponible)
+    if (address) {
+      checkUserProfile();
+    }
+  }, [address]);
+
+  // Fonction pour vérifier si un utilisateur a un profil dans Firebase
+  const checkUserProfile = async () => {
+    const docRef = doc(db, "users", address);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      setUserExists(true); // L'utilisateur a déjà un profil
+    } else {
+      setUserExists(false); // Pas de profil existant
+    }
+  };
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-  }
+    setDarkMode(!darkMode);
+  };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handlePhotoChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target) {
-          setFormData(prev => ({ ...prev, photo: event.target?.result }))
+          setFormData(prev => ({ ...prev, photo: event.target?.result }));
         }
-      }
-      reader.readAsDataURL(e.target.files[0])
+      };
+      reader.readAsDataURL(e.target.files[0]);
     }
-  }
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log('Form submitted:', formData)
-    setShowSignup(false)
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Créer un nouveau profil utilisateur dans Firebase avec les données du formulaire
+    await setDoc(doc(db, "users", address), {
+      username: formData.username,
+      xAccount: formData.xAccount,
+      socialMedia: formData.socialMedia,
+      photo: formData.photo
+    });
+
+    console.log('Profil créé:', formData);
+    setShowSignup(false);
+    setUserExists(true); // Profil créé, maintenant l'utilisateur a un profil
+  };
 
   return (
-    (<div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-zinc-400 dark:text-gray-200 transition-colors duration-200 relative overflow-hidden">
         {/* Starry background */}
         <div className="absolute inset-0 z-0">
@@ -121,7 +158,7 @@ export default function Home() {
               transition={{ delay: 5 }} />
           </g>
         </svg>
-        
+
         {/* Animated laser bridge */}
         <motion.div
           className="absolute inset-0 z-0 opacity-60"
@@ -143,7 +180,7 @@ export default function Home() {
               transition={{ duration: 10, repeat: Infinity, ease: "linear" }} />
           </svg>
         </motion.div>
-        
+
         <header className="px-4 lg:px-6 h-20 flex items-center justify-between relative z-10 bg-transparent">
           <div className="flex items-center">
             {/* Logo placeholder */}
@@ -174,8 +211,8 @@ export default function Home() {
               <span className="sr-only">Discord</span>
             </a>
 
-            {/* Bouton de connexion Wallet */}
-            <ConnectButton />
+            {/* Bouton de connexion Wallet Thirdweb */}
+            <ConnectWallet />
           </div>
         </header>
 
@@ -191,38 +228,49 @@ export default function Home() {
                   className="inline-block rounded-lg bg-lime-400 px-3 py-1 text-sm text-black"
                   animate={{ opacity: [0.5, 5, 0.5] }}
                   transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
-                  Defi Crowdfunding 
+                  Defi Crowdfunding
                 </motion.div>
+
+                {/* Text ajouté ici */}
+                <motion.h1
+                  className="text-4xl font-bold tracking-tighter md:text-4xl/tight mb-4"
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}>
+                  Support the future of the ecosystem.
+                </motion.h1>
+                <motion.p
+                  className="max-w-[900px] text-zinc-700 dark:text-zinc-50 md:text-xl/relaxed lg:text-base/relaxed xxl:text-xl/relaxed mb-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4, duration: 0.8 }}>
+                  Contribute to the development of cutting-edge Web3 technologies and be a part of the decentralized revolution.
+                </motion.p>
+
+                {/* Afficher le bouton ou le formulaire selon le profil */}
                 <motion.div
                   className="p-6 rounded-lg bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 2 }}
                   transition={{ delay: 0.1, duration: 0.05 }}>
-                  <motion.h1
-                    className="text-4xl font-bold tracking-tighter md:text-4xl/tight mb-4"
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}>
-                    Support the future of the ecosysteme.
-                  </motion.h1>
-                  <motion.p
-                    className="max-w-[900px] text-zinc-700 dark:text-zinc-50 md:text-xl/relaxed lg:text-base/relaxed xxl:text-xl/relaxed mb-8"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4, duration: 0.8 }}>
-                   Contribute to the development of cutting-edge Web3 technologies and be a part of the decentralized revolution.
-                  </motion.p>
-                  <motion.div
-                    className="flex justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6, duration: 0.8 }}>
-                    <Button
-                      variant="default"
-                      className="bg-lime-400 text-black hover:bg-lime-50 dark:bg)lime-400 dark:hover:bg-lime-50"
-                      onClick={() => setShowSignup(true)}>
-                      Create Account
-                    </Button>
-                  </motion.div>
+                  {address ? (
+                    userExists ? (
+                      <Button
+                        variant="default"
+                        className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
+                        onClick={() => router.push("/dashboard")}>
+                        Launch App
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="default"
+                        className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
+                        onClick={() => setShowSignup(true)}>
+                        Create Account
+                      </Button>
+                    )
+                  ) : (
+                    <p className="text-lime-400">Please connect your wallet</p>
+                  )}
                 </motion.div>
               </motion.div>
             </div>
@@ -245,6 +293,8 @@ export default function Home() {
           </nav>
         </footer>
       </div>
+
+      {/* Modal d'inscription */}
       <AnimatePresence>
         {showSignup && (
           <motion.div
@@ -333,6 +383,6 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>)
+    </div>
   );
 }

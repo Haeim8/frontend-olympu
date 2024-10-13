@@ -1,28 +1,36 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAddress } from '@thirdweb-dev/react'; 
 import Home from '@/components/home';
 import AppInterface from '@/components/app-interface';
+import { Button } from '@/components/ui/button';
 
 export default function Page() {
-  const { isConnected } = useAccount();
+  const address = useAddress(); 
   const [showInterface, setShowInterface] = useState(false);
 
   useEffect(() => {
-    if (isConnected) {
-      setShowInterface(true);
-    } else {
-      setShowInterface(false);
+    if (address) {
+      setShowInterface(false); 
     }
-  }, [isConnected]);
+  }, [address]);
 
   return (
     <div className="min-h-screen bg-background">
       {showInterface ? (
         <AppInterface />
       ) : (
-        <Home />
+        <>
+          <Home />
+          {address && (
+            <div className="flex justify-center mt-4">
+              <Button onClick={() => setShowInterface(true)} className="bg-blue-500 text-white">
+                Accéder à l'interface de l'application
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

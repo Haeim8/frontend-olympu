@@ -1,3 +1,5 @@
+"use client"; // C'est un composant client !
+
 import React from 'react';
 import { ThemeProvider } from 'next-themes';
 import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider";
@@ -10,11 +12,6 @@ const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
 });
-
-export const metadata = {
-  title: 'Devar',
-  description: 'Description de votre application',
-};
 
 export default function RootLayout({ children }) {
   return (

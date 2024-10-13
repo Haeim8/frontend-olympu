@@ -4,23 +4,25 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Bell, Sun, Moon, ChevronDown, Menu } from 'lucide-react';
 import { formatUnits } from 'ethers/lib/utils';
-import { useBalance } from 'wagmi';
+import { useAddress, useBalance, useDisconnect } from '@thirdweb-dev/react';
+import { useRouter } from 'next/navigation'; // Pour rediriger après déconnexion
 
 export default function Header({ 
   darkMode, 
   toggleDarkMode, 
   showMobileMenu, 
   setShowMobileMenu, 
-  isConnected, 
-  disconnect, 
-  user, 
-  address
+  username, // On reçoit le pseudo en tant que prop
+  disconnect // Utilisation de la fonction de déconnexion
 }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const ethBalance = useBalance({ address, watch: true });
-  const wethBalance = useBalance({ address, token: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', watch: true });
-  const usdtBalance = useBalance({ address, token: '0xdAC17F958D2ee523a2206206994597C13D831ec7', watch: true });
+  const address = useAddress();
+  const router = useRouter(); // Pour rediriger l'utilisateur
+
+  const ethBalance = useBalance({ address });
+  const wethBalance = useBalance({ address, token: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' });
+  const usdtBalance = useBalance({ address, token: '0xdAC17F958D2ee523a2206206994597C13D831ec7' });
 
   const formatBalance = (balance, decimals) => {
     if (!balance || balance.isLoading) return '...';
@@ -36,12 +38,11 @@ export default function Header({
     setIsNotificationsOpen(!isNotificationsOpen);
   };
 
-  // Exemple de notifications (à remplacer par vos vraies données)
-  const notifications = [
-    { id: 1, message: "Nouvelle campagne lancée : Projet X", date: "2023-09-25" },
-    { id: 2, message: "Votre investissement dans Projet A a été confirmé", date: "2023-09-24" },
-    { id: 3, message: "Rappel : La campagne Projet B se termine dans 3 jours", date: "2023-09-23" },
-  ];
+  // Lors de la déconnexion, rediriger l'utilisateur vers Home
+  const handleDisconnect = () => {
+    disconnect(); // Déconnexion via Thirdweb
+    router.push('/'); // Rediriger vers Home après déconnexion
+  };
 
   return (
     <header className="p-4 md:p-6 flex justify-between items-center bg-white dark:bg-neutral-950 shadow-sm border-b-2 border-lime-400">
@@ -74,12 +75,7 @@ export default function Header({
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
               </div>
               <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
-                {notifications.map((notification) => (
-                  <div key={notification.id} className="text-sm text-gray-700 dark:text-gray-300">
-                    <p>{notification.message}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{notification.date}</p>
-                  </div>
-                ))}
+                {/* Notifications */}
               </div>
             </div>
           )}
@@ -102,8 +98,8 @@ export default function Header({
             aria-haspopup="true"
           >
             <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700" aria-hidden="true" />
-            <span className="text-gray-900 dark:text-gray-100">{user?.username || 'Utilisateur'}</span>
-            {isConnected && address && (
+            <span className="text-gray-900 dark:text-gray-100">{username || 'Utilisateur'}</span>
+            {address && (
               <span className="text-gray-600 dark:text-gray-300 ml-2 truncate w-24" title={address}>
                 {address.slice(0, 6)}...{address.slice(-4)}
               </span>
@@ -137,7 +133,7 @@ export default function Header({
               </div>
               <div className="p-4">
                 <Button 
-                  onClick={() => { disconnect(); handleDropdownToggle(); }}
+                  onClick={handleDisconnect} // Utilisation de handleDisconnect pour déconnecter et rediriger
                   className="w-full bg-red-500 hover:bg-red-600 text-white font-bold"
                 >
                   Déconnecter
