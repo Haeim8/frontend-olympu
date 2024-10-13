@@ -26,7 +26,7 @@ export default function AppInterface() {
   // Si l'utilisateur n'est pas connecté, rediriger vers la page Home
   useEffect(() => {
     if (!address) {
-      router.push('/'); // Rediriger vers Home
+      router.push('/'); // Rediriger vers Home si pas connecté
     }
   }, [address, router]);
 
@@ -45,6 +45,11 @@ export default function AppInterface() {
     fetchUserData();
   }, [address]);
 
+  const handleDisconnect = () => {
+    disconnect();
+    router.push('/'); // Redirige vers la page d'accueil après déconnexion
+  };
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     if (darkMode) {
@@ -62,7 +67,7 @@ export default function AppInterface() {
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
         username={username} // Passer le pseudo au Header
-        disconnect={disconnect} // Passer la fonction de déconnexion pour gérer la redirection
+        disconnect={handleDisconnect} // Passer la fonction de déconnexion pour gérer la redirection
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -74,7 +79,7 @@ export default function AppInterface() {
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-950 p-6 md:p-8 transition-all duration-300 ease-in-out">
           {activePage === 'home' && <Home />}
           {activePage === 'wallet' && <Wallet />}
-          {activePage === 'discussions' && <Discussions username={username} />} {/* Passer le pseudo au chat */}
+          {activePage === 'discussions' && <Discussions username={username} />}
           {activePage === 'news' && <News />}
           {activePage === 'favorites' && <Favorites />}
           {activePage === 'campaign' && <Campaign />}

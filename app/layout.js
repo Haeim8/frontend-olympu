@@ -1,17 +1,22 @@
-"use client"; // C'est un composant client !
+"use client"; // Le composant est bien un composant client
 
 import React from 'react';
 import { ThemeProvider } from 'next-themes';
-import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider";
+import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider"; // Ton provider Web3
 import "@/app/globals.css";
 import { Inter as FontSans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { UserProvider } from "@/components/shared/UserContext";
+import { ThirdwebProvider } from "@thirdweb-dev/react"; // Assurez-vous d'importer le ThirdwebProvider
+import { Sepolia, BaseGoerli, Ethereum } from "@thirdweb-dev/chains"; // Chaînes prises en charge
 
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
 });
+
+// Chaînes prises en charge pour Thirdweb
+const supportedChains = [Sepolia, BaseGoerli, Ethereum];
 
 export default function RootLayout({ children }) {
   return (
@@ -23,11 +28,13 @@ export default function RootLayout({ children }) {
         )}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <UserProvider>
-            <RainbowKitAndWagmiProvider>
-              {children}
-            </RainbowKitAndWagmiProvider>
-          </UserProvider>
+          <ThirdwebProvider supportedChains={supportedChains}> {/* Assure que ThirdwebProvider entoure tout */}
+            <UserProvider>
+              <RainbowKitAndWagmiProvider>
+                {children}
+              </RainbowKitAndWagmiProvider>
+            </UserProvider>
+          </ThirdwebProvider>
         </ThemeProvider>
       </body>
     </html>
