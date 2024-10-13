@@ -24,6 +24,7 @@ export default function Home() {
   });
   const address = useAddress(); // Récupérer l'adresse du wallet
   const router = useRouter(); // Utiliser useRouter pour la redirection
+  const [loading, setLoading] = useState(true); // Ajouter un état de chargement
 
   useEffect(() => {
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -31,9 +32,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Si l'utilisateur est connecté via Thirdweb (adresse disponible)
     if (address) {
       checkUserProfile();
+    } else {
+      setLoading(false); // Si pas d'adresse, on n'est plus en chargement
     }
   }, [address]);
 
@@ -47,6 +49,7 @@ export default function Home() {
     } else {
       setUserExists(false); // Pas de profil existant
     }
+    setLoading(false); // Terminer le chargement
   };
 
   const toggleDarkMode = () => {
@@ -63,7 +66,7 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target) {
-          setFormData(prev => ({ ...prev, photo: event.target?.result }));
+          setFormData(prev => ({ ...prev, photo: event.target.result }));
         }
       };
       reader.readAsDataURL(e.target.files[0]);
@@ -85,6 +88,10 @@ export default function Home() {
     setShowSignup(false);
     setUserExists(true); // Profil créé, maintenant l'utilisateur a un profil
   };
+
+  if (loading) {
+    return <div>Loading...</div>; // Retourne un chargement pendant que tu attends
+  }
 
   return (
     <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
@@ -231,6 +238,7 @@ export default function Home() {
                   Defi Crowdfunding
                 </motion.div>
 
+                {/* Text ajouté ici */}
                 <motion.h1
                   className="text-4xl font-bold tracking-tighter md:text-4xl/tight mb-4"
                   animate={{ y: [0, -10, 0] }}
