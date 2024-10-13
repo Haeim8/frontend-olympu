@@ -231,7 +231,6 @@ export default function Home() {
                   Defi Crowdfunding
                 </motion.div>
 
-                {/* Text ajouté ici */}
                 <motion.h1
                   className="text-4xl font-bold tracking-tighter md:text-4xl/tight mb-4"
                   animate={{ y: [0, -10, 0] }}
