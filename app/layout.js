@@ -1,6 +1,6 @@
 "use client"; // Le composant est bien un composant client
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider"; // Ton provider Web3
 import "@/app/globals.css";
@@ -19,6 +19,17 @@ const fontSans = FontSans({
 const supportedChains = [Sepolia, BaseGoerli, Ethereum];
 
 export default function RootLayout({ children }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Empêche le rendu côté client avant que le composant ne soit monté
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
