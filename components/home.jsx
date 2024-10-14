@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
@@ -7,23 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Moon, Sun, Twitter, MessageCircle, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from 'framer-motion';
-import { ConnectWallet, useAddress } from "@thirdweb-dev/react";
-import { db } from '@/lib/firebase/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useRouter } from "next/navigation";
+import { ConnectWallet, useAddress } from "@thirdweb-dev/react"; // Utilisation de Thirdweb
+import { db } from '@/lib/firebase/firebase'; // Importer Firestore
+import { doc, getDoc, setDoc } from 'firebase/firestore'; // Firebase Firestore
+import { useRouter } from "next/navigation"; // Importer le hook useRouter pour la navigation
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-  const [userExists, setUserExists] = useState(false);
+  const [userExists, setUserExists] = useState(false); // Vérifier si le profil existe déjà
   const [formData, setFormData] = useState({
     photo: '',
     username: '',
     xAccount: '',
     socialMedia: ''
   });
-  const address = useAddress();
-  const router = useRouter();
+  const address = useAddress(); // Récupérer l'adresse du wallet
+  const router = useRouter(); // Utiliser useRouter pour la redirection
 
   useEffect(() => {
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -31,20 +31,25 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Si l'utilisateur est connecté via Thirdweb (adresse disponible)
     if (address) {
       checkUserProfile();
-    } else {
-      setUserExists(false);
     }
   }, [address]);
 
+  // Fonction pour vérifier si un utilisateur a un profil dans Firebase
   const checkUserProfile = async () => {
-    if (!address) return;
     const docRef = doc(db, "users", address);
     const docSnap = await getDoc(docRef);
-    console.log(`Vérification du profil pour l'adresse : ${address}`);
-    console.log(`Le document existe : ${docSnap.exists()}`);
-    setUserExists(docSnap.exists());
+    console.log(`Checking profile for address: ${address}`); // Ajoutez cette ligne
+    console.log(`Document exists: ${docSnap.exists()}`); // Ajoutez cette ligne
+
+    
+    if (docSnap.exists()) {
+      setUserExists(true); // L'utilisateur a déjà un profil
+    } else {
+      setUserExists(false); // Pas de profil existant
+    }
   };
 
   const toggleDarkMode = () => {
@@ -61,7 +66,7 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target) {
-          setFormData(prev => ({ ...prev, photo: event.target.result }));
+          setFormData(prev => ({ ...prev, photo: event.target?.result }));
         }
       };
       reader.readAsDataURL(e.target.files[0]);
@@ -70,8 +75,8 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!address) return;
 
+    // Créer un nouveau profil utilisateur dans Firebase avec les données du formulaire
     await setDoc(doc(db, "users", address), {
       username: formData.username,
       xAccount: formData.xAccount,
@@ -81,7 +86,7 @@ export default function Home() {
 
     console.log('Profil créé:', formData);
     setShowSignup(false);
-    setUserExists(true);
+    setUserExists(true); // Profil créé, maintenant l'utilisateur a un profil
   };
 
   return (
@@ -229,6 +234,7 @@ export default function Home() {
                   Defi Crowdfunding
                 </motion.div>
 
+                {/* Text ajouté ici */}
                 <motion.h1
                   className="text-4xl font-bold tracking-tighter md:text-4xl/tight mb-4"
                   animate={{ y: [0, -10, 0] }}
@@ -243,29 +249,30 @@ export default function Home() {
                   Contribute to the development of cutting-edge Web3 technologies and be a part of the decentralized revolution.
                 </motion.p>
 
+                {/* Afficher le bouton ou le formulaire selon le profil */}
                 <motion.div
                   className="p-6 rounded-lg bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm"
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.5 }}>
+                  animate={{ opacity: 2 }}
+                  transition={{ delay: 0.1, duration: 0.05 }}>
                   {address ? (
                     userExists ? (
                       <Button
                         variant="default"
                         className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
                         onClick={() => router.push("/dashboard")}>
-                        Lancer l'application
+                        Launch App
                       </Button>
                     ) : (
                       <Button
                         variant="default"
                         className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
                         onClick={() => setShowSignup(true)}>
-                        Créer un compte
+                        Create Account
                       </Button>
                     )
                   ) : (
-                    <p className="text-lime-400">Veuillez connecter votre portefeuille</p>
+                    <p className="text-lime-400">Please connect your wallet</p>
                   )}
                 </motion.div>
               </motion.div>
@@ -297,7 +304,7 @@ export default function Home() {
             className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}>
+            exit={{ opacity: 50 }}>
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -342,7 +349,6 @@ export default function Home() {
                       <Input
                         id="username"
                         name="username"
-                        
                         value={formData.username}
                         onChange={handleInputChange}
                         required

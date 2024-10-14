@@ -1,21 +1,21 @@
-"use client"; // Le composant est bien un composant client
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
-import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider"; // Ton provider Web3
+import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider";
 import "@/app/globals.css";
 import { Inter as FontSans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { UserProvider } from "@/components/shared/UserContext";
-import { ThirdwebProvider } from "@thirdweb-dev/react"; // Assurez-vous d'importer le ThirdwebProvider
-import { Sepolia, BaseGoerli, Ethereum } from "@thirdweb-dev/chains"; // Chaînes prises en charge
+import { ThirdwebProvider } from "@thirdweb-dev/react";
+import { Sepolia, BaseGoerli, Ethereum } from "@thirdweb-dev/chains";
+import Head from 'next/head';
 
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
 });
 
-// Chaînes prises en charge pour Thirdweb
 const supportedChains = [Sepolia, BaseGoerli, Ethereum];
 
 export default function RootLayout({ children }) {
@@ -25,13 +25,15 @@ export default function RootLayout({ children }) {
     setMounted(true);
   }, []);
 
-  // Empêche le rendu côté client avant que le composant ne soit monté
   if (!mounted) {
     return null;
   }
 
   return (
     <html lang="fr" suppressHydrationWarning>
+      <Head>
+        <title>Votre Application DeFi</title>
+      </Head>
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
@@ -39,7 +41,7 @@ export default function RootLayout({ children }) {
         )}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <ThirdwebProvider supportedChains={supportedChains}> {/* Assure que ThirdwebProvider entoure tout */}
+          <ThirdwebProvider supportedChains={supportedChains}>
             <UserProvider>
               <RainbowKitAndWagmiProvider>
                 {children}

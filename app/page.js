@@ -24,8 +24,11 @@ export default function Page() {
         <>
           <Home />
           {address && (
-            <div className="flex justify-center mt-4">
-              <Button onClick={() => setShowInterface(true)} className="bg-blue-500 text-white">
+            <div className="flex justify-center mt-4" aria-hidden="false">
+              <Button 
+                onClick={() => setShowInterface(true)} 
+                className="bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-300"
+              >
                 Accéder à l'interface de l'application
               </Button>
             </div>
