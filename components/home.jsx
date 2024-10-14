@@ -11,25 +11,15 @@ import { ConnectWallet, useAddress } from "@thirdweb-dev/react";
 import { db } from '@/lib/firebase/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from "next/navigation";
+import dynamic from 'next/dynamic';
 
-export default function Home() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
-  const [userExists, setUserExists] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    photo: '',
-    username: '',
-    xAccount: '',
-    socialMedia: ''
-  });
+// Composant du bouton rendu côté client uniquement
+const DynamicButton = dynamic(() => Promise.resolve(() => {
   const address = useAddress();
   const router = useRouter();
-
-  useEffect(() => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setDarkMode(isDark);
-  }, []);
+  const [userExists, setUserExists] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSignup, setShowSignup] = useState(false);
 
   useEffect(() => {
     const checkUserProfile = async () => {
@@ -53,6 +43,47 @@ export default function Home() {
 
     checkUserProfile();
   }, [address]);
+
+  if (isLoading) return <p className="text-lime-400">Chargement...</p>;
+  if (!address) return <p className="text-lime-400">Veuillez connecter votre portefeuille</p>;
+  if (userExists) {
+    return (
+      <Button
+        variant="default"
+        className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
+        onClick={() => router.push("/dashboard")}
+      >
+        Lancer l'application
+      </Button>
+    );
+  }
+  return (
+    <Button
+      variant="default"
+      className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
+      onClick={() => setShowSignup(true)}
+    >
+      Créer un compte
+    </Button>
+  );
+}), { ssr: false });
+
+export default function Home() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+  const [formData, setFormData] = useState({
+    photo: '',
+    username: '',
+    xAccount: '',
+    socialMedia: ''
+  });
+  const address = useAddress();
+  const router = useRouter();
+
+  useEffect(() => {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setDarkMode(isDark);
+  }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -89,35 +120,9 @@ export default function Home() {
 
       console.log('Profil créé :', formData);
       setShowSignup(false);
-      setUserExists(true);
     } catch (error) {
       console.error("Erreur lors de la création du profil utilisateur :", error);
     }
-  };
-
-  const renderButton = () => {
-    if (isLoading) return <p className="text-lime-400">Chargement...</p>;
-    if (!address) return <p className="text-lime-400">Veuillez connecter votre portefeuille</p>;
-    if (userExists) {
-      return (
-        <Button
-          variant="default"
-          className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
-          onClick={() => router.push("/dashboard")}
-        >
-          Lancer l'application
-        </Button>
-      );
-    }
-    return (
-      <Button
-        variant="default"
-        className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
-        onClick={() => setShowSignup(true)}
-      >
-        Créer un compte
-      </Button>
-    );
   };
 
   return (
@@ -258,7 +263,7 @@ export default function Home() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1, duration: 0.5 }}
                 >
-                  {renderButton()}
+                  <DynamicButton />
                 </motion.div>
               </motion.div>
             </div>
@@ -312,9 +317,9 @@ export default function Home() {
                       <Label htmlFor="photo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Photo de profil
                       </Label>
-                      <Input id="photo" name="photo" type="file" onChange={handlePhotoChange} className="mt-1" />
+                      <Input  id="photo" name="photo" type="file" onChange={handlePhotoChange} className="mt-1" />
                       {formData.photo && (
-                        <img src={formData.photo} alt="Aperçu du profil" className="mt-2  w-20 h-20 object-cover rounded-full" />
+                        <img src={formData.photo} alt="Aperçu du profil" className="mt-2 w-20 h-20 object-cover rounded-full" />
                       )}
                     </div>
                     <div>
