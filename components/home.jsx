@@ -7,46 +7,86 @@ import { Label } from "@/components/ui/label";
 import { Moon, Sun, Twitter, MessageCircle, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from 'framer-motion';
-import { ConnectWallet, useAddress } from "@thirdweb-dev/react"; // Utilisation de Thirdweb
-import { db } from '@/lib/firebase/firebase'; // Importer Firestore
-import { doc, getDoc, setDoc } from 'firebase/firestore'; // Firebase Firestore
-import { useRouter } from "next/navigation"; // Importer le hook useRouter pour la navigation
+import { ConnectWallet, useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
+import { db } from '@/lib/firebase/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useRouter } from "next/navigation";
+import FundRaisingPlatformABI from '@/ABI/FundRaisingPlatformABI.json'; // Importer l'ABI
+import { ethers } from 'ethers'; // Importer ethers pour manipuler les valeurs ETH
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-  const [userExists, setUserExists] = useState(false); // Vérifier si le profil existe déjà
+  const [userExists, setUserExists] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
   const [formData, setFormData] = useState({
     photo: '',
     username: '',
     xAccount: '',
     socialMedia: ''
   });
-  const address = useAddress(); // Récupérer l'adresse du wallet
-  const router = useRouter(); // Utiliser useRouter pour la redirection
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [registrationError, setRegistrationError] = useState(null);
 
+  const address = useAddress();
+  const router = useRouter();
+
+  // Adresse de votre contrat déployé
+  const contractAddress = "0xF334d4CEcB73bc95e032949b9437A1eE6D4C6019"; // Remplacez par votre adresse de contrat
+
+  // Utiliser le hook useContract pour obtenir l'instance du contrat
+  const { contract, isLoading: contractLoading, error: contractError } = useContract(contractAddress, FundRaisingPlatformABI);
+
+  // Utiliser useContractRead pour lire le mapping registeredUsers
+  const { data: isRegisteredData, isLoading: readLoading, error: readError } = useContractRead(
+    contract,
+    "registeredUsers",
+    [address] // Passer l'adresse dans un tableau
+  );
+
+  // Mettre à jour l'état d'inscription basé sur la lecture du contrat
+  useEffect(() => {
+    if (isRegisteredData !== undefined) {
+      setIsRegistered(isRegisteredData);
+      console.log(`User registered in contract: ${isRegisteredData}`);
+    }
+  }, [isRegisteredData]);
+
+  // Détecter le mode sombre
   useEffect(() => {
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     setDarkMode(isDark);
   }, []);
 
+  // Vérifier le profil utilisateur dans Firebase et l'inscription au contrat
   useEffect(() => {
-    // Si l'utilisateur est connecté via Thirdweb (adresse disponible)
     if (address) {
+      console.log("User is connected with address:", address);
       checkUserProfile();
+      // La lecture du smart contract est gérée par useContractRead
+    } else {
+      console.log("User is not connected");
+      setUserExists(false);
+      setIsRegistered(false);
     }
   }, [address]);
 
   // Fonction pour vérifier si un utilisateur a un profil dans Firebase
   const checkUserProfile = async () => {
+    if (!address) return;
     const docRef = doc(db, "users", address);
-    const docSnap = await getDoc(docRef);
-    console.log(`Checking profile for address: ${address}`); // Ajoutez cette ligne
-    console.log(`Document exists: ${docSnap.exists()}`); // Ajoutez cette ligne
-    if (docSnap.exists()) {
-      setUserExists(true); // L'utilisateur a déjà un profil
-    } else {
-      setUserExists(false); // Pas de profil existant
+    try {
+      const docSnap = await getDoc(docRef);
+      console.log(`Checking profile for address: ${address}`);
+      console.log(`Document exists: ${docSnap.exists()}`);
+      if (docSnap.exists()) {
+        setUserExists(true);
+      } else {
+        setUserExists(false);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification du profil Firebase:", error);
     }
   };
 
@@ -64,7 +104,7 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target) {
-          setFormData(prev => ({ ...prev, photo: event.target?.result }));
+          setFormData(prev => ({ ...prev, photo: event.target.result }));
         }
       };
       reader.readAsDataURL(e.target.files[0]);
@@ -73,18 +113,37 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setRegistrationError(null);
 
-    // Créer un nouveau profil utilisateur dans Firebase avec les données du formulaire
-    await setDoc(doc(db, "users", address), {
-      username: formData.username,
-      xAccount: formData.xAccount,
-      socialMedia: formData.socialMedia,
-      photo: formData.photo
-    });
+    try {
+      // Créer un nouveau profil utilisateur dans Firebase avec les données du formulaire
+      await setDoc(doc(db, "users", address), {
+        username: formData.username,
+        xAccount: formData.xAccount,
+        socialMedia: formData.socialMedia,
+        photo: formData.photo
+      });
 
-    console.log('Profil créé:', formData);
-    setShowSignup(false);
-    setUserExists(true); // Profil créé, maintenant l'utilisateur a un profil
+      console.log('Profil créé:', formData);
+      setShowSignup(false);
+      setUserExists(true);
+
+      // Enregistrer l'utilisateur dans le smart contract
+      if (contract) {
+        setRegistrationLoading(true);
+        console.log("Appel de la fonction registerUser avec 0.05 ETH");
+        const tx = await contract.call("registerUser", [], { value: ethers.utils.parseEther("0.05") });
+        console.log("Transaction réussie:", tx);
+        setIsRegistered(true);
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'inscription:", error);
+      setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
+    } finally {
+      setIsSubmitting(false);
+      setRegistrationLoading(false);
+    }
   };
 
   return (
@@ -227,14 +286,13 @@ export default function Home() {
                 transition={{ duration: 0.8 }}>
                 <motion.div
                   className="inline-block rounded-lg bg-lime-400 px-3 py-1 text-sm text-black"
-                  animate={{ opacity: [0.5, 5, 0.5] }}
+                  animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
                   Defi Crowdfunding
                 </motion.div>
 
-                {/* Text ajouté ici */}
                 <motion.h1
-                  className="text-4xl font-bold tracking-tighter md:text-4xl/tight mb-4"
+                  className="text-4xl font-bold tracking-tighter md:text-5xl mb-4"
                   animate={{ y: [0, -10, 0] }}
                   transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}>
                   Support the future of the ecosystem.
@@ -251,16 +309,40 @@ export default function Home() {
                 <motion.div
                   className="p-6 rounded-lg bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm"
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 2 }}
-                  transition={{ delay: 0.1, duration: 0.05 }}>
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.5 }}>
                   {address ? (
                     userExists ? (
-                      <Button
-                        variant="default"
-                        className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
-                        onClick={() => router.push("/dashboard")}>
-                        Launch App
-                      </Button>
+                      readLoading ? (
+                        <p className="text-lime-400">Vérification en cours...</p>
+                      ) : isRegistered ? (
+                        <Button
+                          variant="default"
+                          className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
+                          onClick={() => router.push("/dashboard")}>
+                          Launch App
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="default"
+                          className="bg-red-400 text-black hover:bg-red-50 dark:bg-red-400 dark:hover:bg-red-50"
+                          onClick={async () => {
+                            try {
+                              setRegistrationLoading(true);
+                              console.log("Appel de la fonction registerUser avec 0.05 ETH");
+                              const tx = await contract.call("registerUser", [], { value: ethers.utils.parseEther("0.05") });
+                              console.log("Transaction réussie:", tx);
+                              setIsRegistered(true);
+                            } catch (error) {
+                              console.error("Erreur lors de l'inscription:", error);
+                              setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
+                            } finally {
+                              setRegistrationLoading(false);
+                            }
+                          }}>
+                          {registrationLoading ? "Registering..." : "Register on Smart Contract"}
+                        </Button>
+                      )
                     ) : (
                       <Button
                         variant="default"
@@ -271,6 +353,10 @@ export default function Home() {
                     )
                   ) : (
                     <p className="text-lime-400">Please connect your wallet</p>
+                  )}
+                  {/* Afficher les erreurs d'inscription */}
+                  {registrationError && (
+                    <p className="text-red-500 mt-2">{registrationError}</p>
                   )}
                 </motion.div>
               </motion.div>
@@ -302,7 +388,7 @@ export default function Home() {
             className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 50 }}>
+            exit={{ opacity: 0 }}>
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -376,8 +462,15 @@ export default function Home() {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full bg-lime-400 text-black hover:bg-lime-100 dark:bg-lime-400 dark:hover:bg-lime-100">Create Account</Button>
+                      disabled={isSubmitting || registrationLoading}
+                      className="w-full bg-lime-400 text-black hover:bg-lime-100 dark:bg-lime-400 dark:hover:bg-lime-100">
+                      {isSubmitting ? "Creating..." : "Create Account"}
+                    </Button>
                   </form>
+                  {/* Afficher les erreurs d'inscription */}
+                  {registrationError && (
+                    <p className="text-red-500 mt-2">{registrationError}</p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
