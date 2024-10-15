@@ -1,10 +1,12 @@
 // frontend/components/ThirdwebProviderWrapper.js
 
+"use client";
+
 import { ThirdwebProvider } from '@thirdweb-dev/react';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { Sepolia, BaseGoerli, Ethereum } from "@thirdweb-dev/chains";
+import { Base } from "@thirdweb-dev/chains";
 
-// Créez un objet pour Sepolia Base
+// Définissez SepoliaBase manuellement si ce n'est pas une chaîne prédéfinie par Thirdweb
 const SepoliaBase = {
   id: 84532, // Chain ID de Sepolia Base
   name: "Sepolia Base",
@@ -20,8 +22,8 @@ const SepoliaBase = {
 
 const queryClient = new QueryClient();
 
-// Ajoutez SepoliaBase à la liste des chaînes supportées
-const supportedChains = [Sepolia, BaseGoerli, Ethereum, SepoliaBase];
+// Liste des chaînes supportées : uniquement Base et SepoliaBase
+const supportedChains = [Base, SepoliaBase];
 
 const ThirdwebProviderWrapper = ({ children }) => {
   return (
