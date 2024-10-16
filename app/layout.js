@@ -4,12 +4,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
-import ThirdwebProviderWrapper from "@/app/ThirdwebProviderWrapper.js"; // Assurez-vous que le chemin est correct
+import ThirdwebProviderWrapper from "./ThirdwebProviderWrapper"; // Chemin correct depuis app/
 import "@/app/globals.css";
 import { Inter as FontSans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { UserProvider } from "@/components/shared/UserContext";
-import RainbowKitAndWagmiProvider from "@/app/RainbowKitAndWagmiProvider";
+import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider";
 import Head from 'next/head';
 
 const fontSans = FontSans({
@@ -31,7 +31,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr" suppressHydrationWarning>
       <Head>
-        <title>Devar </title>
+        <title>divar</title>
+        <link rel="icon" href="/favicon.ico" />
       </Head>
       <body
         className={cn(

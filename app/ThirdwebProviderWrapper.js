@@ -4,7 +4,7 @@
 
 import { ThirdwebProvider } from '@thirdweb-dev/react';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { Base } from "@thirdweb-dev/chains";
+import { Base,BaseSepoliaTestnet } from "@thirdweb-dev/chains";
 
 // Définissez SepoliaBase manuellement si ce n'est pas une chaîne prédéfinie par Thirdweb
 const SepoliaBase = {
@@ -23,7 +23,7 @@ const SepoliaBase = {
 const queryClient = new QueryClient();
 
 // Liste des chaînes supportées : uniquement Base et SepoliaBase
-const supportedChains = [Base, SepoliaBase];
+const supportedChains = [Base, BaseSepoliaTestnet, SepoliaBase];
 
 const ThirdwebProviderWrapper = ({ children }) => {
   return (

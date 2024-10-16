@@ -80,11 +80,7 @@ export default function Home() {
       const docSnap = await getDoc(docRef);
       console.log(`Checking profile for address: ${address}`);
       console.log(`Document exists: ${docSnap.exists()}`);
-      if (docSnap.exists()) {
-        setUserExists(true);
-      } else {
-        setUserExists(false);
-      }
+      setUserExists(docSnap.exists());
     } catch (error) {
       console.error("Erreur lors de la vérification du profil Firebase:", error);
     }
@@ -135,7 +131,11 @@ export default function Home() {
         console.log("Appel de la fonction registerUser avec 0.05 ETH");
         const tx = await contract.call("registerUser", [], { value: ethers.utils.parseEther("0.05") });
         console.log("Transaction réussie:", tx);
+        
+        // Mise à jour immédiate de l'état d'enregistrement
         setIsRegistered(true);
+        // Optionnel : Afficher un message de succès
+        alert("Inscription réussie !");
       }
     } catch (error) {
       console.error("Erreur lors de l'inscription:", error);
@@ -332,7 +332,11 @@ export default function Home() {
                               console.log("Appel de la fonction registerUser avec 0.05 ETH");
                               const tx = await contract.call("registerUser", [], { value: ethers.utils.parseEther("0.05") });
                               console.log("Transaction réussie:", tx);
+                              
+                              // Mise à jour immédiate de l'état d'enregistrement
                               setIsRegistered(true);
+                              // Optionnel : Afficher un message de succès
+                              alert("Inscription réussie !");
                             } catch (error) {
                               console.error("Erreur lors de l'inscription:", error);
                               setRegistrationError("Échec de l'inscription. Veuillez réessayer.");

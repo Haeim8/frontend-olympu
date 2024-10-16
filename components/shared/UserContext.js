@@ -8,25 +8,30 @@ import { doc, getDoc } from 'firebase/firestore';
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
+  const address = useAddress();
   const [user, setUser] = useState(null);
-  let address = null;
-
-  try {
-    address = useAddress(); // Obtenir l'adresse via Thirdweb
-  } catch (error) {
-    console.warn("useAddress hook cannot be used outside of ThirdwebProvider");
-  }
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
       if (address) {
-        // Récupérer les données utilisateur dans Firebase
-        const userDoc = await getDoc(doc(db, "users", address));
-        if (userDoc.exists()) {
-          setUser(userDoc.data()); // Mettre à jour les données utilisateur
-        } else {
-          console.log("Aucun utilisateur trouvé pour cette adresse.");
+        try {
+          const userDoc = await getDoc(doc(db, "users", address));
+          if (userDoc.exists()) {
+            setUser(userDoc.data());
+          } else {
+            console.log("Aucun utilisateur trouvé pour cette adresse.");
+            setUser(null);
+          }
+        } catch (error) {
+          console.error("Erreur lors de la récupération du profil Firebase:", error);
+          setUser(null);
+        } finally {
+          setLoading(false);
         }
+      } else {
+        setUser(null);
+        setLoading(false);
       }
     };
 
@@ -34,7 +39,7 @@ export const UserProvider = ({ children }) => {
   }, [address]);
 
   return (
-    <UserContext.Provider value={{ user }}>
+    <UserContext.Provider value={{ user, loading }}>
       {children}
     </UserContext.Provider>
   );
