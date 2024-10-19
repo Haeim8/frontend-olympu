@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+// CampaignModal.jsx
+
+"use client";
+
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,15 +15,65 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Upload, Plus, Minus } from 'lucide-react';
 
+import { ethers } from 'ethers';
+
+import { db, storage } from "@/lib/firebase/firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 export default function CampaignModal({ showCreateCampaign, setShowCreateCampaign, handleCreateCampaign }) {
-  const [campaignForm, setCampaignForm] = useState({
-    creatorAddress: '',
+  // Adresse du contrat FundRaisingPlatform
+  const contractAddress = "0xF334d4CEcB73bc95e032949b9437A1eE6D4C6019";
+  
+  // ABI du contrat FundRaisingPlatform (inclure uniquement les fonctions nécessaires)
+  const contractABI = [
+    "function createCampaign(string memory _name, uint256 _targetAmount, uint256 _sharePrice, uint256 _endTime, bool _certified, address _lawyer, uint96 _royaltyFee) external payable",
+    "event CampaignCreated(address indexed campaignAddress, address indexed startup, bool certified, address indexed lawyer)"
+  ];
+
+  const [provider, setProvider] = useState(null);
+  const [signer, setSigner] = useState(null);
+  const [contract, setContract] = useState(null);
+  const [creatorAddress, setCreatorAddress] = useState('');
+
+  // Charger le fournisseur et le signer sans demander la connexion
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
+      const tempProvider = new ethers.providers.Web3Provider(window.ethereum);
+      setProvider(tempProvider);
+
+      const tempSigner = tempProvider.getSigner();
+      setSigner(tempSigner);
+
+      const tempContract = new ethers.Contract(contractAddress, contractABI, tempSigner);
+      setContract(tempContract);
+
+      // Récupérer l'adresse du créateur et la définir dans le formulaire
+      tempSigner.getAddress().then(address => {
+        setCreatorAddress(address);
+        setCampaignForm(prev => ({
+          ...prev,
+          creatorAddress: address
+        }));
+      }).catch(error => {
+        console.error("Erreur lors de la récupération de l'adresse du signer :", error);
+        alert("Erreur lors de la récupération de votre adresse. Veuillez réessayer.");
+      });
+    } else {
+      console.error("Ethereum provider non trouvé. Veuillez installer MetaMask.");
+      alert("Ethereum provider non trouvé. Veuillez installer MetaMask.");
+    }
+  }, []);
+
+  // Initialisation du formulaire avec sauvegarde automatique
+  const initialFormState = {
+    creatorAddress: '', // Rempli automatiquement
     name: '',
     sector: '',
     description: '',
     sharePrice: '',
-    totalShares: '',
-    goal: '',
+    numberOfNFTs: '',
+    goal: '', // Calculé automatiquement
     endDate: '',
     documents: [],
     media: [],
@@ -28,19 +82,49 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     lawyer: {
       name: '',
       contact: '',
-      phone: ''
+      phone: '',
+      address: '', // Adresse Ethereum de l'avocat
     },
+    royaltyFee: '', // Nouvel élément pour le smart contract
     investmentTerms: {
       remunerationType: '',
+      tokenDistribution: '',
       roi: '',
-      nativeTokenDistribution: false
     },
     companyShares: {
       percentageMinted: '',
-      vertePortalLink: ''
+      vertePortalLink: '',
     },
     acceptTerms: false
+  };
+
+  const [campaignForm, setCampaignForm] = useState(() => {
+    // Charger depuis le stockage local si disponible
+    const savedForm = localStorage.getItem('campaignForm');
+    return savedForm ? JSON.parse(savedForm) : initialFormState;
   });
+
+  // Sauvegarder le formulaire à chaque changement
+  useEffect(() => {
+    localStorage.setItem('campaignForm', JSON.stringify(campaignForm));
+  }, [campaignForm]);
+
+  // Calcul automatique de l'objectif de levée
+  useEffect(() => {
+    const sharePrice = parseFloat(campaignForm.sharePrice);
+    const numberOfNFTs = parseInt(campaignForm.numberOfNFTs);
+    if (!isNaN(sharePrice) && !isNaN(numberOfNFTs)) {
+      setCampaignForm(prev => ({
+        ...prev,
+        goal: (sharePrice * numberOfNFTs).toString()
+      }));
+    } else {
+      setCampaignForm(prev => ({
+        ...prev,
+        goal: ''
+      }));
+    }
+  }, [campaignForm.sharePrice, campaignForm.numberOfNFTs]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -110,19 +194,167 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const handleTeamMemberChange = (index, field, value) => {
     setCampaignForm(prev => ({
       ...prev,
-      teamMembers: prev.teamMembers.map((member, i) => 
+      teamMembers: prev.teamMembers.map((member, i) =>
         i === index ? { ...member, [field]: value } : member
       )
     }));
   };
 
-  const handleSubmit = (e) => {
+  // Fonction pour gérer la soumission du formulaire
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!campaignForm.acceptTerms) {
       alert("Veuillez accepter les conditions générales d'utilisation.");
       return;
     }
-    handleCreateCampaign(campaignForm);
+
+    if (!contract) {
+      console.error("Contrat non initialisé");
+      alert("Erreur : le contrat n'est pas disponible. Veuillez vérifier votre connexion.");
+      return;
+    }
+
+    // Validation des champs requis
+    if (!campaignForm.name || !campaignForm.sharePrice || !campaignForm.numberOfNFTs || !campaignForm.endDate || !campaignForm.royaltyFee) {
+      alert("Veuillez remplir tous les champs requis.");
+      return;
+    }
+
+    try {
+      console.log("Début de la soumission du formulaire");
+
+      // Gestion de l'adresse de l'avocat
+      let lawyerAddress = ethers.constants.AddressZero;
+      if (campaignForm.hasLawyer) {
+        // Vérifier si 'lawyer.address' est une adresse Ethereum valide
+        if (ethers.utils.isAddress(campaignForm.lawyer.address)) {
+          lawyerAddress = campaignForm.lawyer.address;
+        } else {
+          alert("Veuillez fournir une adresse Ethereum valide pour l'avocat.");
+          return;
+        }
+      }
+
+      // Préparation des paramètres
+      const name = campaignForm.name;
+      const sharePrice = ethers.utils.parseEther(campaignForm.sharePrice.toString());
+      const numberOfNFTs = parseInt(campaignForm.numberOfNFTs);
+      const targetAmount = sharePrice.mul(numberOfNFTs);
+      const endDateTimestamp = Math.floor(new Date(campaignForm.endDate).getTime() / 1000);
+      const certified = campaignForm.hasLawyer;
+      const royaltyFee = parseInt(campaignForm.royaltyFee);
+
+      // Validation des paramètres
+      if (numberOfNFTs <= 0) {
+        alert("Le nombre de NFTs doit être supérieur à zéro.");
+        return;
+      }
+      if (royaltyFee < 0 || royaltyFee > 10000) { // 10000 basis points = 100%
+        alert("Les frais de royalties doivent être compris entre 0 et 10000 basis points.");
+        return;
+      }
+
+      // Affichage des paramètres pour vérification
+      console.log("Paramètres pour createCampaign :", {
+        name,
+        targetAmount: targetAmount.toString(),
+        sharePrice: sharePrice.toString(),
+        endDateTimestamp,
+        certified,
+        lawyerAddress,
+        royaltyFee,
+      });
+
+      // Appel de la fonction createCampaign via le contrat connecté
+      console.log("Appel de la fonction createCampaign du contrat");
+
+      const tx = await contract.createCampaign(
+        name,
+        targetAmount,
+        sharePrice,
+        endDateTimestamp,
+        certified,
+        lawyerAddress,
+        royaltyFee,
+        {
+          value: ethers.utils.parseEther("0.02") // Frais de création de campagne
+        }
+      );
+
+      console.log("Transaction envoyée :", tx.hash);
+
+      // Attente de la confirmation de la transaction
+      const receipt = await tx.wait();
+
+      console.log("Transaction confirmée :", receipt.transactionHash);
+
+      // Récupérer l'événement
+      const event = receipt.events.find((e) => e.event === "CampaignCreated");
+
+      if (!event) {
+        console.error("Événement CampaignCreated introuvable dans le receipt :", receipt);
+        alert("Erreur lors de la création de la campagne. L'événement CampaignCreated n'a pas été émis.");
+        return;
+      }
+
+      const campaignAddress = event.args.campaignAddress;
+
+      console.log("Adresse de la campagne créée :", campaignAddress);
+
+      // Upload des documents vers Firebase Storage
+      const documentsURLs = [];
+      for (const file of campaignForm.documents) {
+        const storageRef = ref(storage, `campaigns/${campaignAddress}/documents/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        documentsURLs.push({ name: file.name, url: downloadURL });
+        console.log(`Document ${file.name} uploadé avec succès`);
+      }
+
+      // Upload des médias vers Firebase Storage
+      const mediaURLs = [];
+      for (const file of campaignForm.media) {
+        const storageRef = ref(storage, `campaigns/${campaignAddress}/media/${file.name}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        mediaURLs.push({ name: file.name, url: downloadURL });
+        console.log(`Média ${file.name} uploadé avec succès`);
+      }
+
+      // Enregistrer les données supplémentaires dans Firebase
+      await setDoc(doc(db, "campaigns", campaignAddress), {
+        creatorAddress: campaignForm.creatorAddress,
+        name: campaignForm.name,
+        sector: campaignForm.sector,
+        description: campaignForm.description,
+        sharePrice: campaignForm.sharePrice,
+        numberOfNFTs: campaignForm.numberOfNFTs,
+        goal: campaignForm.goal,
+        endDate: campaignForm.endDate,
+        documents: documentsURLs,
+        media: mediaURLs,
+        teamMembers: campaignForm.teamMembers,
+        hasLawyer: campaignForm.hasLawyer,
+        lawyer: campaignForm.hasLawyer ? campaignForm.lawyer : null,
+        royaltyFee: campaignForm.royaltyFee,
+        investmentTerms: campaignForm.investmentTerms, // Ajout de investmentTerms
+        companyShares: campaignForm.companyShares, // Ajout de companyShares
+        timestamp: new Date(),
+      });
+
+      console.log("Données de la campagne enregistrées dans Firebase");
+
+      // Réinitialiser le formulaire et le stockage local
+      setCampaignForm(initialFormState);
+      localStorage.removeItem('campaignForm');
+
+      console.log("Campagne créée avec succès:", campaignAddress);
+      handleCreateCampaign(campaignForm); // Gérer la logique après la création de la campagne
+      setShowCreateCampaign(false); // Fermer le modal après la soumission
+    } catch (error) {
+      console.error("Erreur lors de la création de la campagne :", error);
+      alert(`Erreur lors de la création de la campagne : ${error.message || error}`);
+    }
   };
 
   const InfoTooltip = ({ content }) => (
@@ -153,31 +385,24 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
           </AlertDescription>
         </Alert>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasLawyer"
-              checked={campaignForm.hasLawyer}
-              onCheckedChange={() => handleCheckboxChange('hasLawyer')}
-            />
-            <Label htmlFor="hasLawyer">Campagne avec avocat</Label>
-            <InfoTooltip content="Cochez cette case si votre campagne est assistée par un avocat." />
-          </div>
-
+          {/* Adresse du créateur (Lecture seule) */}
           <div>
             <div className="flex items-center space-x-2">
               <Label htmlFor="creatorAddress">Adresse du créateur</Label>
-              <InfoTooltip content="Entrez l'adresse Ethereum du créateur de la campagne." />
+              <InfoTooltip content="L'adresse Ethereum du créateur de la campagne est renseignée automatiquement." />
             </div>
             <Input
               id="creatorAddress"
               name="creatorAddress"
+              type="text"
               value={campaignForm.creatorAddress}
-              onChange={handleInputChange}
-              className="bg-gray-50 dark:bg-neutral-900"
+              readOnly
+              className="bg-gray-100 dark:bg-neutral-800 cursor-not-allowed"
               required
             />
           </div>
 
+          {/* Nom de la campagne */}
           <div>
             <div className="flex items-center space-x-2">
               <Label htmlFor="name">Nom de la campagne</Label>
@@ -193,6 +418,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             />
           </div>
 
+          {/* Secteur d'activité */}
           <div>
             <div className="flex items-center space-x-2">
               <Label htmlFor="sector">Secteur d'activité</Label>
@@ -203,15 +429,16 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                 <SelectValue placeholder="Sélectionnez un secteur" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="tech">Technologie</SelectItem>
-                <SelectItem value="finance">Finance</SelectItem>
-                <SelectItem value="health">Santé</SelectItem>
-                <SelectItem value="education">Éducation</SelectItem>
-                <SelectItem value="other">Autre</SelectItem>
+                <SelectItem value="Technologie">Technologie</SelectItem>
+                <SelectItem value="Finance">Finance</SelectItem>
+                <SelectItem value="Santé">Santé</SelectItem>
+                <SelectItem value="Éducation">Éducation</SelectItem>
+                <SelectItem value="Autre">Autre</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {/* Description du projet */}
           <div>
             <div className="flex items-center space-x-2">
               <Label htmlFor="description">Description du projet</Label>
@@ -228,15 +455,18 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             />
           </div>
 
+          {/* Prix par part */}
           <div>
             <div className="flex items-center space-x-2">
-              <Label htmlFor="sharePrice">Prix par part (en USDC)</Label>
-              <InfoTooltip content="Définissez le prix d'une part de votre projet en USDC." />
+              <Label htmlFor="sharePrice">Prix par part (en ETH)</Label>
+              <InfoTooltip content="Définissez le prix d'une part de votre projet en ETH." />
             </div>
             <Input
               id="sharePrice"
               name="sharePrice"
               type="number"
+              step="any"
+              min="0.000000000000000001"
               value={campaignForm.sharePrice}
               onChange={handleInputChange}
               className="bg-gray-50 dark:bg-neutral-900"
@@ -244,38 +474,41 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             />
           </div>
 
+          {/* Nombre de NFTs à Mint */}
           <div>
             <div className="flex items-center space-x-2">
-              <Label htmlFor="totalShares">Nombre total de parts</Label>
-              <InfoTooltip content="Indiquez le nombre total de parts disponibles pour votre projet." />
+              <Label htmlFor="numberOfNFTs">Nombre de NFTs à Mint</Label>
+              <InfoTooltip content="Définissez le nombre de NFTs que vous souhaitez mint pour cette campagne." />
             </div>
             <Input
-              id="totalShares"
-              name="totalShares"
+              id="numberOfNFTs"
+              name="numberOfNFTs"
               type="number"
-              value={campaignForm.totalShares}
+              min="1"
+              value={campaignForm.numberOfNFTs}
               onChange={handleInputChange}
               className="bg-gray-50 dark:bg-neutral-900"
               required
             />
           </div>
 
+          {/* Objectif de levée (Calculé Automatiquement) */}
           <div>
             <div className="flex items-center space-x-2">
-              <Label htmlFor="goal">Objectif de levée (en USDC)</Label>
-              <InfoTooltip content="Définissez le montant total que vous souhaitez lever pour votre projet." />
+              <Label htmlFor="goal">Objectif de levée (en ETH)</Label>
+              <InfoTooltip content="Ce champ est calculé automatiquement en fonction du nombre de NFTs et du prix par NFT." />
             </div>
             <Input
               id="goal"
               name="goal"
-              type="number"
+              type="text"
               value={campaignForm.goal}
-              onChange={handleInputChange}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
+              readOnly
+              className="bg-gray-100 dark:bg-neutral-800 cursor-not-allowed"
             />
           </div>
 
+          {/* Date de fin */}
           <div>
             <div className="flex items-center space-x-2">
               <Label htmlFor="endDate">Date de fin</Label>
@@ -292,6 +525,118 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             />
           </div>
 
+          {/* Frais de Royalties */}
+          <div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="royaltyFee">Frais de Royalties (en basis points)</Label>
+              <InfoTooltip content="Définissez les frais de royalties en basis points (1% = 100 basis points)." />
+            </div>
+            <Input
+              id="royaltyFee"
+              name="royaltyFee"
+              type="number"
+              min="0"
+              max="10000"
+              value={campaignForm.royaltyFee}
+              onChange={handleInputChange}
+              className="bg-gray-50 dark:bg-neutral-900"
+              required
+            />
+          </div>
+
+          {/* Conditions de rémunération des investisseurs */}
+          <div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="remunerationType">Type de rémunération</Label>
+              <InfoTooltip content="Définissez le type de rémunération pour les investisseurs." />
+            </div>
+            <Input
+              id="remunerationType"
+              name="remunerationType"
+              value={campaignForm.investmentTerms.remunerationType}
+              onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
+              className="bg-gray-50 dark:bg-neutral-900"
+              required
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="tokenDistribution">Distribution de tokens</Label>
+              <InfoTooltip content="Définissez comment les tokens seront distribués aux investisseurs." />
+            </div>
+            <Input
+              id="tokenDistribution"
+              name="tokenDistribution"
+              value={campaignForm.investmentTerms.tokenDistribution}
+              onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
+              className="bg-gray-50 dark:bg-neutral-900"
+              required
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="roi">Temps de retour sur investissement estimé</Label>
+              <InfoTooltip content="Indiquez le temps estimé pour le retour sur investissement." />
+            </div>
+            <Input
+              id="roi"
+              name="roi"
+              value={campaignForm.investmentTerms.roi}
+              onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
+              className="bg-gray-50 dark:bg-neutral-900"
+              required
+            />
+          </div>
+
+          {/* Part de la société */}
+          <div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="percentageMinted">Pourcentage de la société minté</Label>
+              <InfoTooltip content="Indiquez le pourcentage de la société qui a été minté." />
+            </div>
+            <Input
+              id="percentageMinted"
+              name="percentageMinted"
+              type="number"
+              min="0"
+              max="100"
+              value={campaignForm.companyShares.percentageMinted}
+              onChange={(e) => handleNestedInputChange(e, 'companyShares')}
+              className="bg-gray-50 dark:bg-neutral-900"
+              required
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="vertePortalLink">Lien vers le portail Verte</Label>
+              <InfoTooltip content="Entrez le lien vers le portail Verte de votre société." />
+            </div>
+            <Input
+              id="vertePortalLink"
+              name="vertePortalLink"
+              type="url"
+              value={campaignForm.companyShares.vertePortalLink}
+              onChange={(e) => handleNestedInputChange(e, 'companyShares')}
+              className="bg-gray-50 dark:bg-neutral-900"
+              required
+            />
+          </div>
+
+          {/* Campagne avec avocat */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="hasLawyer"
+              checked={campaignForm.hasLawyer}
+              onCheckedChange={() => handleCheckboxChange('hasLawyer')}
+            />
+            <Label htmlFor="hasLawyer">Campagne avec avocat</Label>
+            <InfoTooltip content="Cochez cette case si votre campagne est assistée par un avocat." />
+          </div>
+
+          {/* Informations sur l'avocat */}
           {campaignForm.hasLawyer && (
             <>
               <div>
@@ -311,7 +656,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               <div>
                 <div className="flex items-center space-x-2">
                   <Label htmlFor="lawyerContact">Contact de l'avocat</Label>
-                  <InfoTooltip content="Fournissez une adresse e-mail ou un numéro de téléphone pour contacter l'avocat." />
+                  <InfoTooltip content="Fournissez une adresse e-mail pour contacter l'avocat." />
                 </div>
                 <Input
                   id="lawyerContact"
@@ -333,83 +678,26 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                   value={campaignForm.lawyer.phone}
                   onChange={(e) => handleNestedInputChange(e, 'lawyer')}
                   className="bg-gray-50 dark:bg-neutral-900"
+                />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="lawyerAddress">Adresse Ethereum de l'avocat</Label>
+                  <InfoTooltip content="Entrez l'adresse Ethereum de l'avocat." />
+                </div>
+                <Input
+                  id="lawyerAddress"
+                  name="address"
+                  value={campaignForm.lawyer.address}
+                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                  className="bg-gray-50 dark:bg-neutral-900"
                   required
                 />
               </div>
             </>
           )}
 
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="remunerationType">Type de rémunération</Label>
-              <InfoTooltip content="Spécifiez comment les investisseurs seront rémunérés (ex: dividendes, plus-value, etc.)." />
-            </div>
-            <Input
-              id="remunerationType"
-              name="remunerationType"
-              value={campaignForm.investmentTerms.remunerationType}
-              onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="roi">Temps de retour sur investissement estimé</Label>
-              <InfoTooltip content="Indiquez le délai estimé pour que les investisseurs récupèrent leur mise initiale." />
-            </div>
-            <Input
-              id="roi"
-              name="roi"
-              value={campaignForm.investmentTerms.roi}
-              onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="nativeTokenDistribution"
-              checked={campaignForm.investmentTerms.nativeTokenDistribution}
-              onCheckedChange={() => handleCheckboxChange('nativeTokenDistribution', 'investmentTerms')}
-            />
-            <Label htmlFor="nativeTokenDistribution">Distribution de tokens native</Label>
-            <InfoTooltip content="Cochez cette case si vous prévoyez de distribuer des tokens natifs à vos investisseurs." />
-          </div>
-
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="percentageMinted">Pourcentage de la société minté</Label>
-              <InfoTooltip content="Indiquez le pourcentage de la société qui sera représenté par les tokens émis." />
-            </div>
-            <Input
-              id="percentageMinted"
-              name="percentageMinted"
-              type="number"
-              value={campaignForm.companyShares.percentageMinted}
-              onChange={(e) => handleNestedInputChange(e, 'companyShares')}
-              className="bg-gray-50 dark:bg-gray-900"
-              required
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="vertePortalLink">Lien vers le portail Verte</Label>
-              <InfoTooltip content="Fournissez le lien vers votre page sur le portail Verte." />
-            </div>
-            <Input
-              id="vertePortalLink"
-              name="vertePortalLink"
-              value={campaignForm.companyShares.vertePortalLink}
-              onChange={(e) => handleNestedInputChange(e, 'companyShares')}
-              className="bg-gray-50 dark:bg-gray-900"
-              required
-            />
-          </div>
-
+          {/* Équipe */}
           <div>
             <div className="flex items-center space-x-2">
               <Label>Équipe</Label>
@@ -461,6 +749,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             </Button>
           </div>
 
+          {/* Documents de la campagne */}
           <div>
             <div className="flex items-center space-x-2">
               <Label htmlFor="documents">Documents de la campagne</Label>
@@ -507,6 +796,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             )}
           </div>
 
+          {/* Médias de la campagne */}
           <div>
             <div className="flex items-center space-x-2">
               <Label htmlFor="media">Médias de la campagne</Label>
@@ -535,7 +825,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               </span>
             </div>
             {campaignForm.media.length > 0 && (
-              <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-100 dark:bg-neutral-900">
+              <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-50 dark:bg-neutral-900">
                 {campaignForm.media.map((file, index) => (
                   <div key={index} className="flex justify-between items-center py-1">
                     <span className="text-sm text-neutral-900 dark:text-gray-300">{file.name}</span>
@@ -554,6 +844,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             )}
           </div>
 
+          {/* Acceptation des conditions */}
           <div className="flex items-center space-x-2">
             <Checkbox
               id="acceptTerms"
@@ -567,6 +858,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             <InfoTooltip content="En cochant cette case, vous acceptez nos conditions d'utilisation et notre politique de confidentialité." />
           </div>
 
+          {/* Bouton de soumission */}
           <Button type="submit" className="w-full bg-lime-600 hover:bg-lime-700 text-white" disabled={!campaignForm.acceptTerms}>
             Créer la campagne
           </Button>

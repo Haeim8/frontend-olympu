@@ -1,18 +1,20 @@
+// components/home.jsx
+
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Moon, Sun, Twitter, MessageCircle, X } from 'lucide-react';
+import { X, Moon, Sun, Twitter, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from "framer-motion";
 import { ConnectWallet, useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
-import { db } from '@/lib/firebase/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from "@/lib/firebase/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import FundRaisingPlatformABI from '@/ABI/FundRaisingPlatformABI.json'; // Importer l'ABI
-import { ethers } from 'ethers'; // Importer ethers pour manipuler les valeurs ETH
+import FundRaisingPlatformABI from "@/ABI/FundRaisingPlatformABI.json"; // Importer l'ABI
+import { ethers } from "ethers"; // Importer ethers pour manipuler les valeurs ETH
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
@@ -20,10 +22,10 @@ export default function Home() {
   const [userExists, setUserExists] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const [formData, setFormData] = useState({
-    photo: '',
-    username: '',
-    xAccount: '',
-    socialMedia: ''
+    photo: "",
+    username: "",
+    xAccount: "",
+    socialMedia: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationLoading, setRegistrationLoading] = useState(false);
@@ -36,7 +38,10 @@ export default function Home() {
   const contractAddress = "0xF334d4CEcB73bc95e032949b9437A1eE6D4C6019"; // Remplacez par votre adresse de contrat
 
   // Utiliser le hook useContract pour obtenir l'instance du contrat
-  const { contract, isLoading: contractLoading, error: contractError } = useContract(contractAddress, FundRaisingPlatformABI);
+  const { contract, isLoading: contractLoading, error: contractError } = useContract(
+    contractAddress,
+    FundRaisingPlatformABI
+  );
 
   // Utiliser useContractRead pour lire le mapping registeredUsers
   const { data: isRegisteredData, isLoading: readLoading, error: readError } = useContractRead(
@@ -51,11 +56,15 @@ export default function Home() {
       setIsRegistered(isRegisteredData);
       console.log(`User registered in contract: ${isRegisteredData}`);
     }
-  }, [isRegisteredData]);
+    if (readError) {
+      console.error("Erreur lors de la lecture du contrat:", readError);
+      setRegistrationError("Erreur lors de la vérification de l'inscription sur le contrat.");
+    }
+  }, [isRegisteredData, readError]);
 
   // Détecter le mode sombre
   useEffect(() => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     setDarkMode(isDark);
   }, []);
 
@@ -63,18 +72,20 @@ export default function Home() {
   useEffect(() => {
     if (address) {
       console.log("User is connected with address:", address);
-      checkUserProfile();
+      checkUserProfileAndContract();
       // La lecture du smart contract est gérée par useContractRead
     } else {
       console.log("User is not connected");
       setUserExists(false);
       setIsRegistered(false);
     }
-  }, [address]);
+  }, [address, contract]);
 
-  // Fonction pour vérifier si un utilisateur a un profil dans Firebase
-  const checkUserProfile = async () => {
+  // Fonction pour vérifier si un utilisateur a un profil dans Firebase et son inscription au contrat
+  const checkUserProfileAndContract = async () => {
     if (!address) return;
+
+    // Vérification Firebase
     const docRef = doc(db, "users", address);
     try {
       const docSnap = await getDoc(docRef);
@@ -84,6 +95,21 @@ export default function Home() {
     } catch (error) {
       console.error("Erreur lors de la vérification du profil Firebase:", error);
     }
+
+    // Vérification Smart Contract
+    if (contract) {
+      try {
+        const registered = await contract.call("registeredUsers", [address]);
+        setIsRegistered(registered);
+        console.log(`User registered in contract: ${registered}`);
+      } catch (error) {
+        console.error("Erreur lors de la lecture de registeredUsers:", error);
+        setRegistrationError("Erreur lors de la vérification de l'inscription sur le contrat.");
+      }
+    } else if (contractError) {
+      console.error("Erreur lors de la connexion au contrat:", contractError);
+      setRegistrationError("Erreur lors de la connexion au contrat.");
+    }
   };
 
   const toggleDarkMode = () => {
@@ -92,7 +118,7 @@ export default function Home() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePhotoChange = (e) => {
@@ -100,7 +126,7 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target) {
-          setFormData(prev => ({ ...prev, photo: event.target.result }));
+          setFormData((prev) => ({ ...prev, photo: event.target.result }));
         }
       };
       reader.readAsDataURL(e.target.files[0]);
@@ -118,10 +144,10 @@ export default function Home() {
         username: formData.username,
         xAccount: formData.xAccount,
         socialMedia: formData.socialMedia,
-        photo: formData.photo
+        photo: formData.photo,
       });
 
-      console.log('Profil créé:', formData);
+      console.log("Profil créé:", formData);
       setShowSignup(false);
       setUserExists(true);
 
@@ -131,10 +157,9 @@ export default function Home() {
         console.log("Appel de la fonction registerUser avec 0.05 ETH");
         const tx = await contract.call("registerUser", [], { value: ethers.utils.parseEther("0.05") });
         console.log("Transaction réussie:", tx);
-        
+
         // Mise à jour immédiate de l'état d'enregistrement
         setIsRegistered(true);
-        // Optionnel : Afficher un message de succès
         alert("Inscription réussie !");
       }
     } catch (error) {
@@ -147,7 +172,7 @@ export default function Home() {
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen ${darkMode ? "dark" : ""}`}>
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-zinc-400 dark:text-gray-200 transition-colors duration-200 relative overflow-hidden">
         {/* Starry background */}
         <div className="absolute inset-0 z-0">
@@ -168,7 +193,8 @@ export default function Home() {
                   duration: Math.random() * 6 + 4,
                   repeat: Infinity,
                   ease: "easeInOut",
-                }} />
+                }}
+              />
             ))}
           </svg>
         </div>
@@ -180,42 +206,48 @@ export default function Home() {
               d="M20,20 L40,40 L60,30 L80,50 L100,40"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: 1, opacity: 0.3 }}
-              transition={{ duration: 6, ease: "easeInOut" }} />
+              transition={{ duration: 6, ease: "easeInOut" }}
+            />
             <motion.circle
               cx="20"
               cy="20"
               r="2"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 1 }} />
+              transition={{ delay: 1 }}
+            />
             <motion.circle
               cx="40"
               cy="40"
               r="2"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 2 }} />
+              transition={{ delay: 2 }}
+            />
             <motion.circle
               cx="60"
               cy="30"
               r="2"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 3 }} />
+              transition={{ delay: 3 }}
+            />
             <motion.circle
               cx="80"
               cy="50"
               r="2"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 4 }} />
+              transition={{ delay: 4 }}
+            />
             <motion.circle
               cx="100"
               cy="40"
               r="2"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ delay: 5 }} />
+              transition={{ delay: 5 }}
+            />
           </g>
         </svg>
 
@@ -224,12 +256,9 @@ export default function Home() {
           className="absolute inset-0 z-0 opacity-60"
           initial={{ pathLength: 0, pathOffset: 1 }}
           animate={{ pathLength: 1, pathOffset: 0 }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}>
-          <svg
-            width="100%"
-            height="100%"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none">
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        >
+          <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
             <motion.path
               d="M0,50 Q50,0 100,50 Q50,100 0,50"
               stroke={darkMode ? "#a3e635" : "#a3e635"}
@@ -237,7 +266,8 @@ export default function Home() {
               fill="none"
               initial={{ pathLength: 0, pathOffset: 1 }}
               animate={{ pathLength: 1, pathOffset: 0 }}
-              transition={{ duration: 10, repeat: Infinity, ease: "linear" }} />
+              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+            />
           </svg>
         </motion.div>
 
@@ -250,7 +280,8 @@ export default function Home() {
               href="https://x.com/FinibusApp"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            >
               <Twitter size={20} />
               <span className="sr-only">Twitter</span>
             </a>
@@ -258,7 +289,8 @@ export default function Home() {
               variant="ghost"
               size="icon"
               onClick={toggleDarkMode}
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            >
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               <span className="sr-only">Toggle dark mode</span>
             </Button>
@@ -266,7 +298,8 @@ export default function Home() {
               href="https://discord.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            >
               <MessageCircle size={20} />
               <span className="sr-only">Discord</span>
             </a>
@@ -283,25 +316,29 @@ export default function Home() {
                 className="space-y-4 text-center max-w-3xl mx-auto"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}>
+                transition={{ duration: 0.8 }}
+              >
                 <motion.div
                   className="inline-block rounded-lg bg-lime-400 px-3 py-1 text-sm text-black"
                   animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
+                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                >
                   Defi Crowdfunding
                 </motion.div>
 
                 <motion.h1
                   className="text-4xl font-bold tracking-tighter md:text-5xl mb-4"
                   animate={{ y: [0, -10, 0] }}
-                  transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}>
+                  transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}
+                >
                   Support the future of the ecosystem.
                 </motion.h1>
                 <motion.p
                   className="max-w-[900px] text-zinc-700 dark:text-zinc-50 md:text-xl/relaxed lg:text-base/relaxed xxl:text-xl/relaxed mb-8"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.8 }}>
+                  transition={{ delay: 0.4, duration: 0.8 }}
+                >
                   Contribute to the development of cutting-edge Web3 technologies and be a part of the decentralized revolution.
                 </motion.p>
 
@@ -310,7 +347,8 @@ export default function Home() {
                   className="p-6 rounded-lg bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.5 }}>
+                  transition={{ delay: 0.1, duration: 0.5 }}
+                >
                   {address ? (
                     userExists ? (
                       readLoading ? (
@@ -319,7 +357,8 @@ export default function Home() {
                         <Button
                           variant="default"
                           className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
-                          onClick={() => router.push("/dashboard")}>
+                          onClick={() => router.push("/dashboard")}
+                        >
                           Launch App
                         </Button>
                       ) : (
@@ -330,20 +369,25 @@ export default function Home() {
                             try {
                               setRegistrationLoading(true);
                               console.log("Appel de la fonction registerUser avec 0.05 ETH");
-                              const tx = await contract.call("registerUser", [], { value: ethers.utils.parseEther("0.05") });
+                              const tx = await contract.call("registerUser", [], {
+                                value: ethers.utils.parseEther("0.05"),
+                              });
                               console.log("Transaction réussie:", tx);
-                              
+
                               // Mise à jour immédiate de l'état d'enregistrement
                               setIsRegistered(true);
-                              // Optionnel : Afficher un message de succès
                               alert("Inscription réussie !");
+                              // Rafraîchir la lecture du contrat
+                              checkUserProfileAndContract();
                             } catch (error) {
                               console.error("Erreur lors de l'inscription:", error);
                               setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
                             } finally {
                               setRegistrationLoading(false);
                             }
-                          }}>
+                          }}
+                          disabled={registrationLoading}
+                        >
                           {registrationLoading ? "Registering..." : "Register on Smart Contract"}
                         </Button>
                       )
@@ -351,7 +395,8 @@ export default function Home() {
                       <Button
                         variant="default"
                         className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
-                        onClick={() => setShowSignup(true)}>
+                        onClick={() => setShowSignup(true)}
+                      >
                         Create Account
                       </Button>
                     )
@@ -359,9 +404,7 @@ export default function Home() {
                     <p className="text-lime-400">Please connect your wallet</p>
                   )}
                   {/* Afficher les erreurs d'inscription */}
-                  {registrationError && (
-                    <p className="text-red-500 mt-2">{registrationError}</p>
-                  )}
+                  {registrationError && <p className="text-red-500 mt-2">{registrationError}</p>}
                 </motion.div>
               </motion.div>
             </div>
@@ -373,12 +416,14 @@ export default function Home() {
           <nav className="sm:ml-auto flex gap-4 sm:gap-6">
             <a
               href="#"
-              className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline underline-offset-4">
+              className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline underline-offset-4"
+            >
               Terms of Service
             </a>
             <a
               href="#"
-              className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline underline-offset-4">
+              className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline underline-offset-4"
+            >
               Privacy
             </a>
           </nav>
@@ -392,12 +437,14 @@ export default function Home() {
             className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}>
+            exit={{ opacity: 0 }}
+          >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", damping: 15 }}>
+              transition={{ type: "spring", damping: 15 }}
+            >
               <Card className="w-full max-w-md mx-auto">
                 <CardHeader>
                   <CardTitle className="text-2xl font-bold flex justify-between items-center">
@@ -406,7 +453,8 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className="text-gray-900 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-600"
-                      onClick={() => setShowSignup(false)}>
+                      onClick={() => setShowSignup(false)}
+                    >
                       <X size={24} />
                     </Button>
                   </CardTitle>
@@ -414,67 +462,71 @@ export default function Home() {
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <Label
-                        htmlFor="photo"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Photo</Label>
+                      <Label htmlFor="photo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Profile Photo
+                      </Label>
                       <Input
                         id="photo"
                         name="photo"
                         type="file"
                         onChange={handlePhotoChange}
-                        className="mt-1" />
+                        className="mt-1"
+                      />
                       {formData.photo && (
                         <img
                           src={formData.photo}
                           alt="Profile preview"
-                          className="mt-2 w-20 h-20 object-cover rounded-full" />
+                          className="mt-2 w-20 h-20 object-cover rounded-full"
+                        />
                       )}
                     </div>
                     <div>
-                      <Label
-                        htmlFor="username"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-700">Username</Label>
+                      <Label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-700">
+                        Username
+                      </Label>
                       <Input
                         id="username"
                         name="username"
                         value={formData.username}
                         onChange={handleInputChange}
                         required
-                        className="mt-1" />
+                        className="mt-1"
+                      />
                     </div>
                     <div>
-                      <Label
-                        htmlFor="xAccount"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300">X Account</Label>
+                      <Label htmlFor="xAccount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        X Account
+                      </Label>
                       <Input
                         id="xAccount"
                         name="xAccount"
                         value={formData.xAccount}
                         onChange={handleInputChange}
-                        className="mt-1" />
+                        className="mt-1"
+                      />
                     </div>
                     <div>
-                      <Label
-                        htmlFor="socialMedia"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300">Other Social Media</Label>
+                      <Label htmlFor="socialMedia" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Other Social Media
+                      </Label>
                       <Input
                         id="socialMedia"
                         name="socialMedia"
                         value={formData.socialMedia}
                         onChange={handleInputChange}
-                        className="mt-1" />
+                        className="mt-1"
+                      />
                     </div>
                     <Button
                       type="submit"
                       disabled={isSubmitting || registrationLoading}
-                      className="w-full bg-lime-400 text-black hover:bg-lime-100 dark:bg-lime-400 dark:hover:bg-lime-100">
-                      {isSubmitting ? "Creating..." : "Create Account"}
+                      className="w-full bg-lime-400 text-black hover:bg-lime-100 dark:bg-lime-400 dark:hover:bg-lime-100"
+                    >
+                      {isSubmitting || registrationLoading ? "Creating..." : "Create Account"}
                     </Button>
                   </form>
                   {/* Afficher les erreurs d'inscription */}
-                  {registrationError && (
-                    <p className="text-red-500 mt-2">{registrationError}</p>
-                  )}
+                  {registrationError && <p className="text-red-500 mt-2">{registrationError}</p>}
                 </CardContent>
               </Card>
             </motion.div>

@@ -1,43 +1,227 @@
-"use client"
+// ProjectDetails.jsx
 
-import React, { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DollarSign, Calendar, FileText, Twitter, Facebook, Share2, Star } from 'lucide-react'
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DollarSign, Calendar, FileText, Twitter, Facebook, Share2, Star } from 'lucide-react';
+import { ethers } from 'ethers';
+
+import { useContract, useContractRead, useContractWrite, useAddress } from '@thirdweb-dev/react';
+import CampaignABI from '@/ABI/CampaignABI.json'; // Import de l'ABI de la Campaign
+
+import useCampaignAddress from '@/lib/hooks/useCampaignAddress'; // Hook personnalisé
 
 export default function ProjectDetails({ selectedProject, onClose }) {
-  const [showProjectDetails, setShowProjectDetails] = useState(true)
-  const [nftCount, setNftCount] = useState(1)
-  const [isFavorite, setIsFavorite] = useState(false)
+  const [showProjectDetails, setShowProjectDetails] = useState(true);
+  const [nftCount, setNftCount] = useState(1);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [investmentTerms, setInvestmentTerms] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [companyShares, setCompanyShares] = useState(null);
+
+  const userAddress = useAddress(); // Obtenir l'adresse connectée
+  const { address: campaignAddress, loading: addressLoading, error: addressError } = useCampaignAddress(selectedProject?.id);
 
   useEffect(() => {
-    setShowProjectDetails(!!selectedProject)
-  }, [selectedProject])
+    setShowProjectDetails(!!selectedProject);
+  }, [selectedProject]);
 
-  const handleMint = () => {
-    console.log(`Minting ${nftCount} NFTs for a total of ${nftCount * selectedProject.sharePrice} ETH`)
-    // Implement minting logic here to interact with the smart contract
-  }
+  // Ajouter des logs pour vérifier l'adresse récupérée
+  useEffect(() => {
+    console.log("Adresse Campaign récupérée :", campaignAddress);
+    if (campaignAddress && !ethers.utils.isAddress(campaignAddress)) {
+      setError("Adresse du contrat Campaign invalide.");
+      setIsLoading(false);
+    }
+  }, [campaignAddress]);
+
+  // Utiliser useContract pour obtenir l'instance du contrat Campaign
+  const { contract: campaignContract, isLoading: contractLoading, error: contractError } = useContract(campaignAddress, CampaignABI);
+
+  // Utiliser useContractWrite pour l'achat de shares (équivalent de mint)
+  const { mutateAsync: buyShares, isLoading: buying, error: buyError } = useContractWrite(campaignContract, "buyShares");
+
+  // Utiliser useContractRead pour lire les données depuis le contrat Campaign
+  const { data: remunerationType, isLoading: rmTypeLoading, error: rmTypeError } = useContractRead(
+    campaignContract,
+    "remunerationType",
+    []
+  );
+
+  const { data: tokenDistribution, isLoading: tokenDistLoading, error: tokenDistError } = useContractRead(
+    campaignContract,
+    "tokenDistribution",
+    []
+  );
+
+  const { data: roi, isLoading: roiLoading, error: roiError } = useContractRead(
+    campaignContract,
+    "roi",
+    []
+  );
+
+  const { data: txs, isLoading: txsLoading, error: txsError } = useContractRead(
+    campaignContract,
+    "getAllTransactions",
+    []
+  );
+
+  // Récupérer les parts de la société depuis la Campaign
+  const { data: sharesMinted, isLoading: sharesMintedLoading, error: sharesMintedError } = useContractRead(
+    campaignContract,
+    "sharesMinted",
+    []
+  );
+
+  // Récupérer les informations de la société via la Campaign
+  const { data: vertePortalLink, isLoading: portalLoading, error: portalError } = useContractRead(
+    campaignContract,
+    "vertePortalLink",
+    []
+  );
+
+  // Récupérer les données du contrat
+  useEffect(() => {
+    const fetchContractData = async () => {
+      if (addressLoading || addressError || contractLoading || contractError) {
+        if (addressError) setError(addressError);
+        if (contractError) setError(contractError);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!selectedProject || !campaignAddress) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Lire les termes d'investissement
+        if (remunerationType && tokenDistribution && roi) {
+          setInvestmentTerms({
+            remunerationType,
+            tokenDistribution,
+            roi: roi.toString(),
+          });
+        }
+
+        // Lire les transactions
+        if (txs) {
+          const formattedTxs = txs.map(tx => ({
+            id: tx.id,
+            nftCount: tx.nftCount.toNumber(),
+            value: ethers.utils.formatEther(tx.value),
+            totalOwned: tx.totalOwned.toNumber(),
+          }));
+          setTransactions(formattedTxs);
+        }
+
+        // Définir les parts de la société depuis selectedProject (supposé déjà fourni)
+        setCompanyShares({
+          percentageMinted: sharesMinted ? sharesMinted.toNumber() : 0,
+          vertePortalLink: vertePortalLink || '',
+        });
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Erreur lors de la récupération des données du contrat :", err);
+        setError(err.message || "Erreur lors de la récupération des données.");
+        setIsLoading(false);
+      }
+    };
+
+    fetchContractData();
+  }, [
+    selectedProject,
+    campaignAddress,
+    campaignContract,
+    remunerationType,
+    tokenDistribution,
+    roi,
+    txs,
+    sharesMinted,
+    vertePortalLink,
+    addressLoading,
+    addressError,
+    contractLoading,
+    contractError
+  ]);
+
+  // Ajouter des logs pour vérifier le contrat et ses fonctions
+  useEffect(() => {
+    if (campaignContract) {
+      console.log("Contrat Campaign :", campaignContract);
+      console.log("Fonctions disponibles dans Campaign :", Object.keys(campaignContract.functions));
+    } else {
+      console.log("Le contrat Campaign n'est pas chargé.");
+    }
+  }, [campaignContract]);
+
+  // Fonction pour gérer l'achat de shares (équivalent de mint)
+  const handleBuyShares = async () => {
+    if (!userAddress) {
+      alert("Veuillez vous connecter à votre portefeuille.");
+      return;
+    }
+
+    if (!selectedProject) {
+      alert("Aucun projet sélectionné.");
+      return;
+    }
+
+    try {
+      console.log(`Tentative d'achat de ${nftCount} shares pour un total de ${(nftCount * parseFloat(selectedProject.sharePrice)).toFixed(2)} ETH`);
+
+      // Calculer la valeur totale
+      const totalValue = ethers.utils.parseEther((nftCount * parseFloat(selectedProject.sharePrice)).toFixed(18));
+      console.log("Valeur totale calculée :", totalValue.toString());
+
+      // Vérifier si la fonction buyShares existe
+      if (!campaignContract.functions.buyShares) {
+        throw new Error("La fonction buyShares n'existe pas dans le contrat Campaign.");
+      }
+      console.log("La fonction buyShares existe.");
+
+      // Appeler la fonction buyShares du contrat Campaign
+      const tx = await buyShares(nftCount, { value: totalValue });
+      console.log("Transaction envoyée :", tx.hash);
+
+      // Attendre la confirmation de la transaction
+      const receipt = await tx.wait();
+      console.log("Transaction confirmée :", receipt.transactionHash);
+
+      alert("Shares achetés avec succès !");
+    } catch (err) {
+      console.error("Erreur lors de l'achat des shares :", err);
+      setError(err.message || "Erreur lors de l'achat des shares.");
+      alert(`Erreur lors de l'achat des shares : ${err.message || err}`);
+    }
+  };
 
   const handleShare = () => {
-    console.log("Sharing project")
-    // Implement share logic here
-  }
+    console.log("Partage du projet");
+    // Implémenter la logique de partage, par exemple en utilisant l'API de partage Web ou en partageant via les réseaux sociaux
+  };
 
   const handleFavorite = () => {
-    setIsFavorite(!isFavorite)
-    console.log(isFavorite ? "Removed from favorites" : "Added to favorites")
-    // Implement favorite logic here
-  }
+    setIsFavorite(!isFavorite);
+    console.log(isFavorite ? "Retiré des favoris" : "Ajouté aux favoris");
+    // Implémenter la logique de favori, par exemple en sauvegardant dans une base de données ou le stockage local
+  };
 
-  const NFTSelector = () => (
+  // Composant pour sélectionner le nombre de Shares (équivalent de NFTs)
+  const ShareSelector = () => (
     <Card className="mt-6 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-lime-400 dark:border-lime-400 shadow-lg rounded-xl overflow-hidden">
       <CardContent className="p-6">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Sélectionner le nombre de NFTs</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Sélectionner le nombre de Shares</h3>
         <div className="flex items-center justify-between mb-4">
-          <label htmlFor="nftCount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de NFT</label>
+          <label htmlFor="shareCount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de Shares</label>
           <div className="flex items-center space-x-2">
             <Button
               onClick={() => setNftCount(Math.max(1, nftCount - 1))}
@@ -46,10 +230,10 @@ export default function ProjectDetails({ selectedProject, onClose }) {
               -
             </Button>
             <input
-              id="nftCount"
+              id="shareCount"
               type="number"
               value={nftCount}
-              onChange={(e) => setNftCount(Math.max(1, parseInt(e.target.value)))}
+              onChange={(e) => setNftCount(Math.max(1, parseInt(e.target.value) || 1))}
               min="1"
               className="w-16 text-center bg-white dark:bg-neutral-900 border border-lime-400 dark:border-lime-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             />
@@ -67,20 +251,27 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         </div>
         <div className="flex justify-between items-center mb-6">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix total</span>
-          <span className="text-lg font-bold text-lime-600 dark:text-lime-400">{nftCount * selectedProject.sharePrice} ETH</span>
+          <span className="text-lg font-bold text-lime-600 dark:text-lime-400">{(nftCount * parseFloat(selectedProject.sharePrice)).toFixed(2)} ETH</span>
         </div>
-        <Button onClick={handleMint} className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50">
-          Mint : {nftCount} NFT{nftCount > 1 ? 's' : ''}
+        <Button
+          onClick={handleBuyShares}
+          className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50"
+          disabled={buying || contractLoading || addressLoading}
+        >
+          {buying ? "Achat en cours..." : `Acheter : ${nftCount} Share${nftCount > 1 ? 's' : ''}`}
         </Button>
+        {buyError && (
+          <p className="text-red-500 mt-2">Erreur lors de l'achat des shares : {buyError.message}</p>
+        )}
       </CardContent>
     </Card>
-  )
+  );
 
-  if (!selectedProject) return null
+  if (!selectedProject) return null;
 
   return (
     <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
-     <DialogContent className="bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-lg shadow-xl">
+      <DialogContent className="bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-lg shadow-xl">
         <div className="flex justify-between items-center mb-6">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-gray-900 dark:text-white">{selectedProject.name}</DialogTitle>
@@ -94,7 +285,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
             </Button>
           </div>
         </div>
-        <NFTSelector />
+        <ShareSelector />
         <Tabs defaultValue="overview" className="w-full mt-8">
           <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-neutral-900 rounded-lg p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-gray-900 dark:data-[state=active]:text-white rounded-md transition-all duration-200">Vue d'ensemble</TabsTrigger>
@@ -102,6 +293,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
             <TabsTrigger value="transactions" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-gray-900 dark:data-[state=active]:text-white rounded-md transition-all duration-200">Transactions</TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="mt-6 space-y-6">
+            {/* Contenu de l'onglet Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="bg-white dark:bg-neutral-900 shadow-lg hover:shadow-xl transition-shadow duration-200">
                 <CardContent className="p-6">
@@ -117,8 +309,8 @@ export default function ProjectDetails({ selectedProject, onClose }) {
                 <CardContent className="p-6">
                   <div className="text-center">
                     <DollarSign className="w-8 h-8 mx-auto text-lime-500" />
-                    <h3 className="mt-2 text-lg font-semibold text-neutral-900 dark:text-white">Prix unitaire NFT</h3>
-                    <p className="text-2xl font-bold text-lime-600 dark:text-lime-400">{selectedProject.sharePrice} USDC</p>
+                    <h3 className="mt-2 text-lg font-semibold text-neutral-900 dark:text-white">Prix unitaire Share</h3>
+                    <p className="text-2xl font-bold text-lime-600 dark:text-lime-400">{selectedProject.sharePrice} ETH</p>
                   </div>
                 </CardContent>
               </Card>
@@ -141,12 +333,15 @@ export default function ProjectDetails({ selectedProject, onClose }) {
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-semibold inline-block text-lime-600 dark:text-lime-400">
-                    {((selectedProject.raised / selectedProject.goal) * 100).toFixed(2)}%
+                    {((parseFloat(selectedProject.raised) / parseFloat(selectedProject.goal)) * 100).toFixed(2)}%
                   </span>
                 </div>
               </div>
               <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-lime-200 dark:bg-lime-900">
-                <div style={{ width: `${(selectedProject.raised / selectedProject.goal) * 100}%` }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-lime-500 dark:bg-lime-400 transition-all duration-500 ease-in-out"></div>
+                <div
+                  style={{ width: `${(parseFloat(selectedProject.raised) / parseFloat(selectedProject.goal)) * 100}%` }}
+                  className={`h-2.5 rounded-full bg-lime-500 dark:bg-lime-400 transition-all duration-500 ease-in-out`}
+                ></div>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -167,7 +362,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
                       <a href={`https://twitter.com/${member.twitter}`} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600 transition-colors duration-200">
                         <Twitter className="w-5 h-5" />
                       </a>
-                      <a href={`https://facebook.com/${member.facebook}`} target="_blank" rel="noopener noreferrer"className="text-lime-500 hover:text-lime-600 transition-colors duration-200">
+                      <a href={`https://facebook.com/${member.facebook}`} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600 transition-colors duration-200">
                         <Facebook className="w-5 h-5" />
                       </a>
                     </div>
@@ -187,22 +382,37 @@ export default function ProjectDetails({ selectedProject, onClose }) {
             )}
           </TabsContent>
           <TabsContent value="details" className="mt-6 space-y-6">
+            {/* Contenu de l'onglet Details */}
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-lg">
               <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Résumé du projet</h3>
               <p className="text-gray-600 dark:text-gray-300">{selectedProject.description}</p>
             </div>
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-lg">
               <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Conditions de rémunération des investisseurs</h3>
-              <ul className="list-disc pl-5 space-y-2 text-gray-600 dark:text-gray-300">
-                <li><strong>Type de rémunération :</strong> {selectedProject.investmentTerms.remunerationType}</li>
-                <li><strong>Distribution de tokens :</strong> {selectedProject.investmentTerms.tokenDistribution}</li>
-                <li><strong>Temps de retour sur investissement estimé :</strong> {selectedProject.investmentTerms.roi}</li>
-              </ul>
+              {isLoading ? (
+                <p>Chargement des conditions de rémunération...</p>
+              ) : error ? (
+                <p className="text-red-500">{error}</p>
+              ) : investmentTerms ? (
+                <ul className="list-disc pl-5 space-y-2 text-gray-600 dark:text-gray-300">
+                  <li><strong>Type de rémunération :</strong> {investmentTerms.remunerationType}</li>
+                  <li><strong>Distribution de tokens :</strong> {investmentTerms.tokenDistribution}</li>
+                  <li><strong>Temps de retour sur investissement estimé :</strong> {investmentTerms.roi} jours</li>
+                </ul>
+              ) : (
+                <p>Aucune condition de rémunération disponible.</p>
+              )}
             </div>
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-lg">
               <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Informations sur les parts de la société</h3>
-              <p className="text-gray-600 dark:text-gray-300"><strong>Pourcentage de la société minté :</strong> {selectedProject.companyShares.percentageMinted}%</p>
-              <p className="text-gray-600 dark:text-gray-300"><strong>Lien vers le portail Verte :</strong> <a href={selectedProject.companyShares.vertePortalLink} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600 hover:underline transition-colors duration-200">{selectedProject.companyShares.vertePortalLink}</a></p>
+              {companyShares ? (
+                <>
+                  <p className="text-gray-600 dark:text-gray-300"><strong>Pourcentage de la société minté :</strong> {companyShares.percentageMinted}%</p>
+                  <p className="text-gray-600 dark:text-gray-300"><strong>Lien vers le portail Verte :</strong> <a href={companyShares.vertePortalLink} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600 hover:underline transition-colors duration-200">{companyShares.vertePortalLink}</a></p>
+                </>
+              ) : (
+                <p className="text-gray-600 dark:text-gray-300">Aucune information sur les parts de la société disponible.</p>
+              )}
             </div>
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-lg">
               <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Documents légaux de la société</h3>
@@ -241,35 +451,46 @@ export default function ProjectDetails({ selectedProject, onClose }) {
             </div>
           </TabsContent>
           <TabsContent value="transactions" className="mt-6 space-y-6">
+            {/* Contenu de l'onglet Transactions */}
             <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow-lg">
               <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Historique des transactions</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4"><strong>Nombre d'investisseurs uniques :</strong> {selectedProject.transactions.length}</p>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-900">
-                  <thead className="bg-gray-50 dark:bg-neutral-800">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre de NFT</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Valeur</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">NFT en possession</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200 dark:bg-neutral-950 dark:divide-lime-400">
-                    {selectedProject.transactions.map((transaction) => (
-                      <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-lime-700 transition-colors duration-200">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{transaction.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{transaction.nftCount}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{transaction.value} ETH</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{transaction.totalOwned}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {isLoading ? (
+                <p>Chargement des transactions...</p>
+              ) : error ? (
+                <p className="text-red-500">{error}</p>
+              ) : transactions && transactions.length > 0 ? (
+                <>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4"><strong>Nombre d'investisseurs uniques :</strong> {transactions.length}</p>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-900">
+                      <thead className="bg-gray-50 dark:bg-neutral-800">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre de Shares</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Valeur</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Shares en possession</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200 dark:bg-neutral-950 dark:divide-lime-400">
+                        {transactions.map((transaction) => (
+                          <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-lime-700 transition-colors duration-200">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{transaction.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{transaction.nftCount}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{transaction.value} ETH</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">{transaction.totalOwned}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-600 dark:text-gray-300">Aucune transaction disponible pour le moment.</p>
+              )}
             </div>
           </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

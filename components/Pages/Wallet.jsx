@@ -1,39 +1,94 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAddress, useBalance } from '@thirdweb-dev/react'; // Importation des hooks Thirdweb
+import { useAddress, useBalance, useContract, useContractRead, useContractEvents } from '@thirdweb-dev/react'; // Importation des hooks Thirdweb
 import { ethers } from 'ethers'; // Utilisation de ethers pour formater les unités
 
-export default function Wallet() {
-  const address = useAddress(); // Utilisation de useAddress pour récupérer l'adresse du portefeuille
+const INVESTMENT_CONTRACT_ADDRESS = '0xYourInvestmentContractAddress'; // Remplacez par l'adresse de votre contrat
 
-  // Hook pour obtenir les balances ETH
-  const { data: ethBalance, isLoading: ethLoading } = useBalance();
+export default function Wallet() {
+  const address = useAddress(); // Récupérer l'adresse du portefeuille de l'utilisateur
+  const { contract, isLoading: contractLoading, error: contractError } = useContract(INVESTMENT_CONTRACT_ADDRESS);
   
-  // Hook pour obtenir les balances WETH
-  const { data: wethBalance, isLoading: wethLoading } = useBalance({
+  // État pour les balances
+  const { data: ethBalance, isLoading: ethLoading, error: ethError } = useBalance();
+  const { data: wethBalance, isLoading: wethLoading, error: wethError } = useBalance({
     tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // Adresse WETH Mainnet
   });
-
-  // Hook pour obtenir les balances USDT
-  const { data: usdtBalance, isLoading: usdtLoading } = useBalance({
+  const { data: usdtBalance, isLoading: usdtLoading, error: usdtError } = useBalance({
     tokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // Adresse USDT Mainnet
   });
 
-  const walletInfo = {
-    pnl: "+500 USDC",
-    investedValue: "2000 USDC",
-    projectsInvested: 5,
-    unlockTime: "30 jours"
-  };
+  // État pour les informations de portefeuille
+  const [walletInfo, setWalletInfo] = useState({
+    pnl: '0 USDC',
+    investedValue: '0 USDC',
+    projectsInvested: 0,
+    unlockTime: '',
+  });
 
-  const transactions = [
-    { id: 1, type: 'Achat', project: 'Projet A', amount: '100 USDC', date: '2023-09-01' },
-    { id: 2, type: 'Vente', project: 'Projet B', amount: '50 USDC', date: '2023-09-15' },
-    { id: 3, type: 'Achat', project: 'Projet C', amount: '200 USDC', date: '2023-09-30' },
-  ];
+  // État pour les transactions
+  const [transactions, setTransactions] = useState([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [transactionError, setTransactionError] = useState(null);
+
+  // Utiliser useContractRead pour lire les investissements de l'utilisateur
+  const { data: userInvestments, isLoading: investmentsLoading, error: investmentsError, refetch: refetchInvestments } = useContractRead(
+    contract,
+    "getUserInvestments",
+    [address]
+  );
+
+  // Écouter les événements de transactions pour rafraîchir les données en temps réel
+  useContractEvents(contract, "InvestmentMade", {
+    filters: { user: address },
+    listener: (event) => {
+      console.log("Nouvelle transaction détectée:", event);
+      refetchInvestments();
+    }
+  });
+
+  // Mettre à jour les informations du portefeuille lorsque les investissements sont chargés
+  useEffect(() => {
+    if (userInvestments) {
+      try {
+        const totalInvested = userInvestments.reduce((acc, project) => acc + parseFloat(ethers.utils.formatEther(project.amountInvested)), 0);
+        const pnl = userInvestments.reduce((acc, project) => acc + parseFloat(ethers.utils.formatEther(project.profitOrLoss)), 0);
+        const unlockTime = Math.max(...userInvestments.map(project => project.unlockTime.toNumber()), 0);
+        
+        setWalletInfo({
+          pnl: `${pnl.toFixed(2)} USDC`,
+          investedValue: `${totalInvested.toFixed(2)} USDC`,
+          projectsInvested: userInvestments.length,
+          unlockTime: unlockTime > 0 ? `${Math.ceil((unlockTime - Math.floor(Date.now() / 1000)) / 86400)} jours` : 'N/A',
+        });
+
+        // Formater les transactions
+        const formattedTransactions = userInvestments.flatMap(project => project.transactions.map(tx => ({
+          id: tx.id,
+          type: tx.type,
+          project: project.name,
+          amount: `${ethers.utils.formatEther(tx.amount)} USDC`,
+          date: new Date(tx.timestamp.toNumber() * 1000).toLocaleDateString(),
+        })));
+
+        setTransactions(formattedTransactions);
+        setIsLoadingTransactions(false);
+      } catch (error) {
+        console.error("Erreur lors du traitement des investissements:", error);
+        setTransactionError("Erreur lors de la récupération des transactions.");
+        setIsLoadingTransactions(false);
+      }
+    }
+  }, [userInvestments]);
+
+  const renderBalance = (balance, loading, error, decimals = 4) => {
+    if (loading) return 'Chargement...';
+    if (error || !balance) return 'Erreur';
+    return parseFloat(ethers.utils.formatUnits(balance.value, balance.decimals)).toFixed(decimals);
+  };
 
   return (
     <div className="space-y-8">
@@ -80,19 +135,19 @@ export default function Wallet() {
           <div className="flex justify-between items-center">
             <span className="text-gray-700 dark:text-gray-300">ETH</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {ethLoading ? '...' : ethBalance ? parseFloat(ethers.utils.formatUnits(ethBalance.value, ethBalance.decimals)).toFixed(4) : '0.0000'} ETH
+              {renderBalance(ethBalance, ethLoading, ethError)} ETH
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-700 dark:text-gray-300">WETH</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {wethLoading ? '...' : wethBalance ? parseFloat(ethers.utils.formatUnits(wethBalance.value, wethBalance.decimals)).toFixed(4) : '0.0000'} WETH
+              {renderBalance(wethBalance, wethLoading, wethError)} WETH
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-700 dark:text-gray-300">USDT</span>
             <span className="text-gray-900 dark:text-gray-100">
-              {usdtLoading ? '...' : usdtBalance ? parseFloat(ethers.utils.formatUnits(usdtBalance.value, usdtBalance.decimals)).toFixed(2) : '0.00'} USDT
+              {renderBalance(usdtBalance, usdtLoading, usdtError, 2)} USDT
             </span>
           </div>
         </CardContent>
@@ -113,14 +168,28 @@ export default function Wallet() {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((tx) => (
-                  <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-800">
-                    <td className={`py-2 ${tx.type === 'Achat' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.type}</td>
-                    <td className="py-2 text-gray-900 dark:text-gray-100">{tx.project}</td>
-                    <td className="py-2 text-gray-900 dark:text-gray-100">{tx.amount}</td>
-                    <td className="py-2 text-gray-900 dark:text-gray-100">{tx.date}</td>
+                {isLoadingTransactions ? (
+                  <tr>
+                    <td colSpan="4" className="text-center py-2">Chargement des transactions...</td>
                   </tr>
-                ))}
+                ) : transactionError ? (
+                  <tr>
+                    <td colSpan="4" className="text-center py-2 text-red-500">{transactionError}</td>
+                  </tr>
+                ) : transactions.length > 0 ? (
+                  transactions.map((tx) => (
+                    <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-800">
+                      <td className={`py-2 ${tx.type === 'Achat' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.type}</td>
+                      <td className="py-2 text-gray-900 dark:text-gray-100">{tx.project}</td>
+                      <td className="py-2 text-gray-900 dark:text-gray-100">{tx.amount}</td>
+                      <td className="py-2 text-gray-900 dark:text-gray-100">{tx.date}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="text-center py-2">Aucune transaction disponible</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </ScrollArea>
