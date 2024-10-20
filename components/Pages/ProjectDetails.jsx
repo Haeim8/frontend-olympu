@@ -1,9 +1,5 @@
-// ProjectDetails.jsx
-
-"use client";
-
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,23 +22,28 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   const [companyShares, setCompanyShares] = useState(null);
 
   const userAddress = useAddress(); // Obtenir l'adresse connectée
-  const { address: campaignAddress, loading: addressLoading, error: addressError } = useCampaignAddress(selectedProject?.id);
+  const { campaignData, loading: addressLoading, error: addressError } = useCampaignAddress(selectedProject?.id);
 
   useEffect(() => {
     setShowProjectDetails(!!selectedProject);
   }, [selectedProject]);
 
-  // Ajouter des logs pour vérifier l'adresse récupérée
+  // Log pour vérifier le contenu de selectedProject
   useEffect(() => {
-    console.log("Adresse Campaign récupérée :", campaignAddress);
-    if (campaignAddress && !ethers.utils.isAddress(campaignAddress)) {
-      setError("Adresse du contrat Campaign invalide.");
+    console.log("Selected Project:", selectedProject);
+  }, [selectedProject]);
+
+  // Log pour vérifier les données récupérées
+  useEffect(() => {
+    console.log("Données de la campagne récupérées :", campaignData);
+    if (campaignData && !ethers.utils.isAddress(campaignData.creatorAddress)) {
+      setError("Adresse du créateur de la campagne invalide.");
       setIsLoading(false);
     }
-  }, [campaignAddress]);
+  }, [campaignData]);
 
   // Utiliser useContract pour obtenir l'instance du contrat Campaign
-  const { contract: campaignContract, isLoading: contractLoading, error: contractError } = useContract(campaignAddress, CampaignABI);
+  const { contract: campaignContract, isLoading: contractLoading, error: contractError } = useContract(selectedProject?.id, CampaignABI);
 
   // Utiliser useContractWrite pour l'achat de shares (équivalent de mint)
   const { mutateAsync: buyShares, isLoading: buying, error: buyError } = useContractWrite(campaignContract, "buyShares");
@@ -86,6 +87,46 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     []
   );
 
+  // Ajouter des logs pour vérifier le contrat et ses fonctions
+  useEffect(() => {
+    if (campaignContract) {
+      console.log("Contrat Campaign :", campaignContract);
+      // Inspection des propriétés disponibles
+      for (const key in campaignContract) {
+        console.log(`Propriété : ${key}`);
+      }
+      // Exemple : Vérifier si buyShares existe
+      if (campaignContract.buyShares) {
+        console.log("La fonction buyShares est disponible.");
+      } else {
+        console.log("La fonction buyShares n'est pas disponible.");
+      }
+    } else {
+      console.log("Le contrat Campaign n'est pas chargé.");
+    }
+  }, [campaignContract]);
+
+  // Ajouter des logs pour vérifier les états de chargement
+  useEffect(() => {
+    console.log("buying :", buying);
+    console.log("contractLoading :", contractLoading);
+    console.log("addressLoading :", addressLoading);
+  }, [buying, contractLoading, addressLoading]);
+
+  // Vérifier si l'utilisateur connecté est le créateur de la campagne
+  useEffect(() => {
+    if (campaignData && userAddress && selectedProject) {
+      console.log("Adresse du créateur :", campaignData.creatorAddress);
+      console.log("Adresse connectée :", userAddress);
+
+      if (campaignData.creatorAddress && userAddress.toLowerCase() === campaignData.creatorAddress.toLowerCase()) {
+        setError("Vous ne pouvez pas acheter vos propres shares.");
+      } else {
+        setError(null);
+      }
+    }
+  }, [campaignData, userAddress, selectedProject]);
+
   // Récupérer les données du contrat
   useEffect(() => {
     const fetchContractData = async () => {
@@ -96,7 +137,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         return;
       }
 
-      if (!selectedProject || !campaignAddress) {
+      if (!selectedProject || !campaignData) {
         setIsLoading(false);
         return;
       }
@@ -139,7 +180,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     fetchContractData();
   }, [
     selectedProject,
-    campaignAddress,
+    campaignData,
     campaignContract,
     remunerationType,
     tokenDistribution,
@@ -152,16 +193,6 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     contractLoading,
     contractError
   ]);
-
-  // Ajouter des logs pour vérifier le contrat et ses fonctions
-  useEffect(() => {
-    if (campaignContract) {
-      console.log("Contrat Campaign :", campaignContract);
-      console.log("Fonctions disponibles dans Campaign :", Object.keys(campaignContract.functions));
-    } else {
-      console.log("Le contrat Campaign n'est pas chargé.");
-    }
-  }, [campaignContract]);
 
   // Fonction pour gérer l'achat de shares (équivalent de mint)
   const handleBuyShares = async () => {
@@ -182,21 +213,26 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       const totalValue = ethers.utils.parseEther((nftCount * parseFloat(selectedProject.sharePrice)).toFixed(18));
       console.log("Valeur totale calculée :", totalValue.toString());
 
-      // Vérifier si la fonction buyShares existe
-      if (!campaignContract.functions.buyShares) {
-        throw new Error("La fonction buyShares n'existe pas dans le contrat Campaign.");
-      }
-      console.log("La fonction buyShares existe.");
-
-      // Appeler la fonction buyShares du contrat Campaign
-      const tx = await buyShares(nftCount, { value: totalValue });
+      // Appeler la fonction buyShares du contrat Campaign avec les bons paramètres
+      const tx = await buyShares({
+        args: [nftCount],
+        overrides: {
+          value: totalValue
+        }
+      });
       console.log("Transaction envoyée :", tx.hash);
 
-      // Attendre la confirmation de la transaction
-      const receipt = await tx.wait();
-      console.log("Transaction confirmée :", receipt.transactionHash);
+      // Accéder directement à tx.receipt
+      const receipt = tx.receipt;
 
-      alert("Shares achetés avec succès !");
+      if (receipt) {
+        console.log("Transaction confirmée :", receipt.transactionHash);
+        alert("Shares achetés avec succès !");
+      } else {
+        // Si tx.receipt n'existe pas
+        console.log("Transaction envoyée et confirmée :", tx);
+        alert("La transaction a été envoyée, mais la confirmation n'a pas pu être récupérée automatiquement.");
+      }
     } catch (err) {
       console.error("Erreur lors de l'achat des shares :", err);
       setError(err.message || "Erreur lors de l'achat des shares.");
@@ -216,58 +252,88 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   };
 
   // Composant pour sélectionner le nombre de Shares (équivalent de NFTs)
-  const ShareSelector = () => (
-    <Card className="mt-6 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-lime-400 dark:border-lime-400 shadow-lg rounded-xl overflow-hidden">
-      <CardContent className="p-6">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Sélectionner le nombre de Shares</h3>
-        <div className="flex items-center justify-between mb-4">
-          <label htmlFor="shareCount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de Shares</label>
-          <div className="flex items-center space-x-2">
-            <Button
-              onClick={() => setNftCount(Math.max(1, nftCount - 1))}
-              className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-900 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-neutral-900 transition-colors duration-200"
-            >
-              -
-            </Button>
-            <input
-              id="shareCount"
-              type="number"
-              value={nftCount}
-              onChange={(e) => setNftCount(Math.max(1, parseInt(e.target.value) || 1))}
-              min="1"
-              className="w-16 text-center bg-white dark:bg-neutral-900 border border-lime-400 dark:border-lime-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
-            />
-            <Button
-              onClick={() => setNftCount(nftCount + 1)}
-              className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-900 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
-            >
-              +
-            </Button>
-          </div>
-        </div>
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix unitaire</span>
-          <span className="text-sm font-bold text-gray-900 dark:text-white">{selectedProject.sharePrice} ETH</span>
-        </div>
-        <div className="flex justify-between items-center mb-6">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix total</span>
-          <span className="text-lg font-bold text-lime-600 dark:text-lime-400">{(nftCount * parseFloat(selectedProject.sharePrice)).toFixed(2)} ETH</span>
-        </div>
-        <Button
-          onClick={handleBuyShares}
-          className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50"
-          disabled={buying || contractLoading || addressLoading}
-        >
-          {buying ? "Achat en cours..." : `Acheter : ${nftCount} Share${nftCount > 1 ? 's' : ''}`}
-        </Button>
-        {buyError && (
-          <p className="text-red-500 mt-2">Erreur lors de l'achat des shares : {buyError.message}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
+  const ShareSelector = () => {
+    if (!selectedProject || !campaignData || !campaignData.creatorAddress) {
+      return <p className="text-gray-600 dark:text-gray-300">Chargement des données...</p>; // Ou un indicateur de chargement
+    }
 
-  if (!selectedProject) return null;
+    const isCreator = userAddress && campaignData.creatorAddress.toLowerCase() === userAddress.toLowerCase();
+
+    return (
+      <Card className="mt-6 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-lime-400 dark:border-lime-400 shadow-lg rounded-xl overflow-hidden">
+        <CardContent className="p-6">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Sélectionner le nombre de Shares</h3>
+          <div className="flex items-center justify-between mb-4">
+            <label htmlFor="shareCount" className="text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de Shares</label>
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => setNftCount(Math.max(1, nftCount - 1))}
+                className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-900 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-neutral-900 transition-colors duration-200"
+              >
+                -
+              </Button>
+              <input
+                id="shareCount"
+                type="number"
+                value={nftCount}
+                onChange={(e) => setNftCount(Math.max(1, parseInt(e.target.value) || 1))}
+                min="1"
+                className="w-16 text-center bg-white dark:bg-neutral-900 border border-lime-400 dark:border-lime-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+              />
+              <Button
+                onClick={() => setNftCount(nftCount + 1)}
+                className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-900 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
+              >
+                +
+              </Button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix unitaire</span>
+            <span className="text-sm font-bold text-gray-900 dark:text-white">{selectedProject.sharePrice} ETH</span>
+          </div>
+          <div className="flex justify-between items-center mb-6">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix total</span>
+            <span className="text-lg font-bold text-lime-600 dark:text-lime-400">{(nftCount * parseFloat(selectedProject.sharePrice)).toFixed(2)} ETH</span>
+          </div>
+          <Button
+            onClick={handleBuyShares}
+            className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-opacity-50"
+            disabled={buying || contractLoading || addressLoading || error !== null || isCreator}
+          >
+            {isCreator ? "Vous ne pouvez pas acheter vos propres shares" : (buying ? "Achat en cours..." : `Acheter : ${nftCount} Share${nftCount > 1 ? 's' : ''}`)}
+          </Button>
+          {buyError && (
+            <p className="text-red-500 mt-2">Erreur lors de l'achat des shares : {buyError.message}</p>
+          )}
+          {isCreator && (
+            <p className="text-red-500 mt-2">Vous ne pouvez pas acheter vos propres shares.</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Affichage des messages d'erreur critiques
+  if (error) {
+    return (
+      <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
+        <DialogContent className="bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-lg shadow-xl">
+          <p className="text-red-500">{error}</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
+        <DialogContent className="bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-lg shadow-xl">
+          <p>Chargement des détails du projet...</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
@@ -275,6 +341,9 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         <div className="flex justify-between items-center mb-6">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold text-gray-900 dark:text-white">{selectedProject.name}</DialogTitle>
+            <DialogDescription>
+              Consultez les détails de votre campagne et achetez des shares pour investir.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="icon" onClick={handleShare} className="hover:bg-gray-100 dark:hover:bg-neutral-950 transition-colors duration-200">

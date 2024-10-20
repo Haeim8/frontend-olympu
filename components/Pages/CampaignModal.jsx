@@ -1,9 +1,7 @@
-// CampaignModal.jsx
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,11 +12,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Upload, Plus, Minus } from 'lucide-react';
-
+import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
-
 import { db, storage } from "@/lib/firebase/firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function CampaignModal({ showCreateCampaign, setShowCreateCampaign, handleCreateCampaign }) {
@@ -31,49 +28,20 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     "event CampaignCreated(address indexed campaignAddress, address indexed startup, bool certified, address indexed lawyer)"
   ];
 
-  const [provider, setProvider] = useState(null);
-  const [signer, setSigner] = useState(null);
-  const [contract, setContract] = useState(null);
-  const [creatorAddress, setCreatorAddress] = useState('');
+  // Utiliser les hooks de Thirdweb
+  const address = useAddress();
+  const { contract, isLoading: contractLoading, error: contractError } = useContract(contractAddress, contractABI);
+  const { mutateAsync: createCampaign, isLoading: writeLoading } = useContractWrite(contract, "createCampaign");
 
-  // Charger le fournisseur et le signer sans demander la connexion
-  useEffect(() => {
-    if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
-      const tempProvider = new ethers.providers.Web3Provider(window.ethereum);
-      setProvider(tempProvider);
-
-      const tempSigner = tempProvider.getSigner();
-      setSigner(tempSigner);
-
-      const tempContract = new ethers.Contract(contractAddress, contractABI, tempSigner);
-      setContract(tempContract);
-
-      // Récupérer l'adresse du créateur et la définir dans le formulaire
-      tempSigner.getAddress().then(address => {
-        setCreatorAddress(address);
-        setCampaignForm(prev => ({
-          ...prev,
-          creatorAddress: address
-        }));
-      }).catch(error => {
-        console.error("Erreur lors de la récupération de l'adresse du signer :", error);
-        alert("Erreur lors de la récupération de votre adresse. Veuillez réessayer.");
-      });
-    } else {
-      console.error("Ethereum provider non trouvé. Veuillez installer MetaMask.");
-      alert("Ethereum provider non trouvé. Veuillez installer MetaMask.");
-    }
-  }, []);
-
-  // Initialisation du formulaire avec sauvegarde automatique
+  // État du formulaire
   const initialFormState = {
-    creatorAddress: '', // Rempli automatiquement
+    creatorAddress: address || '', // Initialiser avec l'adresse
     name: '',
     sector: '',
     description: '',
     sharePrice: '',
     numberOfNFTs: '',
-    goal: '', // Calculé automatiquement
+    goal: '',
     endDate: '',
     documents: [],
     media: [],
@@ -83,9 +51,9 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       name: '',
       contact: '',
       phone: '',
-      address: '', // Adresse Ethereum de l'avocat
+      address: '',
     },
-    royaltyFee: '', // Nouvel élément pour le smart contract
+    royaltyFee: '',
     investmentTerms: {
       remunerationType: '',
       tokenDistribution: '',
@@ -108,6 +76,16 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   useEffect(() => {
     localStorage.setItem('campaignForm', JSON.stringify(campaignForm));
   }, [campaignForm]);
+
+  // Mettre à jour l'adresse du créateur lorsque l'adresse change
+  useEffect(() => {
+    if (address) {
+      setCampaignForm(prev => ({
+        ...prev,
+        creatorAddress: address
+      }));
+    }
+  }, [address]);
 
   // Calcul automatique de l'objectif de levée
   useEffect(() => {
@@ -265,92 +243,99 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         royaltyFee,
       });
 
-      // Appel de la fonction createCampaign via le contrat connecté
+      // Appel de la fonction createCampaign via Thirdweb
       console.log("Appel de la fonction createCampaign du contrat");
-
-      const tx = await contract.createCampaign(
-        name,
-        targetAmount,
-        sharePrice,
-        endDateTimestamp,
-        certified,
-        lawyerAddress,
-        royaltyFee,
-        {
+      const tx = await createCampaign({
+        args: [
+          name,
+          targetAmount,
+          sharePrice,
+          endDateTimestamp,
+          certified,
+          lawyerAddress,
+          royaltyFee
+        ],
+        overrides: {
           value: ethers.utils.parseEther("0.02") // Frais de création de campagne
         }
-      );
-
-      console.log("Transaction envoyée :", tx.hash);
-
-      // Attente de la confirmation de la transaction
-      const receipt = await tx.wait();
-
-      console.log("Transaction confirmée :", receipt.transactionHash);
-
-      // Récupérer l'événement
-      const event = receipt.events.find((e) => e.event === "CampaignCreated");
-
-      if (!event) {
-        console.error("Événement CampaignCreated introuvable dans le receipt :", receipt);
-        alert("Erreur lors de la création de la campagne. L'événement CampaignCreated n'a pas été émis.");
-        return;
-      }
-
-      const campaignAddress = event.args.campaignAddress;
-
-      console.log("Adresse de la campagne créée :", campaignAddress);
-
-      // Upload des documents vers Firebase Storage
-      const documentsURLs = [];
-      for (const file of campaignForm.documents) {
-        const storageRef = ref(storage, `campaigns/${campaignAddress}/documents/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        documentsURLs.push({ name: file.name, url: downloadURL });
-        console.log(`Document ${file.name} uploadé avec succès`);
-      }
-
-      // Upload des médias vers Firebase Storage
-      const mediaURLs = [];
-      for (const file of campaignForm.media) {
-        const storageRef = ref(storage, `campaigns/${campaignAddress}/media/${file.name}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        mediaURLs.push({ name: file.name, url: downloadURL });
-        console.log(`Média ${file.name} uploadé avec succès`);
-      }
-
-      // Enregistrer les données supplémentaires dans Firebase
-      await setDoc(doc(db, "campaigns", campaignAddress), {
-        creatorAddress: campaignForm.creatorAddress,
-        name: campaignForm.name,
-        sector: campaignForm.sector,
-        description: campaignForm.description,
-        sharePrice: campaignForm.sharePrice,
-        numberOfNFTs: campaignForm.numberOfNFTs,
-        goal: campaignForm.goal,
-        endDate: campaignForm.endDate,
-        documents: documentsURLs,
-        media: mediaURLs,
-        teamMembers: campaignForm.teamMembers,
-        hasLawyer: campaignForm.hasLawyer,
-        lawyer: campaignForm.hasLawyer ? campaignForm.lawyer : null,
-        royaltyFee: campaignForm.royaltyFee,
-        investmentTerms: campaignForm.investmentTerms, // Ajout de investmentTerms
-        companyShares: campaignForm.companyShares, // Ajout de companyShares
-        timestamp: new Date(),
       });
 
-      console.log("Données de la campagne enregistrées dans Firebase");
+      console.log("Transaction envoyée :", tx);
 
-      // Réinitialiser le formulaire et le stockage local
-      setCampaignForm(initialFormState);
-      localStorage.removeItem('campaignForm');
+      // Accéder directement à tx.receipt
+      const receipt = tx.receipt;
 
-      console.log("Campagne créée avec succès:", campaignAddress);
-      handleCreateCampaign(campaignForm); // Gérer la logique après la création de la campagne
-      setShowCreateCampaign(false); // Fermer le modal après la soumission
+      if (receipt) {
+        console.log("Transaction confirmée :", receipt.transactionHash);
+
+        // Vérifier les événements dans le reçu
+        const event = receipt.events.find((e) => e.event === "CampaignCreated");
+
+        if (!event) {
+          console.error("Événement CampaignCreated introuvable dans le receipt :", receipt);
+          alert("Erreur lors de la création de la campagne. L'événement CampaignCreated n'a pas été émis.");
+          return;
+        }
+
+        const campaignAddress = event.args.campaignAddress;
+
+        console.log("Adresse de la campagne créée :", campaignAddress);
+
+        // Upload des documents vers Firebase Storage
+        const documentsURLs = [];
+        for (const file of campaignForm.documents) {
+          const storageRef = ref(storage, `campaigns/${campaignAddress}/documents/${file.name}`);
+          await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(storageRef);
+          documentsURLs.push({ name: file.name, url: downloadURL });
+          console.log(`Document ${file.name} uploadé avec succès`);
+        }
+
+        // Upload des médias vers Firebase Storage
+        const mediaURLs = [];
+        for (const file of campaignForm.media) {
+          const storageRef = ref(storage, `campaigns/${campaignAddress}/media/${file.name}`);
+          await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(storageRef);
+          mediaURLs.push({ name: file.name, url: downloadURL });
+          console.log(`Média ${file.name} uploadé avec succès`);
+        }
+
+        // Enregistrer les données supplémentaires dans Firebase
+        await setDoc(doc(db, "campaigns", campaignAddress), {
+          creatorAddress: campaignForm.creatorAddress,
+          name: campaignForm.name,
+          sector: campaignForm.sector,
+          description: campaignForm.description,
+          sharePrice: campaignForm.sharePrice,
+          numberOfNFTs: campaignForm.numberOfNFTs,
+          goal: campaignForm.goal,
+          endDate: campaignForm.endDate,
+          documents: documentsURLs,
+          media: mediaURLs,
+          teamMembers: campaignForm.teamMembers,
+          hasLawyer: campaignForm.hasLawyer,
+          lawyer: campaignForm.hasLawyer ? campaignForm.lawyer : null,
+          royaltyFee: campaignForm.royaltyFee,
+          investmentTerms: campaignForm.investmentTerms,
+          companyShares: campaignForm.companyShares,
+          timestamp: new Date(),
+        });
+
+        console.log("Données de la campagne enregistrées dans Firebase");
+
+        // Réinitialiser le formulaire et le stockage local
+        setCampaignForm(initialFormState);
+        localStorage.removeItem('campaignForm');
+
+        console.log("Campagne créée avec succès:", campaignAddress);
+        handleCreateCampaign(campaignForm); // Gérer la logique après la création de la campagne
+        setShowCreateCampaign(false); // Fermer le modal après la soumission
+      } else {
+        // Si tx.receipt n'existe pas
+        console.log("Transaction envoyée et confirmée :", tx);
+        alert("La transaction a été envoyée, mais la confirmation n'a pas pu être récupérée automatiquement.");
+      }
     } catch (error) {
       console.error("Erreur lors de la création de la campagne :", error);
       alert(`Erreur lors de la création de la campagne : ${error.message || error}`);
@@ -377,6 +362,9 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       <DialogContent className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-gray-50 max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Créer une nouvelle campagne</DialogTitle>
+          <DialogDescription>
+            Remplissez les détails de votre campagne pour la créer.
+          </DialogDescription>
         </DialogHeader>
         <Alert className="mb-6 bg-red-900 border-red-700 text-white">
           <Info className="h-4 w-4" />
@@ -859,8 +847,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
           </div>
 
           {/* Bouton de soumission */}
-          <Button type="submit" className="w-full bg-lime-600 hover:bg-lime-700 text-white" disabled={!campaignForm.acceptTerms}>
-            Créer la campagne
+          <Button type="submit" className="w-full bg-lime-600 hover:bg-lime-700 text-white" disabled={!campaignForm.acceptTerms || writeLoading}>
+            {writeLoading ? "Création en cours..." : "Créer la campagne"}
           </Button>
         </form>
       </DialogContent>

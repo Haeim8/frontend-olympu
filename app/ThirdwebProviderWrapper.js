@@ -1,4 +1,4 @@
-// frontend/components/ThirdwebProviderWrapper.js
+// frontend/app/ThirdwebProviderWrapper.js
 
 "use client";
 

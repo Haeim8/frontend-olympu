@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAddress } from '@thirdweb-dev/react'; 
-import Home from '@/components/home';
+import Home from '@/components/leanding';
 import AppInterface from '@/components/app-interface';
 
 export default function Page() {
