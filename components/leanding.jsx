@@ -13,7 +13,9 @@ import { ConnectWallet, useAddress, useContract, useContractRead } from "@thirdw
 import { db } from "@/lib/firebase/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import FundRaisingPlatformABI from "@/ABI/FundRaisingPlatformABI.json"; // Importer l'ABI
+
+import FundRaisingPlatformABI from "@/ABI/FundRaisingPlatformABI.json"; // Assurez-vous que ce chemin est correct et que l'ABI est à jour
+
 import { ethers } from "ethers"; // Importer ethers pour manipuler les valeurs ETH
 
 export default function Home() {
