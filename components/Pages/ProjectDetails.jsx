@@ -1,3 +1,5 @@
+// frontend/app/ProjectDetails.jsx
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -87,6 +89,13 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     []
   );
 
+  // Lecture de totalSupply depuis le contrat Campaign
+  const { data: totalSupply, isLoading: totalSupplyLoading, error: totalSupplyError } = useContractRead(
+    campaignContract,
+    "totalSupply",
+    []
+  );
+
   // Ajouter des logs pour vérifier le contrat et ses fonctions
   useEffect(() => {
     if (campaignContract) {
@@ -111,7 +120,11 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     console.log("buying :", buying);
     console.log("contractLoading :", contractLoading);
     console.log("addressLoading :", addressLoading);
-  }, [buying, contractLoading, addressLoading]);
+    console.log("totalSupplyLoading :", totalSupplyLoading);
+    if (totalSupplyError) {
+      console.error("Erreur lors de la lecture de totalSupply :", totalSupplyError);
+    }
+  }, [buying, contractLoading, addressLoading, totalSupplyLoading, totalSupplyError]);
 
   // Vérifier si l'utilisateur connecté est le créateur de la campagne
   useEffect(() => {
@@ -131,8 +144,8 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   useEffect(() => {
     const fetchContractData = async () => {
       if (addressLoading || addressError || contractLoading || contractError) {
-        if (addressError) setError(addressError);
-        if (contractError) setError(contractError);
+        if (addressError) setError(addressError.message || "Erreur lors de la récupération de l'adresse.");
+        if (contractError) setError(contractError.message || "Erreur lors de la récupération du contrat.");
         setIsLoading(false);
         return;
       }
@@ -155,7 +168,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         // Lire les transactions
         if (txs) {
           const formattedTxs = txs.map(tx => ({
-            id: tx.id,
+            id: tx.id.toNumber(),
             nftCount: tx.nftCount.toNumber(),
             value: ethers.utils.formatEther(tx.value),
             totalOwned: tx.totalOwned.toNumber(),
@@ -168,6 +181,11 @@ export default function ProjectDetails({ selectedProject, onClose }) {
           percentageMinted: sharesMinted ? sharesMinted.toNumber() : 0,
           vertePortalLink: vertePortalLink || '',
         });
+
+        // Lire totalSupply pour vérifier la supply des NFTs
+        if (totalSupply) {
+          console.log(`Total Supply: ${totalSupply.toString()}`);
+        }
 
         setIsLoading(false);
       } catch (err) {
@@ -188,10 +206,13 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     txs,
     sharesMinted,
     vertePortalLink,
+    totalSupply,
     addressLoading,
     addressError,
     contractLoading,
-    contractError
+    contractError,
+    totalSupplyLoading,
+    totalSupplyError
   ]);
 
   // Fonction pour gérer l'achat de shares (équivalent de mint)
@@ -209,30 +230,19 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     try {
       console.log(`Tentative d'achat de ${nftCount} shares pour un total de ${(nftCount * parseFloat(selectedProject.sharePrice)).toFixed(2)} ETH`);
 
-      // Calculer la valeur totale
-      const totalValue = ethers.utils.parseEther((nftCount * parseFloat(selectedProject.sharePrice)).toFixed(18));
+      // Calculer la valeur totale en wei
+      const totalValue = ethers.utils.parseEther((nftCount * parseFloat(selectedProject.sharePrice)).toString());
       console.log("Valeur totale calculée :", totalValue.toString());
 
       // Appeler la fonction buyShares du contrat Campaign avec les bons paramètres
-      const tx = await buyShares({
+      const receipt = await buyShares({
         args: [nftCount],
         overrides: {
           value: totalValue
         }
       });
-      console.log("Transaction envoyée :", tx.hash);
-
-      // Accéder directement à tx.receipt
-      const receipt = tx.receipt;
-
-      if (receipt) {
-        console.log("Transaction confirmée :", receipt.transactionHash);
-        alert("Shares achetés avec succès !");
-      } else {
-        // Si tx.receipt n'existe pas
-        console.log("Transaction envoyée et confirmée :", tx);
-        alert("La transaction a été envoyée, mais la confirmation n'a pas pu être récupérée automatiquement.");
-      }
+      console.log("Transaction confirmée :", receipt.transactionHash);
+      alert("Shares achetés avec succès !");
     } catch (err) {
       console.error("Erreur lors de l'achat des shares :", err);
       setError(err.message || "Erreur lors de l'achat des shares.");
@@ -463,7 +473,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
               ) : error ? (
                 <p className="text-red-500">{error}</p>
               ) : investmentTerms ? (
-                <ul className="list-disc pl-5 space-y-2 text-gray-600 dark:text-gray-300">
+                <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600 dark:text-gray-300">
                   <li><strong>Type de rémunération :</strong> {investmentTerms.remunerationType}</li>
                   <li><strong>Distribution de tokens :</strong> {investmentTerms.tokenDistribution}</li>
                   <li><strong>Temps de retour sur investissement estimé :</strong> {investmentTerms.roi} jours</li>

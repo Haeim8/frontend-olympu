@@ -9,7 +9,6 @@ import "@/app/globals.css";
 import { Inter as FontSans } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { UserProvider } from "@/components/shared/UserContext";
-import RainbowKitAndWagmiProvider from "./RainbowKitAndWagmiProvider";
 import Head from 'next/head';
 
 const fontSans = FontSans({
@@ -43,9 +42,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <ThirdwebProviderWrapper> {/* Utilisez ThirdwebProviderWrapper ici */}
             <UserProvider>
-              <RainbowKitAndWagmiProvider>
-                {children}
-              </RainbowKitAndWagmiProvider>
+              {children} {/* Déplacé ici */}
             </UserProvider>
           </ThirdwebProviderWrapper>
         </ThemeProvider>

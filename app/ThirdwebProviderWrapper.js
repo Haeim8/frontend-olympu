@@ -1,10 +1,10 @@
-// frontend/ThirdwebProviderWrapper.js
+// frontend/app/ThirdwebProviderWrapper.js
 
 "use client";
 
 import { ThirdwebProvider } from '@thirdweb-dev/react';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { Base,BaseSepoliaTestnet } from "@thirdweb-dev/chains";
+import { Base, BaseSepoliaTestnet } from "@thirdweb-dev/chains";
 
 // Définissez SepoliaBase manuellement si ce n'est pas une chaîne prédéfinie par Thirdweb
 const SepoliaBase = {

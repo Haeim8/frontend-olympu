@@ -1,4 +1,4 @@
-// components/home.jsx
+// components/leanding.jsx
 
 "use client";
 
