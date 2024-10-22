@@ -1,3 +1,4 @@
+//frontend/components/sidebar.jsx
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Home, Wallet, MessageSquare, Newspaper, Star, FileText } from "lucide-react";

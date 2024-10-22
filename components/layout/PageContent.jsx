@@ -1,3 +1,4 @@
+//frontend/components/pagecontent.jsx
 import React from 'react';
 import HomePage from '@/components/Pages/Home';
 import WalletPage from '@/components/Pages/Wallet';

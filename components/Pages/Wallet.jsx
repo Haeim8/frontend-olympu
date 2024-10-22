@@ -1,3 +1,4 @@
+//frontend/components/pages/wallet.jsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -6,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAddress, useBalance, useContract, useContractRead, useContractEvents } from '@thirdweb-dev/react'; // Importation des hooks Thirdweb
 import { ethers } from 'ethers'; // Utilisation de ethers pour formater les unités
 
-const INVESTMENT_CONTRACT_ADDRESS = '0xYourInvestmentContractAddress'; // Remplacez par l'adresse de votre contrat
+const INVESTMENT_CONTRACT_ADDRESS = '0xF334d4CEcB73bc95e032949b9437A1eE6D4C6019'; // Remplacez par l'adresse réelle de votre contrat
 
 export default function Wallet() {
   const address = useAddress(); // Récupérer l'adresse du portefeuille de l'utilisateur
@@ -15,10 +16,10 @@ export default function Wallet() {
   // État pour les balances
   const { data: ethBalance, isLoading: ethLoading, error: ethError } = useBalance();
   const { data: wethBalance, isLoading: wethLoading, error: wethError } = useBalance({
-    tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // Adresse WETH Mainnet
+    tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // Adresse WETH Mainnet (vérifiez pour Sepolia)
   });
   const { data: usdtBalance, isLoading: usdtLoading, error: usdtError } = useBalance({
-    tokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // Adresse USDT Mainnet
+    tokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // Adresse USDT Mainnet (vérifiez pour Sepolia)
   });
 
   // État pour les informations de portefeuille
@@ -89,6 +90,18 @@ export default function Wallet() {
     if (error || !balance) return 'Erreur';
     return parseFloat(ethers.utils.formatUnits(balance.value, balance.decimals)).toFixed(decimals);
   };
+
+  if (contractLoading) {
+    return <p>Chargement du contrat...</p>;
+  }
+
+  if (contractError) {
+    return <p className="text-red-500">Erreur de connexion au contrat: {contractError.message}</p>;
+  }
+
+  if (!address) {
+    return <p>Veuillez connecter votre portefeuille pour voir votre portefeuille.</p>;
+  }
 
   return (
     <div className="space-y-8">
@@ -179,7 +192,9 @@ export default function Wallet() {
                 ) : transactions.length > 0 ? (
                   transactions.map((tx) => (
                     <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-800">
-                      <td className={`py-2 ${tx.type === 'Achat' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{tx.type}</td>
+                      <td className={`py-2 ${tx.type === 'Achat' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {tx.type}
+                      </td>
                       <td className="py-2 text-gray-900 dark:text-gray-100">{tx.project}</td>
                       <td className="py-2 text-gray-900 dark:text-gray-100">{tx.amount}</td>
                       <td className="py-2 text-gray-900 dark:text-gray-100">{tx.date}</td>

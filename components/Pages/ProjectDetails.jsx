@@ -1,4 +1,4 @@
-// frontend/app/ProjectDetails.jsx
+// frontend/compnents/pages/ProjectDetails.jsx
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";

@@ -1,4 +1,4 @@
-// Home.jsx
+//frontend/components/Home.jsx
 
 "use client";
 
