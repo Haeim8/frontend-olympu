@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAddress, useBalance, useContract, useContractRead, useContractEvents } from '@thirdweb-dev/react'; // Importation des hooks Thirdweb
 import { ethers } from 'ethers'; // Utilisation de ethers pour formater les unités
 
-const INVESTMENT_CONTRACT_ADDRESS = '0xF334d4CEcB73bc95e032949b9437A1eE6D4C6019'; // Remplacez par l'adresse réelle de votre contrat
+const INVESTMENT_CONTRACT_ADDRESS = '0xD624ddFe214734dAceA2aacf8bb47e837B5228DD'; // Remplacez par l'adresse réelle de votre contrat
 
 export default function Wallet() {
   const address = useAddress(); // Récupérer l'adresse du portefeuille de l'utilisateur

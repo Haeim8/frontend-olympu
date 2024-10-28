@@ -37,7 +37,7 @@ export default function Home() {
   const router = useRouter();
 
   // Adresse de votre contrat déployé
-  const contractAddress = "0xF334d4CEcB73bc95e032949b9437A1eE6D4C6019"; // Remplacez par votre adresse de contrat
+  const contractAddress = "0xD624ddFe214734dAceA2aacf8bb47e837B5228DD"; // Remplacez par votre adresse de contrat
 
   // Utiliser le hook useContract pour obtenir l'instance du contrat
   const { contract, isLoading: contractLoading, error: contractError } = useContract(

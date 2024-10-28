@@ -1,5 +1,4 @@
-//frontend/components/pages/campaignmodal.jsx
-"use client";
+"use client"
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -12,49 +11,77 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info, Upload, Plus, Minus } from 'lucide-react';
-import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
+import { Info, Upload, Plus, Minus, AlertTriangle, Trash2, CheckCircle } from 'lucide-react';
+import { useContract, useContractWrite, useAddress, useChainId } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
-import { db, storage } from "@/lib/firebase/firebase";
-import { doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+// Import du service de stockage Pinata
+import { pinataService } from '@/lib/services/storage';
+
+const SECTORS = [
+  "Blockchain", "Finance", "Industrie", "Tech", "Influence", "Gaming",
+  "NFT", "DeFi", "DAO", "Infrastructure", "Autre"
+];
+
+const COUNTRIES = ["Afghanistan", "Afrique du Sud", "Albanie", /* ... */, "Zimbabwe"];
 
 export default function CampaignModal({ showCreateCampaign, setShowCreateCampaign, handleCreateCampaign }) {
-  // Adresse du contrat FundRaisingPlatform
-  const contractAddress = "0xF334d4CEcB73bc95e032949b9437A1eE6D4C6019";
-  
-  // ABI du contrat FundRaisingPlatform (inclure uniquement les fonctions nécessaires)
+  const [currentStep, setCurrentStep] = useState(1);
+  const [stepValidated, setStepValidated] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [campaignCreated, setCampaignCreated] = useState(false);
+  const [transactionHash, setTransactionHash] = useState('');
+
+  const address = useAddress();
+  const chainId = useChainId();
+  const contractAddress = "0xD624ddFe214734dAceA2aacf8bb47e837B5228DD";
   const contractABI = [
-    "function createCampaign(string memory _name, uint256 _targetAmount, uint256 _sharePrice, uint256 _endTime, bool _certified, address _lawyer, uint96 _royaltyFee) external payable",
-    "event CampaignCreated(address indexed campaignAddress, address indexed startup, bool certified, address indexed lawyer)"
+    "function createCampaign(string memory _name, string memory _symbol, uint256 _targetAmount, uint256 _sharePrice, uint256 _endTime, bool _certified, address _lawyer, string memory _category, string memory _metadata, uint96 _royaltyFee) external payable",
+    "event CampaignCreated(address indexed campaignAddress, address indexed startup, string name, bool certified, address indexed lawyer, uint256 timestamp)"
   ];
 
-  // Utiliser les hooks de Thirdweb
-  const address = useAddress();
-  const { contract, isLoading: contractLoading, error: contractError } = useContract(contractAddress, contractABI);
+  const { contract } = useContract(contractAddress, contractABI);
   const { mutateAsync: createCampaign, isLoading: writeLoading } = useContractWrite(contract, "createCampaign");
 
-  // État du formulaire
-  const initialFormState = {
-    creatorAddress: address || '', // Initialiser avec l'adresse
+  const [formData, setFormData] = useState({
+    creatorAddress: '',
     name: '',
+    symbol: '',
     sector: '',
+    otherSector: '',
+    nationality: '',
     description: '',
     sharePrice: '',
-    numberOfNFTs: '',
-    goal: '',
+    numberOfShares: '',
+    targetAmount: '',
     endDate: '',
+    royaltyFee: '0',
+    royaltyReceiver: '',
     documents: [],
+    whitepaper: null,
+    pitchDeck: null,
+    legalDocuments: null,
     media: [],
-    teamMembers: [{ name: '', role: '', twitter: '', facebook: '' }],
-    hasLawyer: false,
-    lawyer: {
-      name: '',
-      contact: '',
-      phone: '',
-      address: '',
+    teamMembers: [{ name: '', role: '', socials: { twitter: '', linkedin: '' } }],
+    certified: false,
+    lawyer: { address: '', name: '', contact: '', jurisdiction: '' },
+    acceptTerms: false,
+    socials: {
+      website: '',
+      twitter: '',
+      github: '',
+      discord: '',
+      telegram: '',
+      medium: ''
     },
-    royaltyFee: '',
+    metadata: {
+      roadmap: '',
+      tokenomics: '',
+      vesting: '',
+      useOfFunds: ''
+    },
     investmentTerms: {
       remunerationType: '',
       tokenDistribution: '',
@@ -64,55 +91,28 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       percentageMinted: '',
       vertePortalLink: '',
     },
-    acceptTerms: false
-  };
-
-  const [campaignForm, setCampaignForm] = useState(() => {
-    // Charger depuis le stockage local si disponible
-    const savedForm = localStorage.getItem('campaignForm');
-    return savedForm ? JSON.parse(savedForm) : initialFormState;
+    distributeTokens: false,
+    vestingPlan: false,
   });
 
-  // Sauvegarder le formulaire à chaque changement
-  useEffect(() => {
-    localStorage.setItem('campaignForm', JSON.stringify(campaignForm));
-  }, [campaignForm]);
-
-  // Mettre à jour l'adresse du créateur lorsque l'adresse change
   useEffect(() => {
     if (address) {
-      setCampaignForm(prev => ({
+      setFormData(prev => ({
         ...prev,
-        creatorAddress: address
+        creatorAddress: address,
+        royaltyReceiver: address
       }));
     }
   }, [address]);
 
-  // Calcul automatique de l'objectif de levée
-  useEffect(() => {
-    const sharePrice = parseFloat(campaignForm.sharePrice);
-    const numberOfNFTs = parseInt(campaignForm.numberOfNFTs);
-    if (!isNaN(sharePrice) && !isNaN(numberOfNFTs)) {
-      setCampaignForm(prev => ({
-        ...prev,
-        goal: (sharePrice * numberOfNFTs).toString()
-      }));
-    } else {
-      setCampaignForm(prev => ({
-        ...prev,
-        goal: ''
-      }));
-    }
-  }, [campaignForm.sharePrice, campaignForm.numberOfNFTs]);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setCampaignForm(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleNestedInputChange = (e, nestedField) => {
     const { name, value } = e.target;
-    setCampaignForm(prev => ({
+    setFormData(prev => ({
       ...prev,
       [nestedField]: {
         ...prev[nestedField],
@@ -122,27 +122,17 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   };
 
   const handleSelectChange = (value, field) => {
-    setCampaignForm(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleCheckboxChange = (name, nestedField = null) => {
-    if (nestedField) {
-      setCampaignForm(prev => ({
-        ...prev,
-        [nestedField]: {
-          ...prev[nestedField],
-          [name]: !prev[nestedField][name]
-        }
-      }));
-    } else {
-      setCampaignForm(prev => ({ ...prev, [name]: !prev[name] }));
-    }
+  const handleCheckboxChange = (name) => {
+    setFormData(prev => ({ ...prev, [name]: !prev[name] }));
   };
 
   const handleFileChange = (e, field) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setCampaignForm(prev => ({
+      setFormData(prev => ({
         ...prev,
         [field]: [...prev[field], ...newFiles]
       }));
@@ -150,196 +140,301 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   };
 
   const removeFile = (index, field) => {
-    setCampaignForm(prev => ({
+    setFormData(prev => ({
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index)
     }));
   };
 
   const addTeamMember = () => {
-    setCampaignForm(prev => ({
+    setFormData(prev => ({
       ...prev,
-      teamMembers: [...prev.teamMembers, { name: '', role: '', twitter: '', facebook: '' }]
+      teamMembers: [...prev.teamMembers, { name: '', role: '', socials: { twitter: '', linkedin: '' } }]
     }));
   };
 
   const removeTeamMember = (index) => {
-    setCampaignForm(prev => ({
+    setFormData(prev => ({
       ...prev,
       teamMembers: prev.teamMembers.filter((_, i) => i !== index)
     }));
   };
 
-  const handleTeamMemberChange = (index, field, value) => {
-    setCampaignForm(prev => ({
+  const handleTeamMemberChange = (index, field, value, socialField = null) => {
+    setFormData(prev => ({
       ...prev,
-      teamMembers: prev.teamMembers.map((member, i) =>
-        i === index ? { ...member, [field]: value } : member
-      )
+      teamMembers: prev.teamMembers.map((member, i) => {
+        if (i === index) {
+          if (socialField) {
+            return { ...member, socials: { ...member.socials, [socialField]: value } };
+          }
+          return { ...member, [field]: value };
+        }
+        return member;
+      })
     }));
   };
 
-  // Fonction pour gérer la soumission du formulaire
+  const handleSocialChange = (network, value) => {
+    setFormData(prev => ({
+      ...prev,
+      socials: { ...prev.socials, [network]: value }
+    }));
+  };
+
+  const removeSocial = (network) => {
+    setFormData(prev => ({
+      ...prev,
+      socials: { ...prev.socials, [network]: '' }
+    }));
+  };
+
+  const validateStep = (step) => {
+    const errors = {};
+    switch(step) {
+      case 1:
+        if (!formData.name) errors.name = "Le nom est requis";
+        if (!formData.symbol) errors.symbol = "Le symbole est requis";
+        if (!formData.sector) errors.sector = "Le secteur est requis";
+        if (formData.sector === 'Autre' && !formData.otherSector) errors.otherSector = "Veuillez préciser le secteur";
+        if (!formData.nationality) errors.nationality = "La nationalité est requise";
+        if (!formData.description) errors.description = "La description est requise";
+        if (!formData.sharePrice || parseFloat(formData.sharePrice) <= 0) errors.sharePrice = "Le prix par part doit être supérieur à 0";
+        if (!formData.numberOfShares || parseInt(formData.numberOfShares) <= 0) errors.numberOfShares = "Le nombre de parts doit être supérieur à 0";
+        if (!formData.endDate || new Date(formData.endDate).getTime() <= Date.now()) {
+          errors.endDate = "La date de fin doit être dans le futur";
+        }
+        break;
+      case 2:
+        if (formData.documents.length === 0) errors.documents = "Au moins un document est requis";
+        break;
+      case 3:
+        if (formData.teamMembers.length === 0) errors.team = "Au moins un membre d'équipe est requis";
+        if (formData.certified && !formData.lawyer.address) errors.lawyer = "L'adresse de l'avocat est requise pour une campagne certifiée";
+        break;
+      case 4:
+        if (!formData.acceptTerms) errors.terms = "Vous devez accepter les conditions";
+        break;
+    }
+    setError(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => prev + 1);
+      setStepValidated(prev => ({
+        ...prev,
+        [currentStep]: true
+      }));
+    }
+  };
+
+  const handlePreviousStep = () => {
+    setCurrentStep(prev => prev - 1);
+  };
+
+  const createCampaignFolder = async (campaignData, documents, media) => {
+    try {
+      setIsLoading(true);
+      
+      // Créer un dossier pour la campagne
+      const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
+      
+      // Préparer la structure du dossier
+      const folderStructure = {
+        metadata: {
+          createdAt: new Date().toISOString(),
+          version: "1.0.0",
+          currentRound: 1
+        },
+        campaignDetails: {
+          name: campaignData.name,
+          sector: campaignData.sector,
+          description: campaignData.description,
+          teamMembers: campaignData.teamMembers,
+          investmentTerms: campaignData.investmentTerms,
+          companyShares: campaignData.companyShares,
+          hasLawyer: campaignData.certified,
+          lawyer: campaignData.certified ? campaignData.lawyer : null
+        },
+        rounds: {
+          "round-1": {
+            details: {
+              sharePrice: campaignData.sharePrice,
+              numberOfNFTs: campaignData.numberOfShares,
+              goal: campaignData.targetAmount,
+              endDate: campaignData.endDate,
+              status: "active"
+            }
+          }
+        }
+      };
+
+      console.log("Structure du dossier préparée:", folderStructure);
+
+      // Upload des documents
+      const uploadedDocs = await Promise.all(
+        documents.map(async (file) => {
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: 0
+          }));
+
+          const result = await pinataService.uploadFile(file, {
+            name: `${campaignFolderName}/documents/${file.name}`,
+            keyvalues: {
+              round: "1",
+              type: "document"
+            }
+          });
+
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: 100
+          }));
+
+          return {
+            name: file.name,
+            ipfsHash: result.ipfsHash,
+            url: result.gatewayUrl, // Correction ici pour utiliser gatewayUrl
+            type: file.type,
+            uploadedAt: new Date().toISOString()
+          };
+        })
+      );
+
+      console.log("Documents uploadés:", uploadedDocs);
+
+      // Upload des médias
+      const uploadedMedia = await Promise.all(
+        media.map(async (file) => {
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: 0
+          }));
+
+          const result = await pinataService.uploadFile(file, {
+            name: `${campaignFolderName}/media/${file.name}`,
+            keyvalues: {
+              round: "1",
+              type: "media"
+            }
+          });
+
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: 100
+          }));
+
+          return {
+            name: file.name,
+            ipfsHash: result.ipfsHash,
+            url: result.gatewayUrl, // Correction ici pour utiliser gatewayUrl
+            type: file.type,
+            uploadedAt: new Date().toISOString()
+          };
+        })
+      );
+
+      console.log("Médias uploadés:", uploadedMedia);
+
+      // Ajouter les documents et médias à la structure
+      folderStructure.rounds["round-1"].documents = uploadedDocs;
+      folderStructure.rounds["round-1"].media = uploadedMedia;
+
+      // Upload de toute la structure en JSON
+      const finalResult = await pinataService.uploadJSON(folderStructure, {
+        name: `${campaignFolderName}/campaign_data.json`
+      });
+
+      console.log("Structure JSON uploadée:", finalResult);
+
+      return {
+        success: true,
+        ipfsHash: finalResult.ipfsHash,
+        url: finalResult.gatewayUrl,
+        data: folderStructure
+      };
+
+    } catch (error) {
+      console.error("Erreur lors de la création du dossier IPFS:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+      setUploadProgress({});
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!campaignForm.acceptTerms) {
-      alert("Veuillez accepter les conditions générales d'utilisation.");
-      return;
-    }
-
-    if (!contract) {
-      console.error("Contrat non initialisé");
-      alert("Erreur : le contrat n'est pas disponible. Veuillez vérifier votre connexion.");
-      return;
-    }
-
-    // Validation des champs requis
-    if (!campaignForm.name || !campaignForm.sharePrice || !campaignForm.numberOfNFTs || !campaignForm.endDate || !campaignForm.royaltyFee) {
-      alert("Veuillez remplir tous les champs requis.");
-      return;
-    }
-
+    if (!validateStep(4)) return;
+    setIsLoading(true);
+    setError(null);
+    console.log("Début de la soumission du formulaire");
     try {
-      console.log("Début de la soumission du formulaire");
+      // 1. Créer le dossier IPFS avec tous les documents
+      const ipfsResult = await createCampaignFolder(
+        formData,
+        formData.documents,
+        formData.media
+      );
+      console.log("Dossier IPFS créé:", ipfsResult);
 
-      // Gestion de l'adresse de l'avocat
-      let lawyerAddress = ethers.constants.AddressZero;
-      if (campaignForm.hasLawyer) {
-        // Vérifier si 'lawyer.address' est une adresse Ethereum valide
-        if (ethers.utils.isAddress(campaignForm.lawyer.address)) {
-          lawyerAddress = campaignForm.lawyer.address;
-        } else {
-          alert("Veuillez fournir une adresse Ethereum valide pour l'avocat.");
-          return;
-        }
+      if (!ipfsResult.success) {
+        throw new Error("Échec de l'upload IPFS");
       }
 
-      // Préparation des paramètres
-      const name = campaignForm.name;
-      const sharePrice = ethers.utils.parseEther(campaignForm.sharePrice.toString());
-      const numberOfNFTs = parseInt(campaignForm.numberOfNFTs);
-      const targetAmount = sharePrice.mul(numberOfNFTs);
-      const endDateTimestamp = Math.floor(new Date(campaignForm.endDate).getTime() / 1000);
-      const certified = campaignForm.hasLawyer;
-      const royaltyFee = parseInt(campaignForm.royaltyFee);
-
-      // Validation des paramètres
-      if (numberOfNFTs <= 0) {
-        alert("Le nombre de NFTs doit être supérieur à zéro.");
-        return;
-      }
-      if (royaltyFee < 0 || royaltyFee > 10000) { // 10000 basis points = 100%
-        alert("Les frais de royalties doivent être compris entre 0 et 10000 basis points.");
-        return;
-      }
-
-      // Affichage des paramètres pour vérification
-      console.log("Paramètres pour createCampaign :", {
-        name,
-        targetAmount: targetAmount.toString(),
-        sharePrice: sharePrice.toString(),
-        endDateTimestamp,
-        certified,
-        lawyerAddress,
-        royaltyFee,
-      });
-
-      // Appel de la fonction createCampaign via Thirdweb
-      console.log("Appel de la fonction createCampaign du contrat");
+      // 2. Créer la campagne sur la blockchain avec le hash IPFS
       const tx = await createCampaign({
         args: [
-          name,
-          targetAmount,
-          sharePrice,
-          endDateTimestamp,
-          certified,
-          lawyerAddress,
-          royaltyFee
+          formData.name,
+          formData.symbol,
+          ethers.utils.parseEther((parseFloat(formData.sharePrice) * parseFloat(formData.numberOfShares)).toFixed(18)),
+          ethers.utils.parseEther(formData.sharePrice),
+          Math.floor(new Date(formData.endDate).getTime() / 1000),
+          formData.certified,
+          formData.certified ? formData.lawyer.address : ethers.constants.AddressZero,
+          formData.sector === 'Autre' ? formData.otherSector : formData.sector,
+          ipfsResult.ipfsHash,
+          parseInt(formData.royaltyFee)
         ],
         overrides: {
-          value: ethers.utils.parseEther("0.02") // Frais de création de campagne
+          value: ethers.utils.parseEther("0.02")
         }
       });
+      console.log("Transaction envoyée:", tx);
 
-      console.log("Transaction envoyée :", tx);
+      // 3. Attendre la confirmation de la transaction
+      const receipt = await tx.wait();
+      console.log("Transaction confirmée:", receipt);
 
-      // Accéder directement à tx.receipt
-      const receipt = tx.receipt;
+      // 4. Extraire les informations de l'événement
+      const event = receipt.events.find((e) => e.event === 'CampaignCreated');
+      const [campaignAddress, creator, name, certified, lawyer, timestamp] = event.args;
+      console.log("Événement CampaignCreated:", { campaignAddress, creator, name, certified, lawyer, timestamp });
 
-      if (receipt) {
-        console.log("Transaction confirmée :", receipt.transactionHash);
+      setTransactionHash(receipt.transactionHash);
 
-        // Vérifier les événements dans le reçu
-        const event = receipt.events.find((e) => e.event === "CampaignCreated");
+      // 5. Confirmation et nettoyage
+      handleCreateCampaign({
+        ...formData,
+        ipfsHash: ipfsResult.ipfsHash,
+        ipfsUrl: ipfsResult.url,
+        campaignAddress: campaignAddress,
+        name: name
+      });
+      console.log("handleCreateCampaign appelé");
 
-        if (!event) {
-          console.error("Événement CampaignCreated introuvable dans le receipt :", receipt);
-          alert("Erreur lors de la création de la campagne. L'événement CampaignCreated n'a pas été émis.");
-          return;
-        }
+      setCampaignCreated(true);
+      console.log("campaignCreated mis à true");
 
-        const campaignAddress = event.args.campaignAddress;
-
-        console.log("Adresse de la campagne créée :", campaignAddress);
-
-        // Upload des documents vers Firebase Storage
-        const documentsURLs = [];
-        for (const file of campaignForm.documents) {
-          const storageRef = ref(storage, `campaigns/${campaignAddress}/documents/${file.name}`);
-          await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(storageRef);
-          documentsURLs.push({ name: file.name, url: downloadURL });
-          console.log(`Document ${file.name} uploadé avec succès`);
-        }
-
-        // Upload des médias vers Firebase Storage
-        const mediaURLs = [];
-        for (const file of campaignForm.media) {
-          const storageRef = ref(storage, `campaigns/${campaignAddress}/media/${file.name}`);
-          await uploadBytes(storageRef, file);
-          const downloadURL = await getDownloadURL(storageRef);
-          mediaURLs.push({ name: file.name, url: downloadURL });
-          console.log(`Média ${file.name} uploadé avec succès`);
-        }
-
-        // Enregistrer les données supplémentaires dans Firebase
-        await setDoc(doc(db, "campaigns", campaignAddress), {
-          creatorAddress: campaignForm.creatorAddress,
-          name: campaignForm.name,
-          sector: campaignForm.sector,
-          description: campaignForm.description,
-          sharePrice: campaignForm.sharePrice,
-          numberOfNFTs: campaignForm.numberOfNFTs,
-          goal: campaignForm.goal,
-          endDate: campaignForm.endDate,
-          documents: documentsURLs,
-          media: mediaURLs,
-          teamMembers: campaignForm.teamMembers,
-          hasLawyer: campaignForm.hasLawyer,
-          lawyer: campaignForm.hasLawyer ? campaignForm.lawyer : null,
-          royaltyFee: campaignForm.royaltyFee,
-          investmentTerms: campaignForm.investmentTerms,
-          companyShares: campaignForm.companyShares,
-          timestamp: new Date(),
-        });
-
-        console.log("Données de la campagne enregistrées dans Firebase");
-
-        // Réinitialiser le formulaire et le stockage local
-        setCampaignForm(initialFormState);
-        localStorage.removeItem('campaignForm');
-
-        console.log("Campagne créée avec succès:", campaignAddress);
-        handleCreateCampaign(campaignForm); // Gérer la logique après la création de la campagne
-        setShowCreateCampaign(false); // Fermer le modal après la soumission
-      } else {
-        // Si tx.receipt n'existe pas
-        console.log("Transaction envoyée et confirmée :", tx);
-        alert("La transaction a été envoyée, mais la confirmation n'a pas pu être récupérée automatiquement.");
-      }
     } catch (error) {
-      console.error("Erreur lors de la création de la campagne :", error);
-      alert(`Erreur lors de la création de la campagne : ${error.message || error}`);
+      console.error("Erreur lors de la création de la campagne:", error);
+      setError(error.message || "Erreur lors de la création de la campagne");
+    } finally {
+      setIsLoading(false);
+      console.log("Chargement terminé");
     }
   };
 
@@ -358,501 +453,646 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     </TooltipProvider>
   );
 
+  const renderStepContent = () => {
+    switch(currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Informations de Base</h2>
+            <div>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="creatorAddress">Adresse du créateur</Label>
+                <InfoTooltip content="L'adresse Ethereum du créateur de la campagne" />
+              </div>
+              <Input
+                id="creatorAddress"
+                name="creatorAddress"
+                value={formData.creatorAddress}
+                readOnly
+                className="bg-gray-100 dark:bg-neutral-800 cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <Label htmlFor="name">Nom de la campagne</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Nom de votre projet"
+                required
+              />
+              {error?.name && <p className="text-red-500 text-sm">{error.name}</p>}
+            </div>
+            <div>
+              <Label htmlFor="symbol">Symbole</Label>
+              <Input
+                id="symbol"
+                name="symbol"
+                value={formData.symbol}
+                onChange={handleInputChange}
+                placeholder="3-4 caractères (ex: BTC)"
+                maxLength={4}
+                required
+              />
+              {error?.symbol && <p className="text-red-500 text-sm">{error.symbol}</p>}
+            </div>
+            <div>
+              <Label htmlFor="sector">Secteur</Label>
+              <Select 
+                value={formData.sector}
+                onValueChange={(value) => handleSelectChange(value, 'sector')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un secteur" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SECTORS.map((sector) => (
+                    <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {error?.sector && <p className="text-red-500 text-sm">{error.sector}</p>}
+            </div>
+            {formData.sector === 'Autre' && (
+              <div>
+                <Label htmlFor="otherSector">Précisez le secteur</Label>
+                <Input
+                  id="otherSector"
+                  name="otherSector"
+                  value={formData.otherSector}
+                  onChange={handleInputChange}
+                  placeholder="Précisez le secteur d'activité"
+                  required
+                />
+                {error?.otherSector && <p className="text-red-500 text-sm">{error.otherSector}</p>}
+              </div>
+            )}
+            <div>
+              <Label htmlFor="nationality">Nationalité du Projet</Label>
+              <Select
+                value={formData.nationality}
+                onValueChange={(value) => handleSelectChange(value, 'nationality')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez une nationalité" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((country) => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {error?.nationality && <p className="text-red-500 text-sm">{error.nationality}</p>}
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Description détaillée de votre projet"
+                rows={5}
+                required
+              />
+              {error?.description && <p className="text-red-500 text-sm">{error.description}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="sharePrice">Prix par part (ETH)</Label>
+                <Input
+                  id="sharePrice"
+                  name="sharePrice"
+                  type="number"
+                  step="0.000000000000000001"
+                  value={formData.sharePrice}
+                  onChange={handleInputChange}
+                  required
+                />
+                {error?.sharePrice && <p className="text-red-500 text-sm">{error.sharePrice}</p>}
+              </div>
+              <div>
+                <Label htmlFor="numberOfShares">Nombre de parts</Label>
+                <Input
+                  id="numberOfShares"
+                  name="numberOfShares"
+                  type="number"
+                  value={formData.numberOfShares}
+                  onChange={handleInputChange}
+                  required
+                />
+                {error?.numberOfShares && <p className="text-red-500 text-sm">{error.numberOfShares}</p>}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="targetAmount">Objectif Final (ETH)</Label>
+              <Input
+                id="targetAmount"
+                name="targetAmount"
+                value={(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)}
+                readOnly
+                className="bg-gray-100 dark:bg-neutral-800"
+              />
+            </div>
+            <div>
+              <Label htmlFor="endDate">Date de fin</Label>
+              <Input
+                id="endDate"
+                name="endDate"
+                type="datetime-local"
+                value={formData.endDate}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="royaltyFee">
+                  Frais de royalties (basis points)
+                  <InfoTooltip content="100 basis points = 1%" />
+                </Label>
+                <Input
+                  id="royaltyFee"
+                  name="royaltyFee"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  value={formData.royaltyFee}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="royaltyReceiver">Adresse de réception des royalties</Label>
+                <Input
+                  id="royaltyReceiver"
+                  name="royaltyReceiver"
+                  value={formData.royaltyReceiver}
+                  onChange={handleInputChange}
+                  placeholder="0x..."
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Documents et Médias</h2>
+            <div>
+              <Label htmlFor="whitepaper">Whitepaper</Label>
+              <Input
+                id="whitepaper"
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setFormData({...formData, whitepaper: e.target.files[0]})}
+                required
+              />
+              <InfoTooltip content="Document détaillant votre projet, sa technologie et son modèle économique" />
+            </div>
+            <div>
+              <Label htmlFor="pitchDeck">Pitch Deck</Label>
+              <Input
+                id="pitchDeck"
+                type="file"
+                accept=".pdf,.ppt,.pptx"
+                onChange={(e) => setFormData({...formData, pitchDeck: e.target.files[0]})}
+              />
+              <InfoTooltip content="Présentation visuelle de votre projet pour les investisseurs" />
+            </div>
+            <div>
+              <Label htmlFor="legalDocuments">Documents Légaux</Label>
+              <Input
+                id="legalDocuments"
+                type="file"
+                accept=".pdf"
+                onChange={(e) => setFormData({...formData, legalDocuments: e.target.files[0]})}
+              />
+              <InfoTooltip content="Documents juridiques relatifs à votre projet ou entreprise" />
+            </div>
+            <div>
+              <Label>Documents Additionnels</Label>
+              <div className="mt-2 p-4 border rounded-lg space-y-4">
+                <Input
+                  type="file"
+                  multiple
+                  onChange={(e) => handleFileChange(e, 'documents')}
+                />
+                <ScrollArea className="h-32">
+                  {formData.documents.map((doc, index) => (
+                    <div key={index} className="flex items-center justify-between py-2">
+                      <span className="text-sm">{doc.name}</span>
+                      {uploadProgress[doc.name] !== undefined && (
+                        <div className="w-24 bg-gray-200 rounded-full h-2.5">
+                          <div
+                            className="bg-lime-600 h-2.5 rounded-full"
+                            style={{ width: `${uploadProgress[doc.name]}%` }}
+                          ></div>
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index, 'documents')}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+            </div>
+            <div>
+              <Label>Médias du Projet</Label>
+              <div className="mt-2 p-4 border rounded-lg space-y-4">
+                <Input
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  onChange={(e) => handleFileChange(e, 'media')}
+                />
+                <ScrollArea className="h-32">
+                  {formData.media.map((media, index) => (
+                    <div key={index} className="flex items-center justify-between py-2">
+                      <span className="text-sm">{media.name}</span>
+                      {uploadProgress[media.name] !== undefined && (
+                        <div className="w-24 bg-gray-200 rounded-full h-2.5">
+                          <div
+                            className="bg-lime-600 h-2.5 rounded-full"
+                            style={{ width: `${uploadProgress[media.name]}%` }}
+                          ></div>
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index, 'media')}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="roadmap">Roadmap</Label>
+              <Textarea
+                id="roadmap"
+                name="roadmap"
+                value={formData.metadata.roadmap}
+                onChange={(e) => handleNestedInputChange(e, 'metadata')}
+                placeholder="Décrivez les étapes clés de votre projet"
+                rows={3}
+              />
+              <InfoTooltip content="Plan détaillé des étapes futures de votre projet" />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="distributeTokens"
+                  checked={formData.distributeTokens}
+                  onCheckedChange={() => handleCheckboxChange('distributeTokens')}
+                />
+                <Label htmlFor="distributeTokens">Comptez-vous distribuer des tokens aux VC ?</Label>
+              </div>
+              {formData.distributeTokens && (
+                <div>
+                  <Label htmlFor="tokenomics">Tokenomics</Label>
+                  <Textarea
+                    id="tokenomics"
+                    name="tokenomics"
+                    value={formData.metadata.tokenomics}
+                    onChange={(e) => handleNestedInputChange(e, 'metadata')}
+                    placeholder="Décrivez la distribution et l'utilisation des tokens"
+                    rows={3}
+                  />
+                  <InfoTooltip content="Détails sur la distribution et l'utilisation des tokens de votre projet" />
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="vestingPlan"
+                  checked={formData.vestingPlan}
+                  onCheckedChange={() => handleCheckboxChange('vestingPlan')}
+                />
+                <Label htmlFor="vestingPlan">Avez-vous un plan de vesting ?</Label>
+              </div>
+              {formData.vestingPlan && (
+                <div>
+                  <Label htmlFor="vesting">Vesting</Label>
+                  <Textarea
+                    id="vesting"
+                    name="vesting"
+                    value={formData.metadata.vesting}
+                    onChange={(e) => handleNestedInputChange(e, 'metadata')}
+                    placeholder="Décrivez le calendrier de vesting"
+                    rows={3}
+                  />
+                  <InfoTooltip content="Calendrier de libération progressive des tokens ou actions" />
+                </div>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="useOfFunds">Utilisation des Fonds</Label>
+              <Textarea
+                id="useOfFunds"
+                name="useOfFunds"
+                value={formData.metadata.useOfFunds}
+                onChange={(e) => handleNestedInputChange(e, 'metadata')}
+                placeholder="Décrivez comment les fonds seront utilisés"
+                rows={3}
+              />
+              <InfoTooltip content="Explication détaillée de la manière dont les fonds levés seront utilisés" />
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Équipe et Réseaux Sociaux du Projet</h2>
+            {formData.teamMembers.map((member, index) => (
+              <div key={index} className="p-4 border rounded-md space-y-2">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">Membre {index + 1}</h3>
+                  {index > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeTeamMember(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <div>
+                  <Label>Nom du Membre</Label>
+                  <Input 
+                    value={member.name}
+                    onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
+                    placeholder="Nom du membre"
+                  />
+                </div>
+                <div>
+                  <Label>Rôle du Membre</Label>
+                  <Input 
+                    value={member.role}
+                    onChange={(e) => handleTeamMemberChange(index, 'role', e.target.value)}
+                    placeholder="Rôle du membre"
+                  />
+                </div>
+                <div>
+                  <Label>Twitter</Label>
+                  <Input 
+                    value={member.socials.twitter}
+                    onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'twitter')}
+                    placeholder="Lien Twitter"
+                  />
+                </div>
+                <div>
+                  <Label>LinkedIn</Label>
+                  <Input 
+                    value={member.socials.linkedin}
+                    onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'linkedin')}
+                    placeholder="Lien LinkedIn"
+                  />
+                </div>
+              </div>
+            ))}
+            <Button type="button" onClick={addTeamMember} className="mt-2">
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter un membre
+            </Button>
+
+            <h3 className="text-lg font-semibold mt-6">Réseaux Sociaux du Projet</h3>
+            {Object.entries(formData.socials).map(([network, value]) => (
+              <div key={network} className="flex items-center space-x-2">
+                <Label htmlFor={network}>{network.charAt(0).toUpperCase() + network.slice(1)}</Label>
+                <Input 
+                  id={network}
+                  value={value}
+                  onChange={(e) => handleSocialChange(network, e.target.value)}
+                  placeholder={`Lien ${network}`}
+                />
+                <Button type="button" onClick={() => removeSocial(network)} className="bg-red-500 hover:bg-red-600 text-white">
+                  <Trash2 className="w-4" />
+                </Button>
+              </div>
+            ))}
+
+            <div className="space-y-4 mt-8">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="certified"
+                  checked={formData.certified}
+                  onCheckedChange={() => handleCheckboxChange('certified')}
+                />
+                <Label htmlFor="certified">Campagne Certifiée</Label>
+              </div>
+              {formData.certified && (
+                <div className="p-4 border rounded-lg space-y-4">
+                  <div>
+                    <Label>Adresse de l'avocat</Label>
+                    <Input
+                      value={formData.lawyer.address}
+                      onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                      name="address"
+                      placeholder="Adresse Ethereum de l'avocat"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label>Nom de l'avocat</Label>
+                    <Input
+                      value={formData.lawyer.name}
+                      onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                      name="name"
+                      placeholder="Nom complet"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label>Contact</Label>
+                    <Input
+                      value={formData.lawyer.contact}
+                      onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                      name="contact"
+                      placeholder="Email ou téléphone"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label>Juridiction</Label>
+                    <Input
+                      value={formData.lawyer.jurisdiction}
+                      onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                      name="jurisdiction"
+                      placeholder="Pays ou juridiction"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Vérification et Conditions</h2>
+            <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <h3 className="font-semibold mb-4">Récapitulatif de la Campagne</h3>
+              <div className="space-y-2">
+                <p><strong>Nom de la campagne:</strong> {formData.name}</p>
+                <p><strong>Symbole:</strong> {formData.symbol}</p>
+                <p><strong>Secteur:</strong> {formData.sector}</p>
+                <p><strong>Nationalité:</strong> {formData.nationality}</p>
+                <p><strong>Prix par part:</strong> {formData.sharePrice} ETH</p>
+                <p><strong>Nombre de parts:</strong> {formData.numberOfShares}</p>
+                <p><strong>Objectif final:</strong> {(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)} ETH</p>
+                <p><strong>Date de fin:</strong> {new Date(formData.endDate).toLocaleString()}</p>
+                <p><strong>Frais de royalties:</strong> {formData.royaltyFee} basis points</p>
+                <p><strong>Campagne certifiée:</strong> {formData.certified ? 'Oui' : 'Non'}</p>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+              <h3 className="font-semibold mb-4">Frais de création</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Frais de création</span>
+                  <span>0.02 ETH</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Commission plateforme</span>
+                  <span>15%</span>
+                </div>
+                {formData.certified && (
+                  <div className="flex justify-between">
+                    <span>Frais de certification</span>
+                    <span>0.05 ETH</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="acceptTerms"
+                  checked={formData.acceptTerms}
+                  onCheckedChange={() => handleCheckboxChange('acceptTerms')}
+                  required
+                />
+                <Label htmlFor="acceptTerms">
+                  J'accepte les conditions générales d'utilisation
+                </Label>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
-      <DialogContent className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-gray-50 max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Créer une nouvelle campagne</DialogTitle>
+          <DialogTitle>Créer une nouvelle campagne</DialogTitle>
           <DialogDescription>
             Remplissez les détails de votre campagne pour la créer.
           </DialogDescription>
         </DialogHeader>
-        <Alert className="mb-6 bg-red-900 border-red-700 text-white">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            L'application applique une commission de 15% sur tout achat de la campagne.
-          </AlertDescription>
-        </Alert>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Adresse du créateur (Lecture seule) */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="creatorAddress">Adresse du créateur</Label>
-              <InfoTooltip content="L'adresse Ethereum du créateur de la campagne est renseignée automatiquement." />
-            </div>
-            <Input
-              id="creatorAddress"
-              name="creatorAddress"
-              type="text"
-              value={campaignForm.creatorAddress}
-              readOnly
-              className="bg-gray-100 dark:bg-neutral-800 cursor-not-allowed"
-              required
-            />
-          </div>
 
-          {/* Nom de la campagne */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="name">Nom de la campagne</Label>
-              <InfoTooltip content="Donnez un nom unique et descriptif à votre campagne." />
-            </div>
-            <Input
-              id="name"
-              name="name"
-              value={campaignForm.name}
-              onChange={handleInputChange}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          {/* Secteur d'activité */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="sector">Secteur d'activité</Label>
-              <InfoTooltip content="Choisissez le secteur qui correspond le mieux à votre projet." />
-            </div>
-            <Select onValueChange={(value) => handleSelectChange(value, 'sector')} required>
-              <SelectTrigger className="bg-gray-50 dark:bg-neutral-900">
-                <SelectValue placeholder="Sélectionnez un secteur" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Technologie">Technologie</SelectItem>
-                <SelectItem value="Finance">Finance</SelectItem>
-                <SelectItem value="Santé">Santé</SelectItem>
-                <SelectItem value="Éducation">Éducation</SelectItem>
-                <SelectItem value="Autre">Autre</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Description du projet */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="description">Description du projet</Label>
-              <InfoTooltip content="Décrivez votre projet en détail. Soyez clair et concis." />
-            </div>
-            <Textarea
-              id="description"
-              name="description"
-              value={campaignForm.description}
-              onChange={handleInputChange}
-              placeholder="Veuillez renseigner ce champ."
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          {/* Prix par part */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="sharePrice">Prix par part (en ETH)</Label>
-              <InfoTooltip content="Définissez le prix d'une part de votre projet en ETH." />
-            </div>
-            <Input
-              id="sharePrice"
-              name="sharePrice"
-              type="number"
-              step="any"
-              min="0.000000000000000001"
-              value={campaignForm.sharePrice}
-              onChange={handleInputChange}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          {/* Nombre de NFTs à Mint */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="numberOfNFTs">Nombre de NFTs à Mint</Label>
-              <InfoTooltip content="Définissez le nombre de NFTs que vous souhaitez mint pour cette campagne." />
-            </div>
-            <Input
-              id="numberOfNFTs"
-              name="numberOfNFTs"
-              type="number"
-              min="1"
-              value={campaignForm.numberOfNFTs}
-              onChange={handleInputChange}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          {/* Objectif de levée (Calculé Automatiquement) */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="goal">Objectif de levée (en ETH)</Label>
-              <InfoTooltip content="Ce champ est calculé automatiquement en fonction du nombre de NFTs et du prix par NFT." />
-            </div>
-            <Input
-              id="goal"
-              name="goal"
-              type="text"
-              value={campaignForm.goal}
-              readOnly
-              className="bg-gray-100 dark:bg-neutral-800 cursor-not-allowed"
-            />
-          </div>
-
-          {/* Date de fin */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="endDate">Date de fin</Label>
-              <InfoTooltip content="Choisissez la date de clôture de votre campagne." />
-            </div>
-            <Input
-              id="endDate"
-              name="endDate"
-              type="date"
-              value={campaignForm.endDate}
-              onChange={handleInputChange}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          {/* Frais de Royalties */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="royaltyFee">Frais de Royalties (en basis points)</Label>
-              <InfoTooltip content="Définissez les frais de royalties en basis points (1% = 100 basis points)." />
-            </div>
-            <Input
-              id="royaltyFee"
-              name="royaltyFee"
-              type="number"
-              min="0"
-              max="10000"
-              value={campaignForm.royaltyFee}
-              onChange={handleInputChange}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          {/* Conditions de rémunération des investisseurs */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="remunerationType">Type de rémunération</Label>
-              <InfoTooltip content="Définissez le type de rémunération pour les investisseurs." />
-            </div>
-            <Input
-              id="remunerationType"
-              name="remunerationType"
-              value={campaignForm.investmentTerms.remunerationType}
-              onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="tokenDistribution">Distribution de tokens</Label>
-              <InfoTooltip content="Définissez comment les tokens seront distribués aux investisseurs." />
-            </div>
-            <Input
-              id="tokenDistribution"
-              name="tokenDistribution"
-              value={campaignForm.investmentTerms.tokenDistribution}
-              onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="roi">Temps de retour sur investissement estimé</Label>
-              <InfoTooltip content="Indiquez le temps estimé pour le retour sur investissement." />
-            </div>
-            <Input
-              id="roi"
-              name="roi"
-              value={campaignForm.investmentTerms.roi}
-              onChange={(e) => handleNestedInputChange(e, 'investmentTerms')}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          {/* Part de la société */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="percentageMinted">Pourcentage de la société minté</Label>
-              <InfoTooltip content="Indiquez le pourcentage de la société qui a été minté." />
-            </div>
-            <Input
-              id="percentageMinted"
-              name="percentageMinted"
-              type="number"
-              min="0"
-              max="100"
-              value={campaignForm.companyShares.percentageMinted}
-              onChange={(e) => handleNestedInputChange(e, 'companyShares')}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="vertePortalLink">Lien vers le portail Verte</Label>
-              <InfoTooltip content="Entrez le lien vers le portail Verte de votre société." />
-            </div>
-            <Input
-              id="vertePortalLink"
-              name="vertePortalLink"
-              type="url"
-              value={campaignForm.companyShares.vertePortalLink}
-              onChange={(e) => handleNestedInputChange(e, 'companyShares')}
-              className="bg-gray-50 dark:bg-neutral-900"
-              required
-            />
-          </div>
-
-          {/* Campagne avec avocat */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasLawyer"
-              checked={campaignForm.hasLawyer}
-              onCheckedChange={() => handleCheckboxChange('hasLawyer')}
-            />
-            <Label htmlFor="hasLawyer">Campagne avec avocat</Label>
-            <InfoTooltip content="Cochez cette case si votre campagne est assistée par un avocat." />
-          </div>
-
-          {/* Informations sur l'avocat */}
-          {campaignForm.hasLawyer && (
-            <>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="lawyerName">Nom de l'avocat</Label>
-                  <InfoTooltip content="Entrez le nom complet de l'avocat associé à votre campagne." />
+        {!campaignCreated ? (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex justify-between mb-8">
+              {[1, 2, 3, 4].map((step) => (
+                <div
+                  key={step}
+                  className={`flex items-center ${step < currentStep ? 'text-green-500' : step === currentStep ? 'text-blue-500' : 'text-gray-300'}`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 
+                    ${step < currentStep ? 'border-green-500 bg-green-100' : 
+                      step === currentStep ? 'border-blue-500 bg-blue-100' : 
+                      'border-gray-300'}`}
+                  >
+                    {step < currentStep ? '✓' : step}
+                  </div>
+                  {step < 4 && (
+                    <div className={`w-full h-0.5 mx-2 
+                      ${step < currentStep ? 'bg-green-500' : 'bg-gray-300'}`} 
+                    />
+                  )}
                 </div>
-                <Input
-                  id="lawyerName"
-                  name="name"
-                  value={campaignForm.lawyer.name}
-                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  className="bg-gray-50 dark:bg-neutral-900"
-                  required
-                />
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="lawyerContact">Contact de l'avocat</Label>
-                  <InfoTooltip content="Fournissez une adresse e-mail pour contacter l'avocat." />
-                </div>
-                <Input
-                  id="lawyerContact"
-                  name="contact"
-                  value={campaignForm.lawyer.contact}
-                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  className="bg-gray-50 dark:bg-neutral-900"
-                  required
-                />
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="lawyerPhone">Téléphone de l'avocat</Label>
-                  <InfoTooltip content="Indiquez le numéro de téléphone professionnel de l'avocat." />
-                </div>
-                <Input
-                  id="lawyerPhone"
-                  name="phone"
-                  value={campaignForm.lawyer.phone}
-                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  className="bg-gray-50 dark:bg-neutral-900"
-                />
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="lawyerAddress">Adresse Ethereum de l'avocat</Label>
-                  <InfoTooltip content="Entrez l'adresse Ethereum de l'avocat." />
-                </div>
-                <Input
-                  id="lawyerAddress"
-                  name="address"
-                  value={campaignForm.lawyer.address}
-                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  className="bg-gray-50 dark:bg-neutral-900"
-                  required
-                />
-              </div>
-            </>
-          )}
-
-          {/* Équipe */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label>Équipe</Label>
-              <InfoTooltip content="Ajoutez les membres clés de votre équipe et leurs rôles." />
+              ))}
             </div>
-            {campaignForm.teamMembers.map((member, index) => (
-              <div key={index} className="mt-2 space-y-2 p-4 bg-gray-100 dark:bg-neutral-900 rounded-md">
-                <Input
-                  placeholder="Nom"
-                  value={member.name}
-                  onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
-                  className="bg-white dark:bg-neutral-900"
-                />
-                <Input
-                  placeholder="Rôle"
-                  value={member.role}
-                  onChange={(e) => handleTeamMemberChange(index, 'role', e.target.value)}
-                  className="bg-white dark:bg-neutral-900"
-                />
-                <Input
-                  placeholder="Twitter"
-                  value={member.twitter}
-                  onChange={(e) => handleTeamMemberChange(index, 'twitter', e.target.value)}
-                  className="bg-white dark:bg-neutral-900"
-                />
-                <Input
-                  placeholder="Facebook"
-                  value={member.facebook}
-                  onChange={(e) => handleTeamMemberChange(index, 'facebook', e.target.value)}
-                  className="bg-white dark:bg-neutral-900"
-                />
+
+            <div className="mb-8">
+              {renderStepContent()}
+            </div>
+
+            <div className="flex justify-between">
+              {currentStep > 1 && (
                 <Button
                   type="button"
-                  onClick={() => removeTeamMember(index)}
-                  className="bg-red-500 hover:bg-red-600 text-white"
+                  variant="outline"
+                  onClick={handlePreviousStep}
+                  disabled={currentStep === 1 || isLoading}
                 >
-                  <Minus className="w-4 h-4 mr-2" />
-                  Supprimer ce membre
+                  Précédent
                 </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              onClick={addTeamMember}
-              className="mt-2 bg-lime-500 hover:bg-lime-400 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter un membre
+              )}
+              
+              {currentStep < 4 ? (
+                <Button type="button" onClick={handleNextStep} disabled={isLoading}>
+                  Suivant
+                </Button>
+              ) : (
+                <Button type="submit" className="bg-lime-600 hover:bg-lime-700" disabled={isLoading || !formData.acceptTerms}>
+                  {isLoading ? "Création en cours..." : "Créer la campagne"}
+                </Button>
+              )}
+            </div>
+          </form>
+        ) : (
+          <div className="text-center space-y-4">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+            <h3 className="text-2xl font-bold">Campagne "{formData.name}" créée avec succès!</h3>
+            <p>Votre campagne a été créée et est maintenant visible sur la plateforme.</p>
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+              <p className="font-semibold">Hash de la transaction:</p>
+              <a 
+                href={`https://sepolia.basescan.org/tx/${transactionHash}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline break-all"
+              >
+                {transactionHash}
+              </a>
+            </div>
+            <Button onClick={() => setShowCreateCampaign(false)} className="mt-4">
+              Fermer
             </Button>
           </div>
+        )}
 
-          {/* Documents de la campagne */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="documents">Documents de la campagne</Label>
-              <InfoTooltip content="Téléchargez les documents pertinents pour votre campagne (business plan, pitch deck, etc.)." />
-            </div>
-            <div className="mt-2 flex items-center space-x-2">
-              <Input
-                id="documents"
-                name="documents"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'documents')}
-                multiple
-                className="hidden"
-              />
-              <Button
-                type="button"
-                onClick={() => document.getElementById('documents').click()}
-                className="bg-lime-500 hover:bg-lime-400 text-white font-bold"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Parcourir
-              </Button>
-              <span className="text-sm text-gray-400">
-                {campaignForm.documents.length} fichier(s) sélectionné(s)
-              </span>
-            </div>
-            {campaignForm.documents.length > 0 && (
-              <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-50 dark:bg-neutral-900">
-                {campaignForm.documents.map((file, index) => (
-                  <div key={index} className="flex justify-between items-center py-1">
-                    <span className="text-sm text-neutral-900 dark:text-gray-300">{file.name}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index, 'documents')}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Supprimer
-                    </Button>
-                  </div>
-                ))}
-              </ScrollArea>
-            )}
-          </div>
-
-          {/* Médias de la campagne */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <Label htmlFor="media">Médias de la campagne</Label>
-              <InfoTooltip content="Ajoutez des vidéos ou autres médias pour présenter votre projet." />
-            </div>
-            <div className="mt-2 flex items-center space-x-2">
-              <Input
-                id="media"
-                name="media"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'media')}
-                multiple
-                accept="video/*"
-                className="hidden"
-              />
-              <Button
-                type="button"
-                onClick={() => document.getElementById('media').click()}
-                className="bg-lime-500 hover:bg-lime-400 text-white font-bold"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Ajouter des médias
-              </Button>
-              <span className="text-sm text-gray-400">
-                {campaignForm.media.length} média(s) sélectionné(s)
-              </span>
-            </div>
-            {campaignForm.media.length > 0 && (
-              <ScrollArea className="h-32 w-full border rounded-md mt-2 p-2 bg-gray-50 dark:bg-neutral-900">
-                {campaignForm.media.map((file, index) => (
-                  <div key={index} className="flex justify-between items-center py-1">
-                    <span className="text-sm text-neutral-900 dark:text-gray-300">{file.name}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index, 'media')}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Supprimer
-                    </Button>
-                  </div>
-                ))}
-              </ScrollArea>
-            )}
-          </div>
-
-          {/* Acceptation des conditions */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="acceptTerms"
-              checked={campaignForm.acceptTerms}
-              onCheckedChange={() => handleCheckboxChange('acceptTerms')}
-              required
-            />
-            <Label htmlFor="acceptTerms">
-              J'accepte les conditions générales d'utilisation et je décharge l'application de toute responsabilité
-            </Label>
-            <InfoTooltip content="En cochant cette case, vous acceptez nos conditions d'utilisation et notre politique de confidentialité." />
-          </div>
-
-          {/* Bouton de soumission */}
-          <Button type="submit" className="w-full bg-lime-600 hover:bg-lime-700 text-white" disabled={!campaignForm.acceptTerms || writeLoading}>
-            {writeLoading ? "Création en cours..." : "Créer la campagne"}
-          </Button>
-        </form>
+        {error && Object.keys(error).length > 0 && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {Object.values(error).map((err, index) => (
+                <div key={index}>{err}</div>
+              ))}
+            </AlertDescription>
+          </Alert>
+        )}
       </DialogContent>
     </Dialog>
   );
-}
+} 

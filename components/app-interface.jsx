@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Pour rediriger l'utilisateur
+import { useRouter } from 'next/navigation';
 import Header from './layout/Header';
 import Sidebar from './layout/Sidebar';
 import Home from './Pages/Home';
@@ -10,34 +10,33 @@ import Discussions from './Pages/Discussions';
 import News from './Pages/News';
 import Favorites from './Pages/Favorites';
 import Campaign from './Pages/Campaign';
-import { useDisconnect, useAddress } from '@thirdweb-dev/react'; // Importation de Thirdweb pour la déconnexion et l'adresse du wallet
-import { doc, getDoc } from "firebase/firestore"; // Pour récupérer les données de l'utilisateur
-import { db } from "@/lib/firebase/firebase"; // Assurez-vous que Firebase est bien importé
+
+import { useDisconnect, useAddress } from '@thirdweb-dev/react';
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/firebase";
 
 export default function AppInterface() {
   const [activePage, setActivePage] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [username, setUsername] = useState("Utilisateur"); // Par défaut, on met "Utilisateur"
-  const disconnect = useDisconnect(); // Utilisation de Thirdweb pour déconnecter
-  const address = useAddress(); // Récupérer l'adresse du wallet
-  const router = useRouter(); // Utilisé pour rediriger l'utilisateur
+  const [username, setUsername] = useState("Utilisateur");
+  const disconnect = useDisconnect();
+  const address = useAddress();
+  const router = useRouter();
 
-  // Si l'utilisateur n'est pas connecté, rediriger vers la page Home
   useEffect(() => {
     if (!address) {
-      router.push('/'); // Rediriger vers Home si pas connecté
+      router.push('/');
     }
   }, [address, router]);
 
-  // Fonction pour récupérer les infos utilisateur depuis Firebase
   useEffect(() => {
     const fetchUserData = async () => {
       if (address) {
         const userDoc = await getDoc(doc(db, "users", address));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setUsername(userData.username || "Utilisateur"); // Récupérer le pseudo
+          setUsername(userData.username || "Utilisateur");
         }
       }
     };
@@ -47,7 +46,7 @@ export default function AppInterface() {
 
   const handleDisconnect = () => {
     disconnect();
-    router.push('/'); // Redirige vers la page d'accueil après déconnexion
+    router.push('/');
   };
 
   const toggleDarkMode = () => {
@@ -59,6 +58,27 @@ export default function AppInterface() {
     }
   };
 
+  const renderActivePage = () => {
+    switch (activePage) {
+      case 'home':
+        return <Home />;
+      case 'wallet':
+        return <Wallet />;
+      case 'discussions':
+        return <Discussions username={username} />;
+      case 'news':
+        return <News />;
+      case 'favorites':
+        return <Favorites />;
+      case 'campaign':
+        return <Campaign />;
+      case 'pinata-test':
+        return <PinataTest />;
+      default:
+        return <Home />;
+    }
+  };
+
   return (
     <div className={`flex flex-col h-screen ${darkMode ? 'dark' : ''}`}>
       <Header
@@ -66,8 +86,8 @@ export default function AppInterface() {
         toggleDarkMode={toggleDarkMode}
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
-        username={username} // Passer le pseudo au Header
-        disconnect={handleDisconnect} // Passer la fonction de déconnexion pour gérer la redirection
+        username={username}
+        disconnect={handleDisconnect}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -77,12 +97,7 @@ export default function AppInterface() {
           setShowMobileMenu={setShowMobileMenu}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-950 p-6 md:p-8 transition-all duration-300 ease-in-out">
-          {activePage === 'home' && <Home />}
-          {activePage === 'wallet' && <Wallet />}
-          {activePage === 'discussions' && <Discussions username={username} />}
-          {activePage === 'news' && <News />}
-          {activePage === 'favorites' && <Favorites />}
-          {activePage === 'campaign' && <Campaign />}
+          {renderActivePage()}
         </main>
       </div>
     </div>
