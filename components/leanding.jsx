@@ -1,5 +1,3 @@
-// components/leanding.jsx
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,9 +12,9 @@ import { db } from "@/lib/firebase/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
-import FundRaisingPlatformABI from "@/ABI/FundRaisingPlatformABI.json"; // Assurez-vous que ce chemin est correct et que l'ABI est à jour
+import FundRaisingPlatformABI from "@/ABI/DivarProxyABI.json";
 
-import { ethers } from "ethers"; // Importer ethers pour manipuler les valeurs ETH
+import { ethers } from "ethers";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
@@ -36,23 +34,16 @@ export default function Home() {
   const address = useAddress();
   const router = useRouter();
 
-  // Adresse de votre contrat déployé
-  const contractAddress = "0xD624ddFe214734dAceA2aacf8bb47e837B5228DD"; // Remplacez par votre adresse de contrat
+  const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
-  // Utiliser le hook useContract pour obtenir l'instance du contrat
-  const { contract, isLoading: contractLoading, error: contractError } = useContract(
-    contractAddress,
-    FundRaisingPlatformABI
-  );
+  const { contract } = useContract(contractAddress, FundRaisingPlatformABI);
 
-  // Utiliser useContractRead pour lire le mapping registeredUsers
   const { data: isRegisteredData, isLoading: readLoading, error: readError } = useContractRead(
     contract,
-    "registeredUsers",
-    [address] // Passer l'adresse dans un tableau
+    "isUserRegistered",
+    [address]
   );
 
-  // Mettre à jour l'état d'inscription basé sur la lecture du contrat
   useEffect(() => {
     if (isRegisteredData !== undefined) {
       setIsRegistered(isRegisteredData);
@@ -60,22 +51,19 @@ export default function Home() {
     }
     if (readError) {
       console.error("Erreur lors de la lecture du contrat:", readError);
-      setRegistrationError("Erreur lors de la vérification de l'inscription sur le contrat.");
+      setRegistrationError(".");
     }
   }, [isRegisteredData, readError]);
 
-  // Détecter le mode sombre
   useEffect(() => {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     setDarkMode(isDark);
   }, []);
 
-  // Vérifier le profil utilisateur dans Firebase et l'inscription au contrat
   useEffect(() => {
     if (address) {
       console.log("User is connected with address:", address);
       checkUserProfileAndContract();
-      // La lecture du smart contract est gérée par useContractRead
     } else {
       console.log("User is not connected");
       setUserExists(false);
@@ -83,11 +71,9 @@ export default function Home() {
     }
   }, [address, contract]);
 
-  // Fonction pour vérifier si un utilisateur a un profil dans Firebase et son inscription au contrat
   const checkUserProfileAndContract = async () => {
     if (!address) return;
 
-    // Vérification Firebase
     const docRef = doc(db, "users", address);
     try {
       const docSnap = await getDoc(docRef);
@@ -98,18 +84,17 @@ export default function Home() {
       console.error("Erreur lors de la vérification du profil Firebase:", error);
     }
 
-    // Vérification Smart Contract
     if (contract) {
       try {
-        const registered = await contract.call("registeredUsers", [address]);
+        const registered = await contract.call("isUserRegistered", [address]);
         setIsRegistered(registered);
         console.log(`User registered in contract: ${registered}`);
       } catch (error) {
-        console.error("Erreur lors de la lecture de registeredUsers:", error);
-        setRegistrationError("Erreur lors de la vérification de l'inscription sur le contrat.");
+        console.error("Erreur lors de la lecture de isUserRegistered:", error);
+        setRegistrationError(".");
       }
-    } else if (contractError) {
-      console.error("Erreur lors de la connexion au contrat:", contractError);
+    } else {
+      console.error("Erreur lors de la connexion au contrat");
       setRegistrationError("Erreur lors de la connexion au contrat.");
     }
   };
@@ -141,7 +126,6 @@ export default function Home() {
     setRegistrationError(null);
 
     try {
-      // Créer un nouveau profil utilisateur dans Firebase avec les données du formulaire
       await setDoc(doc(db, "users", address), {
         username: formData.username,
         xAccount: formData.xAccount,
@@ -153,14 +137,14 @@ export default function Home() {
       setShowSignup(false);
       setUserExists(true);
 
-      // Enregistrer l'utilisateur dans le smart contract
       if (contract) {
         setRegistrationLoading(true);
         console.log("Appel de la fonction registerUser avec 0.05 ETH");
         const tx = await contract.call("registerUser", [], { value: ethers.utils.parseEther("0.05") });
         console.log("Transaction réussie:", tx);
 
-        // Mise à jour immédiate de l'état d'enregistrement
+        await tx.wait();
+
         setIsRegistered(true);
         alert("Inscription réussie !");
       }
@@ -176,7 +160,6 @@ export default function Home() {
   return (
     <div className={`min-h-screen ${darkMode ? "dark" : ""}`}>
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-zinc-400 dark:text-gray-200 transition-colors duration-200 relative overflow-hidden">
-        {/* Starry background */}
         <div className="absolute inset-0 z-0">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <rect width="100%" height="100%" fill={darkMode ? "#070000b3" : "#ececec"} />
@@ -201,7 +184,6 @@ export default function Home() {
           </svg>
         </div>
 
-        {/* Success constellation */}
         <svg className="absolute inset-0 z-0" xmlns="http://www.w3.org/2000/svg">
           <g stroke={darkMode ? "#b9f542" : "#7cf503"} strokeWidth="0.5" fill="none">
             <motion.path
@@ -253,7 +235,6 @@ export default function Home() {
           </g>
         </svg>
 
-        {/* Animated laser bridge */}
         <motion.div
           className="absolute inset-0 z-0 opacity-60"
           initial={{ pathLength: 0, pathOffset: 1 }}
@@ -275,7 +256,6 @@ export default function Home() {
 
         <header className="px-4 lg:px-6 h-20 flex items-center justify-between relative z-10 bg-transparent">
           <div className="flex items-center">
-            {/* Logo placeholder */}
           </div>
           <div className="flex items-center space-x-4">
             <a
@@ -306,7 +286,6 @@ export default function Home() {
               <span className="sr-only">Discord</span>
             </a>
 
-            {/* Bouton de connexion Wallet Thirdweb */}
             <ConnectWallet />
           </div>
         </header>
@@ -344,7 +323,6 @@ export default function Home() {
                   Contribute to the development of cutting-edge Web3 technologies and be a part of the decentralized revolution.
                 </motion.p>
 
-                {/* Afficher le bouton ou le formulaire selon le profil */}
                 <motion.div
                   className="p-6 rounded-lg bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm"
                   initial={{ opacity: 0 }}
@@ -376,10 +354,11 @@ export default function Home() {
                               });
                               console.log("Transaction réussie:", tx);
 
-                              // Mise à jour immédiate de l'état d'enregistrement
+                              await tx.wait();
+
                               setIsRegistered(true);
+                              
                               alert("Inscription réussie !");
-                              // Rafraîchir la lecture du contrat
                               checkUserProfileAndContract();
                             } catch (error) {
                               console.error("Erreur lors de l'inscription:", error);
@@ -405,7 +384,6 @@ export default function Home() {
                   ) : (
                     <p className="text-lime-400">Please connect your wallet</p>
                   )}
-                  {/* Afficher les erreurs d'inscription */}
                   {registrationError && <p className="text-red-500 mt-2">{registrationError}</p>}
                 </motion.div>
               </motion.div>
@@ -432,7 +410,6 @@ export default function Home() {
         </footer>
       </div>
 
-      {/* Modal d'inscription */}
       <AnimatePresence>
         {showSignup && (
           <motion.div
@@ -527,7 +504,6 @@ export default function Home() {
                       {isSubmitting || registrationLoading ? "Creating..." : "Create Account"}
                     </Button>
                   </form>
-                  {/* Afficher les erreurs d'inscription */}
                   {registrationError && <p className="text-red-500 mt-2">{registrationError}</p>}
                 </CardContent>
               </Card>

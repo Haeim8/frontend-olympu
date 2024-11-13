@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -11,11 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info, Upload, Plus, Minus, AlertTriangle, Trash2, CheckCircle } from 'lucide-react';
-import { useContract, useContractWrite, useAddress, useChainId } from '@thirdweb-dev/react';
+import { Info, Plus, Trash2, CheckCircle } from 'lucide-react';
+import { useContract, useContractWrite, useAddress, useChainId, useContractRead, useContractEvents } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 
-// Import du service de stockage Pinata
 import { pinataService } from '@/lib/services/storage';
 
 const SECTORS = [
@@ -23,27 +22,68 @@ const SECTORS = [
   "NFT", "DeFi", "DAO", "Infrastructure", "Autre"
 ];
 
-const COUNTRIES = ["Afghanistan", "Afrique du Sud", "Albanie", /* ... */, "Zimbabwe"];
+const COUNTRIES = [
+  "France", "Allemagne", "Royaume-Uni", "Espagne", "Italie",
+  "États-Unis", "Canada", "Japon", "Chine", "Australie",
+];
 
 export default function CampaignModal({ showCreateCampaign, setShowCreateCampaign, handleCreateCampaign }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepValidated, setStepValidated] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState({});
   const [uploadProgress, setUploadProgress] = useState({});
-  const [campaignCreated, setCampaignCreated] = useState(false);
   const [transactionHash, setTransactionHash] = useState('');
+  const [campaignCreated, setCampaignCreated] = useState(false);
 
   const address = useAddress();
   const chainId = useChainId();
-  const contractAddress = "0xD624ddFe214734dAceA2aacf8bb47e837B5228DD";
+  const contractAddress = "0xb74916df2Bf88Eb7d7b3a722fB5acD43179C5005";
   const contractABI = [
-    "function createCampaign(string memory _name, string memory _symbol, uint256 _targetAmount, uint256 _sharePrice, uint256 _endTime, bool _certified, address _lawyer, string memory _category, string memory _metadata, uint96 _royaltyFee) external payable",
-    "event CampaignCreated(address indexed campaignAddress, address indexed startup, string name, bool certified, address indexed lawyer, uint256 timestamp)"
+    {
+      "type": "function",
+      "name": "createCampaign",
+      "inputs": [
+        { "type": "string", "name": "_name" },
+        { "type": "string", "name": "_symbol" },
+        { "type": "uint256", "name": "_targetAmount" },
+        { "type": "uint256", "name": "_sharePrice" },
+        { "type": "uint256", "name": "_endTime" },
+        { "type": "bool", "name": "_certified" },
+        { "type": "address", "name": "_lawyer" },
+        { "type": "string", "name": "_category" },
+        { "type": "string", "name": "_metadata" },
+        { "type": "uint96", "name": "_royaltyFee" }
+      ],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "event",
+      "name": "CampaignCreated",
+      "inputs": [
+        { "type": "address", "name": "campaignAddress", "indexed": true },
+        { "type": "address", "name": "startup", "indexed": true },
+        { "type": "string", "name": "name", "indexed": false },
+        { "type": "bool", "name": "certified", "indexed": false },
+        { "type": "address", "name": "lawyer", "indexed": true },
+        { "type": "uint256", "name": "timestamp", "indexed": false }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "CAMPAIGN_CREATION_FEE",
+      "inputs": [],
+      "outputs": [{ "type": "uint256" }],
+      "stateMutability": "view"
+    }
   ];
 
   const { contract } = useContract(contractAddress, contractABI);
   const { mutateAsync: createCampaign, isLoading: writeLoading } = useContractWrite(contract, "createCampaign");
+  const { data: creationFee, isLoading: feeLoading, error: feeError } = useContractRead(contract, "CAMPAIGN_CREATION_FEE");
+  const { data: events, isLoading: eventsLoading, error: eventsError } = useContractEvents(contract, "CampaignCreated");
 
   const [formData, setFormData] = useState({
     creatorAddress: '',
@@ -105,6 +145,22 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     }
   }, [address]);
 
+  useEffect(() => {
+    if (events && events.length > 0) {
+      const latestEvent = events[events.length - 1];
+      console.log("Événement CampaignCreated détecté:", latestEvent.data);
+      setCampaignCreated(true);
+      setStatus('success');
+      if (typeof handleCreateCampaign === 'function') {
+        handleCreateCampaign({
+          ...formData,
+          campaignAddress: latestEvent.data.campaignAddress,
+          name: latestEvent.data.name
+        });
+      }
+    }
+  }, [events]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -134,7 +190,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       const newFiles = Array.from(e.target.files);
       setFormData(prev => ({
         ...prev,
-        [field]: [...prev[field], ...newFiles]
+        [field]: [...(prev[field] || []), ...newFiles]
       }));
     }
   };
@@ -175,20 +231,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     }));
   };
 
-  const handleSocialChange = (network, value) => {
-    setFormData(prev => ({
-      ...prev,
-      socials: { ...prev.socials, [network]: value }
-    }));
-  };
-
-  const removeSocial = (network) => {
-    setFormData(prev => ({
-      ...prev,
-      socials: { ...prev.socials, [network]: '' }
-    }));
-  };
-
   const validateStep = (step) => {
     const errors = {};
     switch(step) {
@@ -206,14 +248,21 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         }
         break;
       case 2:
-        if (formData.documents.length === 0) errors.documents = "Au moins un document est requis";
+        if (!formData.whitepaper) errors.whitepaper = "Le whitepaper est requis";
         break;
       case 3:
         if (formData.teamMembers.length === 0) errors.team = "Au moins un membre d'équipe est requis";
-        if (formData.certified && !formData.lawyer.address) errors.lawyer = "L'adresse de l'avocat est requise pour une campagne certifiée";
+        if (formData.certified) {
+          if (!formData.lawyer.address) errors.lawyer = "L'adresse de l'avocat est requise pour une campagne certifiée";
+          if (!formData.lawyer.name) errors.lawyerName = "Le nom de l'avocat est requis";
+          if (!formData.lawyer.contact) errors.lawyerContact = "Le contact de l'avocat est requis";
+          if (!formData.lawyer.jurisdiction) errors.lawyerJurisdiction = "La juridiction de l'avocat est requise";
+        }
         break;
       case 4:
         if (!formData.acceptTerms) errors.terms = "Vous devez accepter les conditions";
+        break;
+      default:
         break;
     }
     setError(errors);
@@ -238,129 +287,85 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     try {
       setIsLoading(true);
       
-      // Créer un dossier pour la campagne
       const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
       
-      // Préparer la structure du dossier
-      const folderStructure = {
-        metadata: {
-          createdAt: new Date().toISOString(),
-          version: "1.0.0",
-          currentRound: 1
-        },
-        campaignDetails: {
-          name: campaignData.name,
-          sector: campaignData.sector,
-          description: campaignData.description,
-          teamMembers: campaignData.teamMembers,
-          investmentTerms: campaignData.investmentTerms,
-          companyShares: campaignData.companyShares,
-          hasLawyer: campaignData.certified,
-          lawyer: campaignData.certified ? campaignData.lawyer : null
-        },
-        rounds: {
-          "round-1": {
-            details: {
-              sharePrice: campaignData.sharePrice,
-              numberOfNFTs: campaignData.numberOfShares,
-              goal: campaignData.targetAmount,
-              endDate: campaignData.endDate,
-              status: "active"
-            }
-          }
-        }
+      const filesToUpload = [];
+
+      const metadata = {
+        createdAt: new Date().toISOString(),
+        version: "1.0.0",
+        currentRound: 1
       };
-
-      console.log("Structure du dossier préparée:", folderStructure);
-
-      // Upload des documents
-      const uploadedDocs = await Promise.all(
-        documents.map(async (file) => {
-          setUploadProgress(prev => ({
-            ...prev,
-            [file.name]: 0
-          }));
-
-          const result = await pinataService.uploadFile(file, {
-            name: `${campaignFolderName}/documents/${file.name}`,
-            keyvalues: {
-              round: "1",
-              type: "document"
-            }
-          });
-
-          setUploadProgress(prev => ({
-            ...prev,
-            [file.name]: 100
-          }));
-
-          return {
-            name: file.name,
-            ipfsHash: result.ipfsHash,
-            url: result.gatewayUrl, // Correction ici pour utiliser gatewayUrl
-            type: file.type,
-            uploadedAt: new Date().toISOString()
-          };
-        })
-      );
-
-      console.log("Documents uploadés:", uploadedDocs);
-
-      // Upload des médias
-      const uploadedMedia = await Promise.all(
-        media.map(async (file) => {
-          setUploadProgress(prev => ({
-            ...prev,
-            [file.name]: 0
-          }));
-
-          const result = await pinataService.uploadFile(file, {
-            name: `${campaignFolderName}/media/${file.name}`,
-            keyvalues: {
-              round: "1",
-              type: "media"
-            }
-          });
-
-          setUploadProgress(prev => ({
-            ...prev,
-            [file.name]: 100
-          }));
-
-          return {
-            name: file.name,
-            ipfsHash: result.ipfsHash,
-            url: result.gatewayUrl, // Correction ici pour utiliser gatewayUrl
-            type: file.type,
-            uploadedAt: new Date().toISOString()
-          };
-        })
-      );
-
-      console.log("Médias uploadés:", uploadedMedia);
-
-      // Ajouter les documents et médias à la structure
-      folderStructure.rounds["round-1"].documents = uploadedDocs;
-      folderStructure.rounds["round-1"].media = uploadedMedia;
-
-      // Upload de toute la structure en JSON
-      const finalResult = await pinataService.uploadJSON(folderStructure, {
-        name: `${campaignFolderName}/campaign_data.json`
+      filesToUpload.push({
+        content: new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' }),
+        path: `${campaignFolderName}/metadata.json`
       });
 
-      console.log("Structure JSON uploadée:", finalResult);
+      const campaignDetails = {
+        name: campaignData.name,
+        sector: campaignData.sector,
+        description: campaignData.description,
+        teamMembers: campaignData.teamMembers,
+        investmentTerms: campaignData.investmentTerms,
+        companyShares: campaignData.companyShares,
+        hasLawyer: campaignData.certified,
+        lawyer: campaignData.certified ? campaignData.lawyer : null
+      };
+      filesToUpload.push({
+        content: new Blob([JSON.stringify(campaignDetails, null, 2)], { type: 'application/json' }),
+        path: `${campaignFolderName}/campaign-details.json`
+      });
+
+      const roundDetails = {
+        sharePrice: campaignData.sharePrice,
+        numberOfShares: campaignData.numberOfShares,
+        goal: campaignData.targetAmount,
+        endDate: campaignData.endDate,
+        status: "active"
+      };
+      filesToUpload.push({
+        content: new Blob([JSON.stringify(roundDetails, null, 2)], { type: 'application/json' }),
+        path: `${campaignFolderName}/rounds/round-1/details.json`
+      });
+
+      documents.forEach(file => {
+        if (file instanceof Blob) {
+          filesToUpload.push({
+            content: file,
+            path: `${campaignFolderName}/rounds/round-1/documents/${file.name}`
+          });
+        } else {
+          console.warn(`Le fichier ${file.name} n'est pas un Blob ou File et sera ignoré.`);
+        }
+      });
+
+      media.forEach(file => {
+        if (file instanceof Blob) {
+          filesToUpload.push({
+            content: file,
+            path: `${campaignFolderName}/rounds/round-1/media/${file.name}`
+          });
+        } else {
+          console.warn(`Le fichier ${file.name} n'est pas un Blob ou File et sera ignoré.`);
+        }
+      });
+
+      console.log("Fichiers à uploader:", filesToUpload);
+
+      const uploadResult = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
+      console.log("Structure de dossier uploadée:", uploadResult);
 
       return {
         success: true,
-        ipfsHash: finalResult.ipfsHash,
-        url: finalResult.gatewayUrl,
-        data: folderStructure
+        ipfsHash: uploadResult.ipfsHash,
+        url: uploadResult.gatewayUrl,
+        data: uploadResult.metadata
       };
 
-    } catch (error) {
+    }   catch (error) {
       console.error("Erreur lors de la création du dossier IPFS:", error);
       throw error;
-    } finally {
+    } finally  {
       setIsLoading(false);
       setUploadProgress({});
     }
@@ -370,10 +375,10 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     e.preventDefault();
     if (!validateStep(4)) return;
     setIsLoading(true);
-    setError(null);
+    setStatus('loading');
+    setError({});
     console.log("Début de la soumission du formulaire");
     try {
-      // 1. Créer le dossier IPFS avec tous les documents
       const ipfsResult = await createCampaignFolder(
         formData,
         formData.documents,
@@ -385,53 +390,45 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         throw new Error("Échec de l'upload IPFS");
       }
 
-      // 2. Créer la campagne sur la blockchain avec le hash IPFS
+      if (!creationFee) {
+        throw new Error("Frais de création de campagne non disponible");
+      }
+
+      const metadataURI = `ipfs://${ipfsResult.ipfsHash}`;
+
+      const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
+      const targetAmountWei = ethers.utils.parseEther(formData.sharePrice).mul(ethers.BigNumber.from(formData.numberOfShares));
+
       const tx = await createCampaign({
         args: [
           formData.name,
           formData.symbol,
-          ethers.utils.parseEther((parseFloat(formData.sharePrice) * parseFloat(formData.numberOfShares)).toFixed(18)),
-          ethers.utils.parseEther(formData.sharePrice),
+          targetAmountWei,
+          sharePriceWei,
           Math.floor(new Date(formData.endDate).getTime() / 1000),
           formData.certified,
           formData.certified ? formData.lawyer.address : ethers.constants.AddressZero,
-          formData.sector === 'Autre' ? formData.otherSector : formData.sector,
-          ipfsResult.ipfsHash,
-          parseInt(formData.royaltyFee)
+          formData.sector,
+          metadataURI,
+          ethers.BigNumber.from(formData.royaltyFee)
         ],
         overrides: {
-          value: ethers.utils.parseEther("0.02")
+          value: creationFee
         }
       });
-      console.log("Transaction envoyée:", tx);
+      
+      console.log("Transaction retournée par mutateAsync:", tx);
 
-      // 3. Attendre la confirmation de la transaction
-      const receipt = await tx.wait();
-      console.log("Transaction confirmée:", receipt);
+      setTransactionHash(tx.hash);
 
-      // 4. Extraire les informations de l'événement
-      const event = receipt.events.find((e) => e.event === 'CampaignCreated');
-      const [campaignAddress, creator, name, certified, lawyer, timestamp] = event.args;
-      console.log("Événement CampaignCreated:", { campaignAddress, creator, name, certified, lawyer, timestamp });
+      await tx.wait();
 
-      setTransactionHash(receipt.transactionHash);
-
-      // 5. Confirmation et nettoyage
-      handleCreateCampaign({
-        ...formData,
-        ipfsHash: ipfsResult.ipfsHash,
-        ipfsUrl: ipfsResult.url,
-        campaignAddress: campaignAddress,
-        name: name
-      });
-      console.log("handleCreateCampaign appelé");
-
-      setCampaignCreated(true);
-      console.log("campaignCreated mis à true");
+      console.log("Transaction confirmée, en attente de l'événement CampaignCreated");
 
     } catch (error) {
       console.error("Erreur lors de la création de la campagne:", error);
-      setError(error.message || "Erreur lors de la création de la campagne");
+      setStatus('error');
+      setError({ general: error.message || "Erreur lors de la création de la campagne" });
     } finally {
       setIsLoading(false);
       console.log("Chargement terminé");
@@ -454,6 +451,53 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   );
 
   const renderStepContent = () => {
+    if (status === 'loading') {
+      return (
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-lime-400"></div>
+          <p className="text-lg text-gray-700 dark:text-gray-300">Création de la campagne en cours...</p>
+        </div>
+      );
+    }
+
+    if (status === 'success') {
+      return (
+        <div className="text-center space-y-4">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+          <h3 className="text-2xl font-bold">Campagne "{formData.name}" créée avec succès!</h3>
+          <p>Votre campagne a été créée et est maintenant visible sur la plateforme.</p>
+          <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
+            <p className="font-semibold">Hash de la transaction:</p>
+            <a 
+              href={`https://sepolia.basescan.org/tx/${transactionHash}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline break-all"
+            >
+              {transactionHash}
+            </a>
+          </div>
+          <Button onClick={() => setShowCreateCampaign(false)} className="mt-4">
+            Fermer
+          </Button>
+        </div>
+      );
+    }
+
+    if (status === 'error') {
+      return (
+        <div className="text-center space-y-4">
+          <div className="p-4 bg-red-100 dark:bg-red-900 rounded-lg">
+            <h3 className="text-2xl font-bold text-red-600 dark:text-red-400">Échec de la création de la campagne</h3>
+            <p className="text-gray-700 dark:text-gray-300">{error.general}</p>
+          </div>
+          <Button onClick={() => setStatus('idle')} className="mt-4">
+            Fermer
+          </Button>
+        </div>
+      );
+    }
+
     switch(currentStep) {
       case 1:
         return (
@@ -605,6 +649,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                 onChange={handleInputChange}
                 required
               />
+              {error?.endDate && <p className="text-red-500 text-sm">{error.endDate}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -631,7 +676,9 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                   value={formData.royaltyReceiver}
                   onChange={handleInputChange}
                   placeholder="0x..."
+                  required
                 />
+                {error?.royaltyReceiver && <p className="text-red-500 text-sm">{error.royaltyReceiver}</p>}
               </div>
             </div>
           </div>
@@ -644,354 +691,203 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               <Label htmlFor="whitepaper">Whitepaper</Label>
               <Input
                 id="whitepaper"
+                name="whitepaper"
                 type="file"
-                accept=".pdf"
-                onChange={(e) => setFormData({...formData, whitepaper: e.target.files[0]})}
+                onChange={(e) => handleFileChange(e, 'whitepaper')}
+                accept=".pdf,.doc,.docx"
                 required
               />
-              <InfoTooltip content="Document détaillant votre projet, sa technologie et son modèle économique" />
+              {error?.whitepaper && <p className="text-red-500 text-sm">{error.whitepaper}</p>}
             </div>
             <div>
               <Label htmlFor="pitchDeck">Pitch Deck</Label>
               <Input
                 id="pitchDeck"
+                name="pitchDeck"
                 type="file"
+                onChange={(e) => handleFileChange(e, 'pitchDeck')}
                 accept=".pdf,.ppt,.pptx"
-                onChange={(e) => setFormData({...formData, pitchDeck: e.target.files[0]})}
               />
-              <InfoTooltip content="Présentation visuelle de votre projet pour les investisseurs" />
             </div>
             <div>
               <Label htmlFor="legalDocuments">Documents Légaux</Label>
               <Input
                 id="legalDocuments"
+                name="legalDocuments"
                 type="file"
-                accept=".pdf"
-                onChange={(e) => setFormData({...formData, legalDocuments: e.target.files[0]})}
+                onChange={(e) => handleFileChange(e, 'legalDocuments')}
+                accept=".pdf,.doc,.docx"
+                multiple
               />
-              <InfoTooltip content="Documents juridiques relatifs à votre projet ou entreprise" />
             </div>
             <div>
-              <Label>Documents Additionnels</Label>
-              <div className="mt-2 p-4 border rounded-lg space-y-4">
-                <Input
-                  type="file"
-                  multiple
-                  onChange={(e) => handleFileChange(e, 'documents')}
-                />
-                <ScrollArea className="h-32">
-                  {formData.documents.map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between py-2">
-                      <span className="text-sm">{doc.name}</span>
-                      {uploadProgress[doc.name] !== undefined && (
-                        <div className="w-24 bg-gray-200 rounded-full h-2.5">
-                          <div
-                            className="bg-lime-600 h-2.5 rounded-full"
-                            style={{ width: `${uploadProgress[doc.name]}%` }}
-                          ></div>
-                        </div>
-                      )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(index, 'documents')}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </ScrollArea>
-              </div>
-            </div>
-            <div>
-              <Label>Médias du Projet</Label>
-              <div className="mt-2 p-4 border rounded-lg space-y-4">
-                <Input
-                  type="file"
-                  accept="image/*,video/*"
-                  multiple
-                  onChange={(e) => handleFileChange(e, 'media')}
-                />
-                <ScrollArea className="h-32">
-                  {formData.media.map((media, index) => (
-                    <div key={index} className="flex items-center justify-between py-2">
-                      <span className="text-sm">{media.name}</span>
-                      {uploadProgress[media.name] !== undefined && (
-                        <div className="w-24 bg-gray-200 rounded-full h-2.5">
-                          <div
-                            className="bg-lime-600 h-2.5 rounded-full"
-                            style={{ width: `${uploadProgress[media.name]}%` }}
-                          ></div>
-                        </div>
-                      )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(index, 'media')}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </ScrollArea>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="roadmap">Roadmap</Label>
-              <Textarea
-                id="roadmap"
-                name="roadmap"
-                value={formData.metadata.roadmap}
-                onChange={(e) => handleNestedInputChange(e, 'metadata')}
-                placeholder="Décrivez les étapes clés de votre projet"
-                rows={3}
+              <Label htmlFor="media">Médias (images, vidéos)</Label>
+              <Input
+                id="media"
+                name="media"
+                type="file"
+                onChange={(e) => handleFileChange(e, 'media')}
+                accept="image/*,video/*"
+                multiple
               />
-              <InfoTooltip content="Plan détaillé des étapes futures de votre projet" />
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="distributeTokens"
-                  checked={formData.distributeTokens}
-                  onCheckedChange={() => handleCheckboxChange('distributeTokens')}
-                />
-                <Label htmlFor="distributeTokens">Comptez-vous distribuer des tokens aux VC ?</Label>
-              </div>
-              {formData.distributeTokens && (
-                <div>
-                  <Label htmlFor="tokenomics">Tokenomics</Label>
-                  <Textarea
-                    id="tokenomics"
-                    name="tokenomics"
-                    value={formData.metadata.tokenomics}
-                    onChange={(e) => handleNestedInputChange(e, 'metadata')}
-                    placeholder="Décrivez la distribution et l'utilisation des tokens"
-                    rows={3}
-                  />
-                  <InfoTooltip content="Détails sur la distribution et l'utilisation des tokens de votre projet" />
+            {['whitepaper', 'pitchDeck', 'legalDocuments', 'media'].map((field) => (
+              formData[field] && formData[field].length > 0 && (
+                <div key={field} className="mt-2">
+                  <h3 className="font-semibold">{field.charAt(0).toUpperCase() + field.slice(1)}:</h3>
+                  <ul className="list-disc pl-5">
+                    {Array.isArray(formData[field]) ? (
+                      formData[field].map((file, index) => (
+                        <li key={index} className="flex justify-between items-center">
+                          <span>{file.name}</span>
+                          <Button
+                            onClick={() => removeFile(index, field)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="flex justify-between items-center">
+                        <span>{formData[field].name}</span>
+                        <Button
+                          onClick={() => removeFile(0, field)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    )}
+                  </ul>
                 </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="vestingPlan"
-                  checked={formData.vestingPlan}
-                  onCheckedChange={() => handleCheckboxChange('vestingPlan')}
-                />
-                <Label htmlFor="vestingPlan">Avez-vous un plan de vesting ?</Label>
-              </div>
-              {formData.vestingPlan && (
-                <div>
-                  <Label htmlFor="vesting">Vesting</Label>
-                  <Textarea
-                    id="vesting"
-                    name="vesting"
-                    value={formData.metadata.vesting}
-                    onChange={(e) => handleNestedInputChange(e, 'metadata')}
-                    placeholder="Décrivez le calendrier de vesting"
-                    rows={3}
-                  />
-                  <InfoTooltip content="Calendrier de libération progressive des tokens ou actions" />
-                </div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="useOfFunds">Utilisation des Fonds</Label>
-              <Textarea
-                id="useOfFunds"
-                name="useOfFunds"
-                value={formData.metadata.useOfFunds}
-                onChange={(e) => handleNestedInputChange(e, 'metadata')}
-                placeholder="Décrivez comment les fonds seront utilisés"
-                rows={3}
-              />
-              <InfoTooltip content="Explication détaillée de la manière dont les fonds levés seront utilisés" />
-            </div>
+              )
+            ))}
           </div>
         );
       case 3:
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Équipe et Réseaux Sociaux du Projet</h2>
-            {formData.teamMembers.map((member, index) => (
-              <div key={index} className="p-4 border rounded-md space-y-2">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">Membre {index + 1}</h3>
-                  {index > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeTeamMember(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                <div>
-                  <Label>Nom du Membre</Label>
-                  <Input 
-                    value={member.name}
-                    onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
-                    placeholder="Nom du membre"
-                  />
-                </div>
-                <div>
-                  <Label>Rôle du Membre</Label>
-                  <Input 
-                    value={member.role}
-                    onChange={(e) => handleTeamMemberChange(index, 'role', e.target.value)}
-                    placeholder="Rôle du membre"
-                  />
-                </div>
-                <div>
-                  <Label>Twitter</Label>
-                  <Input 
-                    value={member.socials.twitter}
-                    onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'twitter')}
-                    placeholder="Lien Twitter"
-                  />
-                </div>
-                <div>
-                  <Label>LinkedIn</Label>
-                  <Input 
-                    value={member.socials.linkedin}
-                    onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'linkedin')}
-                    placeholder="Lien LinkedIn"
-                  />
-                </div>
-              </div>
-            ))}
-            <Button type="button" onClick={addTeamMember} className="mt-2">
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter un membre
-            </Button>
-
-            <h3 className="text-lg font-semibold mt-6">Réseaux Sociaux du Projet</h3>
-            {Object.entries(formData.socials).map(([network, value]) => (
-              <div key={network} className="flex items-center space-x-2">
-                <Label htmlFor={network}>{network.charAt(0).toUpperCase() + network.slice(1)}</Label>
-                <Input 
-                  id={network}
-                  value={value}
-                  onChange={(e) => handleSocialChange(network, e.target.value)}
-                  placeholder={`Lien ${network}`}
-                />
-                <Button type="button" onClick={() => removeSocial(network)} className="bg-red-500 hover:bg-red-600 text-white">
-                  <Trash2 className="w-4" />
-                </Button>
-              </div>
-            ))}
-
-            <div className="space-y-4 mt-8">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="certified"
-                  checked={formData.certified}
-                  onCheckedChange={() => handleCheckboxChange('certified')}
-                />
-                <Label htmlFor="certified">Campagne Certifiée</Label>
-              </div>
-              {formData.certified && (
-                <div className="p-4 border rounded-lg space-y-4">
-                  <div>
-                    <Label>Adresse de l'avocat</Label>
-                    <Input
-                      value={formData.lawyer.address}
-                      onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                      name="address"
-                      placeholder="Adresse Ethereum de l'avocat"
-                      required
-                    />
+            <h2 className="text-xl font-bold">Équipe et Certification</h2>
+            <div>
+              <Label>Membres de l'équipe</Label>
+              {formData.teamMembers.map((member, index) => (
+                <div key={index} className="mb-4 p-4 border rounded-md">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold">Membre {index + 1}</h3>
+                    {index > 0 && (
+                      <Button
+                        onClick={() => removeTeamMember(index)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  <div>
-                    <Label>Nom de l'avocat</Label>
+                  <div className="space-y-2">
                     <Input
-                      value={formData.lawyer.name}
-                      onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                      name="name"
-                      placeholder="Nom complet"
-                      required
+                      placeholder="Nom"
+                      value={member.name}
+                      onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
                     />
-                  </div>
-                  <div>
-                    <Label>Contact</Label>
                     <Input
-                      value={formData.lawyer.contact}
-                      onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                      name="contact"
-                      placeholder="Email ou téléphone"
-                      required
+                      placeholder="Rôle"
+                      value={member.role}
+                      onChange={(e) => handleTeamMemberChange(index, 'role', e.target.value)}
                     />
-                  </div>
-                  <div>
-                    <Label>Juridiction</Label>
                     <Input
-                      value={formData.lawyer.jurisdiction}
-                      onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                      name="jurisdiction"
-                      placeholder="Pays ou juridiction"
-                      required
+                      placeholder="Twitter"
+                      value={member.socials.twitter}
+                      onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'twitter')}
+                    />
+                    <Input
+                      placeholder="LinkedIn"
+                      value={member.socials.linkedin}
+                      onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'linkedin')}
                     />
                   </div>
                 </div>
-              )}
+              ))}
+              <Button onClick={addTeamMember} className="mt-2">
+                <Plus className="mr-2 h-4 w-4" /> Ajouter un membre
+              </Button>
             </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="certified"
+                checked={formData.certified}
+                onCheckedChange={() => handleCheckboxChange('certified')}
+              />
+              <Label htmlFor="certified">Campagne certifiée</Label>
+            </div>
+            {formData.certified && (
+              <div className="space-y-2">
+                <h3 className="font-semibold">Informations de l'avocat</h3>
+                <Input
+                  placeholder="Adresse Ethereum de l'avocat"
+                  value={formData.lawyer.address}
+                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                  name="address"
+                />
+                <Input
+                  placeholder="Nom de l'avocat"
+                  value={formData.lawyer.name}
+                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                  name="name"
+                />
+                <Input
+                  placeholder="Contact de l'avocat"
+                  value={formData.lawyer.contact}
+                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                  name="contact"
+                />
+                <Input
+                  placeholder="Juridiction de l'avocat"
+                  value={formData.lawyer.jurisdiction}
+                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+                  name="jurisdiction"
+                />
+              </div>
+            )}
           </div>
         );
       case 4:
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Vérification et Conditions</h2>
-            <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-              <h3 className="font-semibold mb-4">Récapitulatif de la Campagne</h3>
-              <div className="space-y-2">
-                <p><strong>Nom de la campagne:</strong> {formData.name}</p>
-                <p><strong>Symbole:</strong> {formData.symbol}</p>
-                <p><strong>Secteur:</strong> {formData.sector}</p>
-                <p><strong>Nationalité:</strong> {formData.nationality}</p>
-                <p><strong>Prix par part:</strong> {formData.sharePrice} ETH</p>
-                <p><strong>Nombre de parts:</strong> {formData.numberOfShares}</p>
-                <p><strong>Objectif final:</strong> {(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)} ETH</p>
-                <p><strong>Date de fin:</strong> {new Date(formData.endDate).toLocaleString()}</p>
-                <p><strong>Frais de royalties:</strong> {formData.royaltyFee} basis points</p>
-                <p><strong>Campagne certifiée:</strong> {formData.certified ? 'Oui' : 'Non'}</p>
-              </div>
+            <h2 className="text-xl font-bold">Vérification et Soumission</h2>
+            <div className="space-y-2">
+              <h3 className="font-semibold">Résumé de la campagne</h3>
+              <p><strong>Nom:</strong> {formData.name}</p>
+              <p><strong>Symbole:</strong> {formData.symbol}</p>
+              <p><strong>Secteur:</strong> {formData.sector}</p>
+              <p><strong>Objectif:</strong> {(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)} ETH</p>
+              <p><strong>Date de fin:</strong> {new Date(formData.endDate).toLocaleString()}</p>
+              <p><strong>Campagne certifiée:</strong> {formData.certified ? 'Oui' : 'Non'}</p>
             </div>
-            <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-              <h3 className="font-semibold mb-4">Frais de création</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Frais de création</span>
-                  <span>0.02 ETH</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Commission plateforme</span>
-                  <span>15%</span>
-                </div>
-                {formData.certified && (
-                  <div className="flex justify-between">
-                    <span>Frais de certification</span>
-                    <span>0.05 ETH</span>
-                  </div>
-                )}
-              </div>
+            <Alert>
+              <AlertDescription>
+                Veuillez vérifier attentivement toutes les informations avant de soumettre votre campagne.
+                Une fois soumise, ces informations ne pourront plus être modifiées.
+              </AlertDescription>
+            </Alert>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="acceptTerms"
+                checked={formData.acceptTerms}
+                onCheckedChange={() => handleCheckboxChange('acceptTerms')}
+              />
+              <Label htmlFor="acceptTerms">
+                J'accepte les conditions générales et je confirme que toutes les informations fournies sont exactes.
+              </Label>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="acceptTerms"
-                  checked={formData.acceptTerms}
-                  onCheckedChange={() => handleCheckboxChange('acceptTerms')}
-                  required
-                />
-                <Label htmlFor="acceptTerms">
-                  J'accepte les conditions générales d'utilisation
-                </Label>
-              </div>
-            </div>
+            {error?.terms && <p className="text-red-500 text-sm">{error.terms}</p>}
+            {error?.general && <p className="text-red-500 text-sm">{error.general}</p>}
           </div>
         );
       default:
@@ -1001,98 +897,36 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
 
   return (
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Créer une nouvelle campagne</DialogTitle>
           <DialogDescription>
-            Remplissez les détails de votre campagne pour la créer.
+            Remplissez les informations nécessaires pour lancer votre campagne de financement.
           </DialogDescription>
         </DialogHeader>
-
-        {!campaignCreated ? (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex justify-between mb-8">
-              {[1, 2, 3, 4].map((step) => (
-                <div
-                  key={step}
-                  className={`flex items-center ${step < currentStep ? 'text-green-500' : step === currentStep ? 'text-blue-500' : 'text-gray-300'}`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 
-                    ${step < currentStep ? 'border-green-500 bg-green-100' : 
-                      step === currentStep ? 'border-blue-500 bg-blue-100' : 
-                      'border-gray-300'}`}
-                  >
-                    {step < currentStep ? '✓' : step}
-                  </div>
-                  {step < 4 && (
-                    <div className={`w-full h-0.5 mx-2 
-                      ${step < currentStep ? 'bg-green-500' : 'bg-gray-300'}`} 
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="mb-8">
-              {renderStepContent()}
-            </div>
-
-            <div className="flex justify-between">
-              {currentStep > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handlePreviousStep}
-                  disabled={currentStep === 1 || isLoading}
-                >
-                  Précédent
-                </Button>
-              )}
-              
-              {currentStep < 4 ? (
-                <Button type="button" onClick={handleNextStep} disabled={isLoading}>
-                  Suivant
-                </Button>
-              ) : (
-                <Button type="submit" className="bg-lime-600 hover:bg-lime-700" disabled={isLoading || !formData.acceptTerms}>
-                  {isLoading ? "Création en cours..." : "Créer la campagne"}
-                </Button>
-              )}
-            </div>
-          </form>
-        ) : (
-          <div className="text-center space-y-4">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-            <h3 className="text-2xl font-bold">Campagne "{formData.name}" créée avec succès!</h3>
-            <p>Votre campagne a été créée et est maintenant visible sur la plateforme.</p>
-            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-              <p className="font-semibold">Hash de la transaction:</p>
-              <a 
-                href={`https://sepolia.basescan.org/tx/${transactionHash}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline break-all"
-              >
-                {transactionHash}
-              </a>
-            </div>
-            <Button onClick={() => setShowCreateCampaign(false)} className="mt-4">
-              Fermer
-            </Button>
+        <form onSubmit={handleSubmit}>
+          <ScrollArea className="h-[60vh] px-4">
+            {renderStepContent()}
+          </ScrollArea>
+          <div className="mt-4 flex justify-between">
+            {currentStep > 1 && status === 'idle' && (
+              <Button type="button" onClick={handlePreviousStep}>
+                Précédent
+              </Button>
+            )}
+            {currentStep < 4 && status === 'idle' && (
+              <Button type="button" onClick={handleNextStep}>
+                Suivant
+              </Button>
+            )}
+            {currentStep === 4 && status === 'idle' && (
+              <Button type="submit" disabled={!formData.acceptTerms || isLoading}>
+                {isLoading ? 'Création en cours...' : 'Créer la campagne'}
+              </Button>
+            )}
           </div>
-        )}
-
-        {error && Object.keys(error).length > 0 && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              {Object.values(error).map((err, index) => (
-                <div key={index}>{err}</div>
-              ))}
-            </AlertDescription>
-          </Alert>
-        )}
+        </form>
       </DialogContent>
     </Dialog>
   );
-} 
+}

@@ -6,22 +6,48 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Eye, ArrowRight, Shield } from 'lucide-react';
 import CampaignModal from './CampaignModal';
 import ProjectDetails from './ProjectDetails';
-import { useContract, useContractRead } from '@thirdweb-dev/react';
+import { useContract, useContractRead, useContractEvents } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 
-import FundRaisingPlatformABI from '@/ABI/FundRaisingPlatformABI.json';
+const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
+
+const PLATFORM_ABI = [
+  {
+    "inputs": [],
+    "name": "getAllCampaigns",
+    "outputs": [{"type": "address[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"type": "address"}],
+    "name": "campaignRegistry",
+    "outputs": [{
+      "components": [
+        {"name": "campaignAddress", "type": "address"},
+        {"name": "creator", "type": "address"},
+        {"name": "isCertified", "type": "bool"},
+        {"name": "lawyer", "type": "address"},
+        {"name": "creationTime", "type": "uint256"},
+        {"name": "targetAmount", "type": "uint256"},
+        {"name": "category", "type": "string"},
+        {"name": "isActive", "type": "bool"},
+        {"name": "name", "type": "string"}  // Ajout du champ name
+      ],
+      "type": "tuple"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
 
 const formatEthValue = (value) => {
+  if (!value) return "0";
   try {
-    const num = parseFloat(value);
-    if (isNaN(num)) return "0";
-    
-    // Formater le nombre avec un maximum de 3 décimales
-    const formatted = num.toFixed(3);
-    
-    // Supprimer les zéros inutiles à la fin
-    return formatted.replace(/\.?0+$/, '');
-  } catch {
+    const formattedValue = ethers.utils.formatEther(value.toString());
+    return parseFloat(formattedValue).toFixed(6);
+  } catch (error) {
+    console.error("Erreur de formatage:", error);
     return "0";
   }
 };
@@ -31,124 +57,186 @@ export default function Home() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [debugInfo, setDebugInfo] = useState({});
+  const [error, setError] = useState(null);
 
-  const { contract: platformContract, isLoading: contractLoading, error: contractError } = useContract(
-    "0xD624ddFe214734dAceA2aacf8bb47e837B5228DD",
-    FundRaisingPlatformABI
+  const { contract: platformContract } = useContract(
+    PLATFORM_ADDRESS,
+    PLATFORM_ABI
   );
 
-  const { data: campaignAddresses, isLoading: addressesLoading, error: addressesError } = useContractRead(
+  const { data: campaignAddresses, isLoading: addressesLoading } = useContractRead(
     platformContract,
-    "getAllCampaigns",
-    []
+    "getAllCampaigns"
   );
+
+  const fetchCampaignName = async (campaignAddress) => {
+    try {
+      const events = await platformContract.events.getEvents("CampaignCreated", {
+        filters: {
+          campaignAddress: campaignAddress
+        }
+      });
+      
+      if (events && events.length > 0) {
+        return events[0].data.name;
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la récupération du nom pour ${campaignAddress}:`, error);
+    }
+    return null;
+  };
 
   const fetchCampaignData = async (campaignAddress) => {
     if (!platformContract) {
-      console.error("Le contrat plateforme n'est pas disponible");
+      console.log("Contract not initialized");
       return null;
     }
 
     try {
-      console.log("Tentative de récupération pour l'adresse:", campaignAddress);
-
+      // Récupération des données de base
       const campaignInfo = await platformContract.call("campaignRegistry", [campaignAddress]);
-      console.log("Données brutes reçues du registre:", campaignInfo);
-
+      
       if (!campaignInfo || !campaignInfo.campaignAddress) {
-        throw new Error("Données de campagne invalides");
+        console.log(`Invalid data for campaign ${campaignAddress}`);
+        return null;
       }
+
+      // Récupération du nom via l'événement
+      const name = await fetchCampaignName(campaignAddress);
 
       const formattedData = {
         id: campaignAddress,
-        name: `Campaign ${campaignAddress.slice(0, 6)}`,
+        name: name || `Campagne ${campaignInfo.creationTime.toString()}`,
         sector: campaignInfo.category || "Général",
-        sharePrice: ethers.utils.formatEther(campaignInfo.targetAmount),
+        sharePrice: formatEthValue(campaignInfo.targetAmount),
         raised: "0",
-        goal: ethers.utils.formatEther(campaignInfo.targetAmount),
+        goal: formatEthValue(campaignInfo.targetAmount),
         endDate: new Date(campaignInfo.creationTime.toNumber() * 1000).toLocaleDateString(),
         isActive: campaignInfo.isActive,
         isCertified: campaignInfo.isCertified,
-        creator: campaignInfo.creator
+        creator: campaignInfo.creator,
+        lawyer: campaignInfo.lawyer,
+        creationTime: campaignInfo.creationTime.toNumber()
       };
 
-      console.log("Données formatées:", formattedData);
       return formattedData;
 
     } catch (error) {
-      console.error(`Erreur pour la campagne ${campaignAddress}:`, error);
+      console.error(`Error fetching campaign ${campaignAddress}:`, error);
       return null;
     }
   };
 
+  const fetchAllCampaigns = async () => {
+    if (!campaignAddresses || !platformContract) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const campaignDataPromises = campaignAddresses.map(fetchCampaignData);
+      const campaignsData = await Promise.all(campaignDataPromises);
+      const validCampaigns = campaignsData.filter(campaign => campaign !== null);
+      
+      // Trier les campagnes par date de création (les plus récentes d'abord)
+      validCampaigns.sort((a, b) => b.creationTime - a.creationTime);
+      
+      setProjects(validCampaigns);
+    } catch (error) {
+      console.error("Error fetching campaigns:", error);
+      setError("Erreur lors de la récupération des campagnes");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAllCampaigns = async () => {
-      if (!campaignAddresses || !platformContract) {
-        console.log("Conditions non remplies:", {
-          hasCampaignAddresses: !!campaignAddresses,
-          numberOfAddresses: campaignAddresses?.length,
-          hasPlatformContract: !!platformContract
-        });
-        return;
-      }
+    if (!addressesLoading && platformContract) {
+      fetchAllCampaigns();
+    }
+  }, [platformContract, campaignAddresses, addressesLoading]);
 
-      setIsLoading(true);
-      setDebugInfo(prev => ({
-        ...prev,
-        startFetch: new Date().toISOString()
-      }));
+  // Écouter les nouveaux événements de création de campagne
+  useEffect(() => {
+    if (platformContract) {
+      const unsubscribe = platformContract.events.addEventListener(
+        "CampaignCreated",
+        (event) => {
+          console.log("Nouvelle campagne créée:", event);
+          fetchAllCampaigns();
+        }
+      );
 
-      try {
-        console.log("Début de la récupération des campagnes. Adresses:", campaignAddresses);
-        
-        const campaignDataPromises = campaignAddresses.map(fetchCampaignData);
-        const campaignsData = await Promise.all(campaignDataPromises);
-        
-        const validCampaigns = campaignsData.filter(campaign => campaign !== null);
-        console.log("Campagnes valides trouvées:", validCampaigns);
-        
-        setProjects(validCampaigns);
-        setDebugInfo(prev => ({
-          ...prev,
-          campaignsCount: validCampaigns.length,
-          fetchComplete: new Date().toISOString()
-        }));
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [platformContract]);
 
-      } catch (error) {
-        console.error("Erreur lors de la récupération des campagnes:", error);
-        setDebugInfo(prev => ({
-          ...prev,
-          error: error.message
-        }));
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const handleCreateCampaign = () => {
+    setShowCreateCampaign(true);
+  };
 
+  const handleCampaignCreated = () => {
+    setShowCreateCampaign(false);
     fetchAllCampaigns();
-  }, [platformContract, campaignAddresses]);
+  };
+
+  const handleViewDetails = (project) => {
+    setSelectedProject(project);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedProject(null);
+  };
+
+  const renderProgressBar = (raised, goal) => {
+    const progress = ((parseFloat(raised) / parseFloat(goal)) * 100) || 0;
+    return (
+      <div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-900 dark:text-gray-100">
+            {raised} ETH
+          </span>
+          <span className="text-sm text-gray-500">
+            {progress.toFixed(1)}%
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-1">
+          <div
+            className="h-2.5 rounded-full bg-lime-400"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 dark:bg-red-900 rounded-lg">
+        <p className="text-red-600 dark:text-red-200">{error}</p>
+        <Button 
+          onClick={fetchAllCampaigns}
+          className="mt-4 bg-red-600 text-white hover:bg-red-700"
+        >
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-3 md:p-1">
-      <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded text-sm">
-        <h3 className="font-bold mb-2">Debug Info:</h3>
-        <p>Contract Loading: {contractLoading ? "Yes" : "No"}</p>
-        <p>Contract Error: {contractError ? contractError.message : "None"}</p>
-        <p>Addresses Loading: {addressesLoading ? "Yes" : "No"}</p>
-        <p>Campaign Addresses: {campaignAddresses ? campaignAddresses.length : 0}</p>
-        <p>Projects Loaded: {projects.length}</p>
-        <pre className="mt-2 text-xs">
-          {JSON.stringify(debugInfo, null, 2)}
-        </pre>
-      </div>
-
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-0">
           Projets en cours de financement
         </h2>
         <Button
-          onClick={() => setShowCreateCampaign(true)}
+          onClick={handleCreateCampaign}
           className="w-full md:w-auto bg-lime-400 hover:bg-lime-400 text-white font-bold"
         >
           Créer campagne
@@ -163,7 +251,7 @@ export default function Home() {
         <div className="space-y-6">
           {!projects || projects.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400">
-              {contractError ? "Erreur de connexion au contrat" : "Aucune campagne disponible pour le moment."}
+              Aucune campagne disponible pour le moment.
             </p>
           ) : (
             <>
@@ -191,31 +279,14 @@ export default function Home() {
                       )}
                     </div>
                     <div className="text-gray-700 dark:text-gray-300">{project.sector}</div>
-                    <div className="text-gray-900 dark:text-gray-100">{formatEthValue(project.sharePrice)} ETH</div>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-900 dark:text-gray-100">
-                          {formatEthValue(project.raised)} ETH
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {((parseFloat(project.raised) / parseFloat(project.goal)) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-1">
-                        <div
-                          className="h-2.5 rounded-full bg-lime-400"
-                          style={{
-                            width: `${(parseFloat(project.raised) / parseFloat(project.goal)) * 100}%`
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-gray-900 dark:text-gray-100">{formatEthValue(project.goal)} ETH</div>
-                    <div
-                      className="flex justify-end"
-                      onClick={() => setSelectedProject(project)}
-                    >
-                      <div className="group relative inline-flex items-center justify-center p-2 overflow-hidden font-medium text-lime-400 rounded-lg shadow-xl transition duration-300 ease-out bg-gray-50 dark:bg-neutral-900 hover:bg-lime-50 dark:hover:bg-lime-900">
+                    <div className="text-gray-900 dark:text-gray-100">{project.sharePrice} ETH</div>
+                    <div>{renderProgressBar(project.raised, project.goal)}</div>
+                    <div className="text-gray-900 dark:text-gray-100">{project.goal} ETH</div>
+                    <div className="flex justify-end">
+                      <div 
+                        className="group relative inline-flex items-center justify-center p-2 overflow-hidden font-medium text-lime-400 rounded-lg shadow-xl transition duration-300 ease-out bg-gray-50 dark:bg-neutral-900 hover:bg-lime-50 dark:hover:bg-lime-900 cursor-pointer"
+                        onClick={() => handleViewDetails(project)}
+                      >
                         <span className="absolute inset-0 flex items-center justify-center w-full h-full text-white duration-300 -translate-x-full bg-lime-600 group-hover:translate-x-0 ease">
                           <ArrowRight className="w-5 h-5" />
                         </span>
@@ -236,16 +307,14 @@ export default function Home() {
       {selectedProject && (
         <ProjectDetails
           selectedProject={selectedProject}
-          onClose={() => setSelectedProject(null)}
+          onClose={handleCloseDetails}
         />
       )}
 
       <CampaignModal
         showCreateCampaign={showCreateCampaign}
         setShowCreateCampaign={setShowCreateCampaign}
-        onCampaignCreated={() => {
-          setShowCreateCampaign(false);
-        }}
+        onCampaignCreated={handleCampaignCreated}
       />
     </div>
   );

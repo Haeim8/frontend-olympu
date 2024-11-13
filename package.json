@@ -60,7 +60,8 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "thirdweb": "^5.61.5",
-    "viem": "^1.0.2"
+    "viem": "^1.0.2",
+    "web3": "^4.14.0"
   },
   "devDependencies": {
     "@shadcn/ui": "^0.0.4",

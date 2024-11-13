@@ -1,0 +1,15 @@
+[
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "campaign",
+          "type": "address"
+        }
+      ],
+      "name": "registerCampaign",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
