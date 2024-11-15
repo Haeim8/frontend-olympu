@@ -11,11 +11,20 @@ import News from './Pages/News';
 import Favorites from './Pages/Favorites';
 import Campaign from './Pages/Campaign';
 
-import { useDisconnect, useAddress } from '@thirdweb-dev/react';
+import { 
+  useDisconnect, 
+  useAddress, 
+  useContract, 
+  useContractRead 
+} from '@thirdweb-dev/react';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebase";
+import DivarProxyABI from '@/ABI/DivarProxyABI.json';
+
+const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
 export default function AppInterface() {
+  const [hasCampaign, setHasCampaign] = useState(false);
   const [activePage, setActivePage] = useState('home');
   const [darkMode, setDarkMode] = useState(true);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -23,7 +32,8 @@ export default function AppInterface() {
   const disconnect = useDisconnect();
   const address = useAddress();
   const router = useRouter();
-
+  const { contract: platformContract } = useContract(PLATFORM_ADDRESS, DivarProxyABI); 
+ 
   useEffect(() => {
     if (!address) {
       router.push('/');
@@ -44,6 +54,25 @@ export default function AppInterface() {
     fetchUserData();
   }, [address]);
 
+
+  const { data: userCampaigns } = useContractRead(
+    platformContract,
+    "getCampaignsByCreator",
+    [address]
+  );
+
+  useEffect(() => {
+    if (userCampaigns && userCampaigns.length > 0) {
+      setHasCampaign(true);
+    } else {
+      setHasCampaign(false);
+      if (activePage === 'campaign') {
+        setActivePage('home');
+      }
+    }
+  }, [userCampaigns]);
+
+  
   const handleDisconnect = () => {
     disconnect();
     router.push('/');
@@ -95,6 +124,7 @@ export default function AppInterface() {
           setActivePage={setActivePage}
           showMobileMenu={showMobileMenu}
           setShowMobileMenu={setShowMobileMenu}
+          hasCampaign={hasCampaign}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-950 p-6 md:p-8 transition-all duration-300 ease-in-out">
           {renderActivePage()}

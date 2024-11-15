@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,12 +14,21 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, Share2, Repeat, FileText, BarChart, Link, AlertTriangle, Plus, Video, Megaphone, ShieldCheck } from 'lucide-react';
+import { useAddress, useContract, useContractRead } from '@thirdweb-dev/react';
+import { ethers } from 'ethers';
+import DivarProxyABI from '@/ABI/DivarProxyABI.json';
+import CampaignABI from '@/ABI/CampaignABI.json';
+const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
 export default function Campaign() {
+  const address = useAddress();
+  const [campaignAddress, setCampaignAddress] = useState(null);
+  const [campaignData, setCampaignData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showDistributeDialog, setShowDistributeDialog] = useState(false);
   const [distributeForm, setDistributeForm] = useState({
     amount: "",
-    token: "USDC",
+    token: "ETH",
     message: ""
   });
   const [showReopenDialog, setShowReopenDialog] = useState(false);
@@ -31,52 +40,113 @@ export default function Campaign() {
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
 
-  const campaign = {
-    id: 1,
-    name: "Tech Startup A",
-    status: "En cours",
-    raised: 750000,
-    goal: 1000000,
-    investors: 150,
-    nftTotal: 1000,
-    nftPrice: 1000,
-    endDate: "2023-12-31T23:59:59",
-    lawyer: null,
-    firstRound: {
-      raised: 750000,
-      investors: 150,
-      endDate: "2023-06-30"
+  // Connexion aux contrats
+  const { contract: platformContract } = useContract(PLATFORM_ADDRESS, DivarProxyABI);
+  const { contract: campaignContract } = useContract(campaignAddress, CampaignABI);
+
+  // Lecture des données
+  const { data: userCampaigns } = useContractRead(
+    platformContract,
+    "getCampaignsByCreator",
+    [address]
+  );
+
+  const { data: currentRound } = useContractRead(
+    campaignContract,
+    "getCurrentRound",
+    []
+  );
+
+  useEffect(() => {
+    if (userCampaigns && userCampaigns.length > 0) {
+      setCampaignAddress(userCampaigns[0]);
     }
-  };
+  }, [userCampaigns]);
+
+  useEffect(() => {
+    async function fetchCampaignData() {
+      if (!campaignContract) return;
+      setIsLoading(true);
+
+      try {
+        const [roundData, totalSupply, metadata] = await Promise.all([
+          campaignContract.call("getCurrentRound"),
+          campaignContract.call("totalSupply"),
+          platformContract.call("campaignRegistry", [campaignAddress])
+        ]);
+
+        setCampaignData({
+          address: campaignAddress,
+          name: metadata.name,
+          status: roundData.isActive ? "En cours" : "Finalisée",
+          raised: ethers.utils.formatEther(roundData.fundsRaised),
+          goal: ethers.utils.formatEther(roundData.targetAmount),
+          investors: totalSupply.toNumber(),
+          nftTotal: roundData.targetAmount.div(roundData.sharePrice).toNumber(),
+          nftPrice: ethers.utils.formatEther(roundData.sharePrice),
+          endDate: new Date(roundData.endTime.toNumber() * 1000),
+          lawyer: metadata.lawyer
+        });
+      } catch (error) {
+        console.error("Erreur lors du chargement:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchCampaignData();
+  }, [campaignContract, campaignAddress]);
 
   const handleDistributeChange = (field, value) => {
     setDistributeForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleDistributeDividends = () => {
-    const amount = parseFloat(distributeForm.amount);
-    if (isNaN(amount) || amount <= 0) {
-      alert("Veuillez entrer un montant valide.");
-      return;
+  const handleDistributeDividends = async () => {
+    try {
+      const amount = ethers.utils.parseEther(distributeForm.amount);
+      const tx = await campaignContract.call(
+        "distributeDividends",
+        [amount],
+        { value: amount }
+      );
+      await tx.wait();
+      setDistributeForm({ amount: "", token: "ETH", message: "" });
+      alert("Distribution réussie!");
+    } catch (error) {
+      console.error("Erreur lors de la distribution:", error);
+      alert(error.message);
     }
-    alert(`Distribution de ${amount} ${distributeForm.token} confirmée. Message : ${distributeForm.message}`);
-    setDistributeForm({ amount: "", token: "ETH", message: "" });
   };
 
   const calculateDividendPerNFT = () => {
     const amount = parseFloat(distributeForm.amount);
     if (isNaN(amount) || amount <= 0) return 0;
-    return (amount / campaign.nftTotal).toFixed(6);
+    return (amount / campaignData?.nftTotal || 1).toFixed(6);
   };
 
-  const handleReopenCampaign = () => {
-    if (parseFloat(reopenForm.sharePrice) < campaign.nftPrice) {
-      alert("Le nouveau prix des NFT ne peut pas être inférieur au prix du tour précédent.");
-      return;
+  const handleReopenCampaign = async () => {
+    try {
+      if (parseFloat(reopenForm.sharePrice) < campaignData.nftPrice) {
+        throw new Error("Prix des NFTs trop bas");
+      }
+
+      const targetAmount = ethers.utils.parseEther(reopenForm.goal);
+      const sharePrice = ethers.utils.parseEther(reopenForm.sharePrice);
+      const duration = Math.floor((new Date(reopenForm.endDate).getTime() - Date.now()) / 1000);
+
+      const tx = await campaignContract.call(
+        "startNewRound",
+        [targetAmount, sharePrice, duration]
+      );
+      await tx.wait();
+      
+      setShowReopenDialog(false);
+      setReopenForm({ goal: "", sharePrice: "", endDate: "" });
+      alert("Nouveau round démarré!");
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert(error.message);
     }
-    alert(`Campagne réouverte avec un nouvel objectif de ${reopenForm.goal} USDC et un prix de NFT de ${reopenForm.sharePrice} USDC.`);
-    setShowReopenDialog(false);
-    setReopenForm({ goal: "", sharePrice: "", endDate: "" });
   };
 
   return (
@@ -85,30 +155,33 @@ export default function Campaign() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{campaign.name}</CardTitle>
+          <CardTitle>{campaignData?.name || "Chargement..."}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Statut</p>
-              <p className="text-lg font-semibold">{campaign.status}</p>
+              <p className="text-lg font-semibold">{campaignData?.status || "N/A"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Montant Levé</p>
-              <p className="text-lg font-semibold">{campaign.raised.toLocaleString()} USDC</p>
+              <p className="text-lg font-semibold">{campaignData?.raised || "0"} ETH</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Objectif</p>
-              <p className="text-lg font-semibold">{campaign.goal.toLocaleString()} USDC</p>
+              <p className="text-lg font-semibold">{campaignData?.goal || "0"} ETH</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Investisseurs</p>
-              <p className="text-lg font-semibold">{campaign.investors}</p>
+              <p className="text-lg font-semibold">{campaignData?.investors || "0"}</p>
             </div>
           </div>
-          <Progress value={(campaign.raised / campaign.goal) * 100} className="mt-4" />
+          <Progress 
+            value={(parseFloat(campaignData?.raised || 0) / parseFloat(campaignData?.goal || 1)) * 100} 
+            className="mt-4" 
+          />
           <p className="text-sm text-muted-foreground mt-2">
-            Temps restant : {new Date(campaign.endDate).toLocaleString()}
+            Temps restant : {campaignData?.endDate ? new Date(campaignData.endDate).toLocaleString() : "N/A"}
           </p>
         </CardContent>
       </Card>
@@ -181,40 +254,50 @@ export default function Campaign() {
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Actions de Campagne</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <Button 
-                        className="w-full" 
-                        onClick={() => setShowReopenDialog(true)}
-                        disabled={campaign.status !== "Finalisée"}
-                      >
-                        <Repeat className="mr-2 h-4 w-4" />
-                        Rouvrir la Campagne
-                      </Button>
-                      <Button className="w-full">
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Partager la Campagne
-                      </Button>
-                      <Button className="w-full">
-                        <Video className="mr-2 h-4 w-4" />
-                        Démarrer Live
-                      </Button>
-                      <Button className="w-full" onClick={() => setShowPromoteDialog(true)}>
-                        <Megaphone className="mr-2 h-4 w-4" />
-                        Promouvoir la Campagne
-                      </Button>
-                      {!campaign.lawyer && (
-                        <Button className="w-full" onClick={() => setShowCertifyDialog(true)}>
-                          <ShieldCheck className="mr-2 h-4 w-4" />
-                          Certifier la Campagne
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+  <CardHeader>
+    <CardTitle>Actions de Campagne</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <Button 
+        className="w-full" 
+        onClick={() => setShowReopenDialog(true)}
+        disabled={campaignData?.status !== "Finalisée"}
+      >
+        <Repeat className="mr-2 h-4 w-4" />
+        Rouvrir la Campagne
+      </Button>
+      
+      <Button className="w-full">
+        <Share2 className="mr-2 h-4 w-4" />
+        Partager la Campagne
+      </Button>
+      
+      <Button className="w-full">
+        <Video className="mr-2 h-4 w-4" />
+        Démarrer Live
+      </Button>
+      
+      <Button 
+        className="w-full" 
+        onClick={() => setShowPromoteDialog(true)}
+      >
+        <Megaphone className="mr-2 h-4 w-4" />
+        Promouvoir la Campagne
+      </Button>
+      
+      {!campaignData?.lawyer && (
+        <Button 
+          className="w-full" 
+          onClick={() => setShowCertifyDialog(true)}
+        >
+          <ShieldCheck className="mr-2 h-4 w-4" />
+          Certifier la Campagne
+        </Button>
+      )}
+    </div>
+  </CardContent>
+</Card>
               </div>
             </CardContent>
           </Card>

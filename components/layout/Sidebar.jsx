@@ -1,17 +1,32 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Home, Wallet, MessageSquare, Newspaper, Star, FileText, Upload } from "lucide-react";
+import { Home, Wallet, MessageSquare, Newspaper, Star, FileText } from "lucide-react";
 
-const menuItems = [
-  { icon: Home, title: 'Accueil', id: 'home' },
-  { icon: Wallet, title: 'Portefeuille', id: 'wallet' },
-  { icon: MessageSquare, title: 'Discussions', id: 'discussions' },
-  { icon: Newspaper, title: 'Actualités', id: 'news' },
-  { icon: Star, title: 'Favoris', id: 'favorites' },
-  { icon: FileText, title: 'Campagne', id: 'campaign' },
-];
+const getMenuItems = (hasCampaign) => {
+  const baseItems = [
+    { icon: Home, title: 'Accueil', id: 'home' },
+    { icon: Wallet, title: 'Portefeuille', id: 'wallet' },
+    { icon: MessageSquare, title: 'Discussions', id: 'discussions' },
+    { icon: Newspaper, title: 'Actualités', id: 'news' },
+    { icon: Star, title: 'Favoris', id: 'favorites' },
+  ];
 
-export default function Sidebar({ showMobileMenu = true, activePage = 'home', setActivePage = () => {}, setShowMobileMenu = () => {} }) {
+  if (hasCampaign) {
+    baseItems.push({ icon: FileText, title: 'Campagne', id: 'campaign' });
+  }
+
+  return baseItems;
+};
+
+export default function Sidebar({ 
+  showMobileMenu = true, 
+  activePage = 'home', 
+  setActivePage = () => {}, 
+  setShowMobileMenu = () => {},
+  hasCampaign = false
+}) {
+  const menuItems = getMenuItems(hasCampaign);
+
   const changePage = (page) => {
     setActivePage(page);
     setShowMobileMenu(false);

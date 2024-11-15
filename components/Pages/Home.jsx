@@ -91,7 +91,7 @@ export default function Home() {
       console.log("Contract not initialized");
       return null;
     }
-
+  
     try {
       // Récupération des données de base
       const campaignInfo = await platformContract.call("campaignRegistry", [campaignAddress]);
@@ -100,16 +100,15 @@ export default function Home() {
         console.log(`Invalid data for campaign ${campaignAddress}`);
         return null;
       }
-
-      // Récupération du nom via l'événement
-      const name = await fetchCampaignName(campaignAddress);
-
+  
+      // Le nom est directement disponible dans campaignInfo maintenant
       const formattedData = {
         id: campaignAddress,
-        name: name || `Campagne ${campaignInfo.creationTime.toString()}`,
+        // Utilisation directe du nom depuis campaignInfo
+        name: campaignInfo.name || `Campagne ${campaignInfo.creationTime.toString()}`,
         sector: campaignInfo.category || "Général",
         sharePrice: formatEthValue(campaignInfo.targetAmount),
-        raised: "0",
+        raised: "0", // À mettre à jour avec les vraies données
         goal: formatEthValue(campaignInfo.targetAmount),
         endDate: new Date(campaignInfo.creationTime.toNumber() * 1000).toLocaleDateString(),
         isActive: campaignInfo.isActive,
@@ -118,9 +117,16 @@ export default function Home() {
         lawyer: campaignInfo.lawyer,
         creationTime: campaignInfo.creationTime.toNumber()
       };
-
+  
+      // Log pour debug
+      console.log("Campaign Info:", {
+        address: campaignAddress,
+        name: campaignInfo.name,
+        data: formattedData
+      });
+  
       return formattedData;
-
+  
     } catch (error) {
       console.error(`Error fetching campaign ${campaignAddress}:`, error);
       return null;

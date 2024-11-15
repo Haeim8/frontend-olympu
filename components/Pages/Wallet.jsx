@@ -1,94 +1,119 @@
-//frontend/components/pages/wallet.jsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAddress, useBalance, useContract, useContractRead, useContractEvents } from '@thirdweb-dev/react'; // Importation des hooks Thirdweb
-import { ethers } from 'ethers'; // Utilisation de ethers pour formater les unités
+import { useAddress, useBalance, useContract, useContractRead, useContractEvents } from '@thirdweb-dev/react';
+import { ethers } from 'ethers';
+import CampaignABI from '@/ABI/CampaignABI.json';
+import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 
-const INVESTMENT_CONTRACT_ADDRESS = '0xb74916df2Bf88Eb7d7b3a722fB5acD43179C5005'; // Remplacez par l'adresse réelle de votre contrat
+const INVESTMENT_CONTRACT_ADDRESS = '0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941';
 
 export default function Wallet() {
-  const address = useAddress(); // Récupérer l'adresse du portefeuille de l'utilisateur
+  const address = useAddress();
   const { contract, isLoading: contractLoading, error: contractError } = useContract(INVESTMENT_CONTRACT_ADDRESS);
   
-  // État pour les balances
+  // États pour les balances
   const { data: ethBalance, isLoading: ethLoading, error: ethError } = useBalance();
   const { data: wethBalance, isLoading: wethLoading, error: wethError } = useBalance({
-    tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // Adresse WETH Mainnet (vérifiez pour Sepolia)
+    tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
   });
   const { data: usdtBalance, isLoading: usdtLoading, error: usdtError } = useBalance({
-    tokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // Adresse USDT Mainnet (vérifiez pour Sepolia)
+    tokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
   });
 
-  // État pour les informations de portefeuille
+  // Nouveaux états pour les NFTs et les transactions réelles
+  const [nftHoldings, setNftHoldings] = useState([]);
   const [walletInfo, setWalletInfo] = useState({
     pnl: '0 USDC',
     investedValue: '0 USDC',
     projectsInvested: 0,
     unlockTime: '',
   });
-
-  // État pour les transactions
   const [transactions, setTransactions] = useState([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [transactionError, setTransactionError] = useState(null);
 
-  // Utiliser useContractRead pour lire les investissements de l'utilisateur
-  const { data: userInvestments, isLoading: investmentsLoading, error: investmentsError, refetch: refetchInvestments } = useContractRead(
+  // Lecture des campagnes
+  const { data: campaigns } = useContractRead(
     contract,
-    "getUserInvestments",
-    [address]
+    "getAllCampaigns"
   );
 
-  // Écouter les événements de transactions pour rafraîchir les données en temps réel
-  useContractEvents(contract, "InvestmentMade", {
-    filters: { user: address },
-    listener: (event) => {
-      console.log("Nouvelle transaction détectée:", event);
-      refetchInvestments();
-    }
-  });
+  // Fonction pour récupérer les NFTs d'une campagne
+  const fetchNFTsForCampaign = async (campaignAddress) => {
+    try {
+      const campaignContract = await contract.getContract(campaignAddress, CampaignABI);
+      const balance = await campaignContract.call("balanceOf", [address]);
+      const tokens = [];
 
-  // Mettre à jour les informations du portefeuille lorsque les investissements sont chargés
-  useEffect(() => {
-    if (userInvestments) {
-      try {
-        const totalInvested = userInvestments.reduce((acc, project) => acc + parseFloat(ethers.utils.formatEther(project.amountInvested)), 0);
-        const pnl = userInvestments.reduce((acc, project) => acc + parseFloat(ethers.utils.formatEther(project.profitOrLoss)), 0);
-        const unlockTime = Math.max(...userInvestments.map(project => project.unlockTime.toNumber()), 0);
+      for (let i = 0; i < balance.toNumber(); i++) {
+        const tokenId = await campaignContract.call("tokenOfOwnerByIndex", [address, i]);
+        const tokenInfo = await campaignContract.call("getNFTInfo", [tokenId]);
         
-        setWalletInfo({
-          pnl: `${pnl.toFixed(2)} USDC`,
-          investedValue: `${totalInvested.toFixed(2)} USDC`,
-          projectsInvested: userInvestments.length,
-          unlockTime: unlockTime > 0 ? `${Math.ceil((unlockTime - Math.floor(Date.now() / 1000)) / 86400)} jours` : 'N/A',
+        const investment = await campaignContract.call("investmentsByAddress", [address, i]);
+        tokens.push({
+          id: tokenId.toString(),
+          round: tokenInfo.round.toString(),
+          amount: ethers.utils.formatEther(investment.amount),
+          campaign: campaignAddress,
+          timestamp: investment.timestamp.toNumber()
         });
+      }
 
-        // Formater les transactions
-        const formattedTransactions = userInvestments.flatMap(project => project.transactions.map(tx => ({
-          id: tx.id,
-          type: tx.type,
-          project: project.name,
-          amount: `${ethers.utils.formatEther(tx.amount)} USDC`,
-          date: new Date(tx.timestamp.toNumber() * 1000).toLocaleDateString(),
-        })));
+      return tokens;
+    } catch (error) {
+      console.error(`Erreur NFTs:`, error);
+      return [];
+    }
+  };
 
-        setTransactions(formattedTransactions);
+  // Effet pour les NFTs et le calcul des valeurs
+  useEffect(() => {
+    async function fetchAllNFTs() {
+      if (!campaigns || !address) return;
+
+      try {
+        const nftPromises = campaigns.map(fetchNFTsForCampaign);
+        const nftResults = await Promise.all(nftPromises);
+        const allNFTs = nftResults.flat();
+
+        setNftHoldings(allNFTs);
+
+        // Calcul des valeurs totales
+        const totalInvested = allNFTs.reduce((acc, nft) => acc + parseFloat(nft.amount), 0);
+        
+        setWalletInfo(prev => ({
+          ...prev,
+          investedValue: `${totalInvested.toFixed(2)} ETH`,
+          projectsInvested: new Set(allNFTs.map(nft => nft.campaign)).size
+        }));
+
+        // Création des transactions
+        const txs = allNFTs.map(nft => ({
+          id: nft.id,
+          type: 'Achat',
+          project: nft.campaign,
+          amount: `${nft.amount} ETH`,
+          date: new Date(nft.timestamp * 1000).toLocaleDateString()
+        }));
+
+        setTransactions(txs);
         setIsLoadingTransactions(false);
       } catch (error) {
-        console.error("Erreur lors du traitement des investissements:", error);
-        setTransactionError("Erreur lors de la récupération des transactions.");
-        setIsLoadingTransactions(false);
+        console.error("Erreur lors de la récupération des NFTs:", error);
+        setTransactionError("Erreur lors de la récupération des données.");
       }
     }
-  }, [userInvestments]);
+
+    fetchAllNFTs();
+  }, [campaigns, address]);
 
   const renderBalance = (balance, loading, error, decimals = 4) => {
     if (loading) return 'Chargement...';
     if (error || !balance) return 'Erreur';
-    return parseFloat(ethers.utils.formatUnits(balance.value, balance.decimals)).toFixed(decimals);
+    return parseFloat(balance.displayValue).toFixed(decimals);
   };
 
   if (contractLoading) {
@@ -103,9 +128,39 @@ export default function Wallet() {
     return <p>Veuillez connecter votre portefeuille pour voir votre portefeuille.</p>;
   }
 
+  const renderNFTSection = () => (
+    <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md">
+      <CardHeader>
+        <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Vos NFTs</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[200px]">
+          {nftHoldings.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400">Aucun NFT détenu</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {nftHoldings.map((nft) => (
+                <div 
+                  key={`${nft.campaign}-${nft.id}`}
+                  className="p-4 border rounded-lg dark:border-gray-700"
+                >
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Token #{nft.id}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Round: {nft.round}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Montant: {nft.amount} ETH</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-8">
       <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Votre portefeuille</h2>
+      
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
@@ -140,6 +195,8 @@ export default function Wallet() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Token Balances */}
       <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Solde des Tokens</CardTitle>
@@ -165,6 +222,11 @@ export default function Wallet() {
           </div>
         </CardContent>
       </Card>
+
+      {/* NFT Section */}
+      {renderNFTSection()}
+
+      {/* Transactions Section */}
       <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Historique des transactions</CardTitle>

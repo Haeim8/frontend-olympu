@@ -39,23 +39,21 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
 
   const address = useAddress();
   const chainId = useChainId();
-  const contractAddress = "0xb74916df2Bf88Eb7d7b3a722fB5acD43179C5005";
+  const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
   const contractABI = [
     {
-      "type": "function",
-      "name": "createCampaign",
       "inputs": [
         { "type": "string", "name": "_name" },
         { "type": "string", "name": "_symbol" },
         { "type": "uint256", "name": "_targetAmount" },
         { "type": "uint256", "name": "_sharePrice" },
         { "type": "uint256", "name": "_endTime" },
-        { "type": "bool", "name": "_certified" },
-        { "type": "address", "name": "_lawyer" },
         { "type": "string", "name": "_category" },
         { "type": "string", "name": "_metadata" },
-        { "type": "uint96", "name": "_royaltyFee" }
+        { "type": "uint96", "name": "_royaltyFee" },
+        { "type": "string", "name": "_logo" }
       ],
+      "name": "createCampaign",
       "outputs": [],
       "stateMutability": "payable"
     },
@@ -374,31 +372,39 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(4)) return;
+    
+    if (chainId !== 11155111) {
+      setError({ general: "Veuillez vous connecter au réseau Sepolia" });
+      return;
+    }
+  
     setIsLoading(true);
     setStatus('loading');
     setError({});
     console.log("Début de la soumission du formulaire");
+  
     try {
+      // Upload des documents et création du dossier IPFS
       const ipfsResult = await createCampaignFolder(
         formData,
         formData.documents,
         formData.media
       );
       console.log("Dossier IPFS créé:", ipfsResult);
-
+  
       if (!ipfsResult.success) {
         throw new Error("Échec de l'upload IPFS");
       }
-
+  
       if (!creationFee) {
         throw new Error("Frais de création de campagne non disponible");
       }
-
+  
       const metadataURI = `ipfs://${ipfsResult.ipfsHash}`;
-
       const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
-      const targetAmountWei = ethers.utils.parseEther(formData.sharePrice).mul(ethers.BigNumber.from(formData.numberOfShares));
-
+      const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
+  
+      // Création de la campagne
       const tx = await createCampaign({
         args: [
           formData.name,
@@ -406,32 +412,32 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
           targetAmountWei,
           sharePriceWei,
           Math.floor(new Date(formData.endDate).getTime() / 1000),
-          formData.certified,
-          formData.certified ? formData.lawyer.address : ethers.constants.AddressZero,
           formData.sector,
           metadataURI,
-          ethers.BigNumber.from(formData.royaltyFee)
+          ethers.BigNumber.from(formData.royaltyFee),
+          formData.logo || "" // Logo URL ou chaîne vide si pas de logo
         ],
         overrides: {
           value: creationFee
         }
       });
-      
-      console.log("Transaction retournée par mutateAsync:", tx);
-
+  
+      console.log("Transaction envoyée:", tx);
       setTransactionHash(tx.hash);
-
       await tx.wait();
-
-      console.log("Transaction confirmée, en attente de l'événement CampaignCreated");
-
+      console.log("Transaction confirmée");
+  
     } catch (error) {
       console.error("Erreur lors de la création de la campagne:", error);
       setStatus('error');
-      setError({ general: error.message || "Erreur lors de la création de la campagne" });
+      
+      if (error.code === "INSUFFICIENT_FUNDS") {
+        setError({ general: "Fonds insuffisants pour créer la campagne" });
+      } else {
+        setError({ general: error.message || "Erreur lors de la création de la campagne" });
+      }
     } finally {
       setIsLoading(false);
-      console.log("Chargement terminé");
     }
   };
 
