@@ -373,10 +373,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     e.preventDefault();
     if (!validateStep(4)) return;
     
-    if (chainId !== 11155111) {
-      setError({ general: "Veuillez vous connecter au réseau Sepolia" });
-      return;
-    }
   
     setIsLoading(true);
     setStatus('loading');

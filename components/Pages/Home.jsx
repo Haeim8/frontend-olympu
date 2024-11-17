@@ -3,11 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, ArrowRight, Shield } from 'lucide-react';
+import { Eye, ArrowRight, Shield, ChevronDown } from 'lucide-react';
 import CampaignModal from './CampaignModal';
 import ProjectDetails from './ProjectDetails';
-import { useContract, useContractRead, useContractEvents } from '@thirdweb-dev/react';
+import { useContract, useContractRead } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
@@ -26,16 +33,34 @@ const PLATFORM_ABI = [
       "components": [
         {"name": "campaignAddress", "type": "address"},
         {"name": "creator", "type": "address"},
-        {"name": "isCertified", "type": "bool"},
-        {"name": "lawyer", "type": "address"},
         {"name": "creationTime", "type": "uint256"},
         {"name": "targetAmount", "type": "uint256"},
         {"name": "category", "type": "string"},
         {"name": "isActive", "type": "bool"},
-        {"name": "name", "type": "string"}  // Ajout du champ name
+        {"name": "name", "type": "string"},
+        {"name": "metadata", "type": "string"}
       ],
       "type": "tuple"
     }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+const CAMPAIGN_ABI = [
+  {
+    "inputs": [],
+    "name": "getCurrentRound",
+    "outputs": [
+      { "name": "roundNumber", "type": "uint256" },
+      { "name": "sharePrice", "type": "uint256" },
+      { "name": "targetAmount", "type": "uint256" },
+      { "name": "fundsRaised", "type": "uint256" },
+      { "name": "sharesSold", "type": "uint256" },
+      { "name": "endTime", "type": "uint256" },
+      { "name": "isActive", "type": "bool" },
+      { "name": "isFinalized", "type": "bool" }
+    ],
     "stateMutability": "view",
     "type": "function"
   }
@@ -58,6 +83,8 @@ export default function Home() {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showFinalized, setShowFinalized] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const { contract: platformContract } = useContract(
     PLATFORM_ADDRESS,
@@ -86,47 +113,62 @@ export default function Home() {
     return null;
   };
 
-  const fetchCampaignData = async (campaignAddress) => {
-    if (!platformContract) {
-      console.log("Contract not initialized");
-      return null;
-    }
-  
+  const fetchCampaignStatus = async (campaignAddress) => {
     try {
-      // Récupération des données de base
-      const campaignInfo = await platformContract.call("campaignRegistry", [campaignAddress]);
+      const campaign = await new ethers.Contract(
+        campaignAddress,
+        CAMPAIGN_ABI,
+        new ethers.providers.Web3Provider(window.ethereum)
+      );
       
+      const roundInfo = await campaign.getCurrentRound();
+      
+      return {
+        isActive: roundInfo.isActive,
+        isFinalized: roundInfo.isFinalized,
+        fundsRaised: roundInfo.fundsRaised.toString(),
+        sharesSold: roundInfo.sharesSold.toString(),
+        roundNumber: roundInfo.roundNumber.toString(),
+        sharePrice: roundInfo.sharePrice.toString()
+      };
+    } catch (error) {
+      console.error("Error fetching campaign status:", error);
+      return {
+        isActive: false,
+        isFinalized: false,
+        fundsRaised: "0",
+        sharesSold: "0",
+        roundNumber: "0",
+        sharePrice: "0"
+      };
+    }
+  };
+
+  const fetchCampaignData = async (campaignAddress) => {
+    if (!platformContract) return null;
+
+    try {
+      const campaignInfo = await platformContract.call("campaignRegistry", [campaignAddress]);
+      const statusInfo = await fetchCampaignStatus(campaignAddress);
+
       if (!campaignInfo || !campaignInfo.campaignAddress) {
-        console.log(`Invalid data for campaign ${campaignAddress}`);
+        console.log(`Invalid campaign data for ${campaignAddress}`);
         return null;
       }
-  
-      // Le nom est directement disponible dans campaignInfo maintenant
-      const formattedData = {
+
+      return {
         id: campaignAddress,
-        // Utilisation directe du nom depuis campaignInfo
-        name: campaignInfo.name || `Campagne ${campaignInfo.creationTime.toString()}`,
-        sector: campaignInfo.category || "Général",
-        sharePrice: formatEthValue(campaignInfo.targetAmount),
-        raised: "0", // À mettre à jour avec les vraies données
+        name: campaignInfo.name,
+        sector: campaignInfo.category,
+        sharePrice: formatEthValue(statusInfo.sharePrice),
+        raised: formatEthValue(statusInfo.fundsRaised),
         goal: formatEthValue(campaignInfo.targetAmount),
         endDate: new Date(campaignInfo.creationTime.toNumber() * 1000).toLocaleDateString(),
-        isActive: campaignInfo.isActive,
-        isCertified: campaignInfo.isCertified,
+        isActive: statusInfo.isActive,
+        isFinalized: statusInfo.isFinalized,
         creator: campaignInfo.creator,
-        lawyer: campaignInfo.lawyer,
         creationTime: campaignInfo.creationTime.toNumber()
       };
-  
-      // Log pour debug
-      console.log("Campaign Info:", {
-        address: campaignAddress,
-        name: campaignInfo.name,
-        data: formattedData
-      });
-  
-      return formattedData;
-  
     } catch (error) {
       console.error(`Error fetching campaign ${campaignAddress}:`, error);
       return null;
@@ -146,10 +188,7 @@ export default function Home() {
       const campaignDataPromises = campaignAddresses.map(fetchCampaignData);
       const campaignsData = await Promise.all(campaignDataPromises);
       const validCampaigns = campaignsData.filter(campaign => campaign !== null);
-      
-      // Trier les campagnes par date de création (les plus récentes d'abord)
       validCampaigns.sort((a, b) => b.creationTime - a.creationTime);
-      
       setProjects(validCampaigns);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
@@ -165,7 +204,6 @@ export default function Home() {
     }
   }, [platformContract, campaignAddresses, addressesLoading]);
 
-  // Écouter les nouveaux événements de création de campagne
   useEffect(() => {
     if (platformContract) {
       const unsubscribe = platformContract.events.addEventListener(
@@ -238,9 +276,41 @@ export default function Home() {
   return (
     <div className="p-3 md:p-1">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-        <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-0">
-          Projets en cours de financement
-        </h2>
+        <div className="relative mb-4 md:mb-0">
+          <div 
+            onClick={() => setMenuOpen(!menuOpen)} 
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Projets en cours de financement
+            </h2>
+            <ChevronDown className={`h-5 w-5 transition-transform ${menuOpen ? 'transform rotate-180' : ''}`} />
+          </div>
+          {menuOpen && (
+            <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-neutral-950 rounded-lg shadow-lg z-50">
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setShowFinalized(false);
+                    setMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-neutral-900"
+                >
+                  Campagnes en cours
+                </button>
+                <button
+                  onClick={() => {
+                    setShowFinalized(true);
+                    setMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-neutral-900"
+                >
+                  Campagnes finalisées
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
         <Button
           onClick={handleCreateCampaign}
           className="w-full md:w-auto bg-lime-400 hover:bg-lime-400 text-white font-bold"
@@ -270,7 +340,9 @@ export default function Home() {
                 <div className="font-semibold text-sm text-gray-950 dark:text-gray-300 text-right">Action</div>
               </div>
 
-              {projects.map((project) => (
+              {projects
+                .filter(project => showFinalized ? project.isFinalized : (!project.isFinalized && project.isActive))
+                .map((project) => (
                 <Card
                   key={project.id}
                   className="w-full bg-white dark:bg-neutral-950 shadow-md hover:shadow-lg transition-all duration-300"
@@ -322,6 +394,13 @@ export default function Home() {
         setShowCreateCampaign={setShowCreateCampaign}
         onCampaignCreated={handleCampaignCreated}
       />
+
+      {menuOpen && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
     </div>
   );
 }
