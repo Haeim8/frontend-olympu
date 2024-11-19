@@ -12,8 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Share2, Repeat, FileText, BarChart, Link, AlertTriangle, Plus, Video, Megaphone, ShieldCheck, MessageSquare, Twitter, Github, BookOpen } from 'lucide-react';
-import { useAddress, useContract, useContractRead, useContractEvents } from '@thirdweb-dev/react';
+import { DollarSign, Share2, Repeat, FileText, BarChart, Link, AlertTriangle, Plus, Megaphone, ShieldCheck, MessageSquare, Twitter, Github, BookOpen } from 'lucide-react';
+import { useAddress, useContract, useContractRead } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 import CampaignABI from '@/ABI/CampaignABI.json';
@@ -46,6 +46,7 @@ export default function Campaign() {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [documents, setDocuments] = useState([]);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [error, setError] = useState(null);
 
   const { contract: platformContract } = useContract(PLATFORM_ADDRESS, DivarProxyABI);
   const { contract: campaignContract } = useContract(campaignAddress, CampaignABI);
@@ -54,24 +55,6 @@ export default function Campaign() {
     platformContract,
     "getCampaignsByCreator",
     [address]
-  );
-
-  const { data: currentRound } = useContractRead(
-    campaignContract,
-    "getCurrentRound",
-    []
-  );
-
-  const { data: transferEvents } = useContractEvents(
-    campaignContract,
-    "Transfer",
-    { fromBlock: 0 }
-  );
-
-  const { data: dividendEvents } = useContractEvents(
-    campaignContract,
-    "DividendsDistributed",
-    { fromBlock: 0 }
   );
 
   useEffect(() => {
@@ -111,6 +94,7 @@ export default function Campaign() {
         });
       } catch (error) {
         console.error("Erreur lors du chargement:", error);
+        setError("Erreur lors du chargement des données de la campagne");
       } finally {
         setIsLoading(false);
       }
@@ -120,77 +104,76 @@ export default function Campaign() {
   }, [campaignContract, campaignAddress, platformContract]);
 
   useEffect(() => {
-    async function fetchInvestments() {
-      if (!campaignContract) return;
-      setIsLoadingInvestors(true);
-      
-      try {
-        const investorCount = await campaignContract.call("totalSupply");
-        const investorsData = [];
+    if (!campaignAddress) return;
 
-        for (let i = 0; i < investorCount; i++) {
-          const investorAddress = await campaignContract.call("ownerOf", [i]);
-          const shares = await campaignContract.call("balanceOf", [investorAddress]);
-          
-          investorsData.push({
-            address: investorAddress,
-            nftCount: shares.toString()
-          });
-        }
-
-        setInvestors(investorsData);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des investisseurs:", error);
-      } finally {
-        setIsLoadingInvestors(false);
-      }
-    }
-  
-    fetchInvestments();
-  }, [campaignContract]);
-  
-  useEffect(() => {
-    async function fetchTransactions() {
-      if (!campaignContract) return;
+    const loadEvents = async () => {
       setIsLoadingTransactions(true);
-
+      setIsLoadingInvestors(true);
       try {
-        const events = await campaignContract.events.getEvents("SharesPurchased");
-        const formattedTransactions = events.map(event => ({
-          address: event.data.investor,
-          nftCount: event.data.numShares.toString(),
-          amount: ethers.utils.formatEther(event.data.amount),
-          timestamp: new Date(event.block.timestamp * 1000).toLocaleString(),
-          roundNumber: event.data.roundNumber.toString()
-        }));
+        const provider = new ethers.providers.JsonRpcProvider(
+          `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+        );
+        const contract = new ethers.Contract(campaignAddress, CampaignABI, provider);
 
-        setTransactions(formattedTransactions);
-      } catch (error) {
-        console.error("Erreur lors de la récupération des transactions:", error);
+        const purchaseFilter = contract.filters.SharesPurchased();
+        const refundFilter = contract.filters.SharesRefunded();
+        
+        const [purchaseEvents, refundEvents] = await Promise.all([
+          contract.queryFilter(purchaseFilter),
+          contract.queryFilter(refundFilter)
+        ]);
+
+        const allTxs = [
+          ...purchaseEvents.map(event => ({
+            id: event.blockNumber,
+            type: 'Achat',
+            investor: event.args.investor,
+            nftCount: event.args.numShares.toString(),
+            value: ethers.utils.formatEther(event.args.value || "0")
+          })),
+          ...refundEvents.map(event => ({
+            id: event.blockNumber,
+            type: 'Remboursement',
+            investor: event.args.investor,
+            nftCount: event.args.numShares.toString(),
+            value: ethers.utils.formatEther(event.args.refundAmount || "0")
+          }))
+        ].sort((a,b) => b.id - a.id);
+
+        setTransactions(allTxs);
+        
+        // Construire la liste des investisseurs uniques
+        const investorsMap = new Map();
+        allTxs.forEach(tx => {
+          if (tx.type === 'Achat') {
+            const currentCount = investorsMap.get(tx.investor) || 0;
+            investorsMap.set(tx.investor, currentCount + parseInt(tx.nftCount));
+          } else if (tx.type === 'Remboursement') {
+            const currentCount = investorsMap.get(tx.investor) || 0;
+            investorsMap.set(tx.investor, Math.max(0, currentCount - parseInt(tx.nftCount)));
+          }
+        });
+
+        const investorsList = Array.from(investorsMap.entries())
+          .filter(([_, count]) => count > 0)
+          .map(([address, nftCount]) => ({
+            address,
+            nftCount: nftCount.toString()
+          }));
+
+        setInvestors(investorsList);
+        
+      } catch (err) {
+        console.error("Erreur lors du chargement des événements:", err);
+        setError("Erreur lors du chargement des transactions et des investisseurs");
       } finally {
         setIsLoadingTransactions(false);
+        setIsLoadingInvestors(false);
       }
-    }
+    };
 
-    fetchTransactions();
-  }, [campaignContract]);
-
-  useEffect(() => {
-    async function fetchDocuments() {
-      if (!campaignContract) return;
-      try {
-        const docs = await campaignContract.call("getCampaignDocuments");
-        setDocuments(docs.map(doc => ({
-          name: doc.name,
-          url: `https://ipfs.io/ipfs/${doc.ipfsHash}`,
-          timestamp: new Date(doc.timestamp.toNumber() * 1000).toLocaleDateString()
-        })));
-      } catch (error) {
-        console.error("Erreur chargement documents:", error);
-      }
-    }
-    fetchDocuments();
-  }, [campaignContract]);
+    loadEvents();
+  }, [campaignAddress]);
 
   const handleDistributeChange = (field, value) => {
     setDistributeForm(prev => ({ ...prev, [field]: value }));
@@ -259,9 +242,12 @@ export default function Campaign() {
     }
   };
 
-  // Rendu du composant
   if (isLoading) {
     return <div>Chargement...</div>;
+  }
+
+  if (error) {
+    return <div>Erreur : {error}</div>;
   }
 
   if (!campaignData) {
@@ -270,36 +256,36 @@ export default function Campaign() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Gestion de la Campagne</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Gestion de la Campagne</h1>
 
-      <Card>
+      <Card className="bg-white dark:bg-neutral-950">
         <CardHeader>
-          <CardTitle>{campaignData.name}</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-gray-100">{campaignData.name}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Statut</p>
-              <p className="text-lg font-semibold">{campaignData.status}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Statut</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{campaignData.status}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Montant Levé</p>
-              <p className="text-lg font-semibold">{campaignData.raised} ETH</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Montant Levé</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{campaignData.raised} ETH</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Objectif</p>
-              <p className="text-lg font-semibold">{campaignData.goal} ETH</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Objectif</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{campaignData.goal} ETH</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Investisseurs</p>
-              <p className="text-lg font-semibold">{campaignData.investors}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Investisseurs</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{campaignData.investors}</p>
             </div>
           </div>
           <Progress 
             value={(parseFloat(campaignData.raised) / parseFloat(campaignData.goal)) * 100} 
-            className="mt-4" 
+            className="mt-4 bg-lime-200 dark:bg-lime-900" 
           />
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             {campaignData.status === "En cours" 
               ? `Temps restant : ${Math.floor(campaignData.timeRemaining / (1000 * 60 * 60 * 24))} jours`
               : "Campagne terminée"}
@@ -308,40 +294,41 @@ export default function Campaign() {
       </Card>
 
       <Tabs defaultValue="finance" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="finance">Finance</TabsTrigger>
-          <TabsTrigger value="investors">Investisseurs</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="social">Social</TabsTrigger>
+        <TabsList className="bg-gray-100 dark:bg-neutral-900">
+          <TabsTrigger value="finance" className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800">Finance</TabsTrigger>
+          <TabsTrigger value="investors" className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800">Investisseurs</TabsTrigger>
+          <TabsTrigger value="documents" className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800">Documents</TabsTrigger>
+          <TabsTrigger value="social" className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800">Social</TabsTrigger>
         </TabsList>
 
         <TabsContent value="finance">
-          <Card>
+          <Card className="bg-white dark:bg-neutral-950">
             <CardHeader>
-              <CardTitle>Gestion Financière</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-gray-100">Gestion Financière</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
+                <Card className="bg-white dark:bg-neutral-950">
                   <CardHeader>
-                    <CardTitle>Distribution de Dividendes</CardTitle>
+                    <CardTitle className="text-gray-900 dark:text-gray-100">Distribution de Dividendes</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="distributeAmount">Montant à distribuer</Label>
+                        <Label htmlFor="distributeAmount" className="text-gray-700 dark:text-gray-300">Montant à distribuer</Label>
                         <Input
                           id="distributeAmount"
                           type="number"
                           value={distributeForm.amount}
                           onChange={(e) => handleDistributeChange('amount', e.target.value)}
                           placeholder="Entrez le montant"
+                          className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="distributeToken">Token à distribuer</Label>
+                        <Label htmlFor="distributeToken" className="text-gray-700 dark:text-gray-300">Token à distribuer</Label>
                         <Select onValueChange={(value) => handleDistributeChange('token', value)} defaultValue={distributeForm.token}>
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100">
                             <SelectValue placeholder="Sélectionnez un token" />
                           </SelectTrigger>
                           <SelectContent>
@@ -350,36 +337,37 @@ export default function Campaign() {
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="distributeMessage">Message (optionnel)</Label>
+                        <Label htmlFor="distributeMessage" className="text-gray-700 dark:text-gray-300">Message (optionnel)</Label>
                         <Input
                           id="distributeMessage"
                           value={distributeForm.message}
                           onChange={(e) => handleDistributeChange('message', e.target.value)}
                           placeholder="Message pour les investisseurs"
+                          className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
                         />
                       </div>
                       {distributeForm.amount && (
-                        <Alert>
-                          <AlertTitle>Aperçu de la distribution</AlertTitle>
-                          <AlertDescription>
+                        <Alert className="bg-lime-100 dark:bg-lime-900 border-lime-200 dark:border-lime-800">
+                          <AlertTitle className="text-lime-800 dark:text-lime-200">Aperçu de la distribution</AlertTitle>
+                          <AlertDescription className="text-lime-700 dark:text-lime-300">
                             Chaque NFT recevra {calculateDividendPerNFT()} {distributeForm.token}
                           </AlertDescription>
                         </Alert>
                       )}
-                      <Button onClick={handleDistributeDividends} className="w-full">
+                      <Button onClick={handleDistributeDividends} className="w-full bg-lime-500 hover:bg-lime-600 text-white">
                         Distribuer les Dividendes
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-white dark:bg-neutral-950">
                   <CardHeader>
-                    <CardTitle>Actions de Campagne</CardTitle>
+                    <CardTitle className="text-gray-900 dark:text-gray-100">Actions de Campagne</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <Button 
-                        className="w-full" 
+                        className="w-full bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-neutral-700" 
                         onClick={() => setShowReopenDialog(true)}
                         disabled={campaignData.status !== "Finalisée"}
                       >
@@ -387,18 +375,18 @@ export default function Campaign() {
                         Rouvrir la Campagne
                       </Button>
                       
-                      <Button className="w-full">
+                      <Button className="w-full bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-neutral-700">
                         <Share2 className="mr-2 h-4 w-4" />
                         Partager la Campagne
                       </Button>
                       
-                      <Button className="w-full">
-                        <Video className="mr-2 h-4 w-4" />
-                        Démarrer Live
+                      <Button className="w-full bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-neutral-700">
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Libérer l'Escrow
                       </Button>
                       
                       <Button 
-                        className="w-full" 
+                        className="w-full bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-neutral-700" 
                         onClick={() => setShowPromoteDialog(true)}
                       >
                         <Megaphone className="mr-2 h-4 w-4" />
@@ -407,7 +395,7 @@ export default function Campaign() {
                       
                       {!campaignData.lawyer && (
                         <Button 
-                          className="w-full" 
+                          className="w-full bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-neutral-700" 
                           onClick={() => setShowCertifyDialog(true)}
                         >
                           <ShieldCheck className="mr-2 h-4 w-4" />
@@ -418,37 +406,37 @@ export default function Campaign() {
                   </CardContent>
                 </Card>
               </div>
-              <Card>
+              <Card className="bg-white dark:bg-neutral-950">
                 <CardHeader>
-                  <CardTitle>Historique des Transactions</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-gray-100">Historique des Transactions</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[300px]">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Adresse</TableHead>
-                          <TableHead>NFTs</TableHead>
-                          <TableHead>Montant (ETH)</TableHead>
-                          <TableHead>Date</TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">Type</TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">Adresse</TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">NFTs</TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">Montant (ETH)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {isLoadingTransactions ? (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center">Chargement...</TableCell>
+                            <TableCell colSpan={4} className="text-center text-gray-500 dark:text-gray-400">Chargement...</TableCell>
                           </TableRow>
                         ) : transactions.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center">Aucune transaction</TableCell>
+                            <TableCell colSpan={4} className="text-center text-gray-500 dark:text-gray-400">Aucune transaction</TableCell>
                           </TableRow>
                         ) : (
                           transactions.map((tx, index) => (
                             <TableRow key={index}>
-                              <TableCell>{tx.address.slice(0, 6)}...{tx.address.slice(-4)}</TableCell>
-                              <TableCell>{tx.nftCount}</TableCell>
-                              <TableCell>{tx.amount}</TableCell>
-                              <TableCell>{tx.timestamp}</TableCell>
+                              <TableCell className="text-gray-900 dark:text-gray-100">{tx.type}</TableCell>
+                              <TableCell className="text-gray-900 dark:text-gray-100">{tx.investor.slice(0, 6)}...{tx.investor.slice(-4)}</TableCell>
+                              <TableCell className="text-gray-900 dark:text-gray-100">{tx.nftCount}</TableCell>
+                              <TableCell className="text-gray-900 dark:text-gray-100">{tx.value}</TableCell>
                             </TableRow>
                           ))
                         )}
@@ -462,33 +450,33 @@ export default function Campaign() {
         </TabsContent>
 
         <TabsContent value="investors">
-          <Card>
+          <Card className="bg-white dark:bg-neutral-950">
             <CardHeader>
-              <CardTitle>Liste des Investisseurs</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-gray-100">Liste des Investisseurs</CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[300px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Adresse</TableHead>
-                      <TableHead>NFTs détenus</TableHead>
+                      <TableHead className="text-gray-700 dark:text-gray-300">Adresse</TableHead>
+                      <TableHead className="text-gray-700 dark:text-gray-300">NFTs détenus</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoadingInvestors ? (
                       <TableRow>
-                        <TableCell colSpan={2} className="text-center">Chargement...</TableCell>
+                        <TableCell colSpan={2} className="text-center text-gray-500 dark:text-gray-400">Chargement...</TableCell>
                       </TableRow>
                     ) : investors.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={2} className="text-center">Aucun investisseur</TableCell>
+                        <TableCell colSpan={2} className="text-center text-gray-500 dark:text-gray-400">Aucun investisseur</TableCell>
                       </TableRow>
                     ) : (
                       investors.map((investor, index) => (
                         <TableRow key={index}>
-                          <TableCell>{investor.address.slice(0, 6)}...{investor.address.slice(-4)}</TableCell>
-                          <TableCell>{investor.nftCount}</TableCell>
+                          <TableCell className="text-gray-900 dark:text-gray-100">{investor.address.slice(0, 6)}...{investor.address.slice(-4)}</TableCell>
+                          <TableCell className="text-gray-900 dark:text-gray-100">{investor.nftCount}</TableCell>
                         </TableRow>
                       ))
                     )}
@@ -500,34 +488,34 @@ export default function Campaign() {
         </TabsContent>
 
         <TabsContent value="documents">
-          <Card>
+          <Card className="bg-white dark:bg-neutral-950">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Documents Légaux</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-gray-100">Documents Légaux</CardTitle>
               <Input 
                 type="file" 
                 onChange={(e) => handleDocumentUpload(e.target.files[0])}
                 disabled={isUploadingDoc}
-                className="w-60"
+                className="w-60 bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
               />
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 {documents.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-4">
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
                     Aucun document
                   </div>
                 ) : (
                   documents.map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-secondary rounded">
-                      <span className="flex items-center">
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-neutral-900 rounded">
+                      <span className="flex items-center text-gray-900 dark:text-gray-100">
                         <FileText className="h-4 w-4 mr-2" />
                         {doc.name}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                           {doc.timestamp}
                         </span>
-                        <Button variant="ghost" size="sm" onClick={() => window.open(doc.url)}>
+                        <Button variant="ghost" size="sm" onClick={() => window.open(doc.url)} className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100">
                           Voir
                         </Button>
                       </div>
@@ -540,13 +528,13 @@ export default function Campaign() {
         </TabsContent>
 
         <TabsContent value="social">
-          <Card>
+          <Card className="bg-white dark:bg-neutral-950">
             <CardHeader>
-              <CardTitle>Réseaux Sociaux et Communication</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-gray-100">Réseaux Sociaux et Communication</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
-                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2">
+                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2 bg-gray-50 dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800">
                   <svg
                     className="w-6 h-6"
                     viewBox="0 -28.5 256 256"
@@ -560,7 +548,7 @@ export default function Campaign() {
                   <span className="text-sm">Discord</span>
                 </Button>
                 
-                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2">
+                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2 bg-gray-50 dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800">
                   <svg viewBox="0 0 24 24" className="w-6 h-6">
                     <path
                       fill="currentColor"
@@ -570,7 +558,7 @@ export default function Campaign() {
                   <span className="text-sm">Twitter</span>
                 </Button>
 
-                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2">
+                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2 bg-gray-50 dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800">
                   <svg
                     className="w-6 h-6"
                     viewBox="0 0 98 96"
@@ -586,7 +574,7 @@ export default function Campaign() {
                   <span className="text-sm">GitHub</span>
                 </Button>
 
-                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2">
+                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2 bg-gray-50 dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800">
                   <svg className="w-6 h-6" viewBox="0 0 1043.63 592.71">
                     <path
                       d="M588.67 296.36c0 163.67-131.78 296.35-294.33 296.35S0 460 0 296.36 131.78 0 294.34 0s294.33 132.69 294.33 296.36M911.56 296.36c0 154.06-65.89 279-147.17 279s-147.17-124.94-147.17-279 65.88-279 147.16-279 147.17 124.9 147.17 279M1043.63 296.36c0 138-23.17 249.94-51.76 249.94s-51.75-111.91-51.75-249.94 23.17-249.94 51.75-249.94 51.76 111.9 51.76 249.94"
@@ -596,7 +584,7 @@ export default function Campaign() {
                   <span className="text-sm">Medium</span>
                 </Button>
 
-                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2">
+                <Button variant="outline" className="w-full p-4 h-auto flex flex-col items-center gap-2 bg-gray-50 dark:bg-neutral-900 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800">
                   <MessageSquare className="w-6 h-6" />
                   <span className="text-sm">Forum</span>
                 </Button>
@@ -607,50 +595,53 @@ export default function Campaign() {
       </Tabs>
 
       <Dialog open={showDistributeDialog} onOpenChange={setShowDistributeDialog}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-neutral-950">
           <DialogHeader>
-            <DialogTitle>Distribuer des Dividendes</DialogTitle>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Distribuer des Dividendes</DialogTitle>
           </DialogHeader>
           {/* Contenu du dialogue de distribution */}
         </DialogContent>
       </Dialog>
 
       <Dialog open={showReopenDialog} onOpenChange={setShowReopenDialog}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-neutral-950">
           <DialogHeader>
-            <DialogTitle>Rouvrir la Campagne</DialogTitle>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Rouvrir la Campagne</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="reopenGoal">Nouvel Objectif (ETH)</Label>
+              <Label htmlFor="reopenGoal" className="text-gray-700 dark:text-gray-300">Nouvel Objectif (ETH)</Label>
               <Input
                 id="reopenGoal"
                 type="number"
                 value={reopenForm.goal}
                 onChange={(e) => setReopenForm(prev => ({ ...prev, goal: e.target.value }))}
                 placeholder="Entrez le nouvel objectif"
+                className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <Label htmlFor="reopenSharePrice">Nouveau Prix des NFTs (ETH)</Label>
+              <Label htmlFor="reopenSharePrice" className="text-gray-700 dark:text-gray-300">Nouveau Prix des NFTs (ETH)</Label>
               <Input
                 id="reopenSharePrice"
                 type="number"
                 value={reopenForm.sharePrice}
                 onChange={(e) => setReopenForm(prev => ({ ...prev, sharePrice: e.target.value }))}
                 placeholder="Entrez le nouveau prix des NFTs"
+                className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
-              <Label htmlFor="reopenEndDate">Nouvelle Date de Fin</Label>
+              <Label htmlFor="reopenEndDate" className="text-gray-700 dark:text-gray-300">Nouvelle Date de Fin</Label>
               <Input
                 id="reopenEndDate"
                 type="date"
                 value={reopenForm.endDate}
                 onChange={(e) => setReopenForm(prev => ({ ...prev, endDate: e.target.value }))}
+                className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
               />
             </div>
-            <Button onClick={handleReopenCampaign} className="w-full">
+            <Button onClick={handleReopenCampaign} className="w-full bg-lime-500 hover:bg-lime-600 text-white">
               Rouvrir la Campagne
             </Button>
           </div>
@@ -658,18 +649,18 @@ export default function Campaign() {
       </Dialog>
 
       <Dialog open={showPromoteDialog} onOpenChange={setShowPromoteDialog}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-neutral-950">
           <DialogHeader>
-            <DialogTitle>Promouvoir la Campagne</DialogTitle>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Promouvoir la Campagne</DialogTitle>
           </DialogHeader>
           {/* Contenu du dialogue de promotion */}
         </DialogContent>
       </Dialog>
 
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-neutral-950">
           <DialogHeader>
-            <DialogTitle>Certifier la Campagne</DialogTitle>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Certifier la Campagne</DialogTitle>
           </DialogHeader>
           {/* Contenu du dialogue de certification */}
         </DialogContent>

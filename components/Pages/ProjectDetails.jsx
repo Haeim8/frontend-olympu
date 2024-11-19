@@ -5,9 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, Calendar, FileText, Twitter, Facebook, Share2, Star } from 'lucide-react';
+import { DollarSign, Calendar, Share2, Star } from 'lucide-react';
 import { ethers } from 'ethers';
-import { useContract, useContractRead, useContractWrite, useAddress } from '@thirdweb-dev/react';
+import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import CampaignABI from '@/ABI/CampaignABI.json';
 
 const DEFAULT_PROJECT = {
@@ -16,16 +16,7 @@ const DEFAULT_PROJECT = {
   goal: "0",
   sharePrice: "0",
   endDate: "Non spécifié",
-  documents: [],
-  media: [],
-  teamMembers: [],
-  lawyer: {
-    name: "",
-    contact: "",
-    phone: ""
-  },
   description: "",
-  hasLawyer: false
 };
 
 export default function ProjectDetails({ selectedProject, onClose }) {
@@ -33,115 +24,65 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   const [showProjectDetails, setShowProjectDetails] = useState(true);
   const [nftCount, setNftCount] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [investmentTerms, setInvestmentTerms] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [companyShares, setCompanyShares] = useState(null);
 
   const userAddress = useAddress();
+
+  const { contract: campaignContract } = useContract(project.id, CampaignABI);
+  const { mutateAsync: buyShares, isLoading: buying } = useContractWrite(campaignContract, "buyShares");
 
   useEffect(() => {
     setShowProjectDetails(!!selectedProject);
   }, [selectedProject]);
 
-  // Utiliser useContract pour obtenir l'instance du contrat Campaign
-  const { contract: campaignContract, isLoading: contractLoading } = useContract(
-    project.id, 
-    CampaignABI
-  );
-
-  // Utiliser useContractWrite pour l'achat de shares
-  const { mutateAsync: buyShares, isLoading: buying } = useContractWrite(
-    campaignContract,
-    "buyShares"
-  );
-  // Utiliser useContractRead pour lire les données
-  const { data: remunerationType } = useContractRead(
-    campaignContract,
-    "remunerationType",
-    []
-  );
-
-  const { data: tokenDistribution } = useContractRead(
-    campaignContract,
-    "tokenDistribution",
-    []
-  );
-
-  const { data: roi } = useContractRead(
-    campaignContract,
-    "roi",
-    []
-  );
-
-  const { data: txs } = useContractRead(
-    campaignContract,
-    "getAllTransactions",
-    []
-  );
-
-  const { data: sharesMinted } = useContractRead(
-    campaignContract,
-    "sharesMinted",
-    []
-  );
-
-  const { data: vertePortalLink } = useContractRead(
-    campaignContract,
-    "vertePortalLink",
-    []
-  );
-
-  const { data: totalSupply } = useContractRead(
-    campaignContract,
-    "totalSupply",
-    []
-  );
-
-  // Effet pour récupérer les données du contrat
   useEffect(() => {
-    const fetchContractData = async () => {
-      if (!selectedProject) {
-        setIsLoading(false);
-        return;
-      }
+    if (!project?.id) return;
 
+    const loadEvents = async () => {
       try {
-        if (remunerationType && tokenDistribution && roi) {
-          setInvestmentTerms({
-            remunerationType,
-            tokenDistribution,
-            roi: roi.toString(),
-          });
-        }
+        const provider = new ethers.providers.JsonRpcProvider(
+          `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+        );
+        const contract = new ethers.Contract(project.id, CampaignABI, provider);
 
-        if (txs) {
-          const formattedTxs = txs.map(tx => ({
-            id: tx.id.toNumber(),
-            nftCount: tx.nftCount.toNumber(),
-            value: ethers.utils.formatEther(tx.value),
-            totalOwned: tx.totalOwned.toNumber(),
-          }));
-          setTransactions(formattedTxs);
-        }
+        const purchaseFilter = contract.filters.SharesPurchased();
+        const refundFilter = contract.filters.SharesRefunded();
+        
+        const [purchaseEvents, refundEvents] = await Promise.all([
+          contract.queryFilter(purchaseFilter),
+          contract.queryFilter(refundFilter)
+        ]);
 
-        setCompanyShares({
-          percentageMinted: sharesMinted ? sharesMinted.toNumber() : 0,
-          vertePortalLink: vertePortalLink || '',
-        });
+        const allTxs = [
+          ...purchaseEvents.map(event => ({
+            id: event.blockNumber,
+            type: 'Achat',
+            investor: event.args.investor,
+            nftCount: event.args.numShares.toString(),
+            value: ethers.utils.formatEther(event.args.value || "0")
+          })),
+          ...refundEvents.map(event => ({
+            id: event.blockNumber,
+            type: 'Remboursement',
+            investor: event.args.investor,
+            nftCount: event.args.numShares.toString(),
+            value: ethers.utils.formatEther(event.args.refundAmount || "0")
+          }))
+        ].sort((a,b) => b.id - a.id);
 
+        setTransactions(allTxs);
         setIsLoading(false);
       } catch (err) {
-        console.error("Erreur lors de la récupération des données:", err);
+        console.error("Erreur de chargement des events:", err);
         setError(err.message);
         setIsLoading(false);
       }
     };
 
-    fetchContractData();
-  }, [selectedProject, remunerationType, tokenDistribution, roi, txs, sharesMinted, vertePortalLink]);
-
+    loadEvents();
+  }, [project?.id]);
   const handleBuyShares = async () => {
     if (!userAddress) {
       alert("Veuillez vous connecter à votre portefeuille.");
@@ -155,9 +96,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
       const receipt = await buyShares({
         args: [nftCount],
-        overrides: {
-          value: totalValue
-        }
+        overrides: { value: totalValue }
       });
       console.log("Transaction confirmée:", receipt.transactionHash);
       alert("Shares achetés avec succès!");
@@ -168,13 +107,8 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     }
   };
 
-  const handleShare = () => {
-    console.log("Partage du projet");
-  };
-
-  const handleFavorite = () => {
-    setIsFavorite(!isFavorite);
-  };
+  const handleShare = () => console.log("Partage du projet");
+  const handleFavorite = () => setIsFavorite(!isFavorite);
 
   const ShareSelector = () => {
     if (!project) return null;
@@ -253,6 +187,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       </Dialog>
     );
   }
+
   return (
     <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
       <DialogContent className="bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 max-w-4xl max-h-[90vh] overflow-y-auto p-6">
@@ -339,17 +274,6 @@ export default function ProjectDetails({ selectedProject, onClose }) {
               <h3 className="text-2xl font-semibold mb-4">Description</h3>
               <p className="text-gray-600 dark:text-gray-300">{project.description}</p>
             </div>
-
-            {investmentTerms && (
-              <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg">
-                <h3 className="text-2xl font-semibold mb-4">Termes d'investissement</h3>
-                <ul className="space-y-2">
-                  <li>Type: {investmentTerms.remunerationType}</li>
-                  <li>Distribution: {investmentTerms.tokenDistribution}</li>
-                  <li>ROI estimé: {investmentTerms.roi} jours</li>
-                </ul>
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent value="transactions" className="mt-6 space-y-6">
@@ -357,27 +281,19 @@ export default function ProjectDetails({ selectedProject, onClose }) {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
                 <thead>
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Shares
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valeur
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Investor</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shares</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                   {transactions.map((tx) => (
                     <tr key={tx.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">{tx.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{tx.type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{tx.investor}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{tx.nftCount}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{tx.value} ETH</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{tx.totalOwned}</td>
                     </tr>
                   ))}
                 </tbody>
