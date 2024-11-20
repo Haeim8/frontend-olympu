@@ -110,7 +110,9 @@ export default function Campaign() {
       setIsLoadingTransactions(true);
       setIsLoadingInvestors(true);
       try {
-        const provider = new ethers.providers.JsonRpcProvider("https://sepolia.base.org");
+        const provider = new ethers.providers.JsonRpcProvider(
+          `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+        );
         const contract = new ethers.Contract(campaignAddress, CampaignABI, provider);
 
         const purchaseFilter = contract.filters.SharesPurchased();

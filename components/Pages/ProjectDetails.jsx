@@ -42,7 +42,9 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
     const loadEvents = async () => {
       try {
-        const provider = new ethers.providers.JsonRpcProvider("https://sepolia.base.org");
+        const provider = new ethers.providers.JsonRpcProvider(
+          `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+        );
         const contract = new ethers.Contract(project.id, CampaignABI, provider);
 
         const purchaseFilter = contract.filters.SharesPurchased();
