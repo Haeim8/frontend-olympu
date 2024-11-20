@@ -109,10 +109,23 @@ export default function Campaign() {
     const loadEvents = async () => {
       setIsLoadingTransactions(true);
       setIsLoadingInvestors(true);
+
+      const provider = new ethers.providers.JsonRpcProvider(
+        {
+          url: `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
+          chainId: 84532,
+          name: 'Base Sepolia',
+          network: {
+            chainId: 84532,
+            name: 'Base Sepolia'
+          }
+        }
+      );
+
       try {
-        const provider = new ethers.providers.JsonRpcProvider(
-          `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
-        );
+        await provider.ready;
+        await provider._networkPromise;
+
         const contract = new ethers.Contract(campaignAddress, CampaignABI, provider);
 
         const purchaseFilter = contract.filters.SharesPurchased();
@@ -141,8 +154,7 @@ export default function Campaign() {
         ].sort((a,b) => b.id - a.id);
 
         setTransactions(allTxs);
-        
-        // Construire la liste des investisseurs uniques
+            
         const investorsMap = new Map();
         allTxs.forEach(tx => {
           if (tx.type === 'Achat') {
@@ -162,10 +174,11 @@ export default function Campaign() {
           }));
 
         setInvestors(investorsList);
-        
+        setError(null);
+            
       } catch (err) {
-        console.error("Erreur lors du chargement des événements:", err);
-        setError("Erreur lors du chargement des transactions et des investisseurs");
+        console.error("Erreur de connexion au provider:", err);
+        setError("Erreur de connexion au réseau Base Sepolia");
       } finally {
         setIsLoadingTransactions(false);
         setIsLoadingInvestors(false);
@@ -173,7 +186,7 @@ export default function Campaign() {
     };
 
     loadEvents();
-  }, [campaignAddress]);
+}, [campaignAddress]);
 
   const handleDistributeChange = (field, value) => {
     setDistributeForm(prev => ({ ...prev, [field]: value }));

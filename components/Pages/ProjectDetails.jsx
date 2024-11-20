@@ -42,9 +42,22 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
     const loadEvents = async () => {
       try {
+        setIsLoading(true);
         const provider = new ethers.providers.JsonRpcProvider(
-          `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+          {
+            url: `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
+            chainId: 84532,
+            name: 'Base Sepolia',
+            network: {
+              chainId: 84532,
+              name: 'Base Sepolia'
+            }
+          }
         );
+
+        await provider.ready;
+        await provider._networkPromise;
+
         const contract = new ethers.Contract(project.id, CampaignABI, provider);
 
         const purchaseFilter = contract.filters.SharesPurchased();
@@ -73,16 +86,20 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         ].sort((a,b) => b.id - a.id);
 
         setTransactions(allTxs);
-        setIsLoading(false);
+        setError(null);
+        
       } catch (err) {
-        console.error("Erreur de chargement des events:", err);
-        setError(err.message);
+        console.error("Erreur de connexion au provider:", err);
+        setError("Erreur de connexion au réseau Base Sepolia");
+      } finally {
         setIsLoading(false);
       }
     };
 
     loadEvents();
-  }, [project?.id]);
+}, [project?.id]);
+
+
   const handleBuyShares = async () => {
     if (!userAddress) {
       alert("Veuillez vous connecter à votre portefeuille.");
