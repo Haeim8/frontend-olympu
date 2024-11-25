@@ -30,7 +30,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr" suppressHydrationWarning>
       <Head>
-        <title>divar</title>
+        <title>Livar</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <body

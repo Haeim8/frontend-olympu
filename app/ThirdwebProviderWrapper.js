@@ -30,7 +30,7 @@ const ThirdwebProviderWrapper = ({ children }) => {
       activeChain={BaseSepoliaConfig}
       autoSwitch={true}
       dAppMeta={{
-        name: "Divar",
+        name: "Livar",
         description: "Plateforme de financement participatif",
         logoUrl: "https://votre-logo.com",
         url: "https://votre-site.com",

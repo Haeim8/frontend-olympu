@@ -57,7 +57,7 @@ export default function Header({
         >
           <Menu className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-lime-400">Devar</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-lime-400">Livar</h1>
       </div>
       <div className="flex items-center space-x-2 md:space-x-4">
         <div className="relative">
