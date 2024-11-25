@@ -157,7 +157,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
               />
               <Button
                 onClick={() => setNftCount(nftCount + 1)}
-                className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-900"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-neutral-950"
               >
                 +
               </Button>

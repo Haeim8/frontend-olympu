@@ -36,7 +36,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const [uploadProgress, setUploadProgress] = useState({});
   const [transactionHash, setTransactionHash] = useState('');
   const [campaignCreated, setCampaignCreated] = useState(false);
-
+  const [darkMode, setDarkMode] = useState(false);
   const address = useAddress();
   const chainId = useChainId();
   const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
@@ -133,6 +133,11 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     vestingPlan: false,
   });
 
+  useEffect(() => {
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setDarkMode(isDark);
+  }, []);
+  
   useEffect(() => {
     if (address) {
       setFormData(prev => ({
@@ -457,7 +462,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       return (
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-lime-400"></div>
-          <p className="text-lg text-gray-700 dark:text-gray-300">Création de la campagne en cours...</p>
+          <p className="text-lg text-gray-850 dark:text-gray-100">Création de la campagne en cours...</p>
         </div>
       );
     }

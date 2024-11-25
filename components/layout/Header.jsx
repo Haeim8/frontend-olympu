@@ -71,7 +71,7 @@ export default function Header({
             <Bell className="h-5 w-5" />
           </Button>
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-950 rounded-md shadow-lg z-10">
+            <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-950 rounded-md shadow-lg z-10">
               <div className="p-4 border-b border-gray-200 dark:border-gray-800">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
               </div>

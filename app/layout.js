@@ -1,10 +1,8 @@
-// frontend/app/layout.js
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
-import ThirdwebProviderWrapper from "./ThirdwebProviderWrapper"; // Chemin correct depuis app/
+import ThirdwebProviderWrapper from "./ThirdwebProviderWrapper";
 import "@/app/globals.css";
 import { Inter as FontSans } from "next/font/google";
 import { cn } from "@/lib/utils";
@@ -40,9 +38,9 @@ export default function RootLayout({ children }) {
         )}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <ThirdwebProviderWrapper> {/* Utilisez ThirdwebProviderWrapper ici */}
+          <ThirdwebProviderWrapper>
             <UserProvider>
-              {children} {/* Déplacé ici */}
+              {children}
             </UserProvider>
           </ThirdwebProviderWrapper>
         </ThemeProvider>
