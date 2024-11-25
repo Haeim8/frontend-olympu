@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, Share2, Repeat, FileText, BarChart, Link, AlertTriangle, Plus, Megaphone, ShieldCheck, MessageSquare, Twitter, Github, BookOpen } from 'lucide-react';
-import { useAddress, useContract, useContractRead } from '@thirdweb-dev/react';
+import { useAddress, useContract, useContractRead, useContractWrite } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 import CampaignABI from '@/ABI/CampaignABI.json';
@@ -50,6 +50,9 @@ export default function Campaign() {
 
   const { contract: platformContract } = useContract(PLATFORM_ADDRESS, DivarProxyABI);
   const { contract: campaignContract } = useContract(campaignAddress, CampaignABI);
+
+  const [isReleasingEscrow, setIsReleasingEscrow] = useState(false);
+  const [escrowReleaseError, setEscrowReleaseError] = useState(null);
 
   const { data: userCampaigns } = useContractRead(
     platformContract,
@@ -102,6 +105,27 @@ export default function Campaign() {
 
     fetchCampaignData();
   }, [campaignContract, campaignAddress, platformContract]);
+
+  const { mutateAsync: claimEscrow } = useContractWrite(campaignContract, "claimEscrow");
+
+  const handleReleaseEscrow = async () => {
+    try {
+      setIsReleasingEscrow(true);
+      setEscrowReleaseError(null);
+  
+      // Correction ici - on appelle claimEscrow sans arguments
+      const tx = await claimEscrow({ args: [] }); // On passe un objet avec un tableau args vide
+      await tx.wait();
+      
+      alert("Escrow libéré avec succès !");
+    } catch (error) {
+      console.error("Erreur lors de la libération de l'escrow:", error);
+      setEscrowReleaseError(error.message);
+      alert(error.message);
+    } finally {
+      setIsReleasingEscrow(false);
+    }
+  };
 
   useEffect(() => {
     if (!campaignAddress) return;
@@ -393,10 +417,14 @@ export default function Campaign() {
                         Partager la Campagne
                       </Button>
                       
-                      <Button className="w-full bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-neutral-700">
-                        <DollarSign className="mr-2 h-4 w-4" />
-                        Libérer l'Escrow
-                      </Button>
+                     <Button 
+  className="w-full bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-neutral-700"
+  onClick={handleReleaseEscrow}
+  disabled={isReleasingEscrow}
+>
+  <DollarSign className="mr-2 h-4 w-4" />
+  {isReleasingEscrow ? "Libération en cours..." : "Libérer l'Escrow"}
+</Button>
                       
                       <Button 
                         className="w-full bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-neutral-700" 
