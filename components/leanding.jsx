@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Moon, Sun, Twitter, MessageCircle } from "lucide-react";
+import { X, Moon, Sun, Twitter, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConnectWallet, useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
@@ -158,8 +158,8 @@ export default function Home() {
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? "dark" : ""}`}>
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-zinc-400 dark:text-gray-200 transition-colors duration-200 relative overflow-hidden">
+    <div className={`min-h-screen ${darkMode ? "dark" : ""} text-sm`}>
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200 relative overflow-hidden">
         <div className="absolute inset-0 z-0">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <rect width="100%" height="100%" fill={darkMode ? "#070000b3" : "#ececec"} />
@@ -169,7 +169,7 @@ export default function Home() {
                 cx={`${Math.random() * 100}%`}
                 cy={`${Math.random() * 100}%`}
                 r={Math.random() * 2}
-                fill={darkMode ? "#ffffff" : "#000000"}
+                fill={darkMode ? "#ffffff58" : "#000000"}
                 animate={{
                   opacity: [0.2, 1, 0.2],
                   scale: [1, 1.2, 1],
@@ -267,15 +267,6 @@ export default function Home() {
               <Twitter size={20} />
               <span className="sr-only">Twitter</span>
             </a>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleDarkMode}
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-            >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-              <span className="sr-only">Toggle dark mode</span>
-            </Button>
             <a
               href="https://discord.com"
               target="_blank"
@@ -285,13 +276,21 @@ export default function Home() {
               <MessageCircle size={20} />
               <span className="sr-only">Discord</span>
             </a>
-
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleDarkMode}
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+            >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              <span className="sr-only">Basculer le mode sombre</span>
+            </Button>
             <ConnectWallet />
           </div>
         </header>
 
         <main className="flex-1 relative z-10 flex items-center justify-center">
-          <section className="w-full py-12 md:py-24 lg:py-32">
+          <section className="w-full py-8 md:py-12 lg:py-16">
             <div className="container px-4 md:px-6">
               <motion.div
                 className="space-y-4 text-center max-w-3xl mx-auto"
@@ -300,35 +299,34 @@ export default function Home() {
                 transition={{ duration: 0.8 }}
               >
                 <motion.div
-                  className="inline-block rounded-lg bg-lime-400 px-3 py-1 text-sm text-black"
+                  className="inline-block rounded-lg bg-lime-500 px-3 py-1 text-sm text-white font-medium"
                   animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                 >
-                  Defi Crowdfunding
+                  Financement Participatif DeFi
                 </motion.div>
 
-                <motion.h1
-                  className="text-4xl font-bold tracking-tighter md:text-5xl mb-4"
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}
-                >
-                  Support the future of the ecosystem.
-                </motion.h1>
-                <motion.p
-                  className="max-w-[900px] text-zinc-700 dark:text-zinc-50 md:text-xl/relaxed lg:text-base/relaxed xxl:text-xl/relaxed mb-8"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.8 }}
-                >
-                  Contribute to the development of cutting-edge Web3 technologies and be a part of the decentralized revolution.
-                </motion.p>
-
                 <motion.div
-                  className="p-6 rounded-lg bg-white/10 dark:bg-gray-900/10 backdrop-blur-sm"
+                  className="p-6 rounded-lg bg-white/10 dark:bg-gray-800/10 backdrop-blur-sm shadow-xl max-w-2xl mx-auto w-full"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1, duration: 0.5 }}
                 >
+                  <motion.h1
+                    className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tighter mb-4 text-gray-900 dark:text-white"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}
+                  >
+                    Soutenez l'avenir de l'écosystème.
+                  </motion.h1>
+                  <motion.p
+                className="text-gray-900 dark:text-gray-100 text-sm sm:text-base mb-6"
+              initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+               >
+                Contribuez au développement des technologies Web3 de pointe et faites partie de la révolution décentralisée.
+                </motion.p>
                   {address ? (
                     userExists ? (
                       readLoading ? (
@@ -336,15 +334,15 @@ export default function Home() {
                       ) : isRegistered ? (
                         <Button
                           variant="default"
-                          className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
+                          className="bg-lime-500 text-white hover:bg-lime-600 dark:bg-lime-500 dark:hover:bg-lime-600 font-medium shadow-lg w-full sm:w-auto"
                           onClick={() => router.push("/dashboard")}
                         >
-                          Launch App
+                          Lancer l'App
                         </Button>
                       ) : (
                         <Button
                           variant="default"
-                          className="bg-red-400 text-black hover:bg-red-50 dark:bg-red-400 dark:hover:bg-red-50"
+                          className="bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600 font-medium shadow-lg w-full sm:w-auto"
                           onClick={async () => {
                             try {
                               setRegistrationLoading(true);
@@ -358,6 +356,7 @@ export default function Home() {
 
                               setIsRegistered(true);
                               
+
                               alert("Inscription réussie !");
                               checkUserProfileAndContract();
                             } catch (error) {
@@ -369,20 +368,20 @@ export default function Home() {
                           }}
                           disabled={registrationLoading}
                         >
-                          {registrationLoading ? "Registering..." : "Register on Smart Contract"}
+                          {registrationLoading ? "Inscription en cours..." : "S'inscrire sur le Smart Contract"}
                         </Button>
                       )
                     ) : (
                       <Button
                         variant="default"
-                        className="bg-lime-400 text-black hover:bg-lime-50 dark:bg-lime-400 dark:hover:bg-lime-50"
+                        className="bg-lime-500 text-white hover:bg-lime-600 dark:bg-lime-500 dark:hover:bg-lime-600 font-medium shadow-lg w-full sm:w-auto"
                         onClick={() => setShowSignup(true)}
                       >
-                        Create Account
+                        Créer un Compte
                       </Button>
                     )
                   ) : (
-                    <p className="text-lime-400">Please connect your wallet</p>
+                    <p className="text-lime-400">Veuillez connecter votre portefeuille</p>
                   )}
                   {registrationError && <p className="text-red-500 mt-2">{registrationError}</p>}
                 </motion.div>
@@ -392,19 +391,19 @@ export default function Home() {
         </main>
 
         <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 relative z-10 bg-transparent">
-          <p className="text-xs text-gray-600 dark:text-gray-400">&copy; 2024 django. All rights reserved.</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">&copy; 2024 django. Tous droits réservés.</p>
           <nav className="sm:ml-auto flex gap-4 sm:gap-6">
             <a
               href="#"
               className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline underline-offset-4"
             >
-              Terms of Service
+              Conditions d'utilisation
             </a>
             <a
               href="#"
               className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:underline underline-offset-4"
             >
-              Privacy
+              Confidentialité
             </a>
           </nav>
         </footer>
@@ -413,7 +412,7 @@ export default function Home() {
       <AnimatePresence>
         {showSignup && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -424,89 +423,81 @@ export default function Home() {
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: "spring", damping: 15 }}
             >
-              <Card className="w-full max-w-md mx-auto">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold flex justify-between items-center">
-                    Create Account
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-900 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-600"
-                      onClick={() => setShowSignup(false)}
-                    >
-                      <X size={24} />
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label htmlFor="photo" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Profile Photo
-                      </Label>
-                      <Input
-                        id="photo"
-                        name="photo"
-                        type="file"
-                        onChange={handlePhotoChange}
-                        className="mt-1"
-                      />
-                      {formData.photo && (
-                        <img
-                          src={formData.photo}
-                          alt="Profile preview"
-                          className="mt-2 w-20 h-20 object-cover rounded-full"
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <Label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-700">
-                        Username
-                      </Label>
-                      <Input
-                        id="username"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        required
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="xAccount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        X Account
-                      </Label>
-                      <Input
-                        id="xAccount"
-                        name="xAccount"
-                        value={formData.xAccount}
-                        onChange={handleInputChange}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="socialMedia" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Other Social Media
-                      </Label>
-                      <Input
-                        id="socialMedia"
-                        name="socialMedia"
-                        value={formData.socialMedia}
-                        onChange={handleInputChange}
-                        className="mt-1"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting || registrationLoading}
-                      className="w-full bg-lime-400 text-black hover:bg-lime-100 dark:bg-lime-400 dark:hover:bg-lime-100"
-                    >
-                      {isSubmitting || registrationLoading ? "Creating..." : "Create Account"}
-                    </Button>
-                  </form>
-                  {registrationError && <p className="text-red-500 mt-2">{registrationError}</p>}
-                </CardContent>
-              </Card>
+            <Card className={`w-full max-w-md mx-auto ${darkMode ? "bg-black" : "bg-white"}`}>
+  <CardHeader>
+    <CardTitle className={`text-2xl font-bold flex justify-between items-center ${darkMode ? "text-white" : "text-gray-900"}`}>
+      Créer un Compte
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`${darkMode ? "text-gray-400 hover:text-gray-200" : "text-gray-500 hover:text-gray-700"}`}
+        onClick={() => setShowSignup(false)}
+      >
+        <X size={24} />
+      </Button>
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="photo" className={`block text-sm font-medium ${darkMode ? "text-white" : "text-gray-700"}`}>
+          Photo de Profil
+        </Label>
+        <Input
+          id="photo"
+          name="photo"
+          type="file"
+          onChange={handlePhotoChange}
+          className={`mt-1 ${darkMode ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-300 text-gray-900"}`}
+        />
+      </div>
+      <div>
+        <Label htmlFor="username" className={`block text-sm font-medium ${darkMode ? "text-white" : "text-gray-700"}`}>
+          Nom d'utilisateur
+        </Label>
+        <Input
+          id="username"
+          name="username"
+          value={formData.username}
+          onChange={handleInputChange}
+          required
+          className={`mt-1 ${darkMode ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-300 text-gray-900"}`}
+        />
+      </div>
+      <div>
+        <Label htmlFor="xAccount" className={`block text-sm font-medium ${darkMode ? "text-white" : "text-gray-700"}`}>
+          Compte X
+        </Label>
+        <Input
+          id="xAccount"
+          name="xAccount"
+          value={formData.xAccount}
+          onChange={handleInputChange}
+          className={`mt-1 ${darkMode ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-300 text-gray-900"}`}
+        />
+      </div>
+      <div>
+        <Label htmlFor="socialMedia" className={`block text-sm font-medium ${darkMode ? "text-white" : "text-gray-700"}`}>
+          Autres Réseaux Sociaux
+        </Label>
+        <Input
+          id="socialMedia"
+          name="socialMedia"
+          value={formData.socialMedia}
+          onChange={handleInputChange}
+          className={`mt-1 ${darkMode ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-300 text-gray-900"}`}
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full bg-lime-500 text-white hover:bg-lime-600 dark:bg-lime-600 dark:hover:bg-lime-700 font-medium shadow-lg"
+      >
+        {isSubmitting ? "Création..." : "Créer un Compte"}
+      </Button>
+    </form>
+  </CardContent>
+</Card>
             </motion.div>
           </motion.div>
         )}
@@ -514,3 +505,4 @@ export default function Home() {
     </div>
   );
 }
+
