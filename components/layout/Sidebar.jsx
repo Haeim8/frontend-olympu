@@ -33,7 +33,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className={`${showMobileMenu ? 'block' : 'hidden'} md:block w-16 border-r-2 border-lime-400 flex-shrink-0 bg-white dark:bg-neutral-950 overflow-y-auto transition-all duration-300 ease-in-out`}>
+    <aside className={`${showMobileMenu ? 'block' : 'hidden'} md:block w-16 border-r-1 border-lime-400 flex-shrink-0 bg-white dark:bg-neutral-950 overflow-y-auto transition-all duration-300 ease-in-out`}>
       <nav className="flex flex-col p-4 space-y-4">
         {menuItems.map((item) => (
           <Button

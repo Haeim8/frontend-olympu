@@ -295,26 +295,27 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
           <TabsContent value="transactions" className="mt-6 space-y-6">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Investor</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shares</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                  {transactions.map((tx) => (
-                    <tr key={tx.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">{tx.type}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{tx.investor}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{tx.nftCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{tx.value} ETH</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+  <thead>
+    <tr>
+      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Investor</th>
+      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shares</th>
+      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+    </tr>
+  </thead>
+  <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+    {transactions.map((tx) => (
+      <tr key={tx.id}>
+        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.type}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.investor}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.nftCount}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.value} ETH</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
             </div>
           </TabsContent>
         </Tabs>

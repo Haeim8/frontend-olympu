@@ -46,7 +46,7 @@ export default function Header({
   };
 
   return (
-    <header className="p-4 md:p-6 flex justify-between items-center bg-white dark:bg-neutral-950 shadow-sm border-b-2 border-lime-400">
+    <header className="p-0.5 md:p-6 flex justify-between items-center bg-white dark:bg-neutral-950 shadow-sm border-b-1 border-lime-50">
       <div className="flex items-center">
         <Button
           variant="ghost"
@@ -57,7 +57,7 @@ export default function Header({
         >
           <Menu className="h-6 w-6" />
         </Button>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-lime-400">Livar</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-lime-400 dark:text-lime-400">Livar</h1>
       </div>
       <div className="flex items-center space-x-2 md:space-x-4">
         <div className="relative">
@@ -73,7 +73,7 @@ export default function Header({
           {isNotificationsOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-950 rounded-md shadow-lg z-10">
               <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-gray-100">Notifications</h3>
+                <h3 className="text-lg font-semibold text-neutral-950 dark:text-gray-100">Notifications</h3>
               </div>
               <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
                 {/* Notifications */}

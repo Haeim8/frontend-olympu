@@ -249,7 +249,7 @@ export default function Home() {
             {progress.toFixed(1)}%
           </span>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-1">
+        <div className="w-full bg-gray-500 dark:bg-gray-700 rounded-full h-2.5 mt-1">
           <div
             className="h-2.5 rounded-full bg-lime-400"
             style={{ width: `${progress}%` }}
@@ -287,28 +287,30 @@ export default function Home() {
             <ChevronDown className={`h-5 w-5 transition-transform ${menuOpen ? 'transform rotate-180' : ''}`} />
           </div>
           {menuOpen && (
-            <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-neutral-950 rounded-lg shadow-lg z-50">
-              <div className="py-1">
-                <button
-                  onClick={() => {
-                    setShowFinalized(false);
-                    setMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-neutral-900"
-                >
-                  Campagnes en cours
-                </button>
-                <button
-                  onClick={() => {
-                    setShowFinalized(true);
-                    setMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-neutral-900"
-                >
-                  Campagnes finalisées
-                </button>
-              </div>
-            </div>
+           <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-neutral-950 rounded-lg shadow-lg z-50">
+           <div className="py-1">
+             <button
+               onClick={() => {
+                 setShowFinalized(false);
+                 setMenuOpen(false);
+               }}
+               className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-900 dark:text-white"
+             >
+               Campagnes en cours
+             </button>
+             <button
+               onClick={() => {
+                 setShowFinalized(true);
+                 setMenuOpen(false);
+               }}
+               className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-neutral-900 text-gray-900 dark:text-white"
+             >
+               Campagnes finalisées
+             </button>
+           </div>
+         </div>
+         
+         
           )}
         </div>
         <Button
@@ -337,7 +339,6 @@ export default function Home() {
                 <div className="font-semibold text-sm text-gray-950 dark:text-gray-300">Prix unitaire</div>
                 <div className="font-semibold text-sm text-gray-950 dark:text-gray-300">Levée en cours</div>
                 <div className="font-semibold text-sm text-gray-950 dark:text-gray-300">Objectif</div>
-                <div className="font-semibold text-sm text-gray-950 dark:text-gray-300 text-right">Action</div>
               </div>
 
               {projects
@@ -345,7 +346,7 @@ export default function Home() {
                 .map((project) => (
                 <Card
                   key={project.id}
-                  className="w-full bg-white dark:bg-neutral-950 shadow-md hover:shadow-lg transition-all duration-300"
+                  className="w-full bg-white dark:bg-neutral-950 shadow-md hover:shadow-lg transition-all duration-300 border-0 dark:border-0"
                 >
                   <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center p-4">
                     <div className="flex items-center space-x-2">

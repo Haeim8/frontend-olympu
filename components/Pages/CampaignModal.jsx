@@ -450,7 +450,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             <Info className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="text-gray-900 dark:text-gray-100">
           <p>{content}</p>
         </TooltipContent>
       </Tooltip>
@@ -462,7 +462,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       return (
         <div className="flex flex-col items-center justify-center space-y-4">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-lime-400"></div>
-          <p className="text-lg text-gray-850 dark:text-gray-100">Création de la campagne en cours...</p>
+          <p className="text-lg text-gray-850 dark:text-gray-300">Création de la campagne en cours...</p>
         </div>
       );
     }
@@ -507,370 +507,397 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
 
     switch(currentStep) {
       case 1:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Informations de Base</h2>
-            <div>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="creatorAddress">Adresse du créateur</Label>
-                <InfoTooltip content="L'adresse Ethereum du créateur de la campagne" />
-              </div>
-              <Input
-                id="creatorAddress"
-                name="creatorAddress"
-                value={formData.creatorAddress}
-                readOnly
-                className="bg-gray-100 dark:bg-neutral-800 cursor-not-allowed"
-              />
-            </div>
-            <div>
-              <Label htmlFor="name">Nom de la campagne</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Nom de votre projet"
-                required
-              />
-              {error?.name && <p className="text-red-500 text-sm">{error.name}</p>}
-            </div>
-            <div>
-              <Label htmlFor="symbol">Symbole</Label>
-              <Input
-                id="symbol"
-                name="symbol"
-                value={formData.symbol}
-                onChange={handleInputChange}
-                placeholder="3-4 caractères (ex: BTC)"
-                maxLength={4}
-                required
-              />
-              {error?.symbol && <p className="text-red-500 text-sm">{error.symbol}</p>}
-            </div>
-            <div>
-              <Label htmlFor="sector">Secteur</Label>
-              <Select 
-                value={formData.sector}
-                onValueChange={(value) => handleSelectChange(value, 'sector')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir un secteur" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SECTORS.map((sector) => (
-                    <SelectItem key={sector} value={sector}>{sector}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {error?.sector && <p className="text-red-500 text-sm">{error.sector}</p>}
-            </div>
-            {formData.sector === 'Autre' && (
-              <div>
-                <Label htmlFor="otherSector">Précisez le secteur</Label>
-                <Input
-                  id="otherSector"
-                  name="otherSector"
-                  value={formData.otherSector}
-                  onChange={handleInputChange}
-                  placeholder="Précisez le secteur d'activité"
-                  required
-                />
-                {error?.otherSector && <p className="text-red-500 text-sm">{error.otherSector}</p>}
-              </div>
-            )}
-            <div>
-              <Label htmlFor="nationality">Nationalité du Projet</Label>
-              <Select
-                value={formData.nationality}
-                onValueChange={(value) => handleSelectChange(value, 'nationality')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez une nationalité" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRIES.map((country) => (
-                    <SelectItem key={country} value={country}>{country}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {error?.nationality && <p className="text-red-500 text-sm">{error.nationality}</p>}
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Description détaillée de votre projet"
-                rows={5}
-                required
-              />
-              {error?.description && <p className="text-red-500 text-sm">{error.description}</p>}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="sharePrice">Prix par part (ETH)</Label>
-                <Input
-                  id="sharePrice"
-                  name="sharePrice"
-                  type="number"
-                  step="0.000000000000000001"
-                  value={formData.sharePrice}
-                  onChange={handleInputChange}
-                  required
-                />
-                {error?.sharePrice && <p className="text-red-500 text-sm">{error.sharePrice}</p>}
-              </div>
-              <div>
-                <Label htmlFor="numberOfShares">Nombre de parts</Label>
-                <Input
-                  id="numberOfShares"
-                  name="numberOfShares"
-                  type="number"
-                  value={formData.numberOfShares}
-                  onChange={handleInputChange}
-                  required
-                />
-                {error?.numberOfShares && <p className="text-red-500 text-sm">{error.numberOfShares}</p>}
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="targetAmount">Objectif Final (ETH)</Label>
-              <Input
-                id="targetAmount"
-                name="targetAmount"
-                value={(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)}
-                readOnly
-                className="bg-gray-100 dark:bg-neutral-800"
-              />
-            </div>
-            <div>
-              <Label htmlFor="endDate">Date de fin</Label>
-              <Input
-                id="endDate"
-                name="endDate"
-                type="datetime-local"
-                value={formData.endDate}
-                onChange={handleInputChange}
-                required
-              />
-              {error?.endDate && <p className="text-red-500 text-sm">{error.endDate}</p>}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="royaltyFee">
-                  Frais de royalties (basis points)
-                  <InfoTooltip content="100 basis points = 1%" />
-                </Label>
-                <Input
-                  id="royaltyFee"
-                  name="royaltyFee"
-                  type="number"
-                  min="0"
-                  max="10000"
-                  value={formData.royaltyFee}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="royaltyReceiver">Adresse de réception des royalties</Label>
-                <Input
-                  id="royaltyReceiver"
-                  name="royaltyReceiver"
-                  value={formData.royaltyReceiver}
-                  onChange={handleInputChange}
-                  placeholder="0x..."
-                  required
-                />
-                {error?.royaltyReceiver && <p className="text-red-500 text-sm">{error.royaltyReceiver}</p>}
-              </div>
-            </div>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Documents et Médias</h2>
-            <div>
-              <Label htmlFor="whitepaper">Whitepaper</Label>
-              <Input
-                id="whitepaper"
-                name="whitepaper"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'whitepaper')}
-                accept=".pdf,.doc,.docx"
-                required
-              />
-              {error?.whitepaper && <p className="text-red-500 text-sm">{error.whitepaper}</p>}
-            </div>
-            <div>
-              <Label htmlFor="pitchDeck">Pitch Deck</Label>
-              <Input
-                id="pitchDeck"
-                name="pitchDeck"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'pitchDeck')}
-                accept=".pdf,.ppt,.pptx"
-              />
-            </div>
-            <div>
-              <Label htmlFor="legalDocuments">Documents Légaux</Label>
-              <Input
-                id="legalDocuments"
-                name="legalDocuments"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'legalDocuments')}
-                accept=".pdf,.doc,.docx"
-                multiple
-              />
-            </div>
-            <div>
-              <Label htmlFor="media">Médias (images, vidéos)</Label>
-              <Input
-                id="media"
-                name="media"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'media')}
-                accept="image/*,video/*"
-                multiple
-              />
-            </div>
-            {['whitepaper', 'pitchDeck', 'legalDocuments', 'media'].map((field) => (
-              formData[field] && formData[field].length > 0 && (
-                <div key={field} className="mt-2">
-                  <h3 className="font-semibold">{field.charAt(0).toUpperCase() + field.slice(1)}:</h3>
-                  <ul className="list-disc pl-5">
-                    {Array.isArray(formData[field]) ? (
-                      formData[field].map((file, index) => (
-                        <li key={index} className="flex justify-between items-center">
-                          <span>{file.name}</span>
-                          <Button
-                            onClick={() => removeFile(index, field)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="flex justify-between items-center">
-                        <span>{formData[field].name}</span>
-                        <Button
-                          onClick={() => removeFile(0, field)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              )
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Informations de Base</h2>
+      <div>
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="creatorAddress" className="text-gray-900 dark:text-gray-100">Adresse du créateur</Label>
+          <InfoTooltip content="L'adresse Ethereum du créateur de la campagne" />
+        </div>
+        <Input
+          id="creatorAddress"
+          name="creatorAddress"
+          value={formData.creatorAddress}
+          readOnly
+          className="bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 cursor-not-allowed"
+        />
+      </div>
+      <div>
+        <Label htmlFor="name" className="text-gray-900 dark:text-gray-100">Nom de la campagne</Label>
+        <Input
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+          placeholder="Nom de votre projet"
+          required
+          className="text-gray-900 dark:text-gray-100"
+        />
+        {error?.name && <p className="text-red-500 text-sm">{error.name}</p>}
+      </div>
+      <div>
+        <Label htmlFor="symbol" className="text-gray-900 dark:text-gray-100">Symbole</Label>
+        <Input
+          id="symbol"
+          name="symbol"
+          value={formData.symbol}
+          onChange={handleInputChange}
+          placeholder="3-4 caractères (ex: BTC)"
+          maxLength={4}
+          required
+          className="text-gray-900 dark:text-gray-100"
+        />
+        {error?.symbol && <p className="text-red-500 text-sm">{error.symbol}</p>}
+      </div>
+      <div>
+        <Label htmlFor="sector" className="text-gray-900 dark:text-gray-100">Secteur</Label>
+        <Select 
+          value={formData.sector}
+          onValueChange={(value) => handleSelectChange(value, 'sector')}
+        >
+          <SelectTrigger className="text-gray-900 dark:text-gray-100">
+            <SelectValue placeholder="Choisir un secteur" className="text-gray-900 dark:text-gray-100" />
+          </SelectTrigger>
+          <SelectContent>
+            {SECTORS.map((sector) => (
+              <SelectItem key={sector} value={sector} className="text-gray-900 dark:text-gray-100">
+                {sector}
+              </SelectItem>
             ))}
-          </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Équipe et Certification</h2>
-            <div>
-              <Label>Membres de l'équipe</Label>
-              {formData.teamMembers.map((member, index) => (
-                <div key={index} className="mb-4 p-4 border rounded-md">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-semibold">Membre {index + 1}</h3>
-                    {index > 0 && (
+          </SelectContent>
+        </Select>
+        {error?.sector && <p className="text-red-500 text-sm">{error.sector}</p>}
+      </div>
+      {formData.sector === 'Autre' && (
+        <div>
+          <Label htmlFor="otherSector" className="text-gray-900 dark:text-gray-100">Précisez le secteur</Label>
+          <Input
+            id="otherSector"
+            name="otherSector"
+            value={formData.otherSector}
+            onChange={handleInputChange}
+            placeholder="Précisez le secteur d'activité"
+            required
+            className="text-gray-900 dark:text-gray-100"
+          />
+          {error?.otherSector && <p className="text-red-500 text-sm">{error.otherSector}</p>}
+        </div>
+      )}
+      <div>
+        <Label htmlFor="nationality" className="text-gray-900 dark:text-gray-100">Nationalité du Projet</Label>
+        <Select
+          value={formData.nationality}
+          onValueChange={(value) => handleSelectChange(value, 'nationality')}
+        >
+          <SelectTrigger className="text-gray-900 dark:text-gray-100">
+            <SelectValue placeholder="Sélectionnez une nationalité" className="text-gray-900 dark:text-gray-100" />
+          </SelectTrigger>
+          <SelectContent>
+            {COUNTRIES.map((country) => (
+              <SelectItem key={country} value={country} className="text-gray-900 dark:text-gray-100">
+                {country}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {error?.nationality && <p className="text-red-500 text-sm">{error.nationality}</p>}
+      </div>
+      <div>
+        <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">Description</Label>
+        <Textarea
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleInputChange}
+          placeholder="Description détaillée de votre projet"
+          rows={5}
+          required
+          className="text-gray-900 dark:text-gray-100"
+        />
+        {error?.description && <p className="text-red-500 text-sm">{error.description}</p>}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="sharePrice" className="text-gray-900 dark:text-gray-100">Prix par part (ETH)</Label>
+          <Input
+            id="sharePrice"
+            name="sharePrice"
+            type="number"
+            step="0.000000000000000001"
+            value={formData.sharePrice}
+            onChange={handleInputChange}
+            required
+            className="text-gray-900 dark:text-gray-100"
+          />
+          {error?.sharePrice && <p className="text-red-500 text-sm">{error.sharePrice}</p>}
+        </div>
+        <div>
+          <Label htmlFor="numberOfShares" className="text-gray-900 dark:text-gray-100">Nombre de parts</Label>
+          <Input
+            id="numberOfShares"
+            name="numberOfShares"
+            type="number"
+            value={formData.numberOfShares}
+            onChange={handleInputChange}
+            required
+            className="text-gray-900 dark:text-gray-100"
+          />
+          {error?.numberOfShares && <p className="text-red-500 text-sm">{error.numberOfShares}</p>}
+        </div>
+      </div>
+      <div>
+        <Label htmlFor="targetAmount" className="text-gray-900 dark:text-gray-100">Objectif Final (ETH)</Label>
+        <Input
+          id="targetAmount"
+          name="targetAmount"
+          value={(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)}
+          readOnly
+          className="bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-gray-100"
+        />
+      </div>
+      <div>
+        <Label htmlFor="endDate" className="text-gray-900 dark:text-gray-100">Date de fin</Label>
+        <Input
+          id="endDate"
+          name="endDate"
+          type="datetime-local"
+          value={formData.endDate}
+          onChange={handleInputChange}
+          required
+          className="text-gray-900 dark:text-gray-100"
+        />
+        {error?.endDate && <p className="text-red-500 text-sm">{error.endDate}</p>}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="royaltyFee" className="text-gray-900 dark:text-gray-100">
+            Frais de royalties (basis points)
+            <InfoTooltip content="100 basis points = 1%" />
+          </Label>
+          <Input
+            id="royaltyFee"
+            name="royaltyFee"
+            type="number"
+            min="0"
+            max="10000"
+            value={formData.royaltyFee}
+            onChange={handleInputChange}
+            required
+            className="text-gray-900 dark:text-gray-100"
+          />
+        </div>
+        <div>
+          <Label htmlFor="royaltyReceiver" className="text-gray-900 dark:text-gray-100">Adresse de réception des royalties</Label>
+          <Input
+            id="royaltyReceiver"
+            name="royaltyReceiver"
+            value={formData.royaltyReceiver}
+            onChange={handleInputChange}
+            placeholder="0x..."
+            required
+            className="text-gray-900 dark:text-gray-100"
+          />
+          {error?.royaltyReceiver && <p className="text-red-500 text-sm">{error.royaltyReceiver}</p>}
+        </div>
+      </div>
+    </div>
+  );
+  case 2:
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Documents et Médias</h2>
+        <div>
+          <Label htmlFor="whitepaper" className="text-gray-900 dark:text-gray-100">Whitepaper</Label>
+          <Input
+            id="whitepaper"
+            name="whitepaper"
+            type="file"
+            onChange={(e) => handleFileChange(e, 'whitepaper')}
+            accept=".pdf,.doc,.docx"
+            required
+            className="text-gray-900 dark:text-gray-100"
+          />
+          {error?.whitepaper && <p className="text-red-500 text-sm">{error.whitepaper}</p>}
+        </div>
+        <div>
+          <Label htmlFor="pitchDeck" className="text-gray-900 dark:text-gray-100">Pitch Deck</Label>
+          <Input
+            id="pitchDeck"
+            name="pitchDeck"
+            type="file"
+            onChange={(e) => handleFileChange(e, 'pitchDeck')}
+            accept=".pdf,.ppt,.pptx"
+            className="text-gray-900 dark:text-gray-100"
+          />
+        </div>
+        <div>
+          <Label htmlFor="legalDocuments" className="text-gray-900 dark:text-gray-100">Documents Légaux</Label>
+          <Input
+            id="legalDocuments"
+            name="legalDocuments"
+            type="file"
+            onChange={(e) => handleFileChange(e, 'legalDocuments')}
+            accept=".pdf,.doc,.docx"
+            multiple
+            className="text-gray-900 dark:text-gray-100"
+          />
+        </div>
+        <div>
+          <Label htmlFor="media" className="text-gray-900 dark:text-gray-100">Médias (images, vidéos)</Label>
+          <Input
+            id="media"
+            name="media"
+            type="file"
+            onChange={(e) => handleFileChange(e, 'media')}
+            accept="image/*,video/*"
+            multiple
+            className="text-gray-900 dark:text-gray-100"
+          />
+        </div>
+        {['whitepaper', 'pitchDeck', 'legalDocuments', 'media'].map((field) => (
+          formData[field] && formData[field].length > 0 && (
+            <div key={field} className="mt-2">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                {field.charAt(0).toUpperCase() + field.slice(1)}:
+              </h3>
+              <ul className="list-disc pl-5">
+                {Array.isArray(formData[field]) ? (
+                  formData[field].map((file, index) => (
+                    <li key={index} className="flex justify-between items-center">
+                      <span className="text-gray-900 dark:text-gray-100">{file.name}</span>
                       <Button
-                        onClick={() => removeTeamMember(index)}
+                        onClick={() => removeFile(index, field)}
                         variant="ghost"
                         size="sm"
                         className="text-red-500"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Nom"
-                      value={member.name}
-                      onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
-                    />
-                    <Input
-                      placeholder="Rôle"
-                      value={member.role}
-                      onChange={(e) => handleTeamMemberChange(index, 'role', e.target.value)}
-                    />
-                    <Input
-                      placeholder="Twitter"
-                      value={member.socials.twitter}
-                      onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'twitter')}
-                    />
-                    <Input
-                      placeholder="LinkedIn"
-                      value={member.socials.linkedin}
-                      onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'linkedin')}
-                    />
-                  </div>
-                </div>
-              ))}
-              <Button onClick={addTeamMember} className="mt-2">
-                <Plus className="mr-2 h-4 w-4" /> Ajouter un membre
-              </Button>
+                    </li>
+                  ))
+                ) : (
+                  <li className="flex justify-between items-center">
+                    <span className="text-gray-900 dark:text-gray-100">{formData[field].name}</span>
+                    <Button
+                      onClick={() => removeFile(0, field)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </li>
+                )}
+              </ul>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="certified"
-                checked={formData.certified}
-                onCheckedChange={() => handleCheckboxChange('certified')}
+          )
+        ))}
+      </div>
+    );
+      case 3:
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Équipe et Certification</h2>
+      <div>
+        <Label className="text-gray-900 dark:text-gray-100">Membres de l'équipe</Label>
+        {formData.teamMembers.map((member, index) => (
+          <div key={index} className="mb-4 p-4 border rounded-md">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Membre {index + 1}</h3>
+              {index > 0 && (
+                <Button
+                  onClick={() => removeTeamMember(index)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-500"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Input
+                placeholder="Nom"
+                value={member.name}
+                onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
+                className="text-gray-900 dark:text-gray-100"
               />
-              <Label htmlFor="certified">Campagne certifiée</Label>
+              <Input
+                placeholder="Rôle"
+                value={member.role}
+                onChange={(e) => handleTeamMemberChange(index, 'role', e.target.value)}
+                className="text-gray-900 dark:text-gray-100"
+              />
+              <Input
+                placeholder="Twitter"
+                value={member.socials.twitter}
+                onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'twitter')}
+                className="text-gray-900 dark:text-gray-100"
+              />
+              <Input
+                placeholder="LinkedIn"
+                value={member.socials.linkedin}
+                onChange={(e) => handleTeamMemberChange(index, 'socials', e.target.value, 'linkedin')}
+                className="text-gray-900 dark:text-gray-100"
+              />
             </div>
-            {formData.certified && (
-              <div className="space-y-2">
-                <h3 className="font-semibold">Informations de l'avocat</h3>
-                <Input
-                  placeholder="Adresse Ethereum de l'avocat"
-                  value={formData.lawyer.address}
-                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  name="address"
-                />
-                <Input
-                  placeholder="Nom de l'avocat"
-                  value={formData.lawyer.name}
-                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  name="name"
-                />
-                <Input
-                  placeholder="Contact de l'avocat"
-                  value={formData.lawyer.contact}
-                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  name="contact"
-                />
-                <Input
-                  placeholder="Juridiction de l'avocat"
-                  value={formData.lawyer.jurisdiction}
-                  onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-                  name="jurisdiction"
-                />
-              </div>
-            )}
           </div>
-        );
+        ))}
+        <Button onClick={addTeamMember} className="mt-2">
+          <Plus className="mr-2 h-4 w-4" /> Ajouter un membre
+        </Button>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="certified"
+          checked={formData.certified}
+          onCheckedChange={() => handleCheckboxChange('certified')}
+        />
+        <Label htmlFor="certified" className="text-gray-900 dark:text-gray-100">Campagne certifiée</Label>
+      </div>
+      {formData.certified && (
+        <div className="space-y-2">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">Informations de l'avocat</h3>
+          <Input
+            placeholder="Adresse Ethereum de l'avocat"
+            value={formData.lawyer.address}
+            onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+            name="address"
+            className="text-gray-900 dark:text-gray-100"
+          />
+          <Input
+            placeholder="Nom de l'avocat"
+            value={formData.lawyer.name}
+            onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+            name="name"
+            className="text-gray-900 dark:text-gray-100"
+          />
+          <Input
+            placeholder="Contact de l'avocat"
+            value={formData.lawyer.contact}
+            onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+            name="contact"
+            className="text-gray-900 dark:text-gray-100"
+          />
+          <Input
+            placeholder="Juridiction de l'avocat"
+            value={formData.lawyer.jurisdiction}
+            onChange={(e) => handleNestedInputChange(e, 'lawyer')}
+            name="jurisdiction"
+            className="text-gray-900 dark:text-gray-100"
+          />
+        </div>
+      )}
+    </div>
+  );
       case 4:
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Vérification et Soumission</h2>
             <div className="space-y-2">
               <h3 className="font-semibold">Résumé de la campagne</h3>
-              <p><strong>Nom:</strong> {formData.name}</p>
+              <p className="text-gray-900 dark:text-gray-100"><strong className="text-gray-900 dark:text-gray-100">Nom:</strong> {formData.name}</p>
               <p><strong>Symbole:</strong> {formData.symbol}</p>
               <p><strong>Secteur:</strong> {formData.sector}</p>
               <p><strong>Objectif:</strong> {(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)} ETH</p>
@@ -906,8 +933,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
-          <DialogTitle>Créer une nouvelle campagne</DialogTitle>
-          <DialogDescription>
+        <DialogTitle className="text-gray-900 dark:text-gray-100">Créer une nouvelle campagne</DialogTitle>
+        <DialogDescription className="text-gray-900 dark:text-gray-100">
             Remplissez les informations nécessaires pour lancer votre campagne de financement.
           </DialogDescription>
         </DialogHeader>
