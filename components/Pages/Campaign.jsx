@@ -295,10 +295,10 @@ export default function Campaign() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Gestion de la Campagne</h1>
 
-      <Card className="bg-white dark:bg-neutral-950">
-        <CardHeader>
-          <CardTitle className="text-gray-900 dark:text-gray-100">{campaignData.name}</CardTitle>
-        </CardHeader>
+      <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
+  <CardHeader>
+    <CardTitle className="text-gray-900 dark:text-gray-100">{campaignData.name}</CardTitle>
+  </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
@@ -339,13 +339,13 @@ export default function Campaign() {
         </TabsList>
 
         <TabsContent value="finance">
-          <Card className="bg-white dark:bg-neutral-950">
+          <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-gray-100">Gestion Financière</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-white dark:bg-neutral-950">
+                <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
                   <CardHeader>
                     <CardTitle className="text-gray-900 dark:text-gray-100">Distribution de Dividendes</CardTitle>
                   </CardHeader>
@@ -397,7 +397,7 @@ export default function Campaign() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="bg-white dark:bg-neutral-950">
+                <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
                   <CardHeader>
                     <CardTitle className="text-gray-900 dark:text-gray-100">Actions de Campagne</CardTitle>
                   </CardHeader>
@@ -447,7 +447,7 @@ export default function Campaign() {
                   </CardContent>
                 </Card>
               </div>
-              <Card className="bg-white dark:bg-neutral-950">
+              <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
                 <CardHeader>
                   <CardTitle className="text-gray-900 dark:text-gray-100">Historique des Transactions</CardTitle>
                 </CardHeader>
@@ -491,7 +491,7 @@ export default function Campaign() {
         </TabsContent>
 
         <TabsContent value="investors">
-          <Card className="bg-white dark:bg-neutral-950">
+          <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-gray-100">Liste des Investisseurs</CardTitle>
             </CardHeader>
@@ -529,7 +529,7 @@ export default function Campaign() {
         </TabsContent>
 
         <TabsContent value="documents">
-          <Card className="bg-white dark:bg-neutral-950">
+          <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-gray-900 dark:text-gray-100">Documents Légaux</CardTitle>
               <Input 
@@ -569,7 +569,7 @@ export default function Campaign() {
         </TabsContent>
 
         <TabsContent value="social">
-          <Card className="bg-white dark:bg-neutral-950">
+          <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
             <CardHeader>
               <CardTitle className="text-gray-900 dark:text-gray-100">Réseaux Sociaux et Communication</CardTitle>
             </CardHeader>
