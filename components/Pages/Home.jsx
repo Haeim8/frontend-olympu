@@ -326,7 +326,7 @@ export default function Home() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-400"></div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {!projects || projects.length === 0 ? (
             <p className="text-center text-gray-600 dark:text-gray-400">
               Aucune campagne disponible pour le moment.

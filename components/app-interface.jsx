@@ -126,7 +126,7 @@ export default function AppInterface() {
           setShowMobileMenu={setShowMobileMenu}
           hasCampaign={hasCampaign}
         />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-neutral-900 p-6 md:p-8 transition-all duration-300 ease-in-out">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100/90 dark:bg-neutral-900/90 p-6 md:p-8 transition-all duration-900 ease-in-out">
           {renderActivePage()}
         </main>
       </div>

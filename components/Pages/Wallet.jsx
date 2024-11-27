@@ -129,7 +129,7 @@ export default function Wallet() {
   }
 
   const renderNFTSection = () => (
-    <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md">
+    <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md">
       <CardHeader>
         <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Vos NFTs</CardTitle>
       </CardHeader>
@@ -142,7 +142,7 @@ export default function Wallet() {
               {nftHoldings.map((nft) => (
                 <div 
                   key={`${nft.campaign}-${nft.id}`}
-                  className="p-4 border rounded-lg dark:border-gray-700"
+                  className="p-1 border rounded-lg dark:border-gray-900"
                 >
                   <p className="font-medium text-gray-900 dark:text-gray-100">Token #{nft.id}</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Round: {nft.round}</p>
@@ -157,12 +157,12 @@ export default function Wallet() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Votre portefeuille</h2>
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">PNL</CardTitle>
           </CardHeader>
@@ -170,7 +170,7 @@ export default function Wallet() {
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.pnl}</p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Valeur investie</CardTitle>
           </CardHeader>
@@ -178,7 +178,7 @@ export default function Wallet() {
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.investedValue}</p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Projets investis</CardTitle>
           </CardHeader>
@@ -186,7 +186,7 @@ export default function Wallet() {
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.projectsInvested}</p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300">
+        <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Temps avant déblocage</CardTitle>
           </CardHeader>
@@ -197,7 +197,7 @@ export default function Wallet() {
       </div>
 
       {/* Token Balances */}
-      <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md">
+      <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Solde des Tokens</CardTitle>
         </CardHeader>
@@ -227,7 +227,7 @@ export default function Wallet() {
       {renderNFTSection()}
 
       {/* Transactions Section */}
-      <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-800 shadow-md">
+      <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Historique des transactions</CardTitle>
         </CardHeader>
@@ -253,7 +253,7 @@ export default function Wallet() {
                   </tr>
                 ) : transactions.length > 0 ? (
                   transactions.map((tx) => (
-                    <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-800">
+                    <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-950">
                       <td className={`py-2 ${tx.type === 'Achat' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {tx.type}
                       </td>
