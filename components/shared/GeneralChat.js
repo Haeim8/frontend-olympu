@@ -44,7 +44,7 @@ export default function GeneralChat() {
   };
 
   return (
-    <div className="flex flex-col h-[500px]">
+    <div className="flex flex-col h-[400px]">
       <ScrollArea className="flex-grow mb-4 p-4">
         {messages.map((msg) => (
           <div key={msg.id} className={`mb-4 ${msg.username === user?.username ? 'text-right' : 'text-left'}`}>
@@ -67,7 +67,7 @@ export default function GeneralChat() {
           placeholder="Tapez votre message..."
           className="flex-grow bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-full"
         />
-        <Button type="submit" className="bg-lime-500 hover:bg-lime-600 text-white rounded-full px-6">
+        <Button type="submit" className="bg-lime-500 hover:bg-lime-600 text-white rounded-full px-5">
           <Send className="h-5 w-5" />
         </Button>
       </form>

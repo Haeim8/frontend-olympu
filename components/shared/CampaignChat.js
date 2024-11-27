@@ -44,7 +44,7 @@ export default function CampaignChat({ project }) {
   };
 
   return (
-    <div className="flex flex-col h-[500px]">
+    <div className="flex flex-col h-[400px]">
       <ScrollArea className="flex-grow mb-4 p-4">
         {messages.map((msg) => (
           <div key={msg.id} className={`mb-4 ${msg.username === user?.username ? 'text-right' : 'text-left'}`}>
