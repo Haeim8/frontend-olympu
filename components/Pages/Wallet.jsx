@@ -196,33 +196,6 @@ export default function Wallet() {
         </Card>
       </div>
 
-      {/* Token Balances */}
-      <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100">Solde des Tokens</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 dark:text-gray-300">ETH</span>
-            <span className="text-gray-900 dark:text-gray-100">
-              {renderBalance(ethBalance, ethLoading, ethError)} ETH
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 dark:text-gray-300">WETH</span>
-            <span className="text-gray-900 dark:text-gray-100">
-              {renderBalance(wethBalance, wethLoading, wethError)} WETH
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700 dark:text-gray-300">USDT</span>
-            <span className="text-gray-900 dark:text-gray-100">
-              {renderBalance(usdtBalance, usdtLoading, usdtError, 2)} USDT
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* NFT Section */}
       {renderNFTSection()}
 
@@ -245,7 +218,7 @@ export default function Wallet() {
               <tbody>
                 {isLoadingTransactions ? (
                   <tr>
-                    <td colSpan="4" className="text-center py-2">Chargement des transactions...</td>
+                    <td colSpan="4" className="text-center py-4">Chargement des transactions...</td>
                   </tr>
                 ) : transactionError ? (
                   <tr>
@@ -264,7 +237,7 @@ export default function Wallet() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center py-2">Aucune transaction disponible</td>
+                    <td colSpan="6" className="text-center py-4">Aucune transaction disponible</td>
                   </tr>
                 )}
               </tbody>
