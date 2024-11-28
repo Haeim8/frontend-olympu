@@ -8,60 +8,45 @@ import { ethers } from 'ethers';
 import CampaignABI from '@/ABI/CampaignABI.json';
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 
+
 const INVESTMENT_CONTRACT_ADDRESS = '0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941';
 
-export default function Wallet() {
-  const address = useAddress();
-  const { contract, isLoading: contractLoading, error: contractError } = useContract(INVESTMENT_CONTRACT_ADDRESS);
-  
-  // États pour les balances
-  const { data: ethBalance, isLoading: ethLoading, error: ethError } = useBalance();
-  const { data: wethBalance, isLoading: wethLoading, error: wethError } = useBalance({
-    tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  });
-  const { data: usdtBalance, isLoading: usdtLoading, error: usdtError } = useBalance({
-    tokenAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-  });
-
-  // Nouveaux états pour les NFTs et les transactions réelles
+export default function Wallet({ address }) {
   const [nftHoldings, setNftHoldings] = useState([]);
   const [walletInfo, setWalletInfo] = useState({
-    pnl: '0 USDC',
-    investedValue: '0 USDC',
+    pnl: '0',
+    investedValue: '0 ETH',
     projectsInvested: 0,
-    unlockTime: '',
+    unlockTime: '0 ETH',
   });
   const [transactions, setTransactions] = useState([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [transactionError, setTransactionError] = useState(null);
 
-  // Lecture des campagnes
-  const { data: campaigns } = useContractRead(
-    contract,
-    "getAllCampaigns"
-  );
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const contract = new ethers.Contract(INVESTMENT_CONTRACT_ADDRESS, DivarProxyABI, provider);
 
-  // Fonction pour récupérer les NFTs d'une campagne
   const fetchNFTsForCampaign = async (campaignAddress) => {
     try {
-      const campaignContract = await contract.getContract(campaignAddress, CampaignABI);
-      const balance = await campaignContract.call("balanceOf", [address]);
-      const tokens = [];
+      const campaignContract = new ethers.Contract(campaignAddress, CampaignABI, provider);
+      const balance = await campaignContract.balanceOf(address);
+      
+      if (balance.toNumber() === 0) return [];
 
+      const tokens = [];
       for (let i = 0; i < balance.toNumber(); i++) {
-        const tokenId = await campaignContract.call("tokenOfOwnerByIndex", [address, i]);
-        const tokenInfo = await campaignContract.call("getNFTInfo", [tokenId]);
+        const tokenId = await campaignContract.tokenOfOwnerByIndex(address, i);
+        const investment = await campaignContract.investmentsByAddress(address, tokenId);
+        const dividends = await campaignContract.getDividends(tokenId);
         
-        const investment = await campaignContract.call("investmentsByAddress", [address, i]);
         tokens.push({
           id: tokenId.toString(),
-          round: tokenInfo.round.toString(),
           amount: ethers.utils.formatEther(investment.amount),
+          dividends: ethers.utils.formatEther(dividends),
           campaign: campaignAddress,
           timestamp: investment.timestamp.toNumber()
         });
       }
-
       return tokens;
     } catch (error) {
       console.error(`Erreur NFTs:`, error);
@@ -69,28 +54,36 @@ export default function Wallet() {
     }
   };
 
-  // Effet pour les NFTs et le calcul des valeurs
   useEffect(() => {
+    if (!address) return;
+
+    let mounted = true;
+
     async function fetchAllNFTs() {
-      if (!campaigns || !address) return;
-
       try {
-        const nftPromises = campaigns.map(fetchNFTsForCampaign);
-        const nftResults = await Promise.all(nftPromises);
-        const allNFTs = nftResults.flat();
-
-        setNftHoldings(allNFTs);
-
-        // Calcul des valeurs totales
-        const totalInvested = allNFTs.reduce((acc, nft) => acc + parseFloat(nft.amount), 0);
+        const campaigns = await contract.getAllCampaigns();
         
-        setWalletInfo(prev => ({
-          ...prev,
-          investedValue: `${totalInvested.toFixed(2)} ETH`,
-          projectsInvested: new Set(allNFTs.map(nft => nft.campaign)).size
-        }));
+        if (!mounted) return;
 
-        // Création des transactions
+        const allNFTs = [];
+        for (const campaign of campaigns) {
+          const tokens = await fetchNFTsForCampaign(campaign);
+          allNFTs.push(...tokens);
+        }
+
+        if (!mounted) return;
+
+        const totalInvested = allNFTs.reduce((sum, nft) => sum + Number(nft.amount), 0);
+        const totalDividends = allNFTs.reduce((sum, nft) => sum + Number(nft.dividends), 0);
+        
+        setNftHoldings(allNFTs);
+        setWalletInfo({
+          pnl: String(allNFTs.length),
+          investedValue: `${totalInvested.toFixed(4)} ETH`,
+          projectsInvested: new Set(allNFTs.map(nft => nft.campaign)).size,
+          unlockTime: `${totalDividends.toFixed(4)} ETH`
+        });
+
         const txs = allNFTs.map(nft => ({
           id: nft.id,
           type: 'Achat',
@@ -102,31 +95,17 @@ export default function Wallet() {
         setTransactions(txs);
         setIsLoadingTransactions(false);
       } catch (error) {
-        console.error("Erreur lors de la récupération des NFTs:", error);
-        setTransactionError("Erreur lors de la récupération des données.");
+        console.error("Erreur:", error);
+        if (mounted) {
+          setTransactionError(error.message);
+          setIsLoadingTransactions(false);
+        }
       }
     }
 
     fetchAllNFTs();
-  }, [campaigns, address]);
-
-  const renderBalance = (balance, loading, error, decimals = 4) => {
-    if (loading) return 'Chargement...';
-    if (error || !balance) return 'Erreur';
-    return parseFloat(balance.displayValue).toFixed(decimals);
-  };
-
-  if (contractLoading) {
-    return <p>Chargement du contrat...</p>;
-  }
-
-  if (contractError) {
-    return <p className="text-red-500">Erreur de connexion au contrat: {contractError.message}</p>;
-  }
-
-  if (!address) {
-    return <p>Veuillez connecter votre portefeuille pour voir votre portefeuille.</p>;
-  }
+    return () => mounted = false;
+  }, [address]);
 
   const renderNFTSection = () => (
     <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md">
@@ -164,7 +143,7 @@ export default function Wallet() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">PNL</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de nft </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.pnl}</p>
@@ -180,7 +159,7 @@ export default function Wallet() {
         </Card>
         <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Projets investis</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Projets soutenue </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.projectsInvested}</p>
@@ -188,7 +167,7 @@ export default function Wallet() {
         </Card>
         <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-gray-950 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Temps avant déblocage</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">dividende percus</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{walletInfo.unlockTime}</p>
