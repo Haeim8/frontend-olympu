@@ -335,7 +335,7 @@ export default function Home() {
                         <Button
                           variant="default"
                           className="bg-lime-500 text-white hover:bg-lime-600 dark:bg-lime-500 dark:hover:bg-lime-600 font-medium shadow-lg w-full sm:w-auto"
-                          onClick={() => router.push("/dashboard")}
+                          onClick={() => router.push("/app")}
                         >
                           Lancer l'App
                         </Button>
