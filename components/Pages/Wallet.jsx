@@ -47,11 +47,12 @@ export default function Wallet() {
               
               for (const inv of investments) {
                 totalNFTs.push({
-                  id: `#${inv.tokenIds[0].toString()}`, // Simplifié pour éviter trop d'appels
+                  id: `#${inv.tokenIds[0].toString()}`,
                   amount: ethers.utils.formatEther(inv.amount),
                   shares: inv.shares.toString(),
                   campaign: campaignInfo.name || campaignAddress.slice(0, 6),
-                  timestamp: inv.timestamp.toNumber()
+                  timestamp: inv.timestamp.toNumber(),
+                  txHash: campaignAddress // Ajout de l'adresse du contrat
                 });
               }
             }
@@ -73,7 +74,8 @@ export default function Wallet() {
           type: 'Investment',
           project: nft.campaign,
           amount: `${nft.amount} ETH`,
-          date: new Date(nft.timestamp * 1000).toLocaleDateString()
+          date: new Date(nft.timestamp * 1000).toLocaleDateString(),
+          txHash: nft.txHash // Ajoutez cette ligne
         })));
     
         setIsLoading(false);
@@ -165,40 +167,37 @@ export default function Wallet() {
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[200px]">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-gray-700 dark:text-gray-300">
-                  <th className="pb-2">Type</th>
-                  <th className="pb-2">Projet</th>
-                  <th className="pb-2">Montant</th>
-                  <th className="pb-2">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4">Chargement des transactions...</td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan="4" className="text-center py-2 text-red-500">{error}</td>
-                  </tr>
-                ) : transactions.length > 0 ? (
-                  transactions.map((tx) => (
-                    <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-950">
-                      <td className="py-2 text-green-600 dark:text-green-400">{tx.type}</td>
-                      <td className="py-2 text-gray-900 dark:text-gray-100">{tx.project}</td>
-                      <td className="py-2 text-gray-900 dark:text-gray-100">{tx.amount}</td>
-                      <td className="py-2 text-gray-900 dark:text-gray-100">{tx.date}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4">Aucune transaction disponible</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <table className="w-full">
+  <thead>
+    <tr className="text-left text-gray-700 dark:text-gray-300">
+      <th className="pb-2">Type</th>
+      <th className="pb-2">Projet</th>
+      <th className="pb-2">Montant</th>
+      <th className="pb-2">Date</th>
+      <th className="pb-2">Transaction</th> {/* Nouvelle colonne */}
+    </tr>
+  </thead>
+  <tbody>
+    {transactions.map((tx) => (
+      <tr key={tx.id} className="border-t border-gray-200 dark:border-gray-950">
+        <td className="py-2 text-green-600 dark:text-green-400">{tx.type}</td>
+        <td className="py-2 text-gray-900 dark:text-gray-100">{tx.project}</td>
+        <td className="py-2 text-gray-900 dark:text-gray-100">{tx.amount}</td>
+        <td className="py-2 text-gray-900 dark:text-gray-100">{tx.date}</td>
+        <td className="py-2">
+          <a 
+  href={`https://sepolia.basescan.org/address/${tx.txHash}`} // Changé de /address/ à /tx/
+  target="_blank"
+  rel="noopener noreferrer" 
+  className="text-lime-500 hover:text-lime-600"
+>
+  Voir
+</a>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
           </ScrollArea>
         </CardContent>
       </Card>
