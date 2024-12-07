@@ -37,6 +37,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const [transactionHash, setTransactionHash] = useState('');
   const [campaignCreated, setCampaignCreated] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
   const address = useAddress();
   const chainId = useChainId();
   const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
@@ -56,18 +57,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       "name": "createCampaign",
       "outputs": [],
       "stateMutability": "payable"
-    },
-    {
-      "type": "event",
-      "name": "CampaignCreated",
-      "inputs": [
-        { "type": "address", "name": "campaignAddress", "indexed": true },
-        { "type": "address", "name": "startup", "indexed": true },
-        { "type": "string", "name": "name", "indexed": false },
-        { "type": "bool", "name": "certified", "indexed": false },
-        { "type": "address", "name": "lawyer", "indexed": true },
-        { "type": "uint256", "name": "timestamp", "indexed": false }
-      ]
     },
     {
       "type": "function",
@@ -138,6 +127,42 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     setDarkMode(isDark);
   }, []);
   
+  // Effet de réinitialisation au montage
+  useEffect(() => {
+    if (showCreateCampaign) {
+      setStatus('idle');
+      setCurrentStep(1);
+      setError({});
+      setCampaignCreated(false);
+      setFormData(prevData => ({
+        ...prevData,
+        creatorAddress: address,
+        royaltyReceiver: address,
+      }));
+    }
+  }, [showCreateCampaign, address]);
+
+  useEffect(() => {
+    if (events && events.length > 0) {
+      const latestEvent = events[events.length - 1];
+      console.log("Événement CampaignCreated détecté:", latestEvent.data);
+      setCampaignCreated(true);
+      setStatus('success');
+      if (typeof handleCreateCampaign === 'function') {
+        handleCreateCampaign({
+          ...formData,
+          campaignAddress: latestEvent.data.campaignAddress,
+          name: latestEvent.data.name
+        });
+      }
+    }
+  }, [events, formData, handleCreateCampaign]);
+
+  useEffect(() => {
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setDarkMode(isDark);
+  }, []);
+  
   useEffect(() => {
     if (address) {
       setFormData(prev => ({
@@ -163,6 +188,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       }
     }
   }, [events]);
+
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
