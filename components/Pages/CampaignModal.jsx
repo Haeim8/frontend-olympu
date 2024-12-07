@@ -960,8 +960,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
-        <DialogTitle className="text-gray-900 dark:text-gray-100">Créer une nouvelle campagne</DialogTitle>
-        <DialogDescription className="text-gray-900 dark:text-gray-100">
+          <DialogTitle className="text-gray-900 dark:text-gray-100">Créer une nouvelle campagne</DialogTitle>
+          <DialogDescription className="text-gray-900 dark:text-gray-100">
             Remplissez les informations nécessaires pour lancer votre campagne de financement.
           </DialogDescription>
         </DialogHeader>
