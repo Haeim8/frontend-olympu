@@ -37,7 +37,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const [transactionHash, setTransactionHash] = useState('');
   const [campaignCreated, setCampaignCreated] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-
   const address = useAddress();
   const chainId = useChainId();
   const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
@@ -57,6 +56,18 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       "name": "createCampaign",
       "outputs": [],
       "stateMutability": "payable"
+    },
+    {
+      "type": "event",
+      "name": "CampaignCreated",
+      "inputs": [
+        { "type": "address", "name": "campaignAddress", "indexed": true },
+        { "type": "address", "name": "startup", "indexed": true },
+        { "type": "string", "name": "name", "indexed": false },
+        { "type": "bool", "name": "certified", "indexed": false },
+        { "type": "address", "name": "lawyer", "indexed": true },
+        { "type": "uint256", "name": "timestamp", "indexed": false }
+      ]
     },
     {
       "type": "function",
@@ -122,22 +133,20 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     vestingPlan: false,
   });
 
-  
-  // Effet de réinitialisation au montage
   useEffect(() => {
-    if (showCreateCampaign && address) {
-      setStatus('idle');
-      setCurrentStep(1);
-      setError({});
-      setCampaignCreated(false);
-      setTransactionHash('');  // Ajouté
-      setFormData(prevData => ({
-        ...prevData,
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setDarkMode(isDark);
+  }, []);
+  
+  useEffect(() => {
+    if (address) {
+      setFormData(prev => ({
+        ...prev,
         creatorAddress: address,
-        royaltyReceiver: address,
+        royaltyReceiver: address
       }));
     }
-  }, [showCreateCampaign, address]);
+  }, [address]);
 
   useEffect(() => {
     if (events && events.length > 0) {
@@ -153,22 +162,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         });
       }
     }
-  }, [events, formData, handleCreateCampaign]);
+  }, [events]);
 
-  useEffect(() => {
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setDarkMode(isDark);
-  }, []);
-  
-  useEffect(() => {
-    if (!showCreateCampaign) {
-      setStatus('idle');
-      setCampaignCreated(false);
-      setError({});
-    }
-  }, [showCreateCampaign]);
-
-  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -938,8 +933,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-gray-100">Créer une nouvelle campagne</DialogTitle>
-          <DialogDescription className="text-gray-900 dark:text-gray-100">
+        <DialogTitle className="text-gray-900 dark:text-gray-100">Créer une nouvelle campagne</DialogTitle>
+        <DialogDescription className="text-gray-900 dark:text-gray-100">
             Remplissez les informations nécessaires pour lancer votre campagne de financement.
           </DialogDescription>
         </DialogHeader>
