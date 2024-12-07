@@ -122,18 +122,15 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     vestingPlan: false,
   });
 
-  useEffect(() => {
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setDarkMode(isDark);
-  }, []);
   
   // Effet de réinitialisation au montage
   useEffect(() => {
-    if (showCreateCampaign) {
+    if (showCreateCampaign && address) {
       setStatus('idle');
       setCurrentStep(1);
       setError({});
       setCampaignCreated(false);
+      setTransactionHash('');  // Ajouté
       setFormData(prevData => ({
         ...prevData,
         creatorAddress: address,
@@ -164,33 +161,14 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   }, []);
   
   useEffect(() => {
-    if (address) {
-      setFormData(prev => ({
-        ...prev,
-        creatorAddress: address,
-        royaltyReceiver: address
-      }));
+    if (!showCreateCampaign) {
+      setStatus('idle');
+      setCampaignCreated(false);
+      setError({});
     }
-  }, [address]);
-
-  useEffect(() => {
-    if (events && events.length > 0) {
-      const latestEvent = events[events.length - 1];
-      console.log("Événement CampaignCreated détecté:", latestEvent.data);
-      setCampaignCreated(true);
-      setStatus('success');
-      if (typeof handleCreateCampaign === 'function') {
-        handleCreateCampaign({
-          ...formData,
-          campaignAddress: latestEvent.data.campaignAddress,
-          name: latestEvent.data.name
-        });
-      }
-    }
-  }, [events]);
+  }, [showCreateCampaign]);
 
   
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
