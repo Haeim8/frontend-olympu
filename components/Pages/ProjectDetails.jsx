@@ -128,89 +128,72 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   const handleFavorite = () => setIsFavorite(!isFavorite);
 
   const ShareSelector = () => {
-    if (!project) return null;
-  
-    const isCampaignEnded = new Date(project.endDate) < new Date();
-    const isOutOfShares = project.raised >= project.goal;
-    const isDisabled = isCampaignEnded || isOutOfShares || buying || isLoading;
-  
-    const getButtonMessage = () => {
-      if (isCampaignEnded) return "Campagne terminée";
-      if (isOutOfShares) return "Plus de shares disponibles";
-      if (buying) return "Achat en cours...";
-      return `Acheter ${nftCount} Share${nftCount > 1 ? 's' : ''}`;
-    };
-  
+  if (!project) return null;
+
+  const isCampaignEnded = new Date(project.endDate) < new Date();
+  const isOutOfShares = project.raised >= project.goal;
+  const isDisabled = isCampaignEnded || isOutOfShares || buying || isLoading;
+
+  // Message à afficher selon la condition
+  const getButtonMessage = () => {
+    if (isCampaignEnded) return "Campagne terminée";
+    if (isOutOfShares) return "Plus de shares disponibles";
+    if (buying) return "Achat en cours...";
+    return `Acheter ${nftCount} Share${nftCount > 1 ? 's' : ''}`;
+  };
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Carte du NFT à gauche */}
-        <Card className="bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-lime-400 dark:border-lime-400 shadow-lg rounded-xl overflow-hidden">
-          <CardContent className="p-6">
-            <div className="aspect-square w-full bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center mb-4">
-              {/* Template du NFT */}
-              <div className="w-full h-full p-4">
-                <div className="w-full h-full border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg flex flex-col items-center justify-center space-y-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{project.name}</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{`Total Shares: ${project.numberOfShares || '1,000,000'}`}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{`Deployer: ${project.id?.slice(0, 6)}...${project.id?.slice(-4)}`}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-    
-        {/* Carte du sélecteur à droite */}
-        <Card className="bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-lime-400 dark:border-lime-400 shadow-lg rounded-xl overflow-hidden">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Sélectionner le nombre de Shares
-            </h3>
-            <div className="flex items-center justify-center mb-4 space-x-4">
+      <Card className="mt-6 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-lime-400 dark:border-lime-400 shadow-lg rounded-xl overflow-hidden">
+        <CardContent className="p-6">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Sélectionner le nombre de Shares
+          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <label htmlFor="shareCount" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Nombre de Shares
+            </label>
+            <div className="flex items-center space-x-2">
               <Button
                 onClick={() => setNftCount(Math.max(1, nftCount - 1))}
-                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-neutral-900 hover:bg-gray-300 dark:hover:bg-neutral-800"
-                disabled={isDisabled}
+                className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-900"
               >
                 -
               </Button>
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">{nftCount}</span>
+              <input
+                id="shareCount"
+                type="number"
+                value={nftCount}
+                onChange={(e) => setNftCount(Math.max(1, parseInt(e.target.value) || 1))}
+                min="1"
+                className="w-16 text-center bg-white dark:bg-neutral-900 border border-lime-400"
+              />
               <Button
                 onClick={() => setNftCount(nftCount + 1)}
-                className="w-10 h-10 rounded-full bg-gray-200 dark:bg-neutral-900 hover:bg-gray-300 dark:hover:bg-neutral-800"
-                disabled={isDisabled}
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-neutral-950"
               >
                 +
               </Button>
             </div>
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix unitaire</span>
-              <span className="text-sm font-bold text-gray-900 dark:text-white">{project.sharePrice} ETH</span>
-            </div>
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix total</span>
-              <span className="text-lg font-bold text-lime-600 dark:text-lime-400">
-                {(nftCount * parseFloat(project.sharePrice)).toFixed(2)} ETH
-              </span>
-            </div>
-            <Button
-              onClick={handleBuyShares}
-              className={`w-full ${
-                isDisabled 
-                  ? 'bg-red-500 hover:bg-red-600 cursor-not-allowed opacity-50' 
-                  : 'bg-lime-500 hover:bg-lime-600'
-              } text-white`}
-              disabled={isDisabled}
-            >
-              {getButtonMessage()}
-            </Button>
-            {isDisabled && (
-              <p className="text-sm text-red-500 mt-2 text-center">
-                {isCampaignEnded ? "Cette campagne est terminée" : "Tous les shares ont été vendus"}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix unitaire</span>
+            <span className="text-sm font-bold text-gray-900 dark:text-white">{project.sharePrice} ETH</span>
+          </div>
+          <div className="flex justify-between items-center mb-6">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Prix total</span>
+            <span className="text-lg font-bold text-lime-600 dark:text-lime-400">
+              {(nftCount * parseFloat(project.sharePrice)).toFixed(2)} ETH
+            </span>
+          </div>
+          <Button
+            onClick={handleBuyShares}
+            className="w-full bg-lime-500 hover:bg-lime-600 text-white"
+            disabled={buying || isLoading}
+          >
+            {buying ? "Achat en cours..." : `Acheter ${nftCount} Share${nftCount > 1 ? 's' : ''}`}
+          </Button>
+        </CardContent>
+      </Card>
     );
   };
 
