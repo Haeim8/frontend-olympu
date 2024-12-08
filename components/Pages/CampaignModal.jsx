@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Plus, Trash2, CheckCircle } from 'lucide-react';
-import { useContract, useContractWrite, useAddress, useChainId, useContractRead, useContractEvents } from '@thirdweb-dev/react';
+import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 
 import { pinataService } from '@/lib/services/storage';
@@ -35,10 +35,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const [error, setError] = useState({});
   const [uploadProgress, setUploadProgress] = useState({});
   const [transactionHash, setTransactionHash] = useState('');
-  const [campaignCreated, setCampaignCreated] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const address = useAddress();
-  const chainId = useChainId();
   const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
   const contractABI = [
     {
@@ -80,8 +78,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
 
   const { contract } = useContract(contractAddress, contractABI);
   const { mutateAsync: createCampaign, isLoading: writeLoading } = useContractWrite(contract, "createCampaign");
-  const { data: creationFee, isLoading: feeLoading, error: feeError } = useContractRead(contract, "CAMPAIGN_CREATION_FEE");
-  const { data: events, isLoading: eventsLoading, error: eventsError } = useContractEvents(contract, "CampaignCreated");
+  
 
   const [formData, setFormData] = useState({
     creatorAddress: '',
@@ -148,21 +145,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     }
   }, [address]);
 
-  useEffect(() => {
-    if (events && events.length > 0) {
-      const latestEvent = events[events.length - 1];
-      console.log("Événement CampaignCreated détecté:", latestEvent.data);
-      setCampaignCreated(true);
-      setStatus('success');
-      if (typeof handleCreateCampaign === 'function') {
-        handleCreateCampaign({
-          ...formData,
-          campaignAddress: latestEvent.data.campaignAddress,
-          name: latestEvent.data.name
-        });
-      }
-    }
-  }, [events]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -397,31 +379,29 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         throw new Error("Échec de l'upload IPFS");
       }
   
-      if (!creationFee) {
-        throw new Error("Frais de création de campagne non disponible");
-      }
   
       const metadataURI = `ipfs://${ipfsResult.ipfsHash}`;
       const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
       const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
   
       // Création de la campagne
-      const tx = await createCampaign({
-        args: [
-          formData.name,
-          formData.symbol,
-          targetAmountWei,
-          sharePriceWei,
-          Math.floor(new Date(formData.endDate).getTime() / 1000),
-          formData.sector,
-          metadataURI,
-          ethers.BigNumber.from(formData.royaltyFee),
-          formData.logo || "" // Logo URL ou chaîne vide si pas de logo
-        ],
-        overrides: {
-          value: creationFee
-        }
-      });
+      // Création de la campagne
+const tx = await createCampaign({
+  args: [
+    formData.name,
+    formData.symbol,
+    targetAmountWei,
+    sharePriceWei,
+    Math.floor(new Date(formData.endDate).getTime() / 1000),
+    formData.sector,
+    metadataURI,
+    ethers.BigNumber.from(formData.royaltyFee),
+    formData.logo || "" 
+  ],
+  overrides: {
+    value: ethers.utils.parseEther("0.05") // Frais fixes de 0.05 ETH
+  }
+});
   
       console.log("Transaction envoyée:", tx);
       setTransactionHash(tx.hash);
