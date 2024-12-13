@@ -432,175 +432,195 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     setError({});
     
     try {
-      // 1. Capture NFT avec configuration optimisée pour haute qualité
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: formData.backgroundColor,
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        width: 1500,  // Changé à 1500px
-        height: 1500, // Changé à 1500px
-        removeContainer: false,  // Changé à false
-        logging: false  // Désactivé le logging
-    });
-  
-      // Création du blob avec la meilleure qualité
-      const cardBlob = await new Promise((resolve) => {
-          canvas.toBlob(resolve, 'image/png', 1.0);
+      // Génération du SVG
+      const nftSVG = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
+          <rect width="500" height="700" fill="${formData.backgroundColor}"/>
+          <text x="250" y="80" fill="${formData.textColor}" 
+            font-family="Inter, sans-serif" font-size="24" 
+            font-weight="bold" text-anchor="middle">${formData.name}</text>
+          <text x="250" y="110" fill="${formData.textColor}" 
+            font-family="Inter, sans-serif" font-size="18" 
+            text-anchor="middle">Tokenized Equity</text>
+          ${formData.logo ? `
+            <defs>
+              <clipPath id="logoClip">
+                <circle cx="250" cy="200" r="48"/>
+              </clipPath>
+            </defs>
+            <image x="202" y="152" width="96" height="96" 
+              href="${formData.logo}" clip-path="url(#logoClip)"/>
+          ` : `
+            <circle cx="250" cy="200" r="48" fill="${formData.textColor}"/>
+            <path d="M235 220v-40 M250 210v-40 M265 200v-40" 
+              stroke="${formData.backgroundColor}" stroke-width="2"/>
+          `}
+          <text x="50" y="300" fill="${formData.textColor}" 
+            font-size="14">Deployer: ${formData.creatorAddress.slice(0, 6)}...${formData.creatorAddress.slice(-4)}</text>
+          <text x="50" y="330" fill="${formData.textColor}" 
+            font-size="14">Token ID: 1</text>
+          <text x="50" y="360" fill="${formData.textColor}" 
+            font-size="14">Issued: ${new Date().toISOString().split('T')[0]}</text>
+          <text x="50" y="390" fill="${formData.textColor}" 
+            font-size="14">Funding Round: Seed</text>
+          <rect x="40" y="500" width="420" height="80" 
+            fill="${formData.textColor}20"/>
+          <text x="50" y="530" fill="${formData.textColor}" 
+            font-size="14">Total Shares: ${formData.numberOfShares}</text>
+          <rect x="40" y="620" width="80" height="30" fill="${formData.textColor}20"/>
+          <text x="50" y="640" fill="${formData.textColor}" font-size="14">Dividendes</text>
+          <rect x="130" y="620" width="80" height="30" fill="${formData.textColor}20"/>
+          <text x="140" y="640" fill="${formData.textColor}" font-size="14">Airdrops</text>
+          <rect x="380" y="620" width="80" height="30" 
+            fill="${formData.certified ? '#10B981' : '#F97316'}"/>
+          <text x="390" y="640" fill="#FFFFFF" font-size="14">
+            Livar ${formData.certified ? 'vert' : 'orange'}</text>
+        </svg>`;
+
+      // Convertir le SVG en fichier
+      const blob = new Blob([nftSVG], { type: 'image/svg+xml' });
+      const nftFile = new File([blob], `${formData.name}-nft.svg`, { type: 'image/svg+xml' });
+
+      // Upload NFT sur Pinata
+      const nftImageUpload = await pinataService.uploadFile(nftFile, {
+        pinataMetadata: {
+          name: `${formData.name} NFT`,
+          keyvalues: {
+            type: 'nft-image',
+            symbol: formData.symbol
+          }
+        }
       });
-  
-      // Vérification de la qualité de l'image générée
-      console.log("Image NFT générée:", {
-          size: cardBlob.size,
-          type: cardBlob.type,
-          width: canvas.width,
-          height: canvas.height
+
+      console.log("Réponse de Pinata:", nftImageUpload);
+
+      // Upload documents sur Firebase
+      const storage = getStorage();
+      const documentsUrls = {};
+
+      if (formData.whitepaper?.length) {
+        const whitepaperRef = ref(storage, `projects/${formData.name}/whitepaper/${formData.whitepaper[0].name}`);
+        await uploadBytes(whitepaperRef, formData.whitepaper[0]);
+        documentsUrls.whitepaper = await getDownloadURL(whitepaperRef);
+      }
+
+      if (formData.pitchDeck?.length) {
+        const pitchDeckRef = ref(storage, `projects/${formData.name}/pitchDeck/${formData.pitchDeck[0].name}`);
+        await uploadBytes(pitchDeckRef, formData.pitchDeck[0]);
+        documentsUrls.pitchDeck = await getDownloadURL(pitchDeckRef);
+      }
+
+      if (formData.legalDocuments?.length) {
+        const legalDocsPromises = formData.legalDocuments.map(async (doc) => {
+          const docRef = ref(storage, `projects/${formData.name}/legal/${doc.name}`);
+          await uploadBytes(docRef, doc);
+          return getDownloadURL(docRef);
+        });
+        documentsUrls.legal = await Promise.all(legalDocsPromises);
+      }
+
+      // Création et upload métadonnées
+      const nftMetadata = {
+        name: formData.name,
+        description: formData.description,
+        image: nftImageUpload.gatewayUrl,
+        properties: {
+          symbol: formData.symbol,
+          backgroundColor: formData.backgroundColor,
+          textColor: formData.textColor,
+          creatorAddress: formData.creatorAddress,
+          sharePrice: formData.sharePrice,
+          totalShares: formData.numberOfShares,
+          royaltyFee: formData.royaltyFee,
+          sector: formData.sector,
+          teamMembers: formData.teamMembers,
+          certified: formData.certified,
+          documents: documentsUrls,
+          optionsRemuneration: formData.optionsRemuneration
+        }
+      };
+
+      const metadataUpload = await pinataService.uploadJSON(nftMetadata, {
+        name: `${formData.name}-metadata`
       });
-  
-      const nftFile = new File([cardBlob], `${formData.name}-nft.png`, { 
-          type: 'image/png'
+
+      // Sauvegarde Firebase
+      const projectData = {
+        name: formData.name,
+        symbol: formData.symbol,
+        description: formData.description,
+        sector: formData.sector,
+        creatorAddress: address,
+        team: formData.teamMembers,
+        documents: documentsUrls,
+        certified: formData.certified,
+        createdAt: serverTimestamp(),
+        nftMetadata: metadataUpload.gatewayUrl
+      };
+
+      await setDoc(doc(db, "projects", formData.name), projectData);
+
+      // Déploiement blockchain
+      if (!contract) {
+        throw new Error("Contract non initialisé");
+      }
+
+      const targetAmount = ethers.utils.parseEther(
+        (parseFloat(formData.sharePrice) * parseFloat(formData.numberOfShares)).toString()
+      );
+      const sharePrice = ethers.utils.parseEther(formData.sharePrice);
+
+      console.log("Paramètres de la transaction:", {
+        name: formData.name,
+        symbol: formData.symbol,
+        targetAmount: targetAmount.toString(),
+        sharePrice: sharePrice.toString(),
+        endTime: Math.floor(new Date(formData.endDate).getTime() / 1000),
+        sector: formData.sector,
+        metadataUrl: metadataUpload.gatewayUrl,
+        royaltyFee: formData.royaltyFee
       });
 
-        // 2. Upload NFT sur Pinata
-        const nftImageUpload = await pinataService.uploadFile(nftFile, {
-            pinataMetadata: {
-                name: `${formData.name} NFT`,
-                keyvalues: {
-                    type: 'nft-image',
-                    symbol: formData.symbol
-                }
-            }
-        });
-
-        console.log("Réponse de Pinata:", nftImageUpload);
-
-        // 3. Upload documents sur Firebase
-        const storage = getStorage();
-        const documentsUrls = {};
-
-        if (formData.whitepaper?.length) {
-            const whitepaperRef = ref(storage, `projects/${formData.name}/whitepaper/${formData.whitepaper[0].name}`);
-            await uploadBytes(whitepaperRef, formData.whitepaper[0]);
-            documentsUrls.whitepaper = await getDownloadURL(whitepaperRef);
+      const tx = await createCampaign({
+        args: [
+          formData.name,
+          formData.symbol,
+          targetAmount,
+          sharePrice,
+          Math.floor(new Date(formData.endDate).getTime() / 1000),
+          formData.sector,
+          metadataUpload.gatewayUrl,
+          formData.royaltyFee,
+          formData.logo || ""
+        ],
+        overrides: {
+          value: ethers.utils.parseEther("0.05"),
+          gasLimit: 3000000
         }
+      });
 
-        if (formData.pitchDeck?.length) {
-            const pitchDeckRef = ref(storage, `projects/${formData.name}/pitchDeck/${formData.pitchDeck[0].name}`);
-            await uploadBytes(pitchDeckRef, formData.pitchDeck[0]);
-            documentsUrls.pitchDeck = await getDownloadURL(pitchDeckRef);
-        }
+      console.log("Transaction envoyée:", tx);
+      const receipt = await tx.wait();
+      setTransactionHash(receipt.transactionHash);
 
-        if (formData.legalDocuments?.length) {
-            const legalDocsPromises = formData.legalDocuments.map(async (doc) => {
-                const docRef = ref(storage, `projects/${formData.name}/legal/${doc.name}`);
-                await uploadBytes(docRef, doc);
-                return getDownloadURL(docRef);
-            });
-            documentsUrls.legal = await Promise.all(legalDocsPromises);
-        }
+      // Mise à jour Firebase avec les infos de la transaction
+      await updateDoc(doc(db, "projects", formData.name), {
+        contractAddress: receipt.contractAddress,
+        transactionHash: receipt.transactionHash
+      });
 
-        // 4. Création et upload métadonnées
-        const nftMetadata = {
-            name: formData.name,
-            description: formData.description,
-            image: nftImageUpload.gatewayUrl,
-            properties: {
-                symbol: formData.symbol,
-                backgroundColor: formData.backgroundColor,
-                textColor: formData.textColor,
-                creatorAddress: formData.creatorAddress,
-                sharePrice: formData.sharePrice,
-                totalShares: formData.numberOfShares,
-                royaltyFee: formData.royaltyFee,
-                sector: formData.sector,
-                teamMembers: formData.teamMembers,
-                certified: formData.certified,
-                documents: documentsUrls,
-                optionsRemuneration: formData.optionsRemuneration
-            }
-        };
-
-        const metadataUpload = await pinataService.uploadJSON(nftMetadata, {
-            name: `${formData.name}-metadata`
-        });
-
-        // 5. Sauvegarde Firebase
-        const projectData = {
-            name: formData.name,
-            symbol: formData.symbol,
-            description: formData.description,
-            sector: formData.sector,
-            creatorAddress: address,
-            team: formData.teamMembers,
-            documents: documentsUrls,
-            certified: formData.certified,
-            createdAt: serverTimestamp(),
-            nftMetadata: metadataUpload.gatewayUrl
-        };
-
-        await setDoc(doc(db, "projects", formData.name), projectData);
-
-        // 6. Déploiement blockchain
-        if (!contract) {
-            throw new Error("Contract non initialisé");
-        }
-
-        const targetAmount = ethers.utils.parseEther(
-            (parseFloat(formData.sharePrice) * parseFloat(formData.numberOfShares)).toString()
-        );
-        const sharePrice = ethers.utils.parseEther(formData.sharePrice);
-
-        console.log("Paramètres de la transaction:", {
-            name: formData.name,
-            symbol: formData.symbol,
-            targetAmount: targetAmount.toString(),
-            sharePrice: sharePrice.toString(),
-            endTime: Math.floor(new Date(formData.endDate).getTime() / 1000),
-            sector: formData.sector,
-            metadataUrl: metadataUpload.gatewayUrl,
-            royaltyFee: formData.royaltyFee
-        });
-
-        const tx = await createCampaign({
-            args: [
-                formData.name,
-                formData.symbol,
-                targetAmount,
-                sharePrice,
-                Math.floor(new Date(formData.endDate).getTime() / 1000),
-                formData.sector,
-                metadataUpload.gatewayUrl,
-                formData.royaltyFee,
-                formData.logo || ""
-            ],
-            overrides: {
-                value: ethers.utils.parseEther("0.05"),
-                gasLimit: 3000000
-            }
-        });
-
-        console.log("Transaction envoyée:", tx);
-        const receipt = await tx.wait();
-        setTransactionHash(receipt.transactionHash);
-
-        // Mise à jour Firebase avec les infos de la transaction
-        await updateDoc(doc(db, "projects", formData.name), {
-            contractAddress: receipt.contractAddress,
-            transactionHash: receipt.transactionHash
-        });
-
-        setStatus('success');
+      setStatus('success');
     } catch (error) {
-        console.error("Erreur détaillée:", error);
-        console.error("Stack trace:", error.stack);
-        setStatus('error');
-        setError({
-            general: error.code === 4001 
-                ? "Transaction rejetée par l'utilisateur" 
-                : error.message || "Une erreur est survenue lors de la création de la campagne"
-        });
+      console.error("Erreur détaillée:", error);
+      console.error("Stack trace:", error.stack);
+      setStatus('error');
+      setError({
+        general: error.code === 4001 
+          ? "Transaction rejetée par l'utilisateur" 
+          : error.message || "Une erreur est survenue lors de la création de la campagne"
+      });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
 };
 
