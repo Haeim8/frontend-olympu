@@ -261,7 +261,7 @@ export default function Campaign() {
   const calculateDividendPerNFT = () => {
     const amount = parseFloat(distributeForm.amount);
     if (isNaN(amount) || amount <= 0) return 0;
-    return (amount / (campaignData?.nftTotal || 1)).toFixed(6);
+    return (amount / (campaignData?.nftTotal || 1)).toFixed(0);
   };
 
   const handleDocumentUpload = async (file) => {

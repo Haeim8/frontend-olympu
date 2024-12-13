@@ -22,7 +22,7 @@ export default function Header({
     setIsNotificationsOpen(!isNotificationsOpen);
   };
 
-  // Lors de la déconnexion, rediriger l'utilisateur vers Home
+
   const handleDisconnect = () => {
     disconnect(); // Déconnexion via Thirdweb
     router.push('/'); // Rediriger vers Home après déconnexion

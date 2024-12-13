@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, Calendar, Share2, Star } from 'lucide-react';
+import { DollarSign, Calendar, Share2, Star, FileText } from 'lucide-react';
 import { ethers } from 'ethers';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import CampaignABI from '@/ABI/CampaignABI.json';
@@ -99,6 +99,50 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     loadEvents();
 }, [project?.id]);
 
+const [documents, setDocuments] = useState([]);
+const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
+
+// Remplacer l'useEffect existant pour les documents par celui-ci:
+useEffect(() => {
+  const fetchDocuments = async () => {
+    // Afficher l'objet project pour debug
+    console.log("Projet sélectionné:", project);
+    
+    if (!project?.id) return;
+
+    try {
+      const ipfsHash = project.id; // L'ID de la campagne
+      // Construire l'URL directement avec l'ID
+      const url = `https://jade-hilarious-gecko-392.mypinata.cloud/ipfs/${ipfsHash}/campaign-details.json`;
+      
+      console.log("Tentative de récupération à:", url);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Données récupérées:", data);
+
+      // Mise à jour des données du projet
+      project.description = data.description;
+      project.teamMembers = data.teamMembers;
+      project.investmentTerms = data.investmentTerms;
+      project.companyShares = data.companyShares;
+      
+      setDocuments(data.documents || []);
+      setIsLoading(false);
+
+    } catch (error) {
+      console.error("Erreur détaillée:", error);
+      setError(error.message);
+      setIsLoading(false);
+    }
+  };
+
+  fetchDocuments();
+}, [project?.id]);
 
   const handleBuyShares = async () => {
     if (!userAddress) {
@@ -299,11 +343,33 @@ export default function ProjectDetails({ selectedProject, onClose }) {
           </TabsContent>
 
           <TabsContent value="details" className="mt-6 space-y-6">
-            <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg">
-              <h3 className="text-2xl font-semibold mb-4">Description</h3>
-              <p className="text-gray-600 dark:text-gray-300">{project.description}</p>
-            </div>
-          </TabsContent>
+  <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg">
+    <h3 className="text-2xl font-semibold mb-4">Description</h3>
+    <p className="text-gray-600 dark:text-gray-300">{project.description}</p>
+    
+   
+    <h3 className="text-2xl font-semibold mt-8 mb-4">Documents</h3>
+    {project.documents ? (
+      project.documents.map((doc, index) => (
+        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg mb-4">
+          <div className="flex items-center">
+            <FileText className="h-5 w-5 text-lime-500 mr-3" />
+            <span className="text-gray-900 dark:text-gray-100">{doc.name}</span>
+          </div>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${doc.hash}`)}
+          >
+            Voir
+          </Button>
+        </div>
+      ))
+    ) : (
+      <p className="text-gray-500 dark:text-gray-400">Aucun document disponible</p>
+    )}
+  </div>
+</TabsContent>
 
           <TabsContent value="transactions" className="mt-6 space-y-6">
   <div className="w-full overflow-x-auto relative max-w-full">
