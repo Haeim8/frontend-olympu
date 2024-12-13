@@ -1166,7 +1166,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         <div 
           ref={cardRef} 
           style={{
-            position: 'centre',
+            position: 'fixed',
             left: '-9999px',
             width: '400px',
             height: '560px',
