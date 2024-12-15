@@ -156,7 +156,55 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     endDate: '',
     royaltyFee: '0',
     royaltyReceiver: address || '',
-    optionsRemuneration: ['dividendes', 'airdrops'],
+    investmentReturns: {
+        dividends: {
+            enabled: false,
+            details: {
+                frequency: '',
+                percentage: '',
+                conditions: ''
+            }
+        },
+        airdrops: {
+            enabled: false,
+            details: {
+                tokenType: '',
+                amount: '',
+                frequency: '',
+                conditions: ''
+            }
+        },
+        governance: {
+            enabled: false,
+            details: {
+                votingRights: '',
+                proposalRights: '',
+                scope: ''
+            }
+        },
+        earlyAccess: {
+            enabled: false,
+            details: {
+                productType: '',
+                discountPercentage: '',
+                duration: ''
+            }
+        },
+        revenueSplit: {
+            enabled: false,
+            details: {
+                percentage: '',
+                frequency: '',
+                threshold: ''
+            }
+        },
+        customReward: {
+            enabled: false,
+            name: '',
+            description: '',
+            conditions: ''
+        }
+    },
     documents: [],
     whitepaper: null,
     pitchDeck: null,
@@ -421,7 +469,15 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const handlePreviousStep = () => {
     setCurrentStep(prev => prev - 1);
   };
-
+  
+  const getRewardBadgesForSVG = (investmentReturns) => {
+    const badges = [];
+    if (investmentReturns?.dividends?.enabled) badges.push('Dividendes');
+    if (investmentReturns?.airdrops?.enabled) badges.push('Airdrops');
+    if (investmentReturns?.revenueSplit?.enabled) badges.push('Revenue Split');
+    if (investmentReturns?.customReward?.enabled) badges.push(investmentReturns.customReward.name);
+    return badges;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -433,49 +489,113 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     
     try {
       // Génération du SVG
-      const nftSVG = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
-          <rect width="500" height="700" fill="${formData.backgroundColor}"/>
-          <text x="250" y="80" fill="${formData.textColor}" 
-            font-family="Inter, sans-serif" font-size="24" 
-            font-weight="bold" text-anchor="middle">${formData.name}</text>
-          <text x="250" y="110" fill="${formData.textColor}" 
-            font-family="Inter, sans-serif" font-size="18" 
-            text-anchor="middle">Tokenized Equity</text>
-          ${formData.logo ? `
-            <defs>
-              <clipPath id="logoClip">
-                <circle cx="250" cy="200" r="48"/>
-              </clipPath>
-            </defs>
-            <image x="202" y="152" width="96" height="96" 
-              href="${formData.logo}" clip-path="url(#logoClip)"/>
-          ` : `
-            <circle cx="250" cy="200" r="48" fill="${formData.textColor}"/>
-            <path d="M235 220v-40 M250 210v-40 M265 200v-40" 
-              stroke="${formData.backgroundColor}" stroke-width="2"/>
-          `}
-          <text x="50" y="300" fill="${formData.textColor}" 
-            font-size="14">Deployer: ${formData.creatorAddress.slice(0, 6)}...${formData.creatorAddress.slice(-4)}</text>
-          <text x="50" y="330" fill="${formData.textColor}" 
-            font-size="14">Token ID: 1</text>
-          <text x="50" y="360" fill="${formData.textColor}" 
-            font-size="14">Issued: ${new Date().toISOString().split('T')[0]}</text>
-          <text x="50" y="390" fill="${formData.textColor}" 
-            font-size="14">Funding Round: Seed</text>
-          <rect x="40" y="500" width="420" height="80" 
-            fill="${formData.textColor}20"/>
-          <text x="50" y="530" fill="${formData.textColor}" 
-            font-size="14">Total Shares: ${formData.numberOfShares}</text>
-          <rect x="40" y="620" width="80" height="30" fill="${formData.textColor}20"/>
-          <text x="50" y="640" fill="${formData.textColor}" font-size="14">Dividendes</text>
-          <rect x="130" y="620" width="80" height="30" fill="${formData.textColor}20"/>
-          <text x="140" y="640" fill="${formData.textColor}" font-size="14">Airdrops</text>
-          <rect x="380" y="620" width="80" height="30" 
-            fill="${formData.certified ? '#10B981' : '#F97316'}"/>
-          <text x="390" y="640" fill="#FFFFFF" font-size="14">
-            Livar ${formData.certified ? 'vert' : 'orange'}</text>
-        </svg>`;
+      // Remplacer la génération du SVG existante par celle-ci:
+const nftSVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap');
+      .card { filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.1)); }
+      .rounded { border-radius: 16px; }
+      .badge { border-radius: 9999px; }
+    </style>
+  </defs>
+  <rect width="500" height="700" fill="${formData.backgroundColor}" rx="16" ry="16" class="card rounded"/>
+  
+  <!-- Header -->
+  <g transform="translate(0, 40)">
+    <text x="250" y="0" 
+      font-family="Inter, sans-serif" 
+      font-size="32" 
+      font-weight="bold" 
+      fill="${formData.textColor}" 
+      text-anchor="middle"
+    >${formData.name}</text>
+    <text x="250" y="40" 
+      font-family="Inter, sans-serif" 
+      font-size="20" 
+      fill="${formData.textColor}" 
+      text-anchor="middle"
+    >Tokenized Equity</text>
+  </g>
+
+  <!-- Logo -->
+  <g transform="translate(200, 150)">
+    <circle cx="50" cy="50" r="48" fill="${formData.textColor}" class="rounded"/>
+    ${formData.logo ? `
+      <image 
+        x="2" 
+        y="2" 
+        width="96" 
+        height="96" 
+        href="${formData.logo}" 
+        clip-path="url(#logoClip)"
+      />
+    ` : `
+      <path d="M35 70v-40 M50 60v-40 M65 50v-40" 
+        stroke="${formData.backgroundColor}" 
+        stroke-width="3"
+      />
+    `}
+  </g>
+
+  <!-- Info Section -->
+  <g transform="translate(50, 300)">
+    <text font-family="Inter, sans-serif" font-size="16" fill="${formData.textColor}">
+      <tspan x="0" y="0">Deployer: ${formData.creatorAddress.slice(0, 6)}...${formData.creatorAddress.slice(-4)}</tspan>
+      <tspan x="0" y="40">Token ID: 1</tspan>
+      <tspan x="0" y="80">Issued: ${new Date().toISOString().split('T')[0]}</tspan>
+      <tspan x="0" y="120">Funding Round: Seed</tspan>
+    </text>
+  </g>
+
+  <!-- Total Shares Box -->
+  <rect x="40" y="500" width="420" height="50" 
+    fill="${formData.textColor}20" 
+    rx="8" 
+    ry="8"
+  />
+  <text x="50" y="530" 
+    font-family="Inter, sans-serif" 
+    font-size="16" 
+    fill="${formData.textColor}"
+  >Total Shares: ${formData.numberOfShares}</text>
+
+  <!-- Rewards Section -->
+  <g transform="translate(40, 580)">
+    <!-- Badges -->
+    ${getRewardBadgesForSVG(formData.investmentReturns).map((badge, i) => `
+      <g transform="translate(${i * 110}, 0)">
+        <rect width="100" height="30" 
+          fill="${formData.textColor}20" 
+          rx="15" 
+          ry="15"
+        />
+        <text x="50" y="20" 
+          font-family="Inter, sans-serif" 
+          font-size="14" 
+          fill="${formData.textColor}" 
+          text-anchor="middle"
+        >${badge}</text>
+      </g>
+    `).join('')}
+  </g>
+
+  <!-- Livar Badge -->
+  <g transform="translate(380, 580)">
+    <rect width="80" height="30" 
+      fill="${formData.certified ? '#10B981' : '#F97316'}" 
+      rx="15" 
+      ry="15"
+    />
+    <text x="40" y="20" 
+      font-family="Inter, sans-serif" 
+      font-size="14" 
+      fill="white" 
+      text-anchor="middle"
+    >Livar</text>
+  </g>
+</svg>`;;
 
       // Convertir le SVG en fichier
       const blob = new Blob([nftSVG], { type: 'image/svg+xml' });
@@ -545,20 +665,43 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       });
 
       // Sauvegarde Firebase
-      const projectData = {
-        name: formData.name,
-        symbol: formData.symbol,
-        description: formData.description,
-        sector: formData.sector,
-        creatorAddress: address,
-        team: formData.teamMembers,
-        documents: documentsUrls,
-        certified: formData.certified,
-        createdAt: serverTimestamp(),
-        nftMetadata: metadataUpload.gatewayUrl
-      };
+     // Sauvegarde Firebase
+const projectData = {
+  name: formData.name,
+  symbol: formData.symbol,
+  description: formData.description,
+  sector: formData.sector,
+  creatorAddress: address,
+  team: formData.teamMembers,
+  documents: documentsUrls,
+  certified: formData.certified,
+  createdAt: serverTimestamp(),
+  nftMetadata: metadataUpload.gatewayUrl,
+  investmentReturns: {
+    dividends: formData.investmentReturns.dividends.enabled ? {
+      frequency: formData.investmentReturns.dividends.details.frequency,
+      percentage: formData.investmentReturns.dividends.details.percentage,
+      conditions: formData.investmentReturns.dividends.details.conditions
+    } : null,
+    airdrops: formData.investmentReturns.airdrops.enabled ? {
+      tokenType: formData.investmentReturns.airdrops.details.tokenType,
+      amount: formData.investmentReturns.airdrops.details.amount,
+      frequency: formData.investmentReturns.airdrops.details.frequency
+    } : null,
+    revenueSplit: formData.investmentReturns.revenueSplit.enabled ? {
+      percentage: formData.investmentReturns.revenueSplit.details.percentage,
+      frequency: formData.investmentReturns.revenueSplit.details.frequency,
+      threshold: formData.investmentReturns.revenueSplit.details.threshold
+    } : null,
+    customReward: formData.investmentReturns.customReward.enabled ? {
+      name: formData.investmentReturns.customReward.name,
+      description: formData.investmentReturns.customReward.description,
+      conditions: formData.investmentReturns.customReward.conditions
+    } : null
+  }
+};
 
-      await setDoc(doc(db, "projects", formData.name), projectData);
+await setDoc(doc(db, "projects", formData.name), projectData);
 
       // Déploiement blockchain
       if (!contract) {
@@ -612,17 +755,26 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       setStatus('success');
     } catch (error) {
       console.error("Erreur détaillée:", error);
-      console.error("Stack trace:", error.stack);
       setStatus('error');
-      setError({
-        general: error.code === 4001 
-          ? "Transaction rejetée par l'utilisateur" 
-          : error.message || "Une erreur est survenue lors de la création de la campagne"
-      });
+      
+      // Message d'erreur plus descriptif selon le type d'erreur
+      if (error.code === 4001) {
+        setError({
+          general: "Transaction rejetée. Vous pouvez réessayer quand vous voulez."
+        });
+      } else if (error.message?.includes('insufficient funds')) {
+        setError({
+          general: "Fonds insuffisants pour créer la campagne. Vérifiez que vous avez assez d'ETH pour couvrir les frais (0.05 ETH + gas)."
+        });
+      } else {
+        setError({
+          general: error.message || "Une erreur est survenue lors de la création de la campagne. Veuillez réessayer."
+        });
+      }
     } finally {
       setIsLoading(false);
     }
-};
+  };
 
   const InfoTooltip = ({ content }) => (
     <TooltipProvider>
@@ -652,6 +804,52 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               {uploadStatus}
             </p>
           )}
+        </div>
+      );
+    }
+  
+    if (status === 'error') {
+      return (
+        <div className="flex flex-col items-center justify-center space-y-6">
+          <div className="bg-gradient-to-br from-red-900/20 to-red-800/20 backdrop-blur-sm w-full max-w-lg rounded-xl p-8 border border-red-500/20 shadow-xl">
+            <h3 className="text-2xl font-semibold text-red-400 text-center mb-2">
+              Transaction échouée
+            </h3>
+            
+            <div className="space-y-4 mb-6">
+              <div className="bg-red-950/20 rounded-lg p-4 border border-red-500/20">
+                <p className="text-base text-gray-200">
+                  La création de votre campagne n'a pas pu être finalisée car la transaction a été rejetée.
+                </p>
+              </div>
+              
+              <div className="bg-neutral-900/50 rounded-lg p-4 text-sm text-gray-400 font-mono">
+                <p className="mb-2">Détails de l'erreur :</p>
+                <div className="text-xs overflow-x-auto">
+                  {error.general}
+                </div>
+              </div>
+            </div>
+  
+            <div className="flex justify-center gap-4 pt-2">
+              <Button 
+                onClick={() => {
+                  setStatus('idle');
+                  setError({});
+                }}
+                className="bg-lime-500 hover:bg-lime-600 text-white px-8 py-2 rounded-full transition-all duration-200 transform hover:scale-105"
+              >
+                Réessayer
+              </Button>
+              <Button 
+                onClick={() => setShowCreateCampaign(false)}
+                variant="outline"
+                className="border border-red-500/50 text-red-400 hover:bg-red-950/30 px-8 py-2 rounded-full transition-all duration-200"
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
         </div>
       );
     }
@@ -864,116 +1062,488 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         );
         case 2:
           return (
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Description et Documents</h2>
-              
-              <div className="mb-6">
-                <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">Description du Projet</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="Description détaillée de votre projet"
-                  rows={5}
-                  required
-                  className="text-gray-900 dark:text-gray-100"
-                />
-                {error?.description && <p className="text-red-500 text-sm">{error.description}</p>}
-              </div>
-        
-              <div>
-                <Label htmlFor="whitepaper" className="text-gray-900 dark:text-gray-100">Whitepaper</Label>
-                <Input
-                  id="whitepaper"
-                  name="whitepaper"
-                  type="file"
-                  onChange={(e) => handleFileChange(e, 'whitepaper')}
-                  accept=".pdf,.doc,.docx"
-                  required
-                  className="text-gray-900 dark:text-gray-100"
-                />
-                {error?.whitepaper && <p className="text-red-500 text-sm">{error.whitepaper}</p>}
-              </div>
-        
-              <div>
-                <Label htmlFor="pitchDeck" className="text-gray-900 dark:text-gray-100">Pitch Deck</Label>
-                <Input
-                  id="pitchDeck"
-                  name="pitchDeck"
-                  type="file"
-                  onChange={(e) => handleFileChange(e, 'pitchDeck')}
-                  accept=".pdf,.ppt,.pptx"
-                  className="text-gray-900 dark:text-gray-100"
-                />
-              </div>
-        
-              <div>
-                <Label htmlFor="legalDocuments" className="text-gray-900 dark:text-gray-100">Documents Légaux</Label>
-                <Input
-                  id="legalDocuments"
-                  name="legalDocuments"
-                  type="file"
-                  onChange={(e) => handleFileChange(e, 'legalDocuments')}
-                  accept=".pdf,.doc,.docx"
-                  multiple
-                  className="text-gray-900 dark:text-gray-100"
-                />
-              </div>
-        
-              <div>
-                <Label htmlFor="media" className="text-gray-900 dark:text-gray-100">Médias (images, vidéos)</Label>
-                <Input
-                  id="media"
-                  name="media"
-                  type="file"
-                  onChange={(e) => handleFileChange(e, 'media')}
-                  accept="image/*,video/*"
-                  multiple
-                  className="text-gray-900 dark:text-gray-100"
-                />
-              </div>
-        
-              {['whitepaper', 'pitchDeck', 'legalDocuments', 'media'].map((field) => (
-                formData[field] && formData[field].length > 0 && (
-                  <div key={field} className="mt-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                      {field.charAt(0).toUpperCase() + field.slice(1)}:
-                    </h3>
-                    <ul className="list-disc pl-5">
-                      {Array.isArray(formData[field]) ? (
-                        formData[field].map((file, index) => (
-                          <li key={index} className="flex justify-between items-center">
-                            <span className="text-gray-900 dark:text-gray-100">{file.name}</span>
-                            <Button
-                              onClick={() => removeFile(index, field)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="flex justify-between items-center">
-                          <span className="text-gray-900 dark:text-gray-100">{formData[field].name}</span>
-                          <Button
-                            onClick={() => removeFile(0, field)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </li>
-                      )}
-                    </ul>
+              <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Description et Documents</h2>
+                  
+                  <div className="mb-6">
+                      <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">Description du Projet</Label>
+                      <Textarea
+                          id="description"
+                          name="description"
+                          value={formData.description}
+                          onChange={handleInputChange}
+                          placeholder="Description détaillée de votre projet"
+                          rows={5}
+                          required
+                          className="text-gray-900 dark:text-gray-100"
+                      />
+                      {error?.description && <p className="text-red-500 text-sm">{error.description}</p>}
                   </div>
-                )
-              ))}
+      
+                  {/* Section Retours sur Investissement */}
+                  <div className="border rounded-lg p-4 space-y-4 mb-6">
+                      <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Options de Retour sur Investissement</h3>
+                      
+                      {/* Dividendes */}
+                      <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                              <Checkbox
+                                  checked={formData.investmentReturns.dividends.enabled}
+                                  onCheckedChange={(checked) => {
+                                      setFormData(prev => ({
+                                          ...prev,
+                                          investmentReturns: {
+                                              ...prev.investmentReturns,
+                                              dividends: {
+                                                  ...prev.investmentReturns.dividends,
+                                                  enabled: checked
+                                              }
+                                          }
+                                      }));
+                                  }}
+                              />
+                              <Label className="text-gray-900 dark:text-gray-100">Distribution de Dividendes</Label>
+                          </div>
+                          
+                          {formData.investmentReturns.dividends.enabled && (
+                              <div className="ml-6 space-y-2">
+                                  <Select
+                                      value={formData.investmentReturns.dividends.details.frequency}
+                                      onValueChange={(value) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  dividends: {
+                                                      ...prev.investmentReturns.dividends,
+                                                      details: {
+                                                          ...prev.investmentReturns.dividends.details,
+                                                          frequency: value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                  >
+                                      <SelectTrigger className="text-gray-900 dark:text-gray-100">
+                                          <SelectValue placeholder="Fréquence de distribution" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="monthly">Mensuelle</SelectItem>
+                                          <SelectItem value="quarterly">Trimestrielle</SelectItem>
+                                          <SelectItem value="annual">Annuelle</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+      
+                                  <Input
+                                      type="number"
+                                      placeholder="Pourcentage des bénéfices (%)"
+                                      value={formData.investmentReturns.dividends.details.percentage}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  dividends: {
+                                                      ...prev.investmentReturns.dividends,
+                                                      details: {
+                                                          ...prev.investmentReturns.dividends.details,
+                                                          percentage: e.target.value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                      className="text-gray-900 dark:text-gray-100"
+                                  />
+      
+                                  <Input
+                                      placeholder="Conditions spécifiques (optionnel)"
+                                      value={formData.investmentReturns.dividends.details.conditions}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  dividends: {
+                                                      ...prev.investmentReturns.dividends,
+                                                      details: {
+                                                          ...prev.investmentReturns.dividends.details,
+                                                          conditions: e.target.value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                      className="text-gray-900 dark:text-gray-100"
+                                  />
+                              </div>
+                          )}
+                      </div>
+      
+                      {/* Airdrops */}
+                      <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                              <Checkbox
+                                  checked={formData.investmentReturns.airdrops.enabled}
+                                  onCheckedChange={(checked) => {
+                                      setFormData(prev => ({
+                                          ...prev,
+                                          investmentReturns: {
+                                              ...prev.investmentReturns,
+                                              airdrops: {
+                                                  ...prev.investmentReturns.airdrops,
+                                                  enabled: checked
+                                              }
+                                          }
+                                      }));
+                                  }}
+                              />
+                              <Label className="text-gray-900 dark:text-gray-100">Airdrops</Label>
+                          </div>
+      
+                          {formData.investmentReturns.airdrops.enabled && (
+                              <div className="ml-6 space-y-2">
+                                  <Input
+                                      placeholder="Type de token"
+                                      value={formData.investmentReturns.airdrops.details.tokenType}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  airdrops: {
+                                                      ...prev.investmentReturns.airdrops,
+                                                      details: {
+                                                          ...prev.investmentReturns.airdrops.details,
+                                                          tokenType: e.target.value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                      className="text-gray-900 dark:text-gray-100"
+                                  />
+                                  <Input
+                                      type="number"
+                                      placeholder="Quantité par NFT"
+                                      value={formData.investmentReturns.airdrops.details.amount}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  airdrops: {
+                                                      ...prev.investmentReturns.airdrops,
+                                                      details: {
+                                                          ...prev.investmentReturns.airdrops.details,
+                                                          amount: e.target.value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                      className="text-gray-900 dark:text-gray-100"
+                                  />
+                                  <Select
+                                      value={formData.investmentReturns.airdrops.details.frequency}
+                                      onValueChange={(value) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  airdrops: {
+                                                      ...prev.investmentReturns.airdrops,
+                                                      details: {
+                                                          ...prev.investmentReturns.airdrops.details,
+                                                          frequency: value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                  >
+                                      <SelectTrigger className="text-gray-900 dark:text-gray-100">
+                                          <SelectValue placeholder="Fréquence des airdrops" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="monthly">Mensuel</SelectItem>
+                                          <SelectItem value="quarterly">Trimestriel</SelectItem>
+                                          <SelectItem value="annual">Annuel</SelectItem>
+                                          <SelectItem value="oneTime">Unique</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                              </div>
+                          )}
+                      </div>
+      
+                      {/* Partage des revenus */}
+                      <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                              <Checkbox
+                                  checked={formData.investmentReturns.revenueSplit.enabled}
+                                  onCheckedChange={(checked) => {
+                                      setFormData(prev => ({
+                                          ...prev,
+                                          investmentReturns: {
+                                              ...prev.investmentReturns,
+                                              revenueSplit: {
+                                                  ...prev.investmentReturns.revenueSplit,
+                                                  enabled: checked
+                                              }
+                                          }
+                                      }));
+                                  }}
+                              />
+                              <Label className="text-gray-900 dark:text-gray-100">Partage des Revenus</Label>
+                          </div>
+      
+                          {formData.investmentReturns.revenueSplit.enabled && (
+                              <div className="ml-6 space-y-2">
+                                  <Input
+                                      type="number"
+                                      placeholder="Pourcentage du chiffre d'affaires (%)"
+                                      value={formData.investmentReturns.revenueSplit.details.percentage}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  revenueSplit: {
+                                                      ...prev.investmentReturns.revenueSplit,
+                                                      details: {
+                                                          ...prev.investmentReturns.revenueSplit.details,
+                                                          percentage: e.target.value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                      className="text-gray-900 dark:text-gray-100"
+                                  />
+                                  <Select
+                                      value={formData.investmentReturns.revenueSplit.details.frequency}
+                                      onValueChange={(value) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  revenueSplit: {
+                                                      ...prev.investmentReturns.revenueSplit,
+                                                      details: {
+                                                          ...prev.investmentReturns.revenueSplit.details,
+                                                          frequency: value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                  >
+                                      <SelectTrigger className="text-gray-900 dark:text-gray-100">
+                                          <SelectValue placeholder="Fréquence de distribution" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="monthly">Mensuelle</SelectItem>
+                                          <SelectItem value="quarterly">Trimestrielle</SelectItem>
+                                          <SelectItem value="annual">Annuelle</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                                  <Input
+                                      placeholder="Seuil minimum de déclenchement (optionnel)"
+                                      value={formData.investmentReturns.revenueSplit.details.threshold}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  revenueSplit: {
+                                                      ...prev.investmentReturns.revenueSplit,
+                                                      details: {
+                                                          ...prev.investmentReturns.revenueSplit.details,
+                                                          threshold: e.target.value
+                                                      }
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                      className="text-gray-900 dark:text-gray-100"
+                                  />
+                              </div>
+                          )}
+                      </div>
+      
+                      {/* Récompense personnalisée */}
+                      <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                              <Checkbox
+                                  checked={formData.investmentReturns.customReward.enabled}
+                                  onCheckedChange={(checked) => {
+                                      setFormData(prev => ({
+                                          ...prev,
+                                          investmentReturns: {
+                                              ...prev.investmentReturns,
+                                              customReward: {
+                                                  ...prev.investmentReturns.customReward,
+                                                  enabled: checked
+                                              }
+                                          }
+                                      }));
+                                  }}
+                              />
+                              <Label className="text-gray-900 dark:text-gray-100">Récompense Personnalisée</Label>
+                          </div>
+      
+                          {formData.investmentReturns.customReward.enabled && (
+                              <div className="ml-6 space-y-2">
+                                  <Input
+                                      placeholder="Nom de la récompense"
+                                      value={formData.investmentReturns.customReward.name}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  customReward: {
+                                                      ...prev.investmentReturns.customReward,
+                                                      name: e.target.value
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                      className="text-gray-900 dark:text-gray-100"
+                                  />
+                                  <Textarea
+                                      placeholder="Description détaillée de la récompense"
+                                      value={formData.investmentReturns.customReward.description}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                  ...prev.investmentReturns,
+                                                  customReward: {
+                                                      ...prev.investmentReturns.customReward,
+                                                      description: e.target.value
+                                                  }
+                                              }
+                                          }));
+                                      }}
+                                      className="text-gray-900 dark:text-gray-100"
+                                  />
+                                  <Input
+                                      placeholder="Conditions d'obtention (optionnel)"
+                                      value={formData.investmentReturns.customReward.conditions}
+                                      onChange={(e) => {
+                                          setFormData(prev => ({
+                                              ...prev,
+                                              investmentReturns: {
+                                                ...prev.investmentReturns,
+                                                customReward: {
+                                                    ...prev.investmentReturns.customReward,
+                                                    conditions: e.target.value
+                                                }
+                                            }
+                                        }));
+                                    }}
+                                    className="text-gray-900 dark:text-gray-100"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+    
+                {/* Section Documents */}
+                <div>
+                    <Label htmlFor="whitepaper" className="text-gray-900 dark:text-gray-100">Whitepaper</Label>
+                    <Input
+                        id="whitepaper"
+                        name="whitepaper"
+                        type="file"
+                        onChange={(e) => handleFileChange(e, 'whitepaper')}
+                        accept=".pdf,.doc,.docx"
+                        required
+                        className="text-gray-900 dark:text-gray-100"
+                    />
+                    {error?.whitepaper && <p className="text-red-500 text-sm">{error.whitepaper}</p>}
+                </div>
+    
+                <div>
+                    <Label htmlFor="pitchDeck" className="text-gray-900 dark:text-gray-100">Pitch Deck</Label>
+                    <Input
+                        id="pitchDeck"
+                        name="pitchDeck"
+                        type="file"
+                        onChange={(e) => handleFileChange(e, 'pitchDeck')}
+                        accept=".pdf,.ppt,.pptx"
+                        className="text-gray-900 dark:text-gray-100"
+                    />
+                </div>
+    
+                <div>
+                    <Label htmlFor="legalDocuments" className="text-gray-900 dark:text-gray-100">Documents Légaux</Label>
+                    <Input
+                        id="legalDocuments"
+                        name="legalDocuments"
+                        type="file"
+                        onChange={(e) => handleFileChange(e, 'legalDocuments')}
+                        accept=".pdf,.doc,.docx"
+                        multiple
+                        className="text-gray-900 dark:text-gray-100"
+                    />
+                </div>
+    
+                <div>
+                    <Label htmlFor="media" className="text-gray-900 dark:text-gray-100">Médias (images, vidéos)</Label>
+                    <Input
+                        id="media"
+                        name="media"
+                        type="file"
+                        onChange={(e) => handleFileChange(e, 'media')}
+                        accept="image/*,video/*"
+                        multiple
+                        className="text-gray-900 dark:text-gray-100"
+                    />
+                </div>
+    
+                {['whitepaper', 'pitchDeck', 'legalDocuments', 'media'].map((field) => (
+                    formData[field] && formData[field].length > 0 && (
+                        <div key={field} className="mt-2">
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                                {field.charAt(0).toUpperCase() + field.slice(1)}:
+                            </h3>
+                            <ul className="list-disc pl-5">
+                                {Array.isArray(formData[field]) ? (
+                                    formData[field].map((file, index) => (
+                                        <li key={index} className="flex justify-between items-center">
+                                            <span className="text-gray-900 dark:text-gray-100">{file.name}</span>
+                                            <Button
+                                                onClick={() => removeFile(index, field)}
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-red-500"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li className="flex justify-between items-center">
+                                        <span className="text-gray-900 dark:text-gray-100">{formData[field].name}</span>
+                                        <Button
+                                            onClick={() => removeFile(0, field)}
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-red-500"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+                    )
+                ))}
             </div>
-          );
+        );
       case 3:
         return (
           <div className="space-y-4">
@@ -1101,7 +1671,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                   textColor={formData.textColor}
                   logoUrl={formData.logo}
                   niveauLivar={formData.certified ? "vert" : "orange"}
-                  optionsRemuneration={['dividendes', 'airdrops']}
+                  investmentReturns={formData.investmentReturns} 
+                  isPreview={false}
                 />
               </div>
         
@@ -1184,32 +1755,33 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
           {renderStepContent()}
         </ScrollArea>  
         <div 
-          ref={cardRef} 
-          style={{
-            position: 'fixed',
-            left: '-9999px',
-            width: '400px',
-            height: '560px',
-            backgroundColor: 'transparent',
-            pointerEvents: 'none'
-          }}
-        >
-          <CompanySharesNFTCard
-            name={formData.name}
-            symbol={formData.symbol}
-            creatorAddress={formData.creatorAddress}
-            tokenId="1"
-            issueDate={new Date().toISOString().split('T')[0]}
-            fundingRound="Seed"
-            smartContract={contractAddress}
-            totalShares={formData.numberOfShares}
-            backgroundColor={formData.backgroundColor}
-            textColor={formData.textColor}
-            logoUrl={formData.logo}
-            niveauLivar={formData.certified ? "vert" : "orange"}
-            optionsRemuneration={['dividendes', 'airdrops']}
-          />
-        </div>
+  ref={cardRef} 
+  style={{
+    position: 'fixed',
+    left: '-9999px',
+    width: '400px',
+    height: '560px',
+    backgroundColor: 'transparent',
+    pointerEvents: 'none'
+  }}
+>
+  <CompanySharesNFTCard
+    name={formData.name}
+    symbol={formData.symbol}
+    creatorAddress={formData.creatorAddress}
+    tokenId="1"
+    issueDate={new Date().toISOString().split('T')[0]}
+    fundingRound="Seed"
+    smartContract={contractAddress}
+    totalShares={formData.numberOfShares}
+    backgroundColor={formData.backgroundColor}
+    textColor={formData.textColor}
+    logoUrl={formData.logo}
+    niveauLivar={formData.certified ? "vert" : "orange"}
+    investmentReturns={formData.investmentReturns}  // <- AJOUTER CETTE LIGNE
+    isPreview={true}
+  />
+</div>
         
         {/* Boutons de navigation */}
         <div className="mt-4 flex justify-between">

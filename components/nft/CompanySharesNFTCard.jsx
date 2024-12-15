@@ -15,7 +15,8 @@ const CompanySharesNFTCard = ({
   textColor,
   logoUrl,
   niveauLivar,
-  optionsRemuneration = []
+  investmentReturns,
+  isPreview = false // Nouveau prop pour différencier la prévisualisation
 }) => {
   const getLivarBadgeColor = () => {
     switch (niveauLivar) {
@@ -26,92 +27,135 @@ const CompanySharesNFTCard = ({
     }
   };
 
+  const getRewardBadges = () => {
+    const badges = [];
+    if (investmentReturns?.dividends?.enabled) badges.push('Dividendes');
+    if (investmentReturns?.airdrops?.enabled) badges.push('Airdrops');
+    if (investmentReturns?.revenueSplit?.enabled) badges.push('Revenue Split');
+    if (investmentReturns?.customReward?.enabled) badges.push(investmentReturns.customReward.name);
+    return badges;
+  };
+
+  const badges = getRewardBadges();
+  const halfLength = Math.ceil(badges.length / 2);
+  const leftBadges = badges.slice(0, halfLength);
+  const rightBadges = badges.slice(halfLength);
+
+  // Styles conditionnels basés sur isPreview
+  const containerStyles = isPreview ? {
+    width: '100%',
+    maxWidth: '500px',
+    height: 'auto',
+    margin: '0 auto'
+  } : {
+    width: '500px',
+    height: '700px',
+    margin: 0,
+    padding: 0
+  };
+
+  const badgeStyles = isPreview ? {
+    fontSize: '0.75rem',
+    padding: '0.25rem 0.5rem',
+    minWidth: '60px'
+  } : {
+    fontSize: '0.875rem',
+    padding: '0.5rem 1rem',
+    minWidth: '80px'
+  };
+
   return (
-    <div className="inline-block">
+    <div className="inline-block" style={containerStyles}>
       <Card 
-        className="w-[500px] h-[700px]"
         style={{ 
           backgroundColor,
           color: textColor,
-          margin: 0,
-          padding: 0,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
-        <CardHeader className="h-1/4 p-4 flex flex-col items-center justify-center">
-          <h2 className="text-2xl font-bold mb-2" style={{ color: textColor }}>{name}</h2>
-          <p className="text-lg" style={{ color: textColor }}>Tokenized Equity</p>
+        <CardHeader className={`${isPreview ? 'p-4' : 'p-6'} flex flex-col items-center justify-center`}>
+          <h2 className={`${isPreview ? 'text-xl' : 'text-2xl'} font-bold mb-2`} style={{ color: textColor }}>{name}</h2>
+          <p className={`${isPreview ? 'text-base' : 'text-lg'}`} style={{ color: textColor }}>Tokenized Equity</p>
         </CardHeader>
 
-        <CardContent className="h-2/4 p-4 flex flex-col justify-between">
+        <CardContent className="flex-grow p-4 flex flex-col justify-between">
           <div className="flex justify-center mb-4">
             <div 
-              className="w-24 h-24 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: textColor }}
+              className="rounded-full flex items-center justify-center"
+              style={{ 
+                backgroundColor: textColor,
+                width: isPreview ? '4rem' : '6rem',
+                height: isPreview ? '4rem' : '6rem'
+              }}
             >
               {logoUrl ? (
                 <img src={logoUrl} alt="Company Logo" className="w-full h-full rounded-full object-cover" />
               ) : (
-                <BarChart2 className="w-12 h-12" style={{ color: backgroundColor }} />
+                <BarChart2 className={isPreview ? 'w-8 h-8' : 'w-12 h-12'} style={{ color: backgroundColor }} />
               )}
             </div>
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Wallet className="w-5 h-5" style={{ color: textColor }} />
-              <span className="text-sm">Deployer: {creatorAddress.slice(0, 6)}...{creatorAddress.slice(-4)}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Hash className="w-5 h-5" style={{ color: textColor }} />
-              <span className="text-sm">Token ID: {tokenId}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5" style={{ color: textColor }} />
-              <span className="text-sm">Issued: {issueDate}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Target className="w-5 h-5" style={{ color: textColor }} />
-              <span className="text-sm">Funding Round: {fundingRound}</span>
-            </div>
-          </div>
-
-          <div 
-            className="p-4 rounded-lg"
-            style={{ backgroundColor: `${textColor}20` }}
-          >
-            <p className="text-sm font-mono">
-              Smart Contract: {smartContract.slice(0, 6)}...{smartContract.slice(-4)}
-            </p>
-            <p className="text-sm font-mono">
-              Total Shares: {totalShares.toLocaleString()}
-            </p>
+            {/* Info sections avec taille conditionnelle */}
+            {[
+              { Icon: Wallet, text: `Deployer: ${creatorAddress.slice(0, 6)}...${creatorAddress.slice(-4)}` },
+              { Icon: Hash, text: `Token ID: ${tokenId}` },
+              { Icon: Calendar, text: `Issued: ${issueDate}` },
+              { Icon: Target, text: `Smart Contract: ${smartContract.slice(0, 6)}...${smartContract.slice(-4)}` }
+            ].map(({ Icon, text }, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                <Icon className={isPreview ? 'w-4 h-4' : 'w-5 h-5'} style={{ color: textColor }} />
+                <span className={isPreview ? 'text-xs' : 'text-sm'}>{text}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
 
-        <CardFooter className="h-1/4 p-4 justify-between">
-          <div className="flex gap-2">
-            {optionsRemuneration.slice(0, 2).map((option, index) => (
-              <Badge 
-                key={index}
-                className="text-xs"
-                style={{ 
-                  backgroundColor: `${textColor}20`,
-                  color: textColor,
-                  border: `1px solid ${textColor}40`
-                }}
-              >
-                {option === 'dividendes' && 'Dividendes'}
-                {option === 'airdrops' && 'Airdrops'}
-                {option === 'vc' && 'VC'}
-                {option === 'accesAnticipe' && 'Accès anticipé'}
-              </Badge>
-            ))}
+        <CardFooter className="p-4 flex flex-col items-center">
+        <Badge 
+  className={`text-xs text-white mb-4 ${getLivarBadgeColor()}`}
+  style={badgeStyles}
+>
+  Livar
+</Badge>
+          
+          <div className="flex justify-between w-full gap-4">
+            <div className="flex flex-col gap-2">
+              {leftBadges.map((badge, index) => (
+                <Badge 
+                  key={`left-${index}`}
+                  className="flex justify-center"
+                  style={{
+                    ...badgeStyles,
+                    backgroundColor: `${textColor}20`,
+                    color: textColor,
+                    border: `1px solid ${textColor}40`
+                  }}
+                >
+                  {badge}
+                </Badge>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2">
+              {rightBadges.map((badge, index) => (
+                <Badge 
+                  key={`right-${index}`}
+                  className="flex justify-center"
+                  style={{
+                    ...badgeStyles,
+                    backgroundColor: `${textColor}20`,
+                    color: textColor,
+                    border: `1px solid ${textColor}40`
+                  }}
+                >
+                  {badge}
+                </Badge>
+              ))}
+            </div>
           </div>
-          <Badge 
-            className={`text-xs text-white ${getLivarBadgeColor()}`}
-          >
-            Livar {niveauLivar}
-          </Badge>
         </CardFooter>
       </Card>
     </div>
