@@ -9,6 +9,9 @@ import { DollarSign, Calendar, Share2, Star, FileText } from 'lucide-react';
 import { ethers } from 'ethers';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import CampaignABI from '@/ABI/CampaignABI.json';
+import { db } from "@/lib/firebase/firebase";
+import { doc, getDoc } from "firebase/firestore";
+
 
 const DEFAULT_PROJECT = {
   name: "Nom du projet",
@@ -102,47 +105,50 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 const [documents, setDocuments] = useState([]);
 const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
 
-// Remplacer l'useEffect existant pour les documents par celui-ci:
 useEffect(() => {
-  const fetchDocuments = async () => {
-    // Afficher l'objet project pour debug
-    console.log("Projet sélectionné:", project);
-    
-    if (!project?.id) return;
+  const fetchProjectDetails = async () => {
+    if (!project?.name) return;  // On utilise le nom au lieu de l'id
 
+    setIsLoading(true);
     try {
-      const ipfsHash = project.id; // L'ID de la campagne
-      // Construire l'URL directement avec l'ID
-      const url = `https://jade-hilarious-gecko-392.mypinata.cloud/ipfs/${ipfsHash}/campaign-details.json`;
-      
-      console.log("Tentative de récupération à:", url);
+      console.log("Tentative de récupération du projet:", project.name);
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
+      // Récupérer les données du projet depuis Firebase avec le nom
+      const projectRef = doc(db, "projects", project.name);
+      const projectSnapshot = await getDoc(projectRef);
+      
+      console.log("Snapshot existe:", projectSnapshot.exists());
+      
+      if (projectSnapshot.exists()) {
+        const projectData = projectSnapshot.data();
+        console.log("Données du projet:", projectData);
+
+        // Mise à jour du projet avec toutes les données
+        Object.assign(project, {
+          description: projectData.description,
+          teamMembers: projectData.teamMembers,
+          documents: projectData.documents || {},
+          nftMetadata: projectData.nftMetadata,
+          investmentTerms: projectData.investmentTerms,
+          companyShares: projectData.companyShares,
+        });
+
+        setDocuments(projectData.documents || {});
+        setError(null);
+      } else {
+        console.error("Aucun document trouvé avec le nom:", project.name);
+        setError(`Aucune donnée trouvée pour ${project.name}`);
       }
-
-      const data = await response.json();
-      console.log("Données récupérées:", data);
-
-      // Mise à jour des données du projet
-      project.description = data.description;
-      project.teamMembers = data.teamMembers;
-      project.investmentTerms = data.investmentTerms;
-      project.companyShares = data.companyShares;
-      
-      setDocuments(data.documents || []);
-      setIsLoading(false);
-
     } catch (error) {
       console.error("Erreur détaillée:", error);
-      setError(error.message);
+      setError(`Erreur lors de la récupération des données: ${error.message}`);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  fetchDocuments();
-}, [project?.id]);
+  fetchProjectDetails();
+}, [project?.name]); // Dépendance sur le nom au lieu de l'id
 
   const handleBuyShares = async () => {
     if (!userAddress) {
@@ -245,16 +251,18 @@ useEffect(() => {
     return (
       <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
         <DialogContent>
+          <DialogTitle>Erreur</DialogTitle>
           <p className="text-red-500">{error}</p>
         </DialogContent>
       </Dialog>
     );
   }
-
+  
   if (isLoading) {
     return (
       <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
         <DialogContent>
+          <DialogTitle>Chargement</DialogTitle>
           <p>Chargement des détails...</p>
         </DialogContent>
       </Dialog>
@@ -347,27 +355,63 @@ useEffect(() => {
     <h3 className="text-2xl font-semibold mb-4">Description</h3>
     <p className="text-gray-600 dark:text-gray-300">{project.description}</p>
     
-   
     <h3 className="text-2xl font-semibold mt-8 mb-4">Documents</h3>
-    {project.documents ? (
-      project.documents.map((doc, index) => (
-        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg mb-4">
+    <div className="space-y-4">
+      {/* Whitepaper */}
+      {documents?.whitepaper && (
+        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
           <div className="flex items-center">
             <FileText className="h-5 w-5 text-lime-500 mr-3" />
-            <span className="text-gray-900 dark:text-gray-100">{doc.name}</span>
+            <span className="text-gray-900 dark:text-gray-100">Whitepaper</span>
           </div>
           <Button 
             variant="outline"
             size="sm"
-            onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${doc.hash}`)}
+            onClick={() => window.open(documents.whitepaper)}
           >
             Voir
           </Button>
         </div>
-      ))
-    ) : (
-      <p className="text-gray-500 dark:text-gray-400">Aucun document disponible</p>
-    )}
+      )}
+
+      {/* Pitch Deck */}
+      {documents?.pitchDeck && (
+        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
+          <div className="flex items-center">
+            <FileText className="h-5 w-5 text-lime-500 mr-3" />
+            <span className="text-gray-900 dark:text-gray-100">Pitch Deck</span>
+          </div>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(documents.pitchDeck)}
+          >
+            Voir
+          </Button>
+        </div>
+      )}
+
+      {/* Legal Documents */}
+      {documents?.legal && documents.legal.map((url, index) => (
+        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
+          <div className="flex items-center">
+            <FileText className="h-5 w-5 text-lime-500 mr-3" />
+            <span className="text-gray-900 dark:text-gray-100">Document légal {index + 1}</span>
+          </div>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(url)}
+          >
+            Voir
+          </Button>
+        </div>
+      ))}
+
+      {(!documents?.whitepaper && !documents?.pitchDeck && (!documents?.legal || documents.legal.length === 0)) && (
+        <p className="text-gray-500 dark:text-gray-400">Aucun document disponible</p>
+      )}
+    </div>
   </div>
 </TabsContent>
 
