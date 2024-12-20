@@ -204,22 +204,6 @@ export default function Home() {
     }
   }, [platformContract, campaignAddresses, addressesLoading]);
 
-  useEffect(() => {
-    if (platformContract) {
-      const unsubscribe = platformContract.events.addEventListener(
-        "CampaignCreated",
-        (event) => {
-          console.log("Nouvelle campagne créée:", event);
-          fetchAllCampaigns();
-        }
-      );
-
-      return () => {
-        unsubscribe();
-      };
-    }
-  }, [platformContract]);
-
   const handleCreateCampaign = () => {
     setShowCreateCampaign(true);
   };

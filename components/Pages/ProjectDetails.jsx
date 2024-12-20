@@ -1,4 +1,4 @@
-// frontend/components/Pages/ProjectDetails.jsx
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -12,7 +12,6 @@ import CampaignABI from '@/ABI/CampaignABI.json';
 import { db } from "@/lib/firebase/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-
 const DEFAULT_PROJECT = {
   name: "Nom du projet",
   raised: "0",
@@ -22,6 +21,25 @@ const DEFAULT_PROJECT = {
   description: "",
 };
 
+const DocumentLink = ({ title, url }) => (
+  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
+    <div className="flex items-center">
+      <FileText className="h-5 w-5 text-lime-500 mr-3" />
+      <span className="text-gray-900 dark:text-gray-100">{title}</span>
+    </div>
+    <Button variant="outline" size="sm" onClick={() => window.open(url)}>
+      Voir
+    </Button>
+  </div>
+);
+
+const InfoCard = ({ title, value }) => (
+  <div className="p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
+    <h4 className="text-sm font-medium text-gray-500 mb-1">{title}</h4>
+    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{value}</p>
+  </div>
+);
+
 export default function ProjectDetails({ selectedProject, onClose }) {
   const project = { ...DEFAULT_PROJECT, ...selectedProject };
   const [showProjectDetails, setShowProjectDetails] = useState(true);
@@ -30,6 +48,12 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [projectData, setProjectData] = useState({
+    firebase: null,
+    ipfs: null
+  });
+  const [documents, setDocuments] = useState([]);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
 
   const userAddress = useAddress();
 
@@ -63,6 +87,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
         const contract = new ethers.Contract(project.id, CampaignABI, provider);
 
+        // Récupération des transactions blockchain
         const purchaseFilter = contract.filters.SharesPurchased();
         const refundFilter = contract.filters.SharesRefunded();
         
@@ -88,6 +113,38 @@ export default function ProjectDetails({ selectedProject, onClose }) {
           }))
         ].sort((a,b) => b.id - a.id);
 
+        // Récupération des données Firebase
+        const documentId = `campaign_${project.name.toLowerCase()}`;
+        console.log("Recherche du document Firebase:", documentId);
+        const projectRef = doc(db, "campaigns", documentId);
+        const projectSnapshot = await getDoc(projectRef);
+        
+        if (projectSnapshot.exists()) {
+          const firebaseData = projectSnapshot.data();
+          setProjectData(prev => ({
+            ...prev,
+            firebase: firebaseData
+          }));
+
+          
+          if (firebaseData.nftMetadata) {
+            try {
+              const ipfsResponse = await fetch(firebaseData.nftMetadata);
+              const ipfsData = await ipfsResponse.json();
+              setProjectData(prev => ({
+                ...prev,
+                ipfs: ipfsData
+              }));
+            } catch (ipfsError) {
+              console.error("Erreur lors de la récupération des données IPFS:", ipfsError);
+            }
+          }
+
+          if (firebaseData.documents) {
+            setDocuments(firebaseData.documents);
+          }
+        }
+
         setTransactions(allTxs);
         setError(null);
         
@@ -100,55 +157,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     };
 
     loadEvents();
-}, [project?.id]);
-
-const [documents, setDocuments] = useState([]);
-const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
-
-useEffect(() => {
-  const fetchProjectDetails = async () => {
-    if (!project?.name) return;  // On utilise le nom au lieu de l'id
-
-    setIsLoading(true);
-    try {
-      console.log("Tentative de récupération du projet:", project.name);
-
-      // Récupérer les données du projet depuis Firebase avec le nom
-      const projectRef = doc(db, "projects", project.name);
-      const projectSnapshot = await getDoc(projectRef);
-      
-      console.log("Snapshot existe:", projectSnapshot.exists());
-      
-      if (projectSnapshot.exists()) {
-        const projectData = projectSnapshot.data();
-        console.log("Données du projet:", projectData);
-
-        // Mise à jour du projet avec toutes les données
-        Object.assign(project, {
-          description: projectData.description,
-          teamMembers: projectData.teamMembers,
-          documents: projectData.documents || {},
-          nftMetadata: projectData.nftMetadata,
-          investmentTerms: projectData.investmentTerms,
-          companyShares: projectData.companyShares,
-        });
-
-        setDocuments(projectData.documents || {});
-        setError(null);
-      } else {
-        console.error("Aucun document trouvé avec le nom:", project.name);
-        setError(`Aucune donnée trouvée pour ${project.name}`);
-      }
-    } catch (error) {
-      console.error("Erreur détaillée:", error);
-      setError(`Erreur lors de la récupération des données: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  fetchProjectDetails();
-}, [project?.name]); // Dépendance sur le nom au lieu de l'id
+  }, [project?.id, project?.name]);
 
   const handleBuyShares = async () => {
     if (!userAddress) {
@@ -178,19 +187,11 @@ useEffect(() => {
   const handleFavorite = () => setIsFavorite(!isFavorite);
 
   const ShareSelector = () => {
-  if (!project) return null;
+    if (!project) return null;
 
-  const isCampaignEnded = new Date(project.endDate) < new Date();
-  const isOutOfShares = project.raised >= project.goal;
-  const isDisabled = isCampaignEnded || isOutOfShares || buying || isLoading;
-
-  // Message à afficher selon la condition
-  const getButtonMessage = () => {
-    if (isCampaignEnded) return "Campagne terminée";
-    if (isOutOfShares) return "Plus de shares disponibles";
-    if (buying) return "Achat en cours...";
-    return `Acheter ${nftCount} Share${nftCount > 1 ? 's' : ''}`;
-  };
+    const isCampaignEnded = new Date(project.endDate) < new Date();
+    const isOutOfShares = project.raised >= project.goal;
+    const isDisabled = isCampaignEnded || isOutOfShares || buying || isLoading;
 
     return (
       <Card className="mt-6 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-lime-400 dark:border-lime-400 shadow-lg rounded-xl overflow-hidden">
@@ -238,9 +239,12 @@ useEffect(() => {
           <Button
             onClick={handleBuyShares}
             className="w-full bg-lime-500 hover:bg-lime-600 text-white"
-            disabled={buying || isLoading}
+            disabled={isDisabled}
           >
-            {buying ? "Achat en cours..." : `Acheter ${nftCount} Share${nftCount > 1 ? 's' : ''}`}
+            {buying ? "Achat en cours..." : 
+             isCampaignEnded ? "Campagne terminée" :
+             isOutOfShares ? "Plus de shares disponibles" :
+             `Acheter ${nftCount} Share${nftCount > 1 ? 's' : ''}`}
           </Button>
         </CardContent>
       </Card>
@@ -342,7 +346,7 @@ useEffect(() => {
                 </span>
               </div>
               <div className="h-2 bg-gray-200 dark:bg-neutral-800 rounded-full">
-                <div
+              <div
                   style={{ width: `${(parseFloat(project.raised) / parseFloat(project.goal)) * 100}%` }}
                   className="h-full bg-lime-500 rounded-full"
                 />
@@ -352,105 +356,113 @@ useEffect(() => {
 
           <TabsContent value="details" className="mt-6 space-y-6">
   <div className="bg-white dark:bg-neutral-900 p-6 rounded-lg">
-    <h3 className="text-2xl font-semibold mb-4">Description</h3>
-    <p className="text-gray-600 dark:text-gray-300">{project.description}</p>
-    
-    <h3 className="text-2xl font-semibold mt-8 mb-4">Documents</h3>
-    <div className="space-y-4">
-      {/* Whitepaper */}
-      {documents?.whitepaper && (
-        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-          <div className="flex items-center">
-            <FileText className="h-5 w-5 text-lime-500 mr-3" />
-            <span className="text-gray-900 dark:text-gray-100">Whitepaper</span>
-          </div>
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(documents.whitepaper)}
-          >
-            Voir
-          </Button>
-        </div>
-      )}
-
-      {/* Pitch Deck */}
-      {documents?.pitchDeck && (
-        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-          <div className="flex items-center">
-            <FileText className="h-5 w-5 text-lime-500 mr-3" />
-            <span className="text-gray-900 dark:text-gray-100">Pitch Deck</span>
-          </div>
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(documents.pitchDeck)}
-          >
-            Voir
-          </Button>
-        </div>
-      )}
-
-      {/* Legal Documents */}
-      {documents?.legal && documents.legal.map((url, index) => (
-        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-          <div className="flex items-center">
-            <FileText className="h-5 w-5 text-lime-500 mr-3" />
-            <span className="text-gray-900 dark:text-gray-100">Document légal {index + 1}</span>
-          </div>
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(url)}
-          >
-            Voir
-          </Button>
-        </div>
-      ))}
-
-      {(!documents?.whitepaper && !documents?.pitchDeck && (!documents?.legal || documents.legal.length === 0)) && (
-        <p className="text-gray-500 dark:text-gray-400">Aucun document disponible</p>
-      )}
+    {/* Description du projet */}
+    <div className="mb-8">
+      <h3 className="text-2xl font-semibold mb-4">Description</h3>
+      <p className="text-gray-600 dark:text-gray-300">
+        {projectData.firebase?.description || project.description}
+      </p>
     </div>
+
+    {/* Documents */}
+    <div className="mb-8">
+      <h3 className="text-2xl font-semibold mb-4">Documents</h3>
+      <div className="space-y-4">
+        {projectData.firebase?.documents?.whitepaper && (
+          <DocumentLink
+            title="Whitepaper"
+            url={projectData.firebase.documents.whitepaper}
+          />
+        )}
+        {projectData.firebase?.documents?.pitchDeck && (
+          <DocumentLink
+            title="Pitch Deck"
+            url={projectData.firebase.documents.pitchDeck}
+          />
+        )}
+        {projectData.firebase?.documents?.legalDocuments && (
+          Array.isArray(projectData.firebase.documents.legalDocuments) 
+            ? projectData.firebase.documents.legalDocuments.map((doc, index) => (
+                <DocumentLink
+                  key={index}
+                  title={`Document légal ${index + 1}`}
+                  url={doc}
+                />
+              ))
+            : <DocumentLink
+                title="Document légal"
+                url={projectData.firebase.documents.legalDocuments}
+              />
+        )}
+        {(!projectData.firebase?.documents || Object.keys(projectData.firebase?.documents).length === 0) && (
+          <p className="text-gray-500 text-center">Aucun document disponible</p>
+        )}
+      </div>
+    </div>
+
+    {/* Autres données de Firebase */}
+    {projectData.firebase?.investmentReturns && (
+      <div className="mb-8">
+        <h3 className="text-2xl font-semibold mb-4">Retours sur investissement</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {Object.entries(projectData.firebase.investmentReturns)
+            .filter(([key, value]) => value.enabled)
+            .map(([key, value]) => (
+              <div key={key} className="bg-gray-50 dark:bg-neutral-800 p-4 rounded-lg">
+                <h4 className="font-semibold text-lg mb-2">{key.charAt(0).toUpperCase() + key.slice(1)}</h4>
+                {value.details && (
+                  <div className="space-y-1 text-sm">
+                    {Object.entries(value.details).map(([detailKey, detailValue]) => (
+                      <p key={detailKey} className="text-gray-600 dark:text-gray-400">
+                        {detailKey}: {detailValue}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+        </div>
+      </div>
+    )}
   </div>
 </TabsContent>
 
           <TabsContent value="transactions" className="mt-6 space-y-6">
-  <div className="w-full overflow-x-auto relative max-w-full">
-    <div className="min-w-max">
-      <table className="w-full divide-y divide-gray-200 dark:divide-gray-800">
-        <thead>
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Investor</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shares</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-          {transactions.length === 0 ? (
-            <tr>
-              <td colSpan="4" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                Aucune transaction disponible
-              </td>
-            </tr>
-          ) : (
-            transactions.map((tx) => (
-              <tr key={tx.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.type}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                  {tx.investor.slice(0, 6)}...{tx.investor.slice(-4)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.nftCount}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.value} ETH</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</TabsContent>
+            <div className="w-full overflow-x-auto relative max-w-full">
+              <div className="min-w-max">
+                <table className="w-full divide-y divide-gray-200 dark:divide-gray-800">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Investor</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shares</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                    {transactions.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                          Aucune transaction disponible
+                        </td>
+                      </tr>
+                    ) : (
+                      transactions.map((tx) => (
+                        <tr key={tx.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.type}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
+                            {tx.investor.slice(0, 6)}...{tx.investor.slice(-4)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.nftCount}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{tx.value} ETH</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
