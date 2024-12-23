@@ -14,9 +14,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db } from '@/lib/firebase/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore'; 
 import { pinataService } from '@/lib/services/storage';
 
 const SECTORS = [
@@ -25,14 +22,12 @@ const SECTORS = [
 ];
 
 
-
-export default function CampaignModal({ showCreateCampaign, setShowCreateCampaign, onCampaignCreated }) {
+export default function CampaignModal({ showCreateCampaign, setShowCreateCampaign, }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepValidated, setStepValidated] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState({});
-  const [uploadProgress, setUploadProgress] = useState({});
   const [transactionHash, setTransactionHash] = useState('');
   const [darkMode, setDarkMode] = useState(false);
   const address = useAddress();
@@ -92,11 +87,12 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     endDate: '',
     royaltyFee: '0',
     royaltyReceiver: '',
-    documents: [],
-    whitepaper: null,
-    pitchDeck: null,
-    legalDocuments: null,
-    media: [],
+    documents: {
+      whitepaper: undefined,   // Au lieu de null
+      pitchDeck: undefined,    // Au lieu de null
+      legalDocuments: [],      // Array vide au lieu de null
+      media: []                // Array vide déjà correct
+    },
     teamMembers: [{ name: '', role: '', socials: { twitter: '', linkedin: '' } }],
     certified: false,
     lawyer: { address: '', name: '', contact: '', jurisdiction: '' },
@@ -125,7 +121,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       vertePortalLink: '',
     },
     distributeTokens: false,
-    vestingPlan: false,
+    vestingPlan: false
   });
 
   useEffect(() => {
@@ -265,40 +261,16 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     setCurrentStep(prev => prev - 1);
   };
 
-  const createCampaignFolder = async (campaignData, documents, media) => {
+  const createCampaignFolder = async (campaignData) => {
     try {
       setIsLoading(true);
       
+      // Nom du dossier principal
       const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
-      
       const filesToUpload = [];
-
-      // Upload vers Firebase Storage d'abord
-      const storage = getStorage();
-      const storageRefs = {};
-
-      // Upload documents vers Firebase
-      for(const doc of documents) {
-        if(doc instanceof Blob) {
-          const docRef = ref(storage, `campaigns/${campaignFolderName}/documents/${doc.name}`);
-          await uploadBytes(docRef, doc);
-          const url = await getDownloadURL(docRef);
-          storageRefs[doc.name] = url;
-        }
-      }
-
-      // Upload media vers Firebase
-      for(const med of media) {
-        if(med instanceof Blob) {
-          const mediaRef = ref(storage, `campaigns/${campaignFolderName}/media/${med.name}`);
-          await uploadBytes(mediaRef, med);
-          const url = await getDownloadURL(mediaRef);
-          storageRefs[med.name] = url;
-        }
-      }
-
-      // Pour IPFS: uniquement les données du smart contract
-      const metadata = {
+  
+      // 1. Métadonnées du smart contract
+      const contractMetadata = {
         name: campaignData.name,
         symbol: campaignData.symbol,
         sharePrice: campaignData.sharePrice,
@@ -308,180 +280,162 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         sector: campaignData.sector,
         royaltyFee: campaignData.royaltyFee
       };
+  
       filesToUpload.push({
-        content: new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' }),
+        content: new Blob([JSON.stringify(contractMetadata, null, 2)], { type: 'application/json' }),
         path: `${campaignFolderName}/metadata.json`
       });
-
-      const campaignDetails = {
+  
+      // 2. Documents
+      // Whitepaper
+      if (campaignData.whitepaper && campaignData.whitepaper.length > 0) {
+        filesToUpload.push({
+          content: campaignData.whitepaper[0],
+          path: `${campaignFolderName}/documents/whitepaper/${campaignData.whitepaper[0].name}`
+        });
+      }
+  
+      // Pitch Deck
+      if (campaignData.pitchDeck && campaignData.pitchDeck.length > 0) {
+        filesToUpload.push({
+          content: campaignData.pitchDeck[0],
+          path: `${campaignFolderName}/documents/pitchDeck/${campaignData.pitchDeck[0].name}`
+        });
+      }
+  
+      // Documents légaux
+      if (campaignData.legalDocuments && campaignData.legalDocuments.length > 0) {
+        campaignData.legalDocuments.forEach(doc => {
+          filesToUpload.push({
+            content: doc,
+            path: `${campaignFolderName}/documents/legal/${doc.name}`
+          });
+        });
+      }
+  
+      // Médias
+      if (campaignData.media && campaignData.media.length > 0) {
+        campaignData.media.forEach(media => {
+          filesToUpload.push({
+            content: media,
+            path: `${campaignFolderName}/documents/media/${media.name}`
+          });
+        });
+      }
+  
+      // 4. Index des fichiers pour faciliter l'accès
+      const filesIndex = {
+        documents: {
+          whitepaper: campaignData.whitepaper ? campaignData.whitepaper[0]?.name : null,
+          pitchDeck: campaignData.pitchDeck ? campaignData.pitchDeck[0]?.name : null,
+          legal: campaignData.legalDocuments ? campaignData.legalDocuments.map(doc => doc.name) : [],
+        },
+        media: campaignData.media ? campaignData.media.map(m => m.name) : []
+      };
+  
+      filesToUpload.push({
+        content: new Blob([JSON.stringify(filesIndex, null, 2)], { type: 'application/json' }),
+        path: `${campaignFolderName}/files-index.json`
+      });
+  
+      // 5. Informations complètes de la campagne
+      const campaignInfo = {
         name: campaignData.name,
-        sector: campaignData.sector,
         description: campaignData.description,
+        sector: campaignData.sector,
         teamMembers: campaignData.teamMembers,
-        investmentTerms: campaignData.investmentTerms,
-        companyShares: campaignData.companyShares,
-        hasLawyer: campaignData.certified,
-        lawyer: campaignData.certified ? campaignData.lawyer : null
+        isActive: true,
+        certified: campaignData.certified,
+        lawyer: campaignData.certified ? campaignData.lawyer : null,
+        createdAt: new Date().toISOString(),
+        creatorAddress: campaignData.creatorAddress
       };
+  
       filesToUpload.push({
-        content: new Blob([JSON.stringify(campaignDetails, null, 2)], { type: 'application/json' }),
-        path: `${campaignFolderName}/campaign-details.json`
+        content: new Blob([JSON.stringify(campaignInfo, null, 2)], { type: 'application/json' }),
+        path: `${campaignFolderName}/campaign-info.json`
       });
-
-      const roundDetails = {
-        sharePrice: campaignData.sharePrice,
-        numberOfShares: campaignData.numberOfShares,
-        goal: campaignData.targetAmount,
-        endDate: campaignData.endDate,
-        status: "active"
-      };
-      filesToUpload.push({
-        content: new Blob([JSON.stringify(roundDetails, null, 2)], { type: 'application/json' }),
-        path: `${campaignFolderName}/rounds/round-1/details.json`
-      });
-
-      // Sauvegarder les URLs Firebase dans la base de données
-      const campaignsRef = collection(db, 'campaigns');
-await setDoc(doc(campaignsRef, campaignFolderName), {
-  createdAt: new Date(),
-  name: campaignData.name,
-  sector: campaignData.sector,
-  description: campaignData.description,
-  teamMembers: campaignData.teamMembers,
-  investmentTerms: campaignData.investmentTerms,
-  companyShares: campaignData.companyShares,
-  hasLawyer: campaignData.certified,
-  lawyer: campaignData.certified ? campaignData.lawyer : null,
-  files: storageRefs
-});
-
-      documents.forEach(file => {
-        if (file instanceof Blob) {
-          filesToUpload.push({
-            content: file,
-            path: `${campaignFolderName}/rounds/round-1/documents/${file.name}`
-          });
-        } else {
-          console.warn(`Le fichier ${file.name} n'est pas un Blob ou File et sera ignoré.`);
-        }
-      });
-
-      media.forEach(file => {
-        if (file instanceof Blob) {
-          filesToUpload.push({
-            content: file,
-            path: `${campaignFolderName}/rounds/round-1/media/${file.name}`
-          });
-        } else {
-          console.warn(`Le fichier ${file.name} n'est pas un Blob ou File et sera ignoré.`);
-        }
-      });
-
-      console.log("Fichiers à uploader:", filesToUpload);
-
-      const uploadResult = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
-      console.log("Structure de dossier uploadée:", uploadResult);
-
+  
+      // 6. Upload vers IPFS via Pinata
+      console.log("Uploading to Pinata...", filesToUpload);
+      const result = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
+  
+      if (!result.success) {
+        throw new Error("Échec de l'upload IPFS");
+      }
+  
       return {
         success: true,
-        ipfsHash: uploadResult.ipfsHash,
-        url: uploadResult.gatewayUrl,
-        data: uploadResult.metadata
+        ipfsHash: result.ipfsHash,
+        gatewayUrl: result.gatewayUrl
       };
-
+  
     } catch (error) {
       console.error("Erreur lors de la création du dossier IPFS:", error);
       throw error;
     } finally {
       setIsLoading(false);
-      setUploadProgress({});
     }
-};
+  };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateStep(4)) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateStep(4)) return;
+  
+    setIsLoading(true);
+    setStatus('loading');
+    setError({});
+  
+    try {
+      const ipfsResult = await createCampaignFolder(formData);
 
-  setIsLoading(true);
-  setStatus('loading');
-  setError({});
-
-  try {
-    // 1. Créer le dossier IPFS pour les documents
-    const ipfsResult = await createCampaignFolder(
-     formData,
-     formData.documents,
-     formData.media
-    );
-
-    if (!ipfsResult.success) {
-      throw new Error("Échec de l'upload IPFS");
-    }
-
-    // 2. Préparation des données pour le smart contract
-    const metadataURI = `ipfs://${ipfsResult.ipfsHash}`;
-    const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
-    const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
-
-    // 3. Création de la campagne sur la blockchain
-    const result = await createCampaign({
-      args: [
-        formData.name,
-        formData.symbol,
-        targetAmountWei,
-        sharePriceWei,
-        Math.floor(new Date(formData.endDate).getTime() / 1000),
-        formData.sector,
-        metadataURI,
-        ethers.BigNumber.from(formData.royaltyFee),
-        formData.logo || ""
-      ],
-      overrides: {
-        value: ethers.utils.parseEther("0.05")
+      if (!ipfsResult.success) {
+        throw new Error("Échec de l'upload IPFS");
       }
-    });
-
-    // 4. Une fois la transaction confirmée
-    const receipt = result.receipt;
-    const event = receipt.events.find(e => e.event === 'CampaignCreated');
-    const campaignAddress = event.args.campaignAddress;
-
-    // 5. Stockage Firebase en une seule fois
-    await setDoc(doc(collection(db, 'campaigns'), campaignAddress), {
-      creatorAddress: formData.creatorAddress,
-      name: formData.name,
-      description: formData.description,
-      createdAt: new Date(),
-      sector: formData.sector,
-      socials: formData.socials,
-      teamMembers: formData.teamMembers,
-      hasLawyer: formData.certified,
-      lawyer: formData.certified ? formData.lawyer : null,
-      documents: {
-        whitepaper: formData.whitepaper ? formData.whitepaper[0].name : null,
-        pitchDeck: formData.pitchDeck ? formData.pitchDeck[0].name : null,
-        legalDocuments: formData.legalDocuments ? formData.legalDocuments.map(doc => doc.name) : [],
-      },
-      ipfsHash: ipfsResult.ipfsHash,
-      transactionHash: receipt.transactionHash
-    });
-
-    // 6. Mise à jour du statut une seule fois
-    setTransactionHash(receipt.transactionHash);
-    setStatus('success');
-
-  } catch (error) {
-    console.error("Erreur:", error);
-    setStatus('error');
-    setError({ 
-      general: error.code === "INSUFFICIENT_FUNDS" 
-        ? "Fonds insuffisants pour créer la campagne" 
-        : error.message 
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  
+      // 2. Préparation des données pour le smart contract
+      const metadataURI = `ipfs://${ipfsResult.ipfsHash}/metadata.json`;
+      const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
+      const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
+  
+      // 3. Création de la campagne sur la blockchain
+      const result = await createCampaign({
+        args: [
+          formData.name,
+          formData.symbol,
+          targetAmountWei,
+          sharePriceWei,
+          Math.floor(new Date(formData.endDate).getTime() / 1000),
+          formData.sector,
+          metadataURI,
+          ethers.BigNumber.from(formData.royaltyFee),
+          formData.logo || ""
+        ],
+        overrides: {
+          value: ethers.utils.parseEther("0.05")
+        }
+      });
+  
+      // 4. Récupération de l'adresse du contrat de la campagne depuis l'événement
+      const receipt = result.receipt;
+      const event = receipt.events.find(e => e.event === 'CampaignCreated');
+      const campaignAddress = event.args.campaignAddress;
+  
+      setTransactionHash(receipt.transactionHash);
+      setStatus('success');
+  
+    } catch (error) {
+      console.error("Erreur:", error);
+      setStatus('error');
+      setError({ 
+        general: error.code === "INSUFFICIENT_FUNDS" 
+          ? "Fonds insuffisants pour créer la campagne" 
+          : error.message 
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const InfoTooltip = ({ content }) => (
     <TooltipProvider>

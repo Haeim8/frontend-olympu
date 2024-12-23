@@ -9,8 +9,7 @@ import { DollarSign, Calendar, Share2, Star, FileText } from 'lucide-react';
 import { ethers } from 'ethers';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import CampaignABI from '@/ABI/CampaignABI.json';
-import { db } from "@/lib/firebase/firebase";
-import { doc, getDoc } from "firebase/firestore";
+
 
 const DEFAULT_PROJECT = {
   name: "Nom du projet",
