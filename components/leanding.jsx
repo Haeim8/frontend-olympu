@@ -11,9 +11,7 @@ import { ConnectWallet, useAddress, useContract, useContractRead } from "@thirdw
 import { db } from "@/lib/firebase/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-
 import FundRaisingPlatformABI from "@/ABI/DivarProxyABI.json";
-
 import { ethers } from "ethers";
 
 export default function Home() {

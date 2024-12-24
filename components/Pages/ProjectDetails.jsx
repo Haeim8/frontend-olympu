@@ -10,7 +10,6 @@ import { ethers } from 'ethers';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import CampaignABI from '@/ABI/CampaignABI.json';
 
-
 const DEFAULT_PROJECT = {
   name: "Nom du projet",
   raised: "0",
@@ -19,6 +18,8 @@ const DEFAULT_PROJECT = {
   endDate: "Non spécifié",
   description: "",
 };
+
+const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
 
 const DocumentLink = ({ title, url }) => (
   <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
@@ -32,13 +33,6 @@ const DocumentLink = ({ title, url }) => (
   </div>
 );
 
-const InfoCard = ({ title, value }) => (
-  <div className="p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-    <h4 className="text-sm font-medium text-gray-500 mb-1">{title}</h4>
-    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{value}</p>
-  </div>
-);
-
 export default function ProjectDetails({ selectedProject, onClose }) {
   const project = { ...DEFAULT_PROJECT, ...selectedProject };
   const [showProjectDetails, setShowProjectDetails] = useState(true);
@@ -48,11 +42,8 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [projectData, setProjectData] = useState({
-    firebase: null,
     ipfs: null
   });
-  const [documents, setDocuments] = useState([]);
-  const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
 
   const userAddress = useAddress();
 
@@ -65,28 +56,68 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
   useEffect(() => {
     if (!project?.id) return;
-
-    const loadEvents = async () => {
+  
+    const loadData = async () => {
       try {
         setIsLoading(true);
+        
         const provider = new ethers.providers.JsonRpcProvider(
-          {
-            url: `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-            chainId: 84532,
-            name: 'Base Sepolia',
-            network: {
-              chainId: 84532,
-              name: 'Base Sepolia'
-            }
-          }
+          `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
         );
-
-        await provider.ready;
-        await provider._networkPromise;
-
+  
         const contract = new ethers.Contract(project.id, CampaignABI, provider);
-
-        // Récupération des transactions blockchain
+  
+        // 1. Récupérer le metadata du contrat
+        const metadataURI = await contract.metadata();
+        console.log("Metadata URI:", metadataURI); 
+  
+        // 2. Extraire le CID de l'URI IPFS
+        const cid = metadataURI.replace('ipfs://', '').split('/')[0];
+        console.log("CID extrait:", cid);
+  
+        // 3. Construire l'URL Pinata avec le CID
+        const pinataUrl = `${PINATA_GATEWAY}/${cid}/campaign-info.json`;
+        console.log("URL Pinata:", pinataUrl);
+  
+        // 4. Récupérer les métadonnées
+        const response = await fetch(pinataUrl);
+        if (!response.ok) {
+          throw new Error(`Impossible de récupérer les métadonnées (${response.status})`);
+        }
+        const metadata = await response.json();
+  
+        // 5. Récupérer les autres fichiers si nécessaire
+        const filesIndexResponse = await fetch(`${PINATA_GATEWAY}/${cid}/files-index.json`);
+        if (filesIndexResponse.ok) {
+          const filesIndex = await filesIndexResponse.json();
+          
+          const projectMetadata = {
+            ...metadata,
+            firebase: {
+              description: metadata.description,
+              documents: {
+                whitepaper: filesIndex.documents.whitepaper ? 
+                  `${PINATA_GATEWAY}/${cid}/documents/whitepaper/${filesIndex.documents.whitepaper}` : null,
+                pitchDeck: filesIndex.documents.pitchDeck ?
+                  `${PINATA_GATEWAY}/${cid}/documents/pitchDeck/${filesIndex.documents.pitchDeck}` : null,
+                legalDocuments: filesIndex.documents.legal.map(doc => 
+                  `${PINATA_GATEWAY}/${cid}/documents/legal/${doc}`
+                ),
+                // Ajout des médias
+                media: filesIndex.media.map(mediaFile => 
+                  `${PINATA_GATEWAY}/${cid}/documents/media/${mediaFile}`
+                )
+              },
+              investmentReturns: metadata.investmentReturns || {}
+            }
+          };
+          
+          setProjectData(projectMetadata);
+        } else {
+          setProjectData(metadata);
+        }
+  
+        // Récupération des événements blockchain (laisse cette partie inchangée)
         const purchaseFilter = contract.filters.SharesPurchased();
         const refundFilter = contract.filters.SharesRefunded();
         
@@ -94,7 +125,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
           contract.queryFilter(purchaseFilter),
           contract.queryFilter(refundFilter)
         ]);
-
+  
         const allTxs = [
           ...purchaseEvents.map(event => ({
             id: event.blockNumber,
@@ -111,52 +142,20 @@ export default function ProjectDetails({ selectedProject, onClose }) {
             value: ethers.utils.formatEther(event.args.refundAmount || "0")
           }))
         ].sort((a,b) => b.id - a.id);
-
-        // Récupération des données Firebase
-        const documentId = `campaign_${project.name.toLowerCase()}`;
-        console.log("Recherche du document Firebase:", documentId);
-        const projectRef = doc(db, "campaigns", documentId);
-        const projectSnapshot = await getDoc(projectRef);
-        
-        if (projectSnapshot.exists()) {
-          const firebaseData = projectSnapshot.data();
-          setProjectData(prev => ({
-            ...prev,
-            firebase: firebaseData
-          }));
-
-          
-          if (firebaseData.nftMetadata) {
-            try {
-              const ipfsResponse = await fetch(firebaseData.nftMetadata);
-              const ipfsData = await ipfsResponse.json();
-              setProjectData(prev => ({
-                ...prev,
-                ipfs: ipfsData
-              }));
-            } catch (ipfsError) {
-              console.error("Erreur lors de la récupération des données IPFS:", ipfsError);
-            }
-          }
-
-          if (firebaseData.documents) {
-            setDocuments(firebaseData.documents);
-          }
-        }
-
+  
         setTransactions(allTxs);
         setError(null);
         
       } catch (err) {
-        console.error("Erreur de connexion au provider:", err);
-        setError("Erreur de connexion au réseau Base Sepolia");
+        console.error("Erreur:", err);
+        setError(err.message);
       } finally {
         setIsLoading(false);
       }
     };
-
-    loadEvents();
-  }, [project?.id, project?.name]);
+  
+    loadData();
+  }, [project?.id]);
 
   const handleBuyShares = async () => {
     if (!userAddress) {
@@ -398,7 +397,36 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         )}
       </div>
     </div>
-
+    <div className="mb-8">
+      <h3 className="text-2xl font-semibold mb-4">Médias</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {projectData.firebase?.documents?.media && 
+          projectData.firebase.documents.media.map((media, index) => (
+            <div key={index} className="relative group">
+              <img 
+                src={media}
+                alt={`Media ${index + 1}`}
+                className="w-full h-48 object-cover rounded-lg"
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => window.open(media, '_blank')}
+                >
+                  Voir
+                </Button>
+              </div>
+            </div>
+          ))
+        }
+        {(!projectData.firebase?.documents?.media || projectData.firebase.documents.media.length === 0) && (
+          <p className="text-gray-500 text-center col-span-full">Aucun média disponible</p>
+        )}
+      </div>
+    </div>
+    
     {/* Autres données de Firebase */}
     {projectData.firebase?.investmentReturns && (
       <div className="mb-8">

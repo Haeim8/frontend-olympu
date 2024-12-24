@@ -10,13 +10,7 @@ import Discussions from './Pages/Discussions';
 import News from './Pages/News';
 import Favorites from './Pages/Favorites';
 import Campaign from './Pages/Campaign';
-
-import { 
-  useDisconnect, 
-  useAddress, 
-  useContract, 
-  useContractRead 
-} from '@thirdweb-dev/react';
+import { useDisconnect,useAddress,useContract, useContractRead } from '@thirdweb-dev/react';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebase";
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';

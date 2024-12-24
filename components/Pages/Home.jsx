@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select"
 
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
+const PROVIDER_URL = `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
 
 const PLATFORM_ABI = [
   {
@@ -90,6 +91,24 @@ export default function Home() {
     PLATFORM_ADDRESS,
     PLATFORM_ABI
   );
+  
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const fetchWithRetry = async (fn, retries = 3, delayMs = 1000) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await fn();
+      } catch (error) {
+        if (error.response?.status === 429 || error.message.includes('429')) {
+          if (i === retries - 1) throw error;
+          await delay(delayMs * Math.pow(2, i));
+          continue;
+        }
+        throw error;
+      }
+    }
+  };
+
 
   const { data: campaignAddresses, isLoading: addressesLoading } = useContractRead(
     platformContract,
@@ -114,11 +133,12 @@ export default function Home() {
   };
 
   const fetchCampaignStatus = async (campaignAddress) => {
-    try {
-      const campaign = await new ethers.Contract(
+    return fetchWithRetry(async () => {
+      const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+      const campaign = new ethers.Contract(
         campaignAddress,
         CAMPAIGN_ABI,
-        new ethers.providers.Web3Provider(window.ethereum)
+        provider
       );
       
       const roundInfo = await campaign.getCurrentRound();
@@ -131,31 +151,23 @@ export default function Home() {
         roundNumber: roundInfo.roundNumber.toString(),
         sharePrice: roundInfo.sharePrice.toString()
       };
-    } catch (error) {
-      console.error("Error fetching campaign status:", error);
-      return {
-        isActive: false,
-        isFinalized: false,
-        fundsRaised: "0",
-        sharesSold: "0",
-        roundNumber: "0",
-        sharePrice: "0"
-      };
-    }
+    });
   };
 
   const fetchCampaignData = async (campaignAddress) => {
     if (!platformContract) return null;
-
+  
     try {
+      const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+      const campaign = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
       const campaignInfo = await platformContract.call("campaignRegistry", [campaignAddress]);
       const statusInfo = await fetchCampaignStatus(campaignAddress);
-
+  
       if (!campaignInfo || !campaignInfo.campaignAddress) {
         console.log(`Invalid campaign data for ${campaignAddress}`);
         return null;
       }
-
+  
       return {
         id: campaignAddress,
         name: campaignInfo.name,
@@ -180,19 +192,34 @@ export default function Home() {
       setIsLoading(false);
       return;
     }
-
+  
     setIsLoading(true);
     setError(null);
-
+  
     try {
-      const campaignDataPromises = campaignAddresses.map(fetchCampaignData);
-      const campaignsData = await Promise.all(campaignDataPromises);
-      const validCampaigns = campaignsData.filter(campaign => campaign !== null);
+      const results = [];
+      const batchSize = 3; // Traiter 3 campagnes à la fois
+  
+      for (let i = 0; i < campaignAddresses.length; i += batchSize) {
+        const batch = campaignAddresses.slice(i, i + batchSize);
+        const batchResults = await Promise.all(
+          batch.map(address => 
+            fetchWithRetry(() => fetchCampaignData(address))
+          )
+        );
+        results.push(...batchResults);
+        
+        if (i + batchSize < campaignAddresses.length) {
+          await delay(1000); // Attendre 1s entre chaque lot
+        }
+      }
+  
+      const validCampaigns = results.filter(campaign => campaign !== null);
       validCampaigns.sort((a, b) => b.creationTime - a.creationTime);
       setProjects(validCampaigns);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
-      setError("Erreur lors de la récupération des campagnes");
+      setError("Impossible de charger les campagnes. Veuillez réessayer plus tard.");
     } finally {
       setIsLoading(false);
     }
