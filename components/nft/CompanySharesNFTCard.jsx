@@ -18,6 +18,18 @@ const CompanySharesNFTCard = ({
   investmentReturns,
   isPreview = false // Nouveau prop pour différencier la prévisualisation
 }) => {
+  const [previewUrl, setPreviewUrl] = React.useState(null);
+
+  React.useEffect(() => {
+    if (logoUrl instanceof File) {
+      const url = URL.createObjectURL(logoUrl);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(logoUrl);
+    }
+  }, [logoUrl]);
+
   const getLivarBadgeColor = () => {
     switch (niveauLivar) {
       case 'vert': return 'bg-green-500';
@@ -90,8 +102,8 @@ const CompanySharesNFTCard = ({
                 height: isPreview ? '4rem' : '6rem'
               }}
             >
-              {logoUrl ? (
-                <img src={logoUrl} alt="Company Logo" className="w-full h-full rounded-full object-cover" />
+              {previewUrl ? (
+                <img src={previewUrl} alt="Company Logo" className="w-full h-full rounded-full object-cover" />
               ) : (
                 <BarChart2 className={isPreview ? 'w-8 h-8' : 'w-12 h-12'} style={{ color: backgroundColor }} />
               )}

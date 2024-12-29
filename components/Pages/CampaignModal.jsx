@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,12 @@ import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 import { pinataService } from '@/lib/services/storage';
 import CompanySharesNFTCard from '@/components/nft/CompanySharesNFTCard';
+import html2canvas from 'html2canvas';
 
 const SECTORS = [
   "Blockchain", "Finance", "Industrie", "Tech", "Influence", "Gaming",
   "NFT", "DeFi", "DAO", "Infrastructure", "Autre"
 ];
-
 
 export default function CampaignModal({ showCreateCampaign, setShowCreateCampaign, }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -31,6 +31,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const [error, setError] = useState({});
   const [transactionHash, setTransactionHash] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [cardImage, setCardImage] = useState(null); // Pour stocker l'image temporairement
   const address = useAddress();
   const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
   const contractABI = [
@@ -142,6 +143,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     }
  
   });
+
+  const cardRef = useRef(null); // Ajout de la ref ici
 
   useEffect(() => {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -267,17 +270,26 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     return Object.keys(errors).length === 0;
   };
 
-  const handleNextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => prev + 1);
-      setStepValidated(prev => ({
-        ...prev,
-        [currentStep]: true
-      }));
+  const handleNextStep = async () => {
+    if (currentStep === 4) {
+      try {
+        // Capturer l'image quand on valide l'étape 4
+        const image = await html2canvas(cardRef.current);
+        const blob = await new Promise(resolve => image.toBlob(resolve, 'image/png'));
+        setCardImage(blob);
+      } catch (error) {
+        console.error("Erreur lors de la capture de la carte:", error);
+        return;
+      }
     }
+    setCurrentStep(prev => prev + 1);
   };
 
   const handlePreviousStep = () => {
+    // Si on revient en arrière depuis l'étape après la preview, on vide l'image
+    if (currentStep === 5) {
+      setCardImage(null);
+    }
     setCurrentStep(prev => prev - 1);
   };
 
@@ -288,17 +300,53 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       // Nom du dossier principal
       const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
       const filesToUpload = [];
+
+      // 1. Upload l'image de la carte sur IPFS
+      filesToUpload.push({
+        content: campaignData.cardImage,
+        path: `${campaignFolderName}/nft-card.png`
+      });
+
+      // 2. Métadonnées NFT (avec l'image de la carte complète)
+      const nftMetadata = {
+        name: campaignData.name,
+        description: campaignData.description || "",
+        image: `ipfs://${campaignFolderName}/nft-card.png`,
+        attributes: [
+            {
+                trait_type: "Sector",
+                value: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector
+            },
+            {
+                trait_type: "Background Color",
+                value: campaignData.nftCustomization.backgroundColor
+            },
+            {
+                trait_type: "Text Color",
+                value: campaignData.nftCustomization.textColor
+            },
+            {
+                trait_type: "Texture",
+                value: campaignData.nftCustomization.texture
+            }
+        ],
+        investmentReturns: campaignData.investmentReturns,
+        verifications: campaignData.verifications
+    };
   
-      // 1. Gérer le logo d'abord
-      let logoIpfsHash = null;  
-      if (campaignData.nftCustomization.logo) {
-        filesToUpload.push({
-          content: campaignData.nftCustomization.logo,
-          path: `${campaignFolderName}/logo/${campaignData.nftCustomization.logo.name}`
-        });
-      }
-  
-      // 2. Métadonnées du smart contract
+      filesToUpload.push({
+        content: new Blob([JSON.stringify(nftMetadata, null, 2)], { type: 'application/json' }),
+        path: `${campaignFolderName}/nft-metadata.json`
+      });
+
+      // Upload tous les fichiers sur IPFS
+      const uploadResponse = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
+      const folderIpfsHash = uploadResponse.ipfsHash;
+
+      // Définir l'URL de base pour les métadonnées NFT
+      const baseTokenURI = `ipfs://${folderIpfsHash}/${campaignFolderName}/nft-metadata`;
+
+      // 3. Métadonnées du smart contract
       const contractMetadata = {
         name: campaignData.name,
         symbol: campaignData.symbol,
@@ -313,25 +361,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       filesToUpload.push({
         content: new Blob([JSON.stringify(contractMetadata, null, 2)], { type: 'application/json' }),
         path: `${campaignFolderName}/metadata.json`
-      });
-  
-      // 3. Métadonnées NFT
-      const nftMetadata = {
-        name: campaignData.name,
-        sector: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector,
-        backgroundColor: campaignData.nftCustomization.backgroundColor,
-        textColor: campaignData.nftCustomization.textColor,
-        texture: campaignData.nftCustomization.texture,
-        logo: campaignData.nftCustomization.logo 
-            ? `ipfs://${campaignFolderName}/logo/${campaignData.nftCustomization.logo.name}` 
-            : null,
-        investmentReturns: campaignData.investmentReturns,
-        verifications: campaignData.verifications
-    };
-  
-      filesToUpload.push({
-        content: new Blob([JSON.stringify(nftMetadata, null, 2)], { type: 'application/json' }),
-        path: `${campaignFolderName}/nft-metadata.json`
       });
   
       // 4. Documents - exactement comme votre version originale
@@ -411,7 +440,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         gatewayUrl: result.gatewayUrl,
         nftMetadataUri: `ipfs://${result.ipfsHash}/nft-metadata.json`,
         campaignMetadataUri: `ipfs://${result.ipfsHash}/metadata.json`,
-        logoUri: logoIpfsHash ? `ipfs://${logoIpfsHash}` : ''
+        logoUri: ''
       };
   
     } catch (error) {
@@ -432,16 +461,20 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     setError({});
 
     try {
-        const ipfsResult = await createCampaignFolder(formData);
-        if (!ipfsResult.success) {
+        // Créer la campagne
+        const result = await createCampaignFolder({
+          ...formData,
+          cardImage: cardImage  // On passe l'image capturée
+        });
+        if (!result.success) {
             throw new Error("Échec de l'upload IPFS");
         }
 
-        const metadataURI = `ipfs://${ipfsResult.ipfsHash}/metadata.json`;
+        const metadataURI = `ipfs://${result.ipfsHash}/metadata.json`;
         const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
         const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
 
-        const result = await createCampaign({
+        const result2 = await createCampaign({
             args: [
                 formData.name,
                 formData.symbol,
@@ -458,7 +491,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             }
         });
 
-        const receipt = result.receipt;
+        const receipt = result2.receipt;
         const event = receipt.events.find(e => e.event === 'CampaignCreated');
         const campaignAddress = event.args.campaignAddress;
 
@@ -1001,20 +1034,22 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       
       {/* Preview mis à jour avec les données du formulaire */}
       <div className="w-full flex justify-center mb-6">
-        <CompanySharesNFTCard
-          name={formData.name}
-          creatorAddress={formData.creatorAddress}
-          tokenId="Preview"
-          sector={formData.sector === 'Autre' ? formData.otherSector : formData.sector}
-          issueDate={new Date().toLocaleDateString()}
-          smartContract={contractAddress}
-          backgroundColor={formData.nftCustomization.backgroundColor}
-          textColor={formData.nftCustomization.textColor}
-          logoUrl={formData.nftCustomization.logo}
-          niveauLivar={formData.certified ? "vert" : "orange"}
-          investmentReturns={formData.investmentReturns}
-          isPreview={true}
-        />
+        <div ref={cardRef}>
+          <CompanySharesNFTCard
+            name={formData.name}
+            creatorAddress={formData.creatorAddress}
+            tokenId="Preview"
+            sector={formData.sector === 'Autre' ? formData.otherSector : formData.sector}
+            issueDate={new Date().toLocaleDateString()}
+            smartContract={contractAddress}
+            backgroundColor={formData.nftCustomization.backgroundColor}
+            textColor={formData.nftCustomization.textColor}
+            logoUrl={formData.nftCustomization.logo}
+            niveauLivar={formData.certified ? "vert" : "orange"}
+            investmentReturns={formData.investmentReturns}
+            isPreview={true}
+          />
+        </div>
       </div>
 
       {/* Contrôles de personnalisation */}
