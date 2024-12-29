@@ -15,6 +15,7 @@ import { Info, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 import { pinataService } from '@/lib/services/storage';
+import CompanySharesNFTCard from '@/components/nft/CompanySharesNFTCard';
 
 const SECTORS = [
   "Blockchain", "Finance", "Industrie", "Tech", "Influence", "Gaming",
@@ -121,7 +122,25 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       vertePortalLink: '',
     },
     distributeTokens: false,
-    vestingPlan: false
+    vestingPlan: false,
+   
+    nftCustomization: {
+      backgroundColor: '#ffffff',
+      textColor: '#000000',
+      logo: null,
+      texture: 'default',
+    },
+    investmentReturns: {
+      dividends: { enabled: false },
+      airdrops: { enabled: false },
+      revenueSplit: { enabled: false },
+      customReward: { enabled: false, name: '' }
+    },
+    verifications: {
+      kycCompleted: false,
+      legalVerification: false
+    }
+ 
   });
 
   useEffect(() => {
@@ -237,10 +256,11 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
           if (!formData.lawyer.jurisdiction) errors.lawyerJurisdiction = "La juridiction de l'avocat est requise";
         }
         break;
-      case 4:
-        if (!formData.acceptTerms) errors.terms = "Vous devez accepter les conditions";
-        break;
-      default:
+        case 4:
+          break;
+        case 5:
+          if (!formData.acceptTerms) errors.terms = "Vous devez accepter les conditions";
+          default:
         break;
     }
     setError(errors);
@@ -269,7 +289,16 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
       const filesToUpload = [];
   
-      // 1. Métadonnées du smart contract
+      // 1. Gérer le logo d'abord
+      let logoIpfsHash = null;  
+      if (campaignData.nftCustomization.logo) {
+        filesToUpload.push({
+          content: campaignData.nftCustomization.logo,
+          path: `${campaignFolderName}/logo/${campaignData.nftCustomization.logo.name}`
+        });
+      }
+  
+      // 2. Métadonnées du smart contract
       const contractMetadata = {
         name: campaignData.name,
         symbol: campaignData.symbol,
@@ -286,8 +315,26 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         path: `${campaignFolderName}/metadata.json`
       });
   
-      // 2. Documents
-      // Whitepaper
+      // 3. Métadonnées NFT
+      const nftMetadata = {
+        name: campaignData.name,
+        sector: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector,
+        backgroundColor: campaignData.nftCustomization.backgroundColor,
+        textColor: campaignData.nftCustomization.textColor,
+        texture: campaignData.nftCustomization.texture,
+        logo: campaignData.nftCustomization.logo 
+            ? `ipfs://${campaignFolderName}/logo/${campaignData.nftCustomization.logo.name}` 
+            : null,
+        investmentReturns: campaignData.investmentReturns,
+        verifications: campaignData.verifications
+    };
+  
+      filesToUpload.push({
+        content: new Blob([JSON.stringify(nftMetadata, null, 2)], { type: 'application/json' }),
+        path: `${campaignFolderName}/nft-metadata.json`
+      });
+  
+      // 4. Documents - exactement comme votre version originale
       if (campaignData.whitepaper && campaignData.whitepaper.length > 0) {
         filesToUpload.push({
           content: campaignData.whitepaper[0],
@@ -295,7 +342,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         });
       }
   
-      // Pitch Deck
       if (campaignData.pitchDeck && campaignData.pitchDeck.length > 0) {
         filesToUpload.push({
           content: campaignData.pitchDeck[0],
@@ -303,7 +349,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         });
       }
   
-      // Documents légaux
       if (campaignData.legalDocuments && campaignData.legalDocuments.length > 0) {
         campaignData.legalDocuments.forEach(doc => {
           filesToUpload.push({
@@ -313,7 +358,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         });
       }
   
-      // Médias
       if (campaignData.media && campaignData.media.length > 0) {
         campaignData.media.forEach(media => {
           filesToUpload.push({
@@ -323,7 +367,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         });
       }
   
-      // 4. Index des fichiers pour faciliter l'accès
+      // 5. Index des fichiers - comme votre version
       const filesIndex = {
         documents: {
           whitepaper: campaignData.whitepaper ? campaignData.whitepaper[0]?.name : null,
@@ -338,7 +382,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         path: `${campaignFolderName}/files-index.json`
       });
   
-      // 5. Informations complètes de la campagne
+      // 6. Informations de la campagne - comme votre version
       const campaignInfo = {
         name: campaignData.name,
         description: campaignData.description,
@@ -356,18 +400,18 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         path: `${campaignFolderName}/campaign-info.json`
       });
   
-      // 6. Upload vers IPFS via Pinata
       console.log("Uploading to Pinata...", filesToUpload);
       const result = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
-  
       if (!result.success) {
         throw new Error("Échec de l'upload IPFS");
       }
-  
       return {
         success: true,
         ipfsHash: result.ipfsHash,
-        gatewayUrl: result.gatewayUrl
+        gatewayUrl: result.gatewayUrl,
+        nftMetadataUri: `ipfs://${result.ipfsHash}/nft-metadata.json`,
+        campaignMetadataUri: `ipfs://${result.ipfsHash}/metadata.json`,
+        logoUri: logoIpfsHash ? `ipfs://${logoIpfsHash}` : ''
       };
   
     } catch (error) {
@@ -377,65 +421,136 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       setIsLoading(false);
     }
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(4)) return;
-  
+    if (isLoading || status === 'success') return;
+
     setIsLoading(true);
     setStatus('loading');
     setError({});
-  
-    try {
-      const ipfsResult = await createCampaignFolder(formData);
 
-      if (!ipfsResult.success) {
-        throw new Error("Échec de l'upload IPFS");
-      }
-  
-      // 2. Préparation des données pour le smart contract
-      const metadataURI = `ipfs://${ipfsResult.ipfsHash}/metadata.json`;
-      const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
-      const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
-  
-      // 3. Création de la campagne sur la blockchain
-      const result = await createCampaign({
-        args: [
-          formData.name,
-          formData.symbol,
-          targetAmountWei,
-          sharePriceWei,
-          Math.floor(new Date(formData.endDate).getTime() / 1000),
-          formData.sector,
-          metadataURI,
-          ethers.BigNumber.from(formData.royaltyFee),
-          formData.logo || ""
-        ],
-        overrides: {
-          value: ethers.utils.parseEther("0.05")
+    try {
+        const ipfsResult = await createCampaignFolder(formData);
+        if (!ipfsResult.success) {
+            throw new Error("Échec de l'upload IPFS");
         }
-      });
-  
-      // 4. Récupération de l'adresse du contrat de la campagne depuis l'événement
-      const receipt = result.receipt;
-      const event = receipt.events.find(e => e.event === 'CampaignCreated');
-      const campaignAddress = event.args.campaignAddress;
-  
-      setTransactionHash(receipt.transactionHash);
-      setStatus('success');
-  
+
+        const metadataURI = `ipfs://${ipfsResult.ipfsHash}/metadata.json`;
+        const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
+        const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
+
+        const result = await createCampaign({
+            args: [
+                formData.name,
+                formData.symbol,
+                targetAmountWei,
+                sharePriceWei,
+                Math.floor(new Date(formData.endDate).getTime() / 1000),
+                formData.sector,
+                metadataURI,
+                ethers.BigNumber.from(formData.royaltyFee),
+                formData.logo || ""
+            ],
+            overrides: {
+                value: ethers.utils.parseEther("0.05")
+            }
+        });
+
+        const receipt = result.receipt;
+        const event = receipt.events.find(e => e.event === 'CampaignCreated');
+        const campaignAddress = event.args.campaignAddress;
+
+        setTransactionHash(receipt.transactionHash);
+        setStatus('success');
+        
+        const cleanup = () => {
+            setFormData({
+                creatorAddress: '',
+                name: '',
+                symbol: '',
+                sector: '',
+                otherSector: '',
+                description: '',
+                sharePrice: '',
+                numberOfShares: '',
+                targetAmount: '',
+                endDate: '',
+                royaltyFee: '0',
+                royaltyReceiver: '',
+                documents: {
+                    whitepaper: undefined,
+                    pitchDeck: undefined,
+                    legalDocuments: [],
+                    media: []
+                },
+                teamMembers: [{ name: '', role: '', socials: { twitter: '', linkedin: '' } }],
+                certified: false,
+                lawyer: { address: '', name: '', contact: '', jurisdiction: '' },
+                acceptTerms: false,
+                socials: {
+                    website: '',
+                    twitter: '',
+                    github: '',
+                    discord: '',
+                    telegram: '',
+                    medium: ''
+                },
+                metadata: {
+                    roadmap: '',
+                    tokenomics: '',
+                    vesting: '',
+                    useOfFunds: ''
+                },
+                investmentTerms: {
+                    remunerationType: '',
+                    tokenDistribution: '',
+                    roi: '',
+                },
+                companyShares: {
+                    percentageMinted: '',
+                    vertePortalLink: '',
+                },
+                distributeTokens: false,
+                vestingPlan: false,
+                nftCustomization: {
+                    backgroundColor: '#ffffff',
+                    textColor: '#000000',
+                    logo: null,
+                    texture: 'default',
+                },
+                investmentReturns: {
+                    dividends: { enabled: false },
+                    airdrops: { enabled: false },
+                    revenueSplit: { enabled: false },
+                    customReward: { enabled: false, name: '' }
+                },
+                verifications: {
+                    kycCompleted: false,
+                    legalVerification: false
+                }
+            });
+            setIsLoading(false);
+            setStatus('idle');
+        };
+
+        return cleanup;
+
     } catch (error) {
-      console.error("Erreur:", error);
-      setStatus('error');
-      setError({ 
-        general: error.code === "INSUFFICIENT_FUNDS" 
-          ? "Fonds insuffisants pour créer la campagne" 
-          : error.message 
-      });
+        console.error("Erreur:", error);
+        setStatus('error');
+        setError({ 
+            general: error.code === "INSUFFICIENT_FUNDS" 
+                ? "Fonds insuffisants pour créer la campagne" 
+                : error.message 
+        });
     } finally {
-      setIsLoading(false);
+        if (status !== 'success') {
+            setIsLoading(false);
+        }
     }
-  };
+};
 
   const InfoTooltip = ({ content }) => (
     <TooltipProvider>
@@ -876,8 +991,107 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         </div>
       )}
     </div>
+  );case 4:
+  case 4:
+  return (
+    <div className="flex flex-col space-y-6 w-full">
+      <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+        Prévisualisation du NFT
+      </h2>
+      
+      {/* Preview mis à jour avec les données du formulaire */}
+      <div className="w-full flex justify-center mb-6">
+        <CompanySharesNFTCard
+          name={formData.name}
+          creatorAddress={formData.creatorAddress}
+          tokenId="Preview"
+          sector={formData.sector === 'Autre' ? formData.otherSector : formData.sector}
+          issueDate={new Date().toLocaleDateString()}
+          smartContract={contractAddress}
+          backgroundColor={formData.nftCustomization.backgroundColor}
+          textColor={formData.nftCustomization.textColor}
+          logoUrl={formData.nftCustomization.logo}
+          niveauLivar={formData.certified ? "vert" : "orange"}
+          investmentReturns={formData.investmentReturns}
+          isPreview={true}
+        />
+      </div>
+
+      {/* Contrôles de personnalisation */}
+      <div className="w-full space-y-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <div>
+          <Label className="text-gray-900 dark:text-gray-100">Logo de la campagne</Label>
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setFormData(prev => ({
+                  ...prev,
+                  nftCustomization: {
+                    ...prev.nftCustomization,
+                    logo: file
+                  }
+                }));
+              }
+            }}
+            className="text-gray-900 dark:text-gray-100"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-gray-900 dark:text-gray-100">Couleur de fond</Label>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="color"
+                value={formData.nftCustomization.backgroundColor}
+                onChange={(e) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    nftCustomization: {
+                      ...prev.nftCustomization,
+                      backgroundColor: e.target.value
+                    }
+                  }));
+                }}
+                className="h-10 w-16"
+              />
+              <span className="text-sm text-gray-900 dark:text-gray-100">
+                {formData.nftCustomization.backgroundColor}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-gray-900 dark:text-gray-100">Couleur du texte</Label>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="color"
+                value={formData.nftCustomization.textColor}
+                onChange={(e) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    nftCustomization: {
+                      ...prev.nftCustomization,
+                      textColor: e.target.value
+                    }
+                  }));
+                }}
+                className="h-10 w-16"
+              />
+              <span className="text-sm text-gray-900 dark:text-gray-100">
+                {formData.nftCustomization.textColor}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-      case 4:
+
+      case 5:
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Vérification et Soumission</h2>
@@ -939,11 +1153,21 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                 Suivant
               </Button>
             )}
-            {currentStep === 4 && status === 'idle' && (
-              <Button type="submit" disabled={!formData.acceptTerms || isLoading}>
-                {isLoading ? 'Création en cours...' : 'Créer la campagne'}
-              </Button>
-            )}
+           {currentStep === 4 && status === 'idle' && (
+  <Button type="button" onClick={handleNextStep} className="bg-lime-500 hover:bg-lime-600 text-white">
+    Suivant
+  </Button>
+)}
+
+{currentStep === 5 && status === 'idle' && (
+  <Button 
+    type="submit" 
+    disabled={!formData.acceptTerms || isLoading}
+    className="bg-lime-500 hover:bg-lime-600 text-white"
+  >
+    {isLoading ? 'Création en cours...' : 'Créer la campagne'}
+  </Button>
+)}
           </div>
         </form>
       </DialogContent>
