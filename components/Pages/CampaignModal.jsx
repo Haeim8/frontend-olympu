@@ -90,10 +90,10 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     royaltyFee: '0',
     royaltyReceiver: '',
     documents: {
-      whitepaper: undefined,   // Au lieu de null
-      pitchDeck: undefined,    // Au lieu de null
-      legalDocuments: [],      // Array vide au lieu de null
-      media: []                // Array vide déjà correct
+      whitepaper: [],   // Au lieu de undefined
+      pitchDeck: [],    // Au lieu de undefined
+      legalDocuments: [],
+      media: []
     },
     teamMembers: [{ name: '', role: '', socials: { twitter: '', linkedin: '' } }],
     certified: false,
@@ -191,7 +191,10 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       const newFiles = Array.from(e.target.files);
       setFormData(prev => ({
         ...prev,
-        [field]: [...(prev[field] || []), ...newFiles]
+        documents: {
+          ...prev.documents,
+          [field]: newFiles  // On remplace directement par les nouveaux fichiers
+        }
       }));
     }
   };
@@ -199,7 +202,10 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const removeFile = (index, field) => {
     setFormData(prev => ({
       ...prev,
-      [field]: prev[field].filter((_, i) => i !== index)
+      documents: {
+        ...prev.documents,
+        [field]: prev.documents[field].filter((_, i) => i !== index)
+      }
     }));
   };
 
@@ -252,12 +258,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         break;
       case 3:
         if (formData.teamMembers.length === 0) errors.team = "Au moins un membre d'équipe est requis";
-        if (formData.certified) {
-          if (!formData.lawyer.address) errors.lawyer = "L'adresse de l'avocat est requise pour une campagne certifiée";
-          if (!formData.lawyer.name) errors.lawyerName = "Le nom de l'avocat est requis";
-          if (!formData.lawyer.contact) errors.lawyerContact = "Le contact de l'avocat est requis";
-          if (!formData.lawyer.jurisdiction) errors.lawyerJurisdiction = "La juridiction de l'avocat est requise";
-        }
         break;
         case 4:
           break;
@@ -355,11 +355,14 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         targetAmount: campaignData.targetAmount,
         endTime: Math.floor(new Date(campaignData.endDate).getTime() / 1000),
         sector: campaignData.sector,
-        royaltyFee: campaignData.royaltyFee
+        royaltyFee: campaignData.royaltyFee,
+        socials: campaignData.socials
       };
   
+      const metadataBlob = new Blob([JSON.stringify(contractMetadata, null, 2)], { type: 'application/json' });
+      
       filesToUpload.push({
-        content: new Blob([JSON.stringify(contractMetadata, null, 2)], { type: 'application/json' }),
+        content: metadataBlob,
         path: `${campaignFolderName}/metadata.json`
       });
   
@@ -397,38 +400,63 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       }
   
       // 5. Index des fichiers - comme votre version
-      const filesIndex = {
-        documents: {
-          whitepaper: campaignData.whitepaper ? campaignData.whitepaper[0]?.name : null,
-          pitchDeck: campaignData.pitchDeck ? campaignData.pitchDeck[0]?.name : null,
-          legal: campaignData.legalDocuments ? campaignData.legalDocuments.map(doc => doc.name) : [],
-        },
+      const documentsIndex = {
+        whitepaper: campaignData.whitepaper ? campaignData.whitepaper[0]?.name : null,
+        pitchDeck: campaignData.pitchDeck ? campaignData.pitchDeck[0]?.name : null,
+        legal: campaignData.legalDocuments ? campaignData.legalDocuments.map(doc => doc.name) : [],
         media: campaignData.media ? campaignData.media.map(m => m.name) : []
       };
-  
+
+      const filesIndex = {
+        metadata: 'metadata.json',
+        campaignInfo: 'campaign-info.json',
+        documents: documentsIndex
+      };
+
+      const filesIndexBlob = new Blob([JSON.stringify(filesIndex, null, 2)], { type: 'application/json' });
+      
       filesToUpload.push({
-        content: new Blob([JSON.stringify(filesIndex, null, 2)], { type: 'application/json' }),
+        content: filesIndexBlob,
         path: `${campaignFolderName}/files-index.json`
       });
-  
-      // 6. Informations de la campagne - comme votre version
+
+      // Informations de la campagne
       const campaignInfo = {
         name: campaignData.name,
-        description: campaignData.description,
+        symbol: campaignData.symbol,
         sector: campaignData.sector,
         teamMembers: campaignData.teamMembers,
         isActive: true,
-        certified: campaignData.certified,
-        lawyer: campaignData.certified ? campaignData.lawyer : null,
         createdAt: new Date().toISOString(),
-        creatorAddress: campaignData.creatorAddress
+        creatorAddress: campaignData.creatorAddress,
+        socials: campaignData.socials
       };
-  
+
+      const campaignInfoBlob = new Blob([JSON.stringify(campaignInfo, null, 2)], { type: 'application/json' });
+
       filesToUpload.push({
-        content: new Blob([JSON.stringify(campaignInfo, null, 2)], { type: 'application/json' }),
+        content: campaignInfoBlob,
         path: `${campaignFolderName}/campaign-info.json`
       });
-  
+
+      // Upload des fichiers
+      const formData = new FormData();
+
+      // Convertir tous les fichiers en Blob avant de les ajouter au FormData
+      for (const file of filesToUpload) {
+        let fileContent;
+        
+        if (file.content instanceof Blob) {
+          fileContent = file.content;
+        } else if (file.content instanceof File) {
+          fileContent = file.content;
+        } else {
+          fileContent = new Blob([JSON.stringify(file.content)], { type: 'application/json' });
+        }
+        
+        formData.append('files', fileContent, file.path);
+      }
+
       console.log("Uploading to Pinata...", filesToUpload);
       const result = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
       if (!result.success) {
@@ -513,8 +541,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                 royaltyFee: '0',
                 royaltyReceiver: '',
                 documents: {
-                    whitepaper: undefined,
-                    pitchDeck: undefined,
+                    whitepaper: [],
+                    pitchDeck: [],
                     legalDocuments: [],
                     media: []
                 },
@@ -670,7 +698,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         <Input
           id="creatorAddress"
           name="creatorAddress"
-          value={formData.creatorAddress}
           readOnly
           className="bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 cursor-not-allowed"
         />
@@ -851,6 +878,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             accept=".pdf,.doc,.docx"
             required
             className="text-gray-900 dark:text-gray-100"
+            key={`whitepaper-${currentStep}`}  // Ajout d'une clé unique
           />
           {error?.whitepaper && <p className="text-red-500 text-sm">{error.whitepaper}</p>}
         </div>
@@ -863,6 +891,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             onChange={(e) => handleFileChange(e, 'pitchDeck')}
             accept=".pdf,.ppt,.pptx"
             className="text-gray-900 dark:text-gray-100"
+            key={`pitchDeck-${currentStep}`}  // Ajout d'une clé unique
           />
         </div>
         <div>
@@ -875,6 +904,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             accept=".pdf,.doc,.docx"
             multiple
             className="text-gray-900 dark:text-gray-100"
+            key={`legalDocuments-${currentStep}`}  // Ajout d'une clé unique
           />
         </div>
         <div>
@@ -887,17 +917,18 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             accept="image/*,video/*"
             multiple
             className="text-gray-900 dark:text-gray-100"
+            key={`media-${currentStep}`}  // Ajout d'une clé unique
           />
         </div>
         {['whitepaper', 'pitchDeck', 'legalDocuments', 'media'].map((field) => (
-          formData[field] && formData[field].length > 0 && (
+          formData.documents[field] && formData.documents[field].length > 0 && (
             <div key={field} className="mt-2">
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                 {field.charAt(0).toUpperCase() + field.slice(1)}:
               </h3>
               <ul className="list-disc pl-5">
-                {Array.isArray(formData[field]) ? (
-                  formData[field].map((file, index) => (
+                {Array.isArray(formData.documents[field]) ? (
+                  formData.documents[field].map((file, index) => (
                     <li key={index} className="flex justify-between items-center">
                       <span className="text-gray-900 dark:text-gray-100">{file.name}</span>
                       <Button
@@ -912,7 +943,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                   ))
                 ) : (
                   <li className="flex justify-between items-center">
-                    <span className="text-gray-900 dark:text-gray-100">{formData[field].name}</span>
+                    <span className="text-gray-900 dark:text-gray-100">{formData.documents[field].name}</span>
                     <Button
                       onClick={() => removeFile(0, field)}
                       variant="ghost"
@@ -932,9 +963,84 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       case 3:
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Équipe et Certification</h2>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Réseaux Sociaux et Équipe</h2>
+      
+      {/* Réseaux sociaux du projet */}
+      <div className="space-y-4 mb-8">
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Réseaux Sociaux du Projet</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="website" className="text-gray-900 dark:text-gray-100">Site Web</Label>
+            <Input
+              id="website"
+              name="website"
+              value={formData.socials.website}
+              onChange={(e) => handleNestedInputChange(e, 'socials')}
+              placeholder="https://"
+              className="text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <Label htmlFor="twitter" className="text-gray-900 dark:text-gray-100">Twitter</Label>
+            <Input
+              id="twitter"
+              name="twitter"
+              value={formData.socials.twitter}
+              onChange={(e) => handleNestedInputChange(e, 'socials')}
+              placeholder="@username"
+              className="text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <Label htmlFor="github" className="text-gray-900 dark:text-gray-100">GitHub</Label>
+            <Input
+              id="github"
+              name="github"
+              value={formData.socials.github}
+              onChange={(e) => handleNestedInputChange(e, 'socials')}
+              placeholder="username"
+              className="text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <Label htmlFor="discord" className="text-gray-900 dark:text-gray-100">Discord</Label>
+            <Input
+              id="discord"
+              name="discord"
+              value={formData.socials.discord}
+              onChange={(e) => handleNestedInputChange(e, 'socials')}
+              placeholder="Invite Link"
+              className="text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <Label htmlFor="telegram" className="text-gray-900 dark:text-gray-100">Telegram</Label>
+            <Input
+              id="telegram"
+              name="telegram"
+              value={formData.socials.telegram}
+              onChange={(e) => handleNestedInputChange(e, 'socials')}
+              placeholder="t.me/"
+              className="text-gray-900 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <Label htmlFor="medium" className="text-gray-900 dark:text-gray-100">Medium</Label>
+            <Input
+              id="medium"
+              name="medium"
+              value={formData.socials.medium}
+              onChange={(e) => handleNestedInputChange(e, 'socials')}
+              placeholder="@username"
+              className="text-gray-900 dark:text-gray-100"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Section équipe */}
       <div>
-        <Label className="text-gray-900 dark:text-gray-100">Membres de l'équipe</Label>
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Membres de l'équipe</h3>
         {formData.teamMembers.map((member, index) => (
           <div key={index} className="mb-4 p-4 border rounded-md">
             <div className="flex justify-between items-center mb-2">
@@ -978,54 +1084,13 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             </div>
           </div>
         ))}
-        <Button onClick={addTeamMember} className="mt-2">
+        <Button onClick={addTeamMember} type="button" className="mt-2">
           <Plus className="mr-2 h-4 w-4" /> Ajouter un membre
         </Button>
       </div>
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="certified"
-          checked={formData.certified}
-          onCheckedChange={() => handleCheckboxChange('certified')}
-        />
-        <Label htmlFor="certified" className="text-gray-900 dark:text-gray-100">Campagne certifiée</Label>
-      </div>
-      {formData.certified && (
-        <div className="space-y-2">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100">Informations de l'avocat</h3>
-          <Input
-            placeholder="Adresse Ethereum de l'avocat"
-            value={formData.lawyer.address}
-            onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-            name="address"
-            className="text-gray-900 dark:text-gray-100"
-          />
-          <Input
-            placeholder="Nom de l'avocat"
-            value={formData.lawyer.name}
-            onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-            name="name"
-            className="text-gray-900 dark:text-gray-100"
-          />
-          <Input
-            placeholder="Contact de l'avocat"
-            value={formData.lawyer.contact}
-            onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-            name="contact"
-            className="text-gray-900 dark:text-gray-100"
-          />
-          <Input
-            placeholder="Juridiction de l'avocat"
-            value={formData.lawyer.jurisdiction}
-            onChange={(e) => handleNestedInputChange(e, 'lawyer')}
-            name="jurisdiction"
-            className="text-gray-900 dark:text-gray-100"
-          />
-        </div>
-      )}
     </div>
-  );case 4:
-  case 4:
+  );
+      case 4:
   return (
     <div className="flex flex-col space-y-6 w-full">
       <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -1045,7 +1110,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             backgroundColor={formData.nftCustomization.backgroundColor}
             textColor={formData.nftCustomization.textColor}
             logoUrl={formData.nftCustomization.logo}
-            niveauLivar={formData.certified ? "vert" : "orange"}
+            niveauLivar={false ? "vert" : "orange"}
             investmentReturns={formData.investmentReturns}
             isPreview={true}
           />
@@ -1137,7 +1202,6 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
               <p><strong>Secteur:</strong> {formData.sector}</p>
               <p><strong>Objectif:</strong> {(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)} ETH</p>
               <p><strong>Date de fin:</strong> {new Date(formData.endDate).toLocaleString()}</p>
-              <p><strong>Campagne certifiée:</strong> {formData.certified ? 'Oui' : 'Non'}</p>
             </div>
             <Alert>
               <AlertDescription>
