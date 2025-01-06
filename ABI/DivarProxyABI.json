@@ -71,6 +71,37 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
+        "name": "campaignAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalInvestors",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalFundsRaised",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "CampaignMetricsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "string",
         "name": "category",
@@ -150,6 +181,50 @@
       {
         "indexed": true,
         "internalType": "address",
+        "name": "newPriceConsumer",
+        "type": "address"
+      }
+    ],
+    "name": "PriceConsumerUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "campaignAddress",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "roundNumber",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "currentFunding",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "remainingTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "RoundProgressUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "oldTreasury",
         "type": "address"
       },
@@ -220,7 +295,7 @@
   },
   {
     "inputs": [],
-    "name": "CAMPAIGN_CREATION_FEE",
+    "name": "CAMPAIGN_CREATION_FEE_USD",
     "outputs": [
       {
         "internalType": "uint256",
@@ -246,7 +321,7 @@
   },
   {
     "inputs": [],
-    "name": "REGISTRATION_FEE",
+    "name": "REGISTRATION_FEE_USD",
     "outputs": [
       {
         "internalType": "uint256",
@@ -505,6 +580,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getCampaignCreationFeeETH",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "string",
@@ -544,6 +632,19 @@
   },
   {
     "inputs": [],
+    "name": "getRegistrationFeeETH",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getVersion",
     "outputs": [
       {
@@ -564,7 +665,30 @@
       },
       {
         "internalType": "address",
+        "name": "_priceConsumer",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_treasury",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
         "name": "_campaignKeeper",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_priceConsumer",
         "type": "address"
       }
     ],
@@ -613,6 +737,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceConsumer",
+    "outputs": [
+      {
+        "internalType": "contract PriceConsumerV3",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -732,6 +869,19 @@
       }
     ],
     "name": "updateCampaignKeeper",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_newPriceConsumer",
+        "type": "address"
+      }
+    ],
+    "name": "updatePriceConsumer",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

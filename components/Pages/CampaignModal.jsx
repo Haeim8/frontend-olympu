@@ -49,7 +49,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       ],
       "name": "createCampaign",
       "outputs": [],
-      "stateMutability": "payable"
+      "stateMutability": "payable",
+      "type": "function"
     },
     {
       "type": "event",
@@ -58,14 +59,19 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         { "type": "address", "name": "campaignAddress", "indexed": true },
         { "type": "address", "name": "startup", "indexed": true },
         { "type": "string", "name": "name", "indexed": false },
-        { "type": "bool", "name": "certified", "indexed": false },
-        { "type": "address", "name": "lawyer", "indexed": true },
         { "type": "uint256", "name": "timestamp", "indexed": false }
       ]
     },
     {
       "type": "function",
-      "name": "CAMPAIGN_CREATION_FEE",
+      "name": "CAMPAIGN_CREATION_FEE_USD",
+      "inputs": [],
+      "outputs": [{ "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getCampaignCreationFeeETH",
       "inputs": [],
       "outputs": [{ "type": "uint256" }],
       "stateMutability": "view"
@@ -303,9 +309,19 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
 
       // 1. Upload l'image de la carte sur IPFS
       filesToUpload.push({
-        content: campaignData.cardImage,
-        path: `${campaignFolderName}/nft-card.png`
-      });
+        content: new Blob([JSON.stringify({
+            name: campaignData.name,
+            description: campaignData.description,
+            image: `ipfs://${campaignFolderName}/nft-card.png`,
+            attributes: [
+                {
+                    trait_type: "Sector",
+                    value: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector
+                }
+            ]
+        }, null, 2)], { type: 'application/json' }),
+        path: `${campaignFolderName}/nft-metadata.json`
+    });
 
       // 2. Métadonnées NFT (avec l'image de la carte complète)
       const nftMetadata = {
@@ -468,7 +484,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         gatewayUrl: result.gatewayUrl,
         nftMetadataUri: `ipfs://${result.ipfsHash}/nft-metadata.json`,
         campaignMetadataUri: `ipfs://${result.ipfsHash}/metadata.json`,
-        logoUri: ''
+        logoUri: '',
+        campaignFolderName: campaignFolderName
       };
   
     } catch (error) {
@@ -492,15 +509,20 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         // Créer la campagne
         const result = await createCampaignFolder({
           ...formData,
-          cardImage: cardImage  // On passe l'image capturée
+          cardImage: cardImage
         });
         if (!result.success) {
             throw new Error("Échec de l'upload IPFS");
+            
         }
 
-        const metadataURI = `ipfs://${result.ipfsHash}/metadata.json`;
+        const { campaignFolderName } = result;
+        const metadataURI = `ipfs://${result.ipfsHash}/${campaignFolderName}/nft-metadata.json`;
         const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
         const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
+
+        // Obtenir le prix de création de campagne en ETH
+        const campaignFee = await contract.call("getCampaignCreationFeeETH", []);
 
         const result2 = await createCampaign({
             args: [
@@ -515,10 +537,26 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
                 formData.logo || ""
             ],
             overrides: {
-                value: ethers.utils.parseEther("0.05")
+                value: campaignFee
             }
         });
-
+       
+        try {
+          console.log("Frais de campagne:", campaignFee.toString());
+          console.log("Données envoyées:", {
+              name: formData.name,
+              symbol: formData.symbol,
+              targetAmount: targetAmountWei.toString(),
+              sharePrice: sharePriceWei.toString(),
+              endTime: Math.floor(new Date(formData.endDate).getTime() / 1000),
+              category: formData.sector,
+              metadataURI,
+              royaltyFee: formData.royaltyFee,
+              logo: formData.logo || ""
+          });
+      } catch (error) {
+          console.error("Détails complets de l'erreur:", error);
+      }
         const receipt = result2.receipt;
         const event = receipt.events.find(e => e.event === 'CampaignCreated');
         const campaignAddress = event.args.campaignAddress;
