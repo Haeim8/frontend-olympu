@@ -11,7 +11,7 @@ import { ConnectWallet, useAddress, useContract, useContractRead } from "@thirdw
 import { db } from "@/lib/firebase/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import FundRaisingPlatformABI from "@/ABI/DivarProxyABI.json";
+import  DivarProxyABI from "@/ABI/DivarProxyABI.json";
 import { ethers } from "ethers";
 
 export default function Home() {
@@ -34,7 +34,7 @@ export default function Home() {
 
   const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
-  const { contract } = useContract(contractAddress, FundRaisingPlatformABI);
+  const { contract } = useContract(contractAddress, DivarProxyABI);
 
   const { data: isRegisteredData, isLoading: readLoading, error: readError } = useContractRead(
     contract,

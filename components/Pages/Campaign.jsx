@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,14 +18,16 @@ import { useAddress, useContract, useContractRead, useContractWrite } from '@thi
 import { ethers } from 'ethers';
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 import CampaignABI from '@/ABI/CampaignABI.json';
+import { pinataService } from '@/lib/services/storage';
+import DocumentManager from '@/components/Systeme/DocumentManager';
+
+const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
 
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
 export default function Campaign() {
   const address = useAddress();
   const [campaignAddress, setCampaignAddress] = useState(null);
-  const [campaignData, setCampaignData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [showDistributeDialog, setShowDistributeDialog] = useState(false);
   const [distributeForm, setDistributeForm] = useState({
     amount: "",
@@ -39,26 +42,126 @@ export default function Campaign() {
   });
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
-
   const [investors, setInvestors] = useState([]);
   const [isLoadingInvestors, setIsLoadingInvestors] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
-  const [documents, setDocuments] = useState([]);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
-  const [error, setError] = useState(null);
-
   const { contract: platformContract } = useContract(PLATFORM_ADDRESS, DivarProxyABI);
   const { contract: campaignContract } = useContract(campaignAddress, CampaignABI);
 
   const [isReleasingEscrow, setIsReleasingEscrow] = useState(false);
   const [escrowReleaseError, setEscrowReleaseError] = useState(null);
 
+  const handleDocumentsUpdate = async (updatedDocs) => {  
+    setCampaignData(prev => ({
+      ...prev, 
+      documents: updatedDocs
+    }));
+  };
+
+  const handleSocialsUpdate = async (updatedSocials) => {
+    setCampaignData(prev => ({
+      ...prev,
+      socials: updatedSocials
+    }));
+  };
+
   const { data: userCampaigns } = useContractRead(
-    platformContract,
+    platformContract, 
     "getCampaignsByCreator",
     [address]
   );
+  const [campaignData, setCampaignData] = useState(null);
+  const [documents, setDocuments] = useState({
+    whitepaper: [],
+    pitchDeck: [], 
+    legal: [],
+    media: []
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+ 
+  useEffect(() => {
+    const initializeAndFetchData = async () => {
+      if (!campaignContract || !platformContract) return;
+      setIsLoading(true);
+      
+      try {
+        // 1. Initialisation IPFS
+        const metadata = await campaignContract.call("metadata");
+        const [, cid] = metadata.match(/ipfs:\/\/(.*?)\//);
+        const baseUrl = `${PINATA_GATEWAY}/${cid}`;
+        
+        // 2. Chargement des données de la campagne
+        const response = await fetch(`${baseUrl}/campaign-info.json`);
+        const campaignInfo = await response.json();
+        
+        // 3. Chargement des données du contrat
+        const [roundData, totalSupply] = await Promise.all([
+          campaignContract.call("getCurrentRound"),
+          campaignContract.call("totalSupply")
+        ]);
+        
+        const now = Date.now();
+        const endTime = roundData.endTime ? roundData.endTime.toNumber() * 1000 : 0;
+  
+        // 4. Mise à jour globale
+        setCampaignData({
+          ...campaignInfo,
+          ipfsHash: cid,
+          baseUrl,
+          status: now < endTime ? "En cours" : "Finalisée",
+          raised: ethers.utils.formatEther(roundData.fundsRaised),
+          goal: ethers.utils.formatEther(roundData.targetAmount),
+          investors: totalSupply.toString(),
+          timeRemaining: endTime - now
+        });
+        
+      } catch (error) {
+        console.error("Erreur:", error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    if (campaignAddress && campaignContract && platformContract) {
+      initializeAndFetchData();
+    }
+  }, [campaignContract, campaignAddress, platformContract]);
+
+const handleDocumentDelete = async (section, fileName) => {
+  try {
+    const basePath = `https://jade-hilarious-gecko-392.mypinata.cloud/ipfs/${campaignData.ipfsHash}`;
+    
+    // 1. Lire l'index actuel
+    const campaignInfoResponse = await fetch(`${basePath}/campaign-info.json`);
+    let campaignInfo = await campaignInfoResponse.json();
+
+    // 2. Supprimer le fichier de l'index
+    if (campaignInfo.documents && campaignInfo.documents[section]) {
+      delete campaignInfo.documents[section];
+    }
+
+    // 3. Upload du nouvel index
+    await pinataService.uploadJSON(campaignInfo, {
+      pinataMetadata: {
+        name: 'campaign-info.json'
+      }
+    });
+
+    // 4. Mettre à jour l'UI
+    setDocuments(prev => ({
+      ...prev,
+      [section]: prev[section].filter(doc => doc.name !== fileName)
+    }));
+
+  } catch (error) {
+    console.error("Erreur suppression:", error);
+    alert("Erreur lors de la suppression");
+  }
+};
 
   useEffect(() => {
     if (userCampaigns && userCampaigns.length > 0) {
@@ -66,46 +169,10 @@ export default function Campaign() {
     }
   }, [userCampaigns]);
 
-  useEffect(() => {
-    async function fetchCampaignData() {
-      if (!campaignContract || !platformContract) return;
-      setIsLoading(true);
+ 
 
-      try {
-        const [roundData, totalSupply, metadata] = await Promise.all([
-          campaignContract.call("getCurrentRound"),
-          campaignContract.call("totalSupply"),
-          platformContract.call("campaignRegistry", [campaignAddress])
-        ]);
-
-        const now = Date.now();
-        const endTime = roundData.endTime.toNumber() * 1000;
-        const isActive = now < endTime;
-
-        setCampaignData({
-          address: campaignAddress,
-          name: metadata.name,
-          status: isActive ? "En cours" : "Finalisée",
-          raised: ethers.utils.formatEther(roundData.fundsRaised),
-          goal: ethers.utils.formatEther(roundData.targetAmount),
-          investors: totalSupply.toNumber(),
-          nftTotal: roundData.targetAmount.div(roundData.sharePrice).toNumber(),
-          nftPrice: ethers.utils.formatEther(roundData.sharePrice),
-          endDate: new Date(endTime),
-          timeRemaining: isActive ? endTime - now : 0,
-          lawyer: metadata.lawyer
-        });
-      } catch (error) {
-        console.error("Erreur lors du chargement:", error);
-        setError("Erreur lors du chargement des données de la campagne");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchCampaignData();
-  }, [campaignContract, campaignAddress, platformContract]);
-
+  
+  
   const { mutateAsync: claimEscrow } = useContractWrite(campaignContract, "claimEscrow");
 
   const handleReleaseEscrow = async () => {
@@ -264,20 +331,47 @@ export default function Campaign() {
     return (amount / (campaignData?.nftTotal || 1)).toFixed(0);
   };
 
-  const handleDocumentUpload = async (file) => {
-    setIsUploadingDoc(true);
-    try {
-      const ipfsHash = await uploadToIPFS(file); // Fonction à implémenter selon votre solution IPFS
-      await campaignContract.call("addDocument", [ipfsHash, file.name]);
-      const docs = await campaignContract.call("getDocuments");
-      setDocuments(docs);
-    } catch (error) {
-      console.error("Erreur upload document:", error);
-      alert("Erreur lors de l'upload du document");
-    } finally {
-      setIsUploadingDoc(false);
+
+
+const [newsForm, setNewsForm] = useState({
+  title: '',
+  content: '',
+  attachments: []
+});
+
+const handleNewsFormChange = (field, value) => {
+  setNewsForm(prev => ({ ...prev, [field]: value }));
+};
+
+const handleNewsPublish = async () => {
+  try {
+    const newsData = {
+      title: newsForm.title,
+      content: newsForm.content,
+      timestamp: new Date().toISOString()
+    };
+
+    // Upload les pièces jointes
+    if (newsForm.attachments.length > 0) {
+      const attachmentUploads = await Promise.all(
+        Array.from(newsForm.attachments).map(file => pinataService.uploadFile(file))
+      );
+      newsData.attachments = attachmentUploads.map(upload => ({
+        name: upload.file.name,
+        hash: upload.IpfsHash
+      }));
     }
-  };
+
+    // Uploader l'actualité
+    const result = await pinataService.uploadJSON(newsData);
+    setShowPromoteDialog(false);
+    setNewsForm({ title: '', content: '', attachments: [] });
+    
+  } catch (error) {
+    console.error("Erreur publication:", error);
+    alert("Erreur lors de la publication");
+  }
+};
 
   if (isLoading) {
     return <div>Chargement...</div>;
@@ -529,44 +623,19 @@ export default function Campaign() {
         </TabsContent>
 
         <TabsContent value="documents">
-          <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-gray-900 dark:text-gray-100">Documents Légaux</CardTitle>
-              <Input 
-                type="file" 
-                onChange={(e) => handleDocumentUpload(e.target.files[0])}
-                disabled={isUploadingDoc}
-                className="w-60 bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
-              />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {documents.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-                    Aucun document
-                  </div>
-                ) : (
-                  documents.map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-neutral-900 rounded">
-                      <span className="flex items-center text-gray-900 dark:text-gray-100">
-                        <FileText className="h-4 w-4 mr-2" />
-                        {doc.name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {doc.timestamp}
-                        </span>
-                        <Button variant="ghost" size="sm" onClick={() => window.open(doc.url)} className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100">
-                          Voir
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+  <DocumentManager 
+    campaignData={{
+      ipfsHash: campaignData.ipfsHash,
+      address: campaignAddress
+    }}
+    onUpdate={(docs) => {
+      setCampaignData(prev => ({
+        ...prev,
+        documents: docs
+      }));
+    }}
+  />
+</TabsContent>
 
         <TabsContent value="social">
           <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
@@ -690,13 +759,38 @@ export default function Campaign() {
       </Dialog>
 
       <Dialog open={showPromoteDialog} onOpenChange={setShowPromoteDialog}>
-        <DialogContent className="bg-white dark:bg-neutral-950">
-          <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">Promouvoir la Campagne</DialogTitle>
-          </DialogHeader>
-          {/* Contenu du dialogue de promotion */}
-        </DialogContent>
-      </Dialog>
+  <DialogContent className="bg-white dark:bg-neutral-950">
+    <DialogHeader>
+      <DialogTitle className="text-gray-900 dark:text-gray-100">Publier une actualité</DialogTitle>
+    </DialogHeader>
+    <div className="space-y-4">
+      <Input
+        placeholder="Titre de l'actualité"
+        value={newsForm.title}
+        onChange={(e) => handleNewsFormChange('title', e.target.value)}
+        className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
+      />
+      <Textarea
+        placeholder="Contenu de l'actualité"
+        value={newsForm.content}
+        onChange={(e) => handleNewsFormChange('content', e.target.value)}
+        className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
+      />
+      <Input 
+        type="file" 
+        onChange={(e) => handleNewsFormChange('attachments', e.target.files)}
+        multiple
+        className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100"
+      />
+      <Button 
+        onClick={handleNewsPublish}
+        className="w-full bg-lime-500 hover:bg-lime-600 text-white"
+      >
+        Publier
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
 
       <Dialog open={showCertifyDialog} onOpenChange={setShowCertifyDialog}>
         <DialogContent className="bg-white dark:bg-neutral-950">

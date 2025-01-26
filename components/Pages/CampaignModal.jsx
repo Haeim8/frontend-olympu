@@ -17,7 +17,7 @@ import { ethers } from 'ethers';
 import { pinataService } from '@/lib/services/storage';
 import CompanySharesNFTCard from '@/components/nft/CompanySharesNFTCard';
 import html2canvas from 'html2canvas';
-
+import { initializeCampaignFolders, uploadDocument, updateSocialLinks, updateDescription } from '@/lib/firebase/firebase';
 const SECTORS = [
   "Blockchain", "Finance", "Industrie", "Tech", "Influence", "Gaming",
   "NFT", "DeFi", "DAO", "Infrastructure", "Autre"
@@ -31,7 +31,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
   const [error, setError] = useState({});
   const [transactionHash, setTransactionHash] = useState('');
   const [darkMode, setDarkMode] = useState(false);
-  const [cardImage, setCardImage] = useState(null); // Pour stocker l'image temporairement
+  const [cardImage, setCardImage] = useState(null); 
   const address = useAddress();
   const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
   const contractABI = [
@@ -96,8 +96,8 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     royaltyFee: '0',
     royaltyReceiver: '',
     documents: {
-      whitepaper: [],   // Au lieu de undefined
-      pitchDeck: [],    // Au lieu de undefined
+      whitepaper: [],   
+      pitchDeck: [],    
       legalDocuments: [],
       media: []
     },
@@ -150,7 +150,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
  
   });
 
-  const cardRef = useRef(null); // Ajout de la ref ici
+  const cardRef = useRef(null); 
 
   useEffect(() => {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -199,7 +199,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         ...prev,
         documents: {
           ...prev.documents,
-          [field]: newFiles  // On remplace directement par les nouveaux fichiers
+          [field]: newFiles  
         }
       }));
     }
@@ -303,339 +303,217 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
     try {
       setIsLoading(true);
       
-      // Nom du dossier principal
       const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
-      const filesToUpload = [];
-
-      // 1. Upload l'image de la carte sur IPFS
-      filesToUpload.push({
-        content: new Blob([JSON.stringify({
-            name: campaignData.name,
-            description: campaignData.description,
-            image: `ipfs://${campaignFolderName}/nft-card.png`,
-            attributes: [
-                {
-                    trait_type: "Sector",
-                    value: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector
-                }
-            ]
-        }, null, 2)], { type: 'application/json' }),
-        path: `${campaignFolderName}/nft-metadata.json`
-    });
-
-      // 2. Métadonnées NFT (avec l'image de la carte complète)
-      const nftMetadata = {
-        name: campaignData.name,
-        description: campaignData.description || "",
-        image: `ipfs://${campaignFolderName}/nft-card.png`,
-        attributes: [
-            {
-                trait_type: "Sector",
-                value: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector
-            },
-            {
-                trait_type: "Background Color",
-                value: campaignData.nftCustomization.backgroundColor
-            },
-            {
-                trait_type: "Text Color",
-                value: campaignData.nftCustomization.textColor
-            },
-            {
-                trait_type: "Texture",
-                value: campaignData.nftCustomization.texture
-            }
-        ],
-        investmentReturns: campaignData.investmentReturns,
-        verifications: campaignData.verifications
-    };
   
-      filesToUpload.push({
-        content: new Blob([JSON.stringify(nftMetadata, null, 2)], { type: 'application/json' }),
-        path: `${campaignFolderName}/nft-metadata.json`
-      });
-
-      // Upload tous les fichiers sur IPFS
-      const uploadResponse = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
-      const folderIpfsHash = uploadResponse.ipfsHash;
-
-      // Définir l'URL de base pour les métadonnées NFT
-      const baseTokenURI = `ipfs://${folderIpfsHash}/${campaignFolderName}/nft-metadata`;
-
-      // 3. Métadonnées du smart contract
-      const contractMetadata = {
-        name: campaignData.name,
-        symbol: campaignData.symbol,
-        sharePrice: campaignData.sharePrice,
-        numberOfShares: campaignData.numberOfShares,
-        targetAmount: campaignData.targetAmount,
-        endTime: Math.floor(new Date(campaignData.endDate).getTime() / 1000),
-        sector: campaignData.sector,
-        royaltyFee: campaignData.royaltyFee,
-        socials: campaignData.socials
-      };
-  
-      const metadataBlob = new Blob([JSON.stringify(contractMetadata, null, 2)], { type: 'application/json' });
-      
-      filesToUpload.push({
-        content: metadataBlob,
-        path: `${campaignFolderName}/metadata.json`
-      });
-  
-      // 4. Documents - exactement comme votre version originale
-      if (campaignData.whitepaper && campaignData.whitepaper.length > 0) {
-        filesToUpload.push({
-          content: campaignData.whitepaper[0],
-          path: `${campaignFolderName}/documents/whitepaper/${campaignData.whitepaper[0].name}`
-        });
-      }
-  
-      if (campaignData.pitchDeck && campaignData.pitchDeck.length > 0) {
-        filesToUpload.push({
-          content: campaignData.pitchDeck[0],
-          path: `${campaignFolderName}/documents/pitchDeck/${campaignData.pitchDeck[0].name}`
-        });
-      }
-  
-      if (campaignData.legalDocuments && campaignData.legalDocuments.length > 0) {
-        campaignData.legalDocuments.forEach(doc => {
-          filesToUpload.push({
-            content: doc,
-            path: `${campaignFolderName}/documents/legal/${doc.name}`
-          });
-        });
-      }
-  
-      if (campaignData.media && campaignData.media.length > 0) {
-        campaignData.media.forEach(media => {
-          filesToUpload.push({
-            content: media,
-            path: `${campaignFolderName}/documents/media/${media.name}`
-          });
-        });
-      }
-  
-      // 5. Index des fichiers - comme votre version
-      const documentsIndex = {
-        whitepaper: campaignData.whitepaper ? campaignData.whitepaper[0]?.name : null,
-        pitchDeck: campaignData.pitchDeck ? campaignData.pitchDeck[0]?.name : null,
-        legal: campaignData.legalDocuments ? campaignData.legalDocuments.map(doc => doc.name) : [],
-        media: campaignData.media ? campaignData.media.map(m => m.name) : []
-      };
-
-      const filesIndex = {
-        metadata: 'metadata.json',
-        campaignInfo: 'campaign-info.json',
-        documents: documentsIndex
-      };
-
-      const filesIndexBlob = new Blob([JSON.stringify(filesIndex, null, 2)], { type: 'application/json' });
-      
-      filesToUpload.push({
-        content: filesIndexBlob,
-        path: `${campaignFolderName}/files-index.json`
-      });
-
-      // Informations de la campagne
-      const campaignInfo = {
-        name: campaignData.name,
-        symbol: campaignData.symbol,
-        sector: campaignData.sector,
-        teamMembers: campaignData.teamMembers,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        creatorAddress: campaignData.creatorAddress,
-        socials: campaignData.socials
-      };
-
-      const campaignInfoBlob = new Blob([JSON.stringify(campaignInfo, null, 2)], { type: 'application/json' });
-
-      filesToUpload.push({
-        content: campaignInfoBlob,
-        path: `${campaignFolderName}/campaign-info.json`
-      });
-
-      // Upload des fichiers
-      const formData = new FormData();
-
-      // Convertir tous les fichiers en Blob avant de les ajouter au FormData
-      for (const file of filesToUpload) {
-        let fileContent;
-        
-        if (file.content instanceof Blob) {
-          fileContent = file.content;
-        } else if (file.content instanceof File) {
-          fileContent = file.content;
-        } else {
-          fileContent = new Blob([JSON.stringify(file.content)], { type: 'application/json' });
+      // Tout est uploadé ENSEMBLE dans le même dossier IPFS
+      const filesToUpload = [
+        // L'image NFT
+        {
+          content: campaignData.cardImage,
+          path: `${campaignFolderName}/nft-card.png`
+        },
+        // Les metadata dans le MÊME dossier
+        {
+          content: new Blob([JSON.stringify({
+            tokenId: 1
+          })], {type: 'application/json'}),
+          path: `${campaignFolderName}/metadata.json`
+        },
+        {
+          content: new Blob([JSON.stringify({
+            image: `ipfs://${campaignFolderName}/nft-card.png`
+          })], {type: 'application/json'}),
+          path: `${campaignFolderName}/nft-metadata.json` 
         }
-        
-        formData.append('files', fileContent, file.path);
+      ];
+  
+      // Un seul upload qui met TOUT dans le même dossier
+      const ipfsResult = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
+      if (!ipfsResult.success) {
+        throw new Error("Échec de l'upload des métadonnées NFT");
       }
-
-      console.log("Uploading to Pinata...", filesToUpload);
-      const result = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
-      if (!result.success) {
-        throw new Error("Échec de l'upload IPFS");
+  
+      // Utiliser les fonctions existantes de firebase.js
+      await initializeCampaignFolders(campaignFolderName);
+      await updateDescription(campaignFolderName, campaignData.description);
+      await updateSocialLinks(campaignFolderName, campaignData.socials);
+  
+      const uploadPromises = [];
+      const documents = {};
+  
+      // Upload des documents s'ils existent
+      if (campaignData.documents.whitepaper?.length) {
+        uploadPromises.push(
+          uploadDocument(campaignFolderName, 'whitepaper', campaignData.documents.whitepaper[0])
+            .then(url => { documents.whitepaper = url; })
+        );
       }
+  
+      if (campaignData.documents.pitchDeck?.length) {
+        uploadPromises.push(
+          uploadDocument(campaignFolderName, 'pitch-deck', campaignData.documents.pitchDeck[0])
+            .then(url => { documents.pitchDeck = url; })
+        );
+      }
+  
+      if (campaignData.documents.legalDocuments?.length) {
+        documents.legal = [];
+        uploadPromises.push(
+          ...campaignData.documents.legalDocuments.map(doc =>
+            uploadDocument(campaignFolderName, 'legal', doc)
+              .then(url => { documents.legal.push(url); })
+          )
+        );
+      }
+  
+      if (campaignData.documents.media?.length) {
+        documents.media = [];
+        uploadPromises.push(
+          ...campaignData.documents.media.map(media =>
+            uploadDocument(campaignFolderName, 'media', media)
+              .then(url => { documents.media.push(url); })
+          )
+        );
+      }
+  
+      await Promise.all(uploadPromises);
+  
       return {
         success: true,
-        ipfsHash: result.ipfsHash,
-        gatewayUrl: result.gatewayUrl,
-        nftMetadataUri: `ipfs://${result.ipfsHash}/nft-metadata.json`,
-        campaignMetadataUri: `ipfs://${result.ipfsHash}/metadata.json`,
-        logoUri: '',
-        campaignFolderName: campaignFolderName
+        ipfsHash: ipfsResult.ipfsHash,
+        metadataUri: `ipfs://${ipfsResult.ipfsHash}/${campaignFolderName}/metadata.json`,
+        campaignFolderName
       };
   
     } catch (error) {
-      console.error("Erreur lors de la création du dossier IPFS:", error);
+      console.error("Erreur lors de la création:", error);
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
   
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(4)) return;
     if (isLoading || status === 'success') return;
-
-    setIsLoading(true);
+   
+    setIsLoading(true); 
     setStatus('loading');
     setError({});
-
+   
     try {
-        // Créer la campagne
+        // 1. Upload image NFT + création métadonnées minimales sur IPFS
         const result = await createCampaignFolder({
           ...formData,
           cardImage: cardImage
         });
+        
         if (!result.success) {
             throw new Error("Échec de l'upload IPFS");
-            
         }
-
-        const { campaignFolderName } = result;
-        const metadataURI = `ipfs://${result.ipfsHash}/${campaignFolderName}/nft-metadata.json`;
+   
+        // 2. Convertir les montants en Wei  
         const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
         const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
-
-        // Obtenir le prix de création de campagne en ETH
+   
+        // 3. Obtenir les frais de création
         const campaignFee = await contract.call("getCampaignCreationFeeETH", []);
-
+   
+        // 4. Créer le contrat avec les infos fixes uniquement 
         const result2 = await createCampaign({
-            args: [
-                formData.name,
-                formData.symbol,
-                targetAmountWei,
-                sharePriceWei,
-                Math.floor(new Date(formData.endDate).getTime() / 1000),
-                formData.sector,
-                metadataURI,
-                ethers.BigNumber.from(formData.royaltyFee),
-                formData.logo || ""
-            ],
-            overrides: {
-                value: campaignFee
-            }
-        });
-       
-        try {
-          console.log("Frais de campagne:", campaignFee.toString());
-          console.log("Données envoyées:", {
-              name: formData.name,
-              symbol: formData.symbol,
-              targetAmount: targetAmountWei.toString(),
-              sharePrice: sharePriceWei.toString(),
-              endTime: Math.floor(new Date(formData.endDate).getTime() / 1000),
-              category: formData.sector,
-              metadataURI,
-              royaltyFee: formData.royaltyFee,
-              logo: formData.logo || ""
-          });
-      } catch (error) {
-          console.error("Détails complets de l'erreur:", error);
-      }
+          args: [
+              formData.name,
+              formData.symbol,
+              targetAmountWei,
+              sharePriceWei,
+              Math.floor(new Date(formData.endDate).getTime() / 1000),
+              formData.sector,
+              result.metadataUri,
+              ethers.BigNumber.from(formData.royaltyFee),
+              formData.logo || ""
+          ],
+          overrides: {
+              value: campaignFee
+          }
+      });
+   
         const receipt = result2.receipt;
         const event = receipt.events.find(e => e.event === 'CampaignCreated');
         const campaignAddress = event.args.campaignAddress;
-
+   
         setTransactionHash(receipt.transactionHash);
         setStatus('success');
         
-        const cleanup = () => {
-            setFormData({
-                creatorAddress: '',
-                name: '',
-                symbol: '',
-                sector: '',
-                otherSector: '',
-                description: '',
-                sharePrice: '',
-                numberOfShares: '',
-                targetAmount: '',
-                endDate: '',
-                royaltyFee: '0',
-                royaltyReceiver: '',
-                documents: {
-                    whitepaper: [],
-                    pitchDeck: [],
-                    legalDocuments: [],
-                    media: []
-                },
-                teamMembers: [{ name: '', role: '', socials: { twitter: '', linkedin: '' } }],
-                certified: false,
-                lawyer: { address: '', name: '', contact: '', jurisdiction: '' },
-                acceptTerms: false,
-                socials: {
-                    website: '',
-                    twitter: '',
-                    github: '',
-                    discord: '',
-                    telegram: '',
-                    medium: ''
-                },
-                metadata: {
-                    roadmap: '',
-                    tokenomics: '',
-                    vesting: '',
-                    useOfFunds: ''
-                },
-                investmentTerms: {
-                    remunerationType: '',
-                    tokenDistribution: '',
-                    roi: '',
-                },
-                companyShares: {
-                    percentageMinted: '',
-                    vertePortalLink: '',
-                },
-                distributeTokens: false,
-                vestingPlan: false,
-                nftCustomization: {
-                    backgroundColor: '#ffffff',
-                    textColor: '#000000',
-                    logo: null,
-                    texture: 'default',
-                },
-                investmentReturns: {
-                    dividends: { enabled: false },
-                    airdrops: { enabled: false },
-                    revenueSplit: { enabled: false },
-                    customReward: { enabled: false, name: '' }
-                },
-                verifications: {
-                    kycCompleted: false,
-                    legalVerification: false
-                }
-            });
-            setIsLoading(false);
-            setStatus('idle');
-        };
-
-        return cleanup;
-
+        // Reset complet du formulaire
+        setFormData({
+            creatorAddress: '',
+            name: '',
+            symbol: '',
+            sector: '',
+            otherSector: '',
+            description: '',
+            sharePrice: '',
+            numberOfShares: '', 
+            targetAmount: '',
+            endDate: '',
+            royaltyFee: '0',
+            royaltyReceiver: '',
+            documents: {
+                whitepaper: [],
+                pitchDeck: [],
+                legalDocuments: [],
+                media: []
+            },
+            teamMembers: [{ name: '', role: '', socials: { twitter: '', linkedin: '' } }],
+            certified: false,
+            lawyer: { address: '', name: '', contact: '', jurisdiction: '' },
+            acceptTerms: false,
+            socials: {
+                website: '',
+                twitter: '',
+                github: '',
+                discord: '',
+                telegram: '',
+                medium: ''
+            },
+            metadata: {
+                roadmap: '',
+                tokenomics: '',
+                vesting: '',
+                useOfFunds: ''
+            },
+            investmentTerms: {
+                remunerationType: '',
+                tokenDistribution: '',
+                roi: '',
+            },
+            companyShares: {
+                percentageMinted: '',
+                vertePortalLink: '',
+            },
+            distributeTokens: false,
+            vestingPlan: false,
+            nftCustomization: {
+                backgroundColor: '#ffffff',
+                textColor: '#000000',
+                logo: null,
+                texture: 'default',
+            },
+            investmentReturns: {
+                dividends: { enabled: false },
+                airdrops: { enabled: false },
+                revenueSplit: { enabled: false },
+                customReward: { enabled: false, name: '' }
+            },
+            verifications: {
+                kycCompleted: false,
+                legalVerification: false
+            }
+        });
+        setIsLoading(false);
+        setStatus('idle');
+   
     } catch (error) {
         console.error("Erreur:", error);
         setStatus('error');
@@ -649,7 +527,7 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
             setIsLoading(false);
         }
     }
-};
+ };
 
   const InfoTooltip = ({ content }) => (
     <TooltipProvider>

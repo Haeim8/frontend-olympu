@@ -64,68 +64,50 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         const provider = new ethers.providers.JsonRpcProvider(
           `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
         );
-  
+    
         const contract = new ethers.Contract(project.id, CampaignABI, provider);
-  
-        // 1. Récupérer le metadata du contrat
+    
+        // 1. Récupérer le metadata URI et le CID
         const metadataURI = await contract.metadata();
-        console.log("Metadata URI:", metadataURI); 
-  
-        // 2. Extraire le CID de l'URI IPFS
         const cid = metadataURI.replace('ipfs://', '').split('/')[0];
-        console.log("CID extrait:", cid);
-  
-        // 3. Construire l'URL Pinata avec le CID
-        const pinataUrl = `${PINATA_GATEWAY}/${cid}/campaign-info.json`;
-        console.log("URL Pinata:", pinataUrl);
-  
-        // 4. Récupérer les métadonnées
-        const response = await fetch(pinataUrl);
-        if (!response.ok) {
-          throw new Error(`Impossible de récupérer les métadonnées (${response.status})`);
-        }
-        const metadata = await response.json();
-  
-        // 5. Récupérer les autres fichiers si nécessaire
-        const filesIndexResponse = await fetch(`${PINATA_GATEWAY}/${cid}/files-index.json`);
-        if (filesIndexResponse.ok) {
-          const filesIndex = await filesIndexResponse.json();
-          
-          const projectMetadata = {
-            ...metadata,
-            firebase: {
-              description: metadata.description,
-              documents: {
-                whitepaper: filesIndex.documents.whitepaper ? 
-                  `${PINATA_GATEWAY}/${cid}/documents/whitepaper/${filesIndex.documents.whitepaper}` : null,
-                pitchDeck: filesIndex.documents.pitchDeck ?
-                  `${PINATA_GATEWAY}/${cid}/documents/pitchDeck/${filesIndex.documents.pitchDeck}` : null,
-                legalDocuments: filesIndex.documents.legal.map(doc => 
-                  `${PINATA_GATEWAY}/${cid}/documents/legal/${doc}`
-                ),
-                // Ajout des médias
-                media: filesIndex.media.map(mediaFile => 
-                  `${PINATA_GATEWAY}/${cid}/documents/media/${mediaFile}`
-                )
-              },
-              investmentReturns: metadata.investmentReturns || {}
-            }
-          };
-          
-          setProjectData(projectMetadata);
-        } else {
-          setProjectData(metadata);
-        }
-  
-        // Récupération des événements blockchain (laisse cette partie inchangée)
-        const purchaseFilter = contract.filters.SharesPurchased();
-        const refundFilter = contract.filters.SharesRefunded();
-        
+        const basePath = `${PINATA_GATEWAY}/${cid}`;
+    
+        // 2. Récupérer campaign-info.json
+        const campaignInfoResponse = await fetch(`${basePath}/campaign-info.json`);
+        const campaignInfo = await campaignInfoResponse.json();
+    
+        // 3. Construction du metadata avec les fichiers en retirant campaign_ifps des chemins
+        const projectMetadata = {
+          ...campaignInfo,
+          firebase: {
+            description: campaignInfo.description,
+            documents: {
+              whitepaper: campaignInfo.documents?.whitepaper 
+                ? `${PINATA_GATEWAY}/${cid}/whitepaper/${campaignInfo.documents.whitepaper.split('/').pop()}` 
+                : null,
+              pitchDeck: campaignInfo.documents?.pitchDeck 
+                ? `${PINATA_GATEWAY}/${cid}/pitch-deck/${campaignInfo.documents.pitchDeck.split('/').pop()}` 
+                : null,
+              legalDocuments: campaignInfo.documents?.legalDocuments?.map(doc => 
+                `${PINATA_GATEWAY}/${cid}/legal/${doc.split('/').pop()}`
+              ) || [],
+              media: campaignInfo.documents?.media?.map(media => 
+                `${PINATA_GATEWAY}/${cid}/media/${media.split('/').pop()}`
+              ) || []
+            },
+            investmentReturns: campaignInfo.investmentReturns || {}
+          }
+        };
+    
+        console.log("Documents après nettoyage des chemins:", projectMetadata.firebase.documents);
+        setProjectData(projectMetadata);
+    
+        // 4. Événements blockchain
         const [purchaseEvents, refundEvents] = await Promise.all([
-          contract.queryFilter(purchaseFilter),
-          contract.queryFilter(refundFilter)
+          contract.queryFilter(contract.filters.SharesPurchased()),
+          contract.queryFilter(contract.filters.SharesRefunded())
         ]);
-  
+    
         const allTxs = [
           ...purchaseEvents.map(event => ({
             id: event.blockNumber,
@@ -142,12 +124,12 @@ export default function ProjectDetails({ selectedProject, onClose }) {
             value: ethers.utils.formatEther(event.args.refundAmount || "0")
           }))
         ].sort((a,b) => b.id - a.id);
-  
+    
         setTransactions(allTxs);
         setError(null);
-        
+    
       } catch (err) {
-        console.error("Erreur:", err);
+        console.error("Erreur lors du chargement des données:", err);
         setError(err.message);
       } finally {
         setIsLoading(false);
@@ -253,19 +235,28 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     return (
       <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
         <DialogContent>
-          <DialogTitle>Erreur</DialogTitle>
+          <DialogHeader>
+            <DialogTitle>Erreur</DialogTitle>
+            <DialogDescription>
+              Une erreur s'est produite lors du chargement des détails.
+            </DialogDescription>
+          </DialogHeader>
           <p className="text-red-500">{error}</p>
         </DialogContent>
       </Dialog>
     );
   }
-  
+
   if (isLoading) {
     return (
       <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
         <DialogContent>
-          <DialogTitle>Chargement</DialogTitle>
-          <p>Chargement des détails...</p>
+          <DialogHeader>
+            <DialogTitle>Chargement</DialogTitle>
+            <DialogDescription>
+              Chargement des détails de la campagne en cours...
+            </DialogDescription>
+          </DialogHeader>
         </DialogContent>
       </Dialog>
     );
