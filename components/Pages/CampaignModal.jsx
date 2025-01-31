@@ -305,43 +305,41 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       
       const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
   
-      // Tout est uploadé ENSEMBLE dans le même dossier IPFS
-      const filesToUpload = [
-        // L'image NFT
+      // Upload des métadonnées NFT sur IPFS
+      const metadata = {
+        name: campaignData.name,
+        description: campaignData.description,
+        image: `ipfs://${campaignFolderName}/nft-card.png`,
+        external_url: `https://firebase-storage-url/${campaignFolderName}`
+      };
+  
+      const metadataBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
+      const metadataFile = new File([metadataBlob], 'metadata.json');
+  
+      const ipfsResult = await pinataService.uploadDirectory(campaignFolderName, [
         {
           content: campaignData.cardImage,
           path: `${campaignFolderName}/nft-card.png`
         },
-        // Les metadata dans le MÊME dossier
         {
-          content: new Blob([JSON.stringify({
-            tokenId: 1
-          })], {type: 'application/json'}),
+          content: metadataFile,
           path: `${campaignFolderName}/metadata.json`
-        },
-        {
-          content: new Blob([JSON.stringify({
-            image: `ipfs://${campaignFolderName}/nft-card.png`
-          })], {type: 'application/json'}),
-          path: `${campaignFolderName}/nft-metadata.json` 
         }
-      ];
+      ]);
   
-      // Un seul upload qui met TOUT dans le même dossier
-      const ipfsResult = await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
       if (!ipfsResult.success) {
         throw new Error("Échec de l'upload des métadonnées NFT");
       }
   
-      // Utiliser les fonctions existantes de firebase.js
+      // Initialisation des dossiers Firebase
       await initializeCampaignFolders(campaignFolderName);
       await updateDescription(campaignFolderName, campaignData.description);
       await updateSocialLinks(campaignFolderName, campaignData.socials);
   
+      // Upload des documents sur Firebase
       const uploadPromises = [];
       const documents = {};
   
-      // Upload des documents s'ils existent
       if (campaignData.documents.whitepaper?.length) {
         uploadPromises.push(
           uploadDocument(campaignFolderName, 'whitepaper', campaignData.documents.whitepaper[0])

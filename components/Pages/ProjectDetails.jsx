@@ -5,11 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DollarSign, Calendar, Share2, Star, FileText } from 'lucide-react';
+import { DollarSign, Calendar, Share2, Star, FileText, Globe, Twitter, Github, MessageSquare, Send, BookOpen } from 'lucide-react';
 import { ethers } from 'ethers';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import CampaignABI from '@/ABI/CampaignABI.json';
-
+import { fetchDocumentsFromFirebase } from '@/lib/firebase/firebase';
 const DEFAULT_PROJECT = {
   name: "Nom du projet",
   raised: "0",
@@ -67,42 +67,83 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     
         const contract = new ethers.Contract(project.id, CampaignABI, provider);
     
-        // 1. Récupérer le metadata URI et le CID
+        // 1. Récupérer les métadonnées IPFS
         const metadataURI = await contract.metadata();
         const cid = metadataURI.replace('ipfs://', '').split('/')[0];
-        const basePath = `${PINATA_GATEWAY}/${cid}`;
+        const basePath = `${PINATA_GATEWAY}/${cid}/metadata.json`;
+        
+        console.log("1. Chemin IPFS:", basePath);
+        
+        const response = await fetch(basePath);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const metadata = await response.json();
+        console.log("2. Métadonnées IPFS:", metadata);
     
-        // 2. Récupérer campaign-info.json
-        const campaignInfoResponse = await fetch(`${basePath}/campaign-info.json`);
-        const campaignInfo = await campaignInfoResponse.json();
+        // 2. Extraire le nom du dossier de campagne pour Firebase
+        const campaignFolderName = metadata.external_url.split('/').pop();
+        console.log("3. Nom du dossier:", campaignFolderName);
     
-        // 3. Construction du metadata avec les fichiers en retirant campaign_ifps des chemins
+        // 3. Récupérer les fichiers
+        console.log("4. Début récupération fichiers Firebase");
+        const [rootFiles, whitepaperFiles, pitchDeckFiles, legalFiles, mediaFiles] = await Promise.all([
+          fetchDocumentsFromFirebase(campaignFolderName),
+          fetchDocumentsFromFirebase(`${campaignFolderName}/whitepaper`),
+          fetchDocumentsFromFirebase(`${campaignFolderName}/pitch-deck`),
+          fetchDocumentsFromFirebase(`${campaignFolderName}/legal`),
+          fetchDocumentsFromFirebase(`${campaignFolderName}/media`)
+        ]);
+    
+        console.log("5. Fichiers racine:", rootFiles);
+    
+        // 4. Récupérer description.txt et socials.json avec leur contenu
+        const descriptionFile = rootFiles.find(f => f.name === 'description.txt');
+        const socialsFile = rootFiles.find(f => f.name === 'socials.json');
+    
+        console.log("10. Fichier description trouvé:", descriptionFile);
+        console.log("11. Fichier socials trouvé:", socialsFile);
+    
+        // 5. Utiliser directement content au lieu de fetch
+        let description = '';
+        let socials = {};
+    
+        if (descriptionFile?.content) {
+          description = descriptionFile.content;
+          console.log("12. Description depuis Firebase:", description);
+        } else if (metadata.description) {
+          description = metadata.description;
+          console.log("13. Description depuis IPFS:", description);
+        }
+    
+        if (socialsFile?.content) {
+          try {
+            socials = JSON.parse(socialsFile.content);
+            console.log("14. Socials parsés:", socials);
+          } catch (err) {
+            console.error("15. Erreur parsing socials:", err);
+          }
+        }
+    
+        // 6. Construction du projectMetadata
         const projectMetadata = {
-          ...campaignInfo,
+          ...metadata,
+          description: description,
           firebase: {
-            description: campaignInfo.description,
             documents: {
-              whitepaper: campaignInfo.documents?.whitepaper 
-                ? `${PINATA_GATEWAY}/${cid}/whitepaper/${campaignInfo.documents.whitepaper.split('/').pop()}` 
-                : null,
-              pitchDeck: campaignInfo.documents?.pitchDeck 
-                ? `${PINATA_GATEWAY}/${cid}/pitch-deck/${campaignInfo.documents.pitchDeck.split('/').pop()}` 
-                : null,
-              legalDocuments: campaignInfo.documents?.legalDocuments?.map(doc => 
-                `${PINATA_GATEWAY}/${cid}/legal/${doc.split('/').pop()}`
-              ) || [],
-              media: campaignInfo.documents?.media?.map(media => 
-                `${PINATA_GATEWAY}/${cid}/media/${media.split('/').pop()}`
-              ) || []
+              whitepaper: whitepaperFiles.length > 0 ? whitepaperFiles[0].url : null,
+              pitchDeck: pitchDeckFiles.length > 0 ? pitchDeckFiles[0].url : null,
+              legalDocuments: legalFiles.map(doc => doc.url),
+              media: mediaFiles.map(doc => doc.url)
             },
-            investmentReturns: campaignInfo.investmentReturns || {}
+            socials: socials
           }
         };
     
-        console.log("Documents après nettoyage des chemins:", projectMetadata.firebase.documents);
+        console.log("16. ProjectMetadata final:", projectMetadata);
         setProjectData(projectMetadata);
     
-        // 4. Événements blockchain
+        // 7. Transactions blockchain
         const [purchaseEvents, refundEvents] = await Promise.all([
           contract.queryFilter(contract.filters.SharesPurchased()),
           contract.queryFilter(contract.filters.SharesRefunded())
@@ -125,17 +166,18 @@ export default function ProjectDetails({ selectedProject, onClose }) {
           }))
         ].sort((a,b) => b.id - a.id);
     
+        console.log("17. Transactions:", allTxs);
         setTransactions(allTxs);
         setError(null);
     
       } catch (err) {
-        console.error("Erreur lors du chargement des données:", err);
+        console.error("18. Erreur globale:", err);
         setError(err.message);
       } finally {
         setIsLoading(false);
       }
     };
-  
+
     loadData();
   }, [project?.id]);
 
@@ -326,7 +368,42 @@ export default function ProjectDetails({ selectedProject, onClose }) {
                 </CardContent>
               </Card>
             </div>
-
+<div className="flex items-center justify-center space-x-6 mb-6">
+  {projectData?.firebase?.socials && (
+    <>
+      {projectData.firebase.socials.website && (
+        <a href={projectData.firebase.socials.website} target="_blank" rel="noopener noreferrer">
+          <Globe className="w-6 h-6 text-lime-500" />
+        </a>
+      )}
+      {projectData.firebase.socials.twitter && (
+        <a href={projectData.firebase.socials.twitter} target="_blank" rel="noopener noreferrer">
+          <Twitter className="w-6 h-6 text-lime-500" />
+        </a>
+      )}
+      {projectData.firebase.socials.github && (
+        <a href={projectData.firebase.socials.github} target="_blank" rel="noopener noreferrer">
+          <Github className="w-6 h-6 text-lime-500" />
+        </a>
+      )}
+      {projectData.firebase.socials.discord && (
+        <a href={projectData.firebase.socials.discord} target="_blank" rel="noopener noreferrer">
+          <MessageSquare className="w-6 h-6 text-lime-500" />
+        </a>
+      )}
+      {projectData.firebase.socials.telegram && (
+        <a href={projectData.firebase.socials.telegram} target="_blank" rel="noopener noreferrer">
+          <Send className="w-6 h-6 text-lime-500" />
+        </a>
+      )}
+      {projectData.firebase.socials.medium && (
+        <a href={projectData.firebase.socials.medium} target="_blank" rel="noopener noreferrer">
+          <BookOpen className="w-6 h-6 text-lime-500" />
+        </a>
+      )}
+    </>
+  )}
+</div>
             <div className="bg-gray-50 dark:bg-neutral-900 p-6 rounded-lg">
               <div className="flex mb-2 items-center justify-between">
                 <span className="text-xs font-semibold">Progression</span>
@@ -349,7 +426,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     <div className="mb-8">
       <h3 className="text-2xl font-semibold mb-4">Description</h3>
       <p className="text-gray-600 dark:text-gray-300">
-        {projectData.firebase?.description || project.description}
+      {projectData.description}
       </p>
     </div>
 
