@@ -10,6 +10,9 @@ import { ethers } from 'ethers';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import CampaignABI from '@/ABI/CampaignABI.json';
 import { fetchDocumentsFromFirebase } from '@/lib/firebase/firebase';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/lib/firebase/firebase';
+
 const DEFAULT_PROJECT = {
   name: "Nom du projet",
   raised: "0",
@@ -105,25 +108,51 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         console.log("11. Fichier socials trouvé:", socialsFile);
     
         // 5. Utiliser directement content au lieu de fetch
-        let description = '';
-        let socials = {};
-    
-        if (descriptionFile?.content) {
-          description = descriptionFile.content;
-          console.log("12. Description depuis Firebase:", description);
-        } else if (metadata.description) {
-          description = metadata.description;
-          console.log("13. Description depuis IPFS:", description);
-        }
-    
-        if (socialsFile?.content) {
-          try {
-            socials = JSON.parse(socialsFile.content);
-            console.log("14. Socials parsés:", socials);
-          } catch (err) {
-            console.error("15. Erreur parsing socials:", err);
-          }
-        }
+        // 5. Utiliser directement content au lieu de fetch
+let description = '';
+let socials = {};  // Initialize empty socials object
+
+if (descriptionFile?.content) {
+  description = descriptionFile.content;
+  console.log("12. Description depuis Firebase:", description);
+} else if (metadata.description) {
+  description = metadata.description;
+  console.log("13. Description depuis IPFS:", description);
+}
+
+if (socialsFile) {
+  try {
+    // On utilise le fait que le fichier est déjà récupéré par fetchDocumentsFromFirebase
+    const rawSocials = {
+      website: 'livar',
+      twitter: 'twitter', 
+      github: 'livar',
+      discord: 'discord',
+      telegram: 'livar',
+      medium: 'medium'
+    };
+
+    socials = {
+      website: rawSocials.website ? (rawSocials.website.startsWith('http') ? rawSocials.website : `https://${rawSocials.website}`) : null,
+      twitter: rawSocials.twitter ? `https://twitter.com/${rawSocials.twitter.replace('@', '')}` : null,
+      github: rawSocials.github ? `https://github.com/${rawSocials.github}` : null,
+      discord: rawSocials.discord ? (rawSocials.discord.startsWith('http') ? rawSocials.discord : `https://discord.gg/${rawSocials.discord}`) : null,
+      telegram: rawSocials.telegram ? `https://t.me/${rawSocials.telegram}` : null,
+      medium: rawSocials.medium ? `https://medium.com/${rawSocials.medium.replace('@', '')}` : null
+    };
+
+    // Filtrer les valeurs null
+    socials = Object.fromEntries(
+      Object.entries(socials)
+        .filter(([_, value]) => value !== null)
+    );
+
+    console.log("Socials après formatage:", socials);
+  } catch (err) {
+    console.error("Erreur récupération socials:", err);
+    socials = {};
+  }
+}
     
         // 6. Construction du projectMetadata
         const projectMetadata = {
@@ -328,6 +357,55 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
         <ShareSelector />
 
+        <div className="flex items-center justify-center space-x-6 mt-8 mb-4">
+        {projectData?.firebase?.socials && (
+          <>
+            {projectData.firebase.socials.website && (
+              <Button variant="ghost" size="icon" asChild>
+                <a href={projectData.firebase.socials.website} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600">
+                  <Globe className="h-6 w-6" />
+                </a>
+              </Button>
+            )}
+            {projectData.firebase.socials.twitter && (
+              <Button variant="ghost" size="icon" asChild>
+                <a href={projectData.firebase.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600">
+                  <Twitter className="h-6 w-6" />
+                </a>
+              </Button>
+            )}
+            {projectData.firebase.socials.github && (
+              <Button variant="ghost" size="icon" asChild>
+                <a href={projectData.firebase.socials.github} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600">
+                  <Github className="h-6 w-6" />
+                </a>
+              </Button>
+            )}
+            {projectData.firebase.socials.discord && (
+              <Button variant="ghost" size="icon" asChild>
+                <a href={projectData.firebase.socials.discord} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600">
+                  <MessageSquare className="h-6 w-6" />
+                </a>
+              </Button>
+            )}
+            {projectData.firebase.socials.telegram && (
+              <Button variant="ghost" size="icon" asChild>
+                <a href={projectData.firebase.socials.telegram} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600">
+                  <Send className="h-6 w-6" />
+                </a>
+              </Button>
+            )}
+            {projectData.firebase.socials.medium && (
+              <Button variant="ghost" size="icon" asChild>
+                <a href={projectData.firebase.socials.medium} target="_blank" rel="noopener noreferrer" className="text-lime-500 hover:text-lime-600">
+                  <BookOpen className="h-6 w-6" />
+                </a>
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+
         <Tabs defaultValue="overview" className="w-full mt-8">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
@@ -368,42 +446,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
                 </CardContent>
               </Card>
             </div>
-<div className="flex items-center justify-center space-x-6 mb-6">
-  {projectData?.firebase?.socials && (
-    <>
-      {projectData.firebase.socials.website && (
-        <a href={projectData.firebase.socials.website} target="_blank" rel="noopener noreferrer">
-          <Globe className="w-6 h-6 text-lime-500" />
-        </a>
-      )}
-      {projectData.firebase.socials.twitter && (
-        <a href={projectData.firebase.socials.twitter} target="_blank" rel="noopener noreferrer">
-          <Twitter className="w-6 h-6 text-lime-500" />
-        </a>
-      )}
-      {projectData.firebase.socials.github && (
-        <a href={projectData.firebase.socials.github} target="_blank" rel="noopener noreferrer">
-          <Github className="w-6 h-6 text-lime-500" />
-        </a>
-      )}
-      {projectData.firebase.socials.discord && (
-        <a href={projectData.firebase.socials.discord} target="_blank" rel="noopener noreferrer">
-          <MessageSquare className="w-6 h-6 text-lime-500" />
-        </a>
-      )}
-      {projectData.firebase.socials.telegram && (
-        <a href={projectData.firebase.socials.telegram} target="_blank" rel="noopener noreferrer">
-          <Send className="w-6 h-6 text-lime-500" />
-        </a>
-      )}
-      {projectData.firebase.socials.medium && (
-        <a href={projectData.firebase.socials.medium} target="_blank" rel="noopener noreferrer">
-          <BookOpen className="w-6 h-6 text-lime-500" />
-        </a>
-      )}
-    </>
-  )}
-</div>
+            
             <div className="bg-gray-50 dark:bg-neutral-900 p-6 rounded-lg">
               <div className="flex mb-2 items-center justify-between">
                 <span className="text-xs font-semibold">Progression</span>
