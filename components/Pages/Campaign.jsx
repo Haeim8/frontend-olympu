@@ -18,10 +18,9 @@ import { useAddress, useContract, useContractRead, useContractWrite } from '@thi
 import { ethers } from 'ethers';
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 import CampaignABI from '@/ABI/CampaignABI.json';
-import { pinataService } from '@/lib/services/storage';
 import DocumentManager from '@/components/Systeme/DocumentManager';
+import { uploadToFirebaseFolder } from '@/lib/firebase/firebase';
 
-const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
 
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
@@ -46,26 +45,12 @@ export default function Campaign() {
   const [isLoadingInvestors, setIsLoadingInvestors] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
-  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const { contract: platformContract } = useContract(PLATFORM_ADDRESS, DivarProxyABI);
   const { contract: campaignContract } = useContract(campaignAddress, CampaignABI);
-
   const [isReleasingEscrow, setIsReleasingEscrow] = useState(false);
   const [escrowReleaseError, setEscrowReleaseError] = useState(null);
 
-  const handleDocumentsUpdate = async (updatedDocs) => {  
-    setCampaignData(prev => ({
-      ...prev, 
-      documents: updatedDocs
-    }));
-  };
-
-  const handleSocialsUpdate = async (updatedSocials) => {
-    setCampaignData(prev => ({
-      ...prev,
-      socials: updatedSocials
-    }));
-  };
+  
 
   const { data: userCampaigns } = useContractRead(
     platformContract, 
@@ -88,17 +73,9 @@ export default function Campaign() {
       setIsLoading(true);
       
       try {
-        // 1. Initialisation IPFS
-        const metadata = await campaignContract.call("metadata");
-        const [, cid] = metadata.match(/ipfs:\/\/(.*?)\//);
-        const baseUrl = `${PINATA_GATEWAY}/${cid}`;
-        
-        // 2. Chargement des données de la campagne
-        const response = await fetch(`${baseUrl}/campaign-info.json`);
-        const campaignInfo = await response.json();
-        
-        // 3. Chargement des données du contrat
-        const [roundData, totalSupply] = await Promise.all([
+        // Chargement du nom et des données du contrat
+        const [name, roundData, totalSupply] = await Promise.all([
+          campaignContract.call("name"),  // Ajout du nom
           campaignContract.call("getCurrentRound"),
           campaignContract.call("totalSupply")
         ]);
@@ -106,11 +83,8 @@ export default function Campaign() {
         const now = Date.now();
         const endTime = roundData.endTime ? roundData.endTime.toNumber() * 1000 : 0;
   
-        // 4. Mise à jour globale
         setCampaignData({
-          ...campaignInfo,
-          ipfsHash: cid,
-          baseUrl,
+          name,  // Le nom de la campagne
           status: now < endTime ? "En cours" : "Finalisée",
           raised: ethers.utils.formatEther(roundData.fundsRaised),
           goal: ethers.utils.formatEther(roundData.targetAmount),
@@ -131,45 +105,50 @@ export default function Campaign() {
     }
   }, [campaignContract, campaignAddress, platformContract]);
 
-const handleDocumentDelete = async (section, fileName) => {
-  try {
-    const basePath = `https://jade-hilarious-gecko-392.mypinata.cloud/ipfs/${campaignData.ipfsHash}`;
-    
-    // 1. Lire l'index actuel
-    const campaignInfoResponse = await fetch(`${basePath}/campaign-info.json`);
-    let campaignInfo = await campaignInfoResponse.json();
-
-    // 2. Supprimer le fichier de l'index
-    if (campaignInfo.documents && campaignInfo.documents[section]) {
-      delete campaignInfo.documents[section];
-    }
-
-    // 3. Upload du nouvel index
-    await pinataService.uploadJSON(campaignInfo, {
-      pinataMetadata: {
-        name: 'campaign-info.json'
-      }
-    });
-
-    // 4. Mettre à jour l'UI
-    setDocuments(prev => ({
-      ...prev,
-      [section]: prev[section].filter(doc => doc.name !== fileName)
-    }));
-
-  } catch (error) {
-    console.error("Erreur suppression:", error);
-    alert("Erreur lors de la suppression");
-  }
-};
-
   useEffect(() => {
     if (userCampaigns && userCampaigns.length > 0) {
       setCampaignAddress(userCampaigns[0]);
     }
   }, [userCampaigns]);
 
- 
+  const handleNewsPublish = async () => {
+    try {
+      setIsLoading(true);
+  
+      const newsData = {
+        title: newsForm.title,
+        content: newsForm.content,
+        timestamp: new Date().toISOString()
+      };
+  
+      // Créer un sous-dossier news dans le dossier de la campagne
+      const newsFolder = `${campaignAddress}/news`;
+  
+      // Si des pièces jointes, les uploader
+      if (newsForm.attachments.length > 0) {
+        const attachmentUploads = await Promise.all(
+          Array.from(newsForm.attachments).map(file => 
+            uploadToFirebaseFolder(`${newsFolder}/attachments`, file)
+          )
+        );
+        newsData.attachments = attachmentUploads;
+      }
+  
+      // Sauvegarder les données de l'actualité
+      const newsFile = new Blob([JSON.stringify(newsData)], { type: 'application/json' });
+      await uploadToFirebaseFolder(newsFolder, new File([newsFile], `${Date.now()}.json`));
+  
+      setShowPromoteDialog(false);
+      setNewsForm({ title: '', content: '', attachments: [] });
+      alert("Actualité publiée avec succès!");
+      
+    } catch (error) {
+      console.error("Erreur publication:", error);
+      alert("Erreur lors de la publication");
+    } finally {
+      setIsLoading(false);
+    }
+  }; 
 
   
   
@@ -343,35 +322,7 @@ const handleNewsFormChange = (field, value) => {
   setNewsForm(prev => ({ ...prev, [field]: value }));
 };
 
-const handleNewsPublish = async () => {
-  try {
-    const newsData = {
-      title: newsForm.title,
-      content: newsForm.content,
-      timestamp: new Date().toISOString()
-    };
 
-    // Upload les pièces jointes
-    if (newsForm.attachments.length > 0) {
-      const attachmentUploads = await Promise.all(
-        Array.from(newsForm.attachments).map(file => pinataService.uploadFile(file))
-      );
-      newsData.attachments = attachmentUploads.map(upload => ({
-        name: upload.file.name,
-        hash: upload.IpfsHash
-      }));
-    }
-
-    // Uploader l'actualité
-    const result = await pinataService.uploadJSON(newsData);
-    setShowPromoteDialog(false);
-    setNewsForm({ title: '', content: '', attachments: [] });
-    
-  } catch (error) {
-    console.error("Erreur publication:", error);
-    alert("Erreur lors de la publication");
-  }
-};
 
   if (isLoading) {
     return <div>Chargement...</div>;
@@ -625,8 +576,7 @@ const handleNewsPublish = async () => {
         <TabsContent value="documents">
   <DocumentManager 
     campaignData={{
-      ipfsHash: campaignData.ipfsHash,
-      address: campaignAddress
+      folderName: campaignAddress // On passe l'adresse du contrat comme nom de dossier
     }}
     onUpdate={(docs) => {
       setCampaignData(prev => ({

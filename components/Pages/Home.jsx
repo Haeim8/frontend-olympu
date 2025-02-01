@@ -8,16 +8,14 @@ import CampaignModal from './CampaignModal';
 import ProjectDetails from './ProjectDetails';
 import { useContract, useContractRead } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 const PROVIDER_URL = `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+const campaignCache = new Map();
+const BATCH_SIZE = 30;
+const BATCH_DELAY = 450;
 
 const PLATFORM_ABI = [
   {
@@ -91,80 +89,44 @@ export default function Home() {
     PLATFORM_ADDRESS,
     PLATFORM_ABI
   );
-  
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  const fetchWithRetry = async (fn, retries = 3, delayMs = 1000) => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await fn();
-      } catch (error) {
-        if (error.response?.status === 429 || error.message.includes('429')) {
-          if (i === retries - 1) throw error;
-          await delay(delayMs * Math.pow(2, i));
-          continue;
-        }
-        throw error;
-      }
-    }
-  };
+
 
 
   const { data: campaignAddresses, isLoading: addressesLoading } = useContractRead(
     platformContract,
     "getAllCampaigns"
   );
+ 
 
-  const fetchCampaignName = async (campaignAddress) => {
-    try {
-      const events = await platformContract.events.getEvents("CampaignCreated", {
-        filters: {
-          campaignAddress: campaignAddress
-        }
-      });
-      
-      if (events && events.length > 0) {
-        return events[0].data.name;
-      }
-    } catch (error) {
-      console.error(`Erreur lors de la récupération du nom pour ${campaignAddress}:`, error);
+  const getCachedCampaignData = async (address) => {
+    if (campaignCache.has(address)) {
+      return campaignCache.get(address);
     }
-    return null;
+    
+    const data = await fetchCampaignData(address);
+    if (data) {
+      campaignCache.set(address, data);
+    }
+    return data;
   };
 
-  const fetchCampaignStatus = async (campaignAddress) => {
-    return fetchWithRetry(async () => {
-      const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
-      const campaign = new ethers.Contract(
-        campaignAddress,
-        CAMPAIGN_ABI,
-        provider
-      );
-      
-      const roundInfo = await campaign.getCurrentRound();
-      
-      return {
-        isActive: roundInfo.isActive,
-        isFinalized: roundInfo.isFinalized,
-        fundsRaised: roundInfo.fundsRaised.toString(),
-        sharesSold: roundInfo.sharesSold.toString(),
-        roundNumber: roundInfo.roundNumber.toString(),
-        sharePrice: roundInfo.sharePrice.toString()
-      };
-    });
-  };
+  
+
 
   const fetchCampaignData = async (campaignAddress) => {
     if (!platformContract) return null;
   
-    try {
-      const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+    try { 
       const campaign = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
-      const campaignInfo = await platformContract.call("campaignRegistry", [campaignAddress]);
-      const statusInfo = await fetchCampaignStatus(campaignAddress);
+      
+      // Faire les appels en parallèle plutôt qu'en série
+      const [campaignInfo, roundInfo] = await Promise.all([
+        platformContract.call("campaignRegistry", [campaignAddress]),
+        campaign.getCurrentRound()
+      ]);
   
       if (!campaignInfo || !campaignInfo.campaignAddress) {
-        console.log(`Invalid campaign data for ${campaignAddress}`);
         return null;
       }
   
@@ -172,12 +134,12 @@ export default function Home() {
         id: campaignAddress,
         name: campaignInfo.name,
         sector: campaignInfo.category,
-        sharePrice: formatEthValue(statusInfo.sharePrice),
-        raised: formatEthValue(statusInfo.fundsRaised),
+        sharePrice: formatEthValue(roundInfo.sharePrice),
+        raised: formatEthValue(roundInfo.fundsRaised),
         goal: formatEthValue(campaignInfo.targetAmount),
         endDate: new Date(campaignInfo.creationTime.toNumber() * 1000).toLocaleDateString(),
-        isActive: statusInfo.isActive,
-        isFinalized: statusInfo.isFinalized,
+        isActive: roundInfo.isActive,
+        isFinalized: roundInfo.isFinalized,
         creator: campaignInfo.creator,
         creationTime: campaignInfo.creationTime.toNumber()
       };
@@ -197,26 +159,34 @@ export default function Home() {
     setError(null);
   
     try {
-      const results = [];
-      const batchSize = 3; // Traiter 3 campagnes à la fois
+      const results = []; // ← Il manquait cette déclaration
   
-      for (let i = 0; i < campaignAddresses.length; i += batchSize) {
-        const batch = campaignAddresses.slice(i, i + batchSize);
-        const batchResults = await Promise.all(
-          batch.map(address => 
-            fetchWithRetry(() => fetchCampaignData(address))
-          )
-        );
-        results.push(...batchResults);
+      // Pré-filtrer les adresses
+      const validAddresses = campaignAddresses.filter(addr => ethers.utils.isAddress(addr));
+  
+      for (let i = 0; i < validAddresses.length; i += BATCH_SIZE) {
+        const batch = validAddresses.slice(i, i + BATCH_SIZE);
         
-        if (i + batchSize < campaignAddresses.length) {
-          await delay(1000); // Attendre 1s entre chaque lot
+        const batchPromises = batch.map(address => 
+          getCachedCampaignData(address).catch(error => {
+            console.error(`Failed to fetch campaign ${address}:`, error);
+            return null;
+          })
+        );
+  
+        const batchResults = await Promise.all(batchPromises);
+        const validResults = batchResults.filter(result => result !== null);
+        results.push(...validResults); // On ajoute les nouveaux résultats
+  
+        const validCampaigns = results.filter(campaign => campaign !== null);
+        validCampaigns.sort((a, b) => b.creationTime - a.creationTime);
+        setProjects(validCampaigns);
+  
+        if (i + BATCH_SIZE < validAddresses.length) {
+          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
         }
       }
   
-      const validCampaigns = results.filter(campaign => campaign !== null);
-      validCampaigns.sort((a, b) => b.creationTime - a.creationTime);
-      setProjects(validCampaigns);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
       setError("Impossible de charger les campagnes. Veuillez réessayer plus tard.");

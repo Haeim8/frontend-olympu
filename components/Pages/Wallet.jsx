@@ -9,6 +9,11 @@ import CampaignABI from '@/ABI/CampaignABI.json';
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 
 const INVESTMENT_CONTRACT_ADDRESS = '0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941';
+const PROVIDER_URL = `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+const BATCH_SIZE = 30;
+const BATCH_DELAY = 450;
+const campaignCache = new Map();
 
 export default function Wallet() {
   const address = useAddress();
@@ -43,41 +48,43 @@ export default function Wallet() {
 
     async function fetchData() {
       try {
-        const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
         const proxyContract = new ethers.Contract(INVESTMENT_CONTRACT_ADDRESS, DivarProxyABI, provider);
         const campaigns = await proxyContract.getAllCampaigns();
         
         let totalNFTs = [];
-        const batchSize = 3; // Traiter 3 campagnes à la fois
-    
-        for (let i = 0; i < campaigns.length; i += batchSize) {
-          const batch = campaigns.slice(i, i + batchSize);
+        
+        for (let i = 0; i < campaigns.length; i += BATCH_SIZE) {
+          const batch = campaigns.slice(i, i + BATCH_SIZE);
           
           await Promise.all(
             batch.map(async (campaignAddress) => {
               try {
+                // Vérifier le cache
+                if (campaignCache.has(campaignAddress)) {
+                  return campaignCache.get(campaignAddress);
+                }
+    
                 const campaignContract = new ethers.Contract(campaignAddress, CampaignABI, provider);
-                const balance = await fetchWithRetry(() => campaignContract.balanceOf(address));
+                const balance = await campaignContract.balanceOf(address);
                 
                 if (balance.toNumber() > 0) {
-                  const investments = await fetchWithRetry(() => 
-                    campaignContract.getInvestments(address)
-                  );
-                  const campaignInfo = await fetchWithRetry(() => 
+                  const [investments, campaignInfo] = await Promise.all([
+                    campaignContract.getInvestments(address),
                     proxyContract.campaignRegistry(campaignAddress)
-                  );
+                  ]);
                   
-                  for (let j = 0; j < investments.length; j++) {
-                    const inv = investments[j];
-                    totalNFTs.push({
-                      id: `${campaignAddress}-${inv.tokenIds[0].toString()}`,
-                      amount: ethers.utils.formatEther(inv.amount),
-                      shares: inv.shares.toString(),
-                      campaign: campaignInfo.name || campaignAddress.slice(0, 6),
-                      timestamp: inv.timestamp.toNumber(),
-                      txHash: campaignAddress
-                    });
-                  }
+                  const nfts = investments.map(inv => ({
+                    id: `${campaignAddress}-${inv.tokenIds[0].toString()}`,
+                    amount: ethers.utils.formatEther(inv.amount),
+                    shares: inv.shares.toString(),
+                    campaign: campaignInfo.name || campaignAddress.slice(0, 6),
+                    timestamp: inv.timestamp.toNumber(),
+                    txHash: campaignAddress
+                  }));
+    
+                  // Mettre en cache
+                  campaignCache.set(campaignAddress, nfts);
+                  totalNFTs.push(...nfts);
                 }
               } catch (e) {
                 console.warn(`Erreur pour la campagne ${campaignAddress}:`, e);
@@ -85,32 +92,16 @@ export default function Wallet() {
             })
           );
     
-          // Attendre entre chaque lot
-          if (i + batchSize < campaigns.length) {
-            await delay(1000);
+          if (i + BATCH_SIZE < campaigns.length) {
+            await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
           }
+    
+          // Mise à jour progressive
+          updateWalletInfo(totalNFTs);
+          updateTransactions(totalNFTs);
         }
     
         setNftHoldings(totalNFTs);
-        
-        // Mise à jour des informations du wallet
-        setWalletInfo({
-          totalNFTs: totalNFTs.reduce((acc, nft) => acc + parseInt(nft.shares), 0),
-          totalInvested: totalNFTs.reduce((acc, nft) => acc + parseFloat(nft.amount), 0).toFixed(4),
-          activeProjects: new Set(totalNFTs.map(nft => nft.campaign)).size,
-          totalDividends: "0"
-        });
-    
-        // Création des transactions avec ID unique
-        setTransactions(totalNFTs.map((nft, index) => ({
-          id: `${nft.id}-${index}`,
-          type: 'Investment',
-          project: nft.campaign,
-          amount: `${nft.amount} ETH`,
-          date: new Date(nft.timestamp * 1000).toLocaleDateString(),
-          txHash: nft.txHash
-        })));
-    
         setIsLoading(false);
       } catch (error) {
         console.error('Error:', error);
@@ -121,7 +112,26 @@ export default function Wallet() {
 
     fetchData();
   }, [address]);
-
+  const updateWalletInfo = (nfts) => {
+    setWalletInfo({
+      totalNFTs: nfts.reduce((acc, nft) => acc + parseInt(nft.shares), 0),
+      totalInvested: nfts.reduce((acc, nft) => acc + parseFloat(nft.amount), 0).toFixed(4),
+      activeProjects: new Set(nfts.map(nft => nft.campaign)).size,
+      totalDividends: "0"
+    });
+  };
+  
+  const updateTransactions = (nfts) => {
+    setTransactions(nfts.map((nft, index) => ({
+      id: `${nft.id}-${index}`,
+      type: 'Investment',
+      project: nft.campaign,
+      amount: `${nft.amount} ETH`,
+      date: new Date(nft.timestamp * 1000).toLocaleDateString(),
+      txHash: nft.txHash
+    })));
+  };
+  
   if (!address) {
     return <p>Please connect your wallet</p>;
   }

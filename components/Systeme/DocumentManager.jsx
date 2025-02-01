@@ -3,11 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileText, Loader, Trash } from 'lucide-react';
-import { pinataService } from '@/lib/services/storage';
-import { useContract } from '@thirdweb-dev/react';
-import CampaignABI from '@/ABI/CampaignABI.json';
+import { fetchDocumentsFromFirebase, uploadToFirebaseFolder, deleteFileFromFirebase } from '@/lib/firebase/firebase';
 
-const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
 
 export default function DocumentManager({ campaignData, onUpdate }) {
   const [documents, setDocuments] = useState({
@@ -19,74 +16,34 @@ export default function DocumentManager({ campaignData, onUpdate }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Obtenir l'instance du contrat en utilisant le hook thirdweb
-  const { contract: campaignContract } = useContract(
-    campaignData?.address,
-    CampaignABI
-  );
 
   useEffect(() => {
-    if (campaignData?.ipfsHash && campaignContract) {
+    if (campaignData?.folderName) {
       loadDocuments();
     }
-  }, [campaignData, campaignContract]);
+  }, [campaignData]);
 
   const loadDocuments = async () => {
     try {
       setIsLoading(true);
-      setError(null);
-
-      if (!campaignContract) {
-        throw new Error("Contrat non initialisé");
-      }
-
-      // Récupérer les métadonnées du contrat
-      const metadata = await campaignContract.call("metadata");
-      console.log("Métadonnées brutes:", metadata);
-
-      // Extraire le CID
-      const [, cid] = metadata.match(/ipfs:\/\/(.*?)\//);
-      if (!cid) throw new Error("CID IPFS invalide");
-
-      // Construire l'URL de base
-      const baseUrl = `${PINATA_GATEWAY}/${cid}`;
-      console.log("URL de base:", baseUrl);
-
-      // Récupérer les informations de la campagne
-      const response = await fetch(`${baseUrl}/campaign-info.json`);
-      if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
       
-      const campaignInfo = await response.json();
+      // Charger les documents avec les mêmes chemins que ProjectDetails
+      const [whitepaperFiles, pitchDeckFiles, legalFiles, mediaFiles] = await Promise.all([
+        fetchDocumentsFromFirebase(`${campaignData.folderName}/whitepaper`),
+        fetchDocumentsFromFirebase(`${campaignData.folderName}/pitch-deck`),
+        fetchDocumentsFromFirebase(`${campaignData.folderName}/legal`),
+        fetchDocumentsFromFirebase(`${campaignData.folderName}/media`)
+      ]);
 
-      // Mettre à jour l'état des documents
-      if (campaignInfo.documents) {
-        setDocuments({
-          whitepaper: campaignInfo.documents.whitepaper ? [{
-            name: campaignInfo.documents.whitepaper.split('/').pop(),
-            url: `${baseUrl}/whitepaper/${campaignInfo.documents.whitepaper.split('/').pop()}`
-          }] : [],
-          pitchDeck: campaignInfo.documents.pitchDeck ? [{
-            name: campaignInfo.documents.pitchDeck.split('/').pop(),
-            url: `${baseUrl}/pitch-deck/${campaignInfo.documents.pitchDeck.split('/').pop()}`
-          }] : [],
-          // Ici on change legal pour legalDocuments
-          legal: Array.isArray(campaignInfo.documents.legalDocuments) 
-            ? campaignInfo.documents.legalDocuments.map(doc => ({
-                name: doc.split('/').pop(),
-                url: `${baseUrl}/legal/${doc.split('/').pop()}`
-              }))
-            : [],
-          media: Array.isArray(campaignInfo.documents.media)
-            ? campaignInfo.documents.media.map(media => ({
-                name: media.split('/').pop(),
-                url: `${baseUrl}/media/${media.split('/').pop()}`
-              }))
-            : []
-        });
-      }
+      setDocuments({
+        whitepaper: whitepaperFiles,
+        pitchDeck: pitchDeckFiles,
+        legal: legalFiles,
+        media: mediaFiles
+      });
 
     } catch (error) {
-      console.error("Erreur lors de l'initialisation:", error);
+      console.error("Erreur:", error);
       setError(error.message);
     } finally {
       setIsLoading(false);
@@ -96,25 +53,18 @@ export default function DocumentManager({ campaignData, onUpdate }) {
   const handleUpload = async (file, section) => {
     try {
       setIsLoading(true);
-      setError(null);
-  
-      const result = await pinataService.updateDirectoryWithFile(
-        campaignData.ipfsHash, 
-        file,
-        section
+
+      const folderPath = section === 'pitchDeck' ? 'pitch-deck' : section;
+      const url = await uploadToFirebaseFolder(
+        `${campaignData.folderName}/${folderPath}`, 
+        file
       );
-  
-      if (result.success) {
-        setDocuments(prev => ({
-          ...prev,
-          [section]: [...prev[section], {
-            name: file.name,
-            url: `${PINATA_GATEWAY}/${result.ipfsHash}/${section === 'pitchDeck' ? 'pitch-deck' : section}/${file.name}`,
-            hash: result.ipfsHash
-          }]
-        }));
-      }
-  
+
+      setDocuments(prev => ({
+        ...prev,
+        [section]: [...prev[section], { name: file.name, url }]
+      }));
+
     } catch (err) {
       console.error("Erreur upload:", err);
       setError(err.message);
@@ -125,31 +75,24 @@ export default function DocumentManager({ campaignData, onUpdate }) {
 
   const handleDelete = async (section, fileName) => {
     try {
-      // 1. Télécharger le dossier actuel
-      const currentFiles = await pinataService.downloadDirectory(campaignData.ipfsHash);
-  
-      // 2. Filtrer le fichier à supprimer
-      const updatedFiles = currentFiles.filter(
-        file => file.path !== `${section}/${fileName}`
+      setIsLoading(true);
+      
+      const folderPath = section === 'pitchDeck' ? 'pitch-deck' : section;
+      await deleteFileFromFirebase(
+        `${campaignData.folderName}/${folderPath}`, 
+        fileName
       );
-  
-      // 3. Mettre à jour IPFS
-      await pinataService.updateDirectory(campaignData.ipfsHash, updatedFiles);
-  
-      // 4. Mettre à jour l'UI
-      const updatedDocs = {
-        ...documents,
-        [section]: documents[section].filter(doc => doc.name !== fileName)
-      };
-  
-      setDocuments(updatedDocs);
-      if (onUpdate) {
-        onUpdate(updatedDocs);
-      }
-  
+
+      setDocuments(prev => ({
+        ...prev,
+        [section]: prev[section].filter(doc => doc.name !== fileName)
+      }));
+
     } catch (err) {
       console.error("Erreur suppression:", err);
-      setError("Erreur lors de la suppression");
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
