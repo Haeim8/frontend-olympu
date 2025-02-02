@@ -11,11 +11,11 @@ import { ethers } from 'ethers';
 
 
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
-const PROVIDER_URL = `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+const PROVIDER_URL = `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY2}`;
 const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
 const campaignCache = new Map();
 const BATCH_SIZE = 30;
-const BATCH_DELAY = 450;
+const BATCH_DELAY = 500;
 
 const PLATFORM_ABI = [
   {

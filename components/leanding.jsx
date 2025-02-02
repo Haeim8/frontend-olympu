@@ -41,6 +41,12 @@ export default function Home() {
     "isUserRegistered",
     [address]
   );
+ 
+  const { data: registrationFeeETH, isLoading: isFeeLoading } = useContractRead(
+    contract,
+    "getRegistrationFeeETH",
+    []
+  );
 
   useEffect(() => {
     if (isRegisteredData !== undefined) {
@@ -119,41 +125,43 @@ export default function Home() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setRegistrationError(null);
+  e.preventDefault();
+  setIsSubmitting(true);
+  setRegistrationError(null);
 
-    try {
-      await setDoc(doc(db, "users", address), {
-        username: formData.username,
-        xAccount: formData.xAccount,
-        socialMedia: formData.socialMedia,
-        photo: formData.photo,
+  try {
+    await setDoc(doc(db, "users", address), {
+      username: formData.username,
+      xAccount: formData.xAccount,
+      socialMedia: formData.socialMedia,
+      photo: formData.photo,
+    });
+
+    console.log("Profil créé:", formData);
+    setShowSignup(false);
+    setUserExists(true);
+
+    if (contract && registrationFeeETH) {
+      setRegistrationLoading(true);
+      console.log("Appel de la fonction registerUser");
+      const tx = await contract.call("registerUser", [], {
+        value: registrationFeeETH
       });
-
-      console.log("Profil créé:", formData);
-      setShowSignup(false);
-      setUserExists(true);
-
-      if (contract) {
-        setRegistrationLoading(true);
-        console.log("Appel de la fonction registerUser avec 0.05 ETH");
-        const tx = await contract.call("registerUser", [], { value: ethers.utils.parseEther("0.05") });
-        console.log("Transaction réussie:", tx);
-
-        await tx.wait();
-
-        setIsRegistered(true);
-        alert("Inscription réussie !");
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'inscription:", error);
-      setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
-    } finally {
-      setIsSubmitting(false);
-      setRegistrationLoading(false);
+      
+      console.log("Transaction réussie:", tx);
+      await tx.wait();
+      
+      setIsRegistered(true);
+      alert("Inscription réussie !");
     }
-  };
+  } catch (error) {
+    console.error("Erreur lors de l'inscription:", error);
+    setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
+  } finally {
+    setIsSubmitting(false);
+    setRegistrationLoading(false);
+  }
+};
 
   return (
     <div className={`min-h-screen ${darkMode ? "dark" : ""} text-sm`}>
@@ -339,35 +347,35 @@ export default function Home() {
                         </Button>
                       ) : (
                         <Button
-                          variant="default"
-                          className="bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600 font-medium shadow-lg w-full sm:w-auto"
-                          onClick={async () => {
-                            try {
-                              setRegistrationLoading(true);
-                              console.log("Appel de la fonction registerUser avec 0.05 ETH");
-                              const tx = await contract.call("registerUser", [], {
-                                value: ethers.utils.parseEther("0.05"),
-                              });
-                              console.log("Transaction réussie:", tx);
-
-                              await tx.wait();
-
-                              setIsRegistered(true);
-                              
-
-                              alert("Inscription réussie !");
-                              checkUserProfileAndContract();
-                            } catch (error) {
-                              console.error("Erreur lors de l'inscription:", error);
-                              setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
-                            } finally {
-                              setRegistrationLoading(false);
-                            }
-                          }}
-                          disabled={registrationLoading}
-                        >
-                          {registrationLoading ? "Inscription en cours..." : "S'inscrire sur le Smart Contract"}
-                        </Button>
+                        variant="default"
+                        className="bg-red-500 text-white hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600 font-medium shadow-lg w-full sm:w-auto"
+                        onClick={async () => {
+                          try {
+                            setRegistrationLoading(true);
+                            console.log("Appel de la fonction registerUser");
+                            const tx = await contract.call("registerUser", [], {
+                              value: registrationFeeETH
+                            });
+                            console.log("Transaction réussie:", tx);
+                      
+                            await tx.wait();
+                      
+                            setIsRegistered(true);
+                            alert("Inscription réussie !");
+                            checkUserProfileAndContract();
+                          } catch (error) {
+                            console.error("Erreur lors de l'inscription:", error);
+                            setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
+                          } finally {
+                            setRegistrationLoading(false);
+                          }
+                        }}
+                        disabled={registrationLoading || isFeeLoading}
+                      >
+                        {registrationLoading ? "Inscription en cours..." : 
+                         isFeeLoading ? "Chargement des frais..." : 
+                         "S'inscrire sur le Smart Contract"}
+                      </Button>
                       )
                     ) : (
                       <Button

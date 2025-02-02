@@ -16,55 +16,63 @@ export default function DocumentManager({ campaignData, onUpdate }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-
   useEffect(() => {
-    if (campaignData?.folderName) {
-      loadDocuments();
-    }
-  }, [campaignData]);
-
-  const loadDocuments = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Charger les documents avec les mêmes chemins que ProjectDetails
-      const [whitepaperFiles, pitchDeckFiles, legalFiles, mediaFiles] = await Promise.all([
-        fetchDocumentsFromFirebase(`${campaignData.folderName}/whitepaper`),
-        fetchDocumentsFromFirebase(`${campaignData.folderName}/pitch-deck`),
-        fetchDocumentsFromFirebase(`${campaignData.folderName}/legal`),
-        fetchDocumentsFromFirebase(`${campaignData.folderName}/media`)
-      ]);
-
-      setDocuments({
-        whitepaper: whitepaperFiles,
-        pitchDeck: pitchDeckFiles,
-        legal: legalFiles,
-        media: mediaFiles
-      });
-
-    } catch (error) {
-      console.error("Erreur:", error);
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const loadDocs = async () => {
+      if (!campaignData?.folderName) return;
+  
+      try {
+        console.log("Dossier pour DocumentManager:", campaignData.folderName);
+        
+        const [whitepaperFiles, pitchDeckFiles, legalFiles, mediaFiles] = await Promise.all([
+          fetchDocumentsFromFirebase(`${campaignData.folderName}/whitepaper`),
+          fetchDocumentsFromFirebase(`${campaignData.folderName}/pitch-deck`),
+          fetchDocumentsFromFirebase(`${campaignData.folderName}/legal`),
+          fetchDocumentsFromFirebase(`${campaignData.folderName}/media`)
+        ]);
+  
+        console.log("Whitepaper:", whitepaperFiles);
+        console.log("Pitch Deck:", pitchDeckFiles);
+        console.log("Documents légaux:", legalFiles);
+        console.log("Média:", mediaFiles);
+  
+        setDocuments({
+          whitepaper: whitepaperFiles,
+          pitchDeck: pitchDeckFiles, 
+          legal: legalFiles,
+          media: mediaFiles
+        });
+  
+      } catch (error) {
+        console.error("Erreur DocumentManager:", error);
+      }
+    };
+  
+    loadDocs();
+  }, [campaignData?.folderName]);
+  
 
   const handleUpload = async (file, section) => {
     try {
       setIsLoading(true);
-
+      
+      // Vérification que folderName existe
+      if (!campaignData?.folderName) {
+        setError("Nom de dossier non disponible");
+        return;
+      }
+      
       const folderPath = section === 'pitchDeck' ? 'pitch-deck' : section;
+      
       const url = await uploadToFirebaseFolder(
         `${campaignData.folderName}/${folderPath}`, 
         file
       );
-
+  
       setDocuments(prev => ({
         ...prev,
         [section]: [...prev[section], { name: file.name, url }]
       }));
-
+  
     } catch (err) {
       console.error("Erreur upload:", err);
       setError(err.message);
@@ -72,22 +80,29 @@ export default function DocumentManager({ campaignData, onUpdate }) {
       setIsLoading(false);
     }
   };
-
+  
   const handleDelete = async (section, fileName) => {
     try {
       setIsLoading(true);
       
+      // Vérification que folderName existe
+      if (!campaignData?.folderName) {
+        setError("Nom de dossier non disponible");
+        return;
+      }
+      
       const folderPath = section === 'pitchDeck' ? 'pitch-deck' : section;
+      
       await deleteFileFromFirebase(
         `${campaignData.folderName}/${folderPath}`, 
         fileName
       );
-
+  
       setDocuments(prev => ({
         ...prev,
         [section]: prev[section].filter(doc => doc.name !== fileName)
       }));
-
+  
     } catch (err) {
       console.error("Erreur suppression:", err);
       setError(err.message);
@@ -103,7 +118,13 @@ export default function DocumentManager({ campaignData, onUpdate }) {
       </div>
     );
   }
-
+  if (!campaignData?.folderName) {
+    return (
+      <div className="text-center text-red-500">
+        Aucun dossier de campagne disponible
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
       {error && (

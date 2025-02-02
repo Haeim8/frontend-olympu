@@ -21,7 +21,7 @@ import CampaignABI from '@/ABI/CampaignABI.json';
 import DocumentManager from '@/components/Systeme/DocumentManager';
 import { uploadToFirebaseFolder } from '@/lib/firebase/firebase';
 
-
+const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
 export default function Campaign() {
@@ -49,7 +49,7 @@ export default function Campaign() {
   const { contract: campaignContract } = useContract(campaignAddress, CampaignABI);
   const [isReleasingEscrow, setIsReleasingEscrow] = useState(false);
   const [escrowReleaseError, setEscrowReleaseError] = useState(null);
-
+  const { mutateAsync: claimEscrow } = useContractWrite(campaignContract, "claimEscrow");
   
 
   const { data: userCampaigns } = useContractRead(
@@ -73,23 +73,33 @@ export default function Campaign() {
       setIsLoading(true);
       
       try {
-        // Chargement du nom et des données du contrat
+        // 1. D'abord récupérer les métadonnées IPFS
+        const metadataURI = await campaignContract.call("metadata");
+        const cid = metadataURI.replace('ipfs://', '').split('/')[0];
+        const basePath = `${PINATA_GATEWAY}/${cid}/metadata.json`;
+        
+        const response = await fetch(basePath);
+        const metadata = await response.json();
+        const campaignFolder = metadata.external_url.split('/').pop();
+
+        // 2. Ensuite charger les autres données du contrat
         const [name, roundData, totalSupply] = await Promise.all([
-          campaignContract.call("name"),  // Ajout du nom
+          campaignContract.call("name"),
           campaignContract.call("getCurrentRound"),
           campaignContract.call("totalSupply")
         ]);
-        
+  
         const now = Date.now();
         const endTime = roundData.endTime ? roundData.endTime.toNumber() * 1000 : 0;
   
         setCampaignData({
-          name,  // Le nom de la campagne
+          name,
           status: now < endTime ? "En cours" : "Finalisée",
           raised: ethers.utils.formatEther(roundData.fundsRaised),
           goal: ethers.utils.formatEther(roundData.targetAmount),
           investors: totalSupply.toString(),
-          timeRemaining: endTime - now
+          timeRemaining: endTime - now,
+          folderName: campaignFolder
         });
         
       } catch (error) {
@@ -104,7 +114,51 @@ export default function Campaign() {
       initializeAndFetchData();
     }
   }, [campaignContract, campaignAddress, platformContract]);
-
+  useEffect(() => {
+    const loadCampaignDocuments = async () => {
+      if (!campaignData?.folderName) return;
+  
+      try {
+        // Log pour déboguer
+        console.log("Dossier de campagne:", campaignData.folderName);
+  
+        // Récupération complète comme dans ProjectDetails
+        const [rootFiles, whitepaperFiles, pitchDeckFiles, legalFiles, mediaFiles] = await Promise.all([
+          fetchDocumentsFromFirebase(campaignData.folderName),
+          fetchDocumentsFromFirebase(`${campaignData.folderName}/whitepaper`),
+          fetchDocumentsFromFirebase(`${campaignData.folderName}/pitch-deck`),
+          fetchDocumentsFromFirebase(`${campaignData.folderName}/legal`),
+          fetchDocumentsFromFirebase(`${campaignData.folderName}/media`)
+        ]);
+  
+        console.log("Documents racine:", rootFiles);
+        console.log("Whitepaper:", whitepaperFiles);
+        console.log("Pitch Deck:", pitchDeckFiles);
+        console.log("Documents légaux:", legalFiles);
+        console.log("Média:", mediaFiles);
+  
+        // Mettre à jour les documents du state
+        setDocuments({
+          whitepaper: whitepaperFiles,
+          pitchDeck: pitchDeckFiles,
+          legal: legalFiles,
+          media: mediaFiles
+        });
+  
+        // Récupération de la description si possible
+        const descriptionFile = rootFiles.find(f => f.name === 'description.txt');
+        if (descriptionFile) {
+          console.log("Description trouvée:", descriptionFile);
+        }
+  
+      } catch (error) {
+        console.error("Erreur récupération documents:", error);
+      }
+    };
+  
+    loadCampaignDocuments();
+  }, [campaignData?.folderName]);
+  
   useEffect(() => {
     if (userCampaigns && userCampaigns.length > 0) {
       setCampaignAddress(userCampaigns[0]);
@@ -151,8 +205,6 @@ export default function Campaign() {
   }; 
 
   
-  
-  const { mutateAsync: claimEscrow } = useContractWrite(campaignContract, "claimEscrow");
 
   const handleReleaseEscrow = async () => {
     try {
@@ -574,17 +626,18 @@ const handleNewsFormChange = (field, value) => {
         </TabsContent>
 
         <TabsContent value="documents">
-  <DocumentManager 
-    campaignData={{
-      folderName: campaignAddress // On passe l'adresse du contrat comme nom de dossier
-    }}
-    onUpdate={(docs) => {
-      setCampaignData(prev => ({
-        ...prev,
-        documents: docs
-      }));
-    }}
-  />
+        <DocumentManager 
+  campaignData={{
+    folderName: campaignData?.folderName, // Le nom du dossier qu'on a récupéré d'IPFS
+    contractAddress: campaignAddress // Passer l'adresse du contrat
+  }}
+  onUpdate={(docs) => {
+    setCampaignData(prev => ({
+      ...prev,
+      documents: docs
+    }));
+  }}
+/>
 </TabsContent>
 
         <TabsContent value="social">
