@@ -27,43 +27,50 @@ export default function Wallet() {
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const PROVIDER_URL = `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
-  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-  
-  const fetchWithRetry = async (fn, retries = 3, delayMs = 1000) => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        return await fn();
-      } catch (error) {
-        if (i === retries - 1) throw error;
-        await delay(delayMs * Math.pow(2, i));
-        continue;
-      }
-    }
-  };
 
+  
+  
 
   useEffect(() => {
     if (!address) return;
-
+  
+    let isMounted = true;
+  
     async function fetchData() {
       try {
+        if (isMounted) {
+          setIsLoading(true);
+          setError(null);
+          setNftHoldings([]);
+          setTransactions([]);
+          setWalletInfo({
+            totalNFTs: 0,
+            totalInvested: '0',
+            activeProjects: 0,
+            totalDividends: '0'
+          });
+        }
+  
         const proxyContract = new ethers.Contract(INVESTMENT_CONTRACT_ADDRESS, DivarProxyABI, provider);
         const campaigns = await proxyContract.getAllCampaigns();
         
         let totalNFTs = [];
         
         for (let i = 0; i < campaigns.length; i += BATCH_SIZE) {
+          if (!isMounted) return;
+  
           const batch = campaigns.slice(i, i + BATCH_SIZE);
           
-          await Promise.all(
+          const batchResults = await Promise.all(
             batch.map(async (campaignAddress) => {
               try {
-                // Vérifier le cache
+                // Utiliser le cache correctement
                 if (campaignCache.has(campaignAddress)) {
-                  return campaignCache.get(campaignAddress);
+                  const cachedNFTs = campaignCache.get(campaignAddress);
+                  totalNFTs.push(...cachedNFTs);
+                  return;
                 }
-    
+  
                 const campaignContract = new ethers.Contract(campaignAddress, CampaignABI, provider);
                 const balance = await campaignContract.balanceOf(address);
                 
@@ -81,8 +88,7 @@ export default function Wallet() {
                     timestamp: inv.timestamp.toNumber(),
                     txHash: campaignAddress
                   }));
-    
-                  // Mettre en cache
+  
                   campaignCache.set(campaignAddress, nfts);
                   totalNFTs.push(...nfts);
                 }
@@ -91,27 +97,37 @@ export default function Wallet() {
               }
             })
           );
-    
+  
+          if (isMounted) {
+            setNftHoldings([...totalNFTs]);
+            updateWalletInfo([...totalNFTs]);
+            updateTransactions([...totalNFTs]);
+          }
+  
           if (i + BATCH_SIZE < campaigns.length) {
             await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
           }
-    
-          // Mise à jour progressive
-          updateWalletInfo(totalNFTs);
-          updateTransactions(totalNFTs);
         }
-    
-        setNftHoldings(totalNFTs);
-        setIsLoading(false);
+  
       } catch (error) {
-        console.error('Error:', error);
-        setError(error.message);
-        setIsLoading(false);
+        if (isMounted) {
+          console.error('Error:', error);
+          setError(error.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
-
+  
     fetchData();
+  
+    return () => {
+      isMounted = false;
+    };
   }, [address]);
+  
   const updateWalletInfo = (nfts) => {
     setWalletInfo({
       totalNFTs: nfts.reduce((acc, nft) => acc + parseInt(nft.shares), 0),
@@ -131,7 +147,7 @@ export default function Wallet() {
       txHash: nft.txHash
     })));
   };
-  
+
   if (!address) {
     return <p>Please connect your wallet</p>;
   }
