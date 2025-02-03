@@ -47,12 +47,16 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   const [projectData, setProjectData] = useState({
     ipfs: null
   });
-
+  const [campaignState, setCampaignState] = useState(null);
+  const campaignEndTime = campaignState?.endTime?.toNumber() * 1000;
+  const displayEndDate = campaignState ? 
+      new Date(campaignEndTime).toLocaleDateString('fr-FR') : 
+      'Chargement...';
   const userAddress = useAddress();
 
   const { contract: campaignContract } = useContract(project.id, CampaignABI);
   const { mutateAsync: buyShares, isLoading: buying } = useContractWrite(campaignContract, "buyShares");
-
+ 
   useEffect(() => {
     setShowProjectDetails(!!selectedProject);
   }, [selectedProject]);
@@ -215,34 +219,79 @@ if (socialsFile) {
       alert("Veuillez vous connecter à votre portefeuille.");
       return;
     }
-
+  
     try {
+      // Limiter le nombre de shares
+      if (nftCount > 100) {
+        alert("Pour des raisons techniques, veuillez acheter maximum 100 shares à la fois");
+        return;
+      }
+  
       const totalValue = ethers.utils.parseEther(
         (nftCount * parseFloat(project.sharePrice)).toString()
       );
-
-      const receipt = await buyShares({
+  
+      console.log("Tentative d'achat :");
+      console.log("Nombre de shares:", nftCount);
+      console.log("Prix total:", ethers.utils.formatEther(totalValue), "ETH");
+  
+      const tx = await buyShares({
         args: [nftCount],
         overrides: { value: totalValue }
       });
-      console.log("Transaction confirmée:", receipt.transactionHash);
-      alert("Shares achetés avec succès!");
+      
+      console.log("Transaction envoyée:", tx);
+      alert("Transaction envoyée !");
+  
     } catch (err) {
-      console.error("Erreur lors de l'achat:", err);
-      setError(err.message);
-      alert(err.message);
+      console.error("Erreur détaillée:", err);
+      alert("Erreur : " + (err.reason || err.message));
     }
   };
 
   const handleShare = () => console.log("Partage du projet");
   const handleFavorite = () => setIsFavorite(!isFavorite);
+  const parseDate = (dateFr) => {
+    const [day, month, year] = dateFr.split('/');
+    return new Date(year, month - 1, day); // Les mois sont 0-indexed en JS
+  }
+
+
+  useEffect(() => {
+    const checkCampaignState = async () => {
+      if (project?.id) {
+        try {
+          const provider = new ethers.providers.JsonRpcProvider(
+            `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`
+          );
+          const contract = new ethers.Contract(project.id, CampaignABI, provider);
+          const roundData = await contract.getCurrentRound();
+          setCampaignState(roundData);
+        } catch (error) {
+          console.error("Erreur vérification état campagne:", error);
+        }
+      }
+    };
+    checkCampaignState();
+  }, [project?.id]);
 
   const ShareSelector = () => {
     if (!project) return null;
-
-    const isCampaignEnded = new Date(project.endDate) < new Date();
+  
+    // Utiliser la date de fin du smart contract
+    const campaignEndTime = campaignState?.endTime?.toNumber() * 1000;
+    const now = new Date();
+    
+    
     const isOutOfShares = project.raised >= project.goal;
+    const isCampaignEnded = campaignState ? !campaignState.isActive : false;
     const isDisabled = isCampaignEnded || isOutOfShares || buying || isLoading;
+
+    // Formater la date pour l'affichage
+    const displayEndDate = campaignState ? 
+        new Date(campaignEndTime).toLocaleDateString('fr-FR') : 
+        'Chargement...';
+
 
     return (
       <Card className="mt-6 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 border border-lime-400 dark:border-lime-400 shadow-lg rounded-xl overflow-hidden">
@@ -262,13 +311,23 @@ if (socialsFile) {
                 -
               </Button>
               <input
-                id="shareCount"
-                type="number"
-                value={nftCount}
-                onChange={(e) => setNftCount(Math.max(1, parseInt(e.target.value) || 1))}
-                min="1"
-                className="w-16 text-center bg-white dark:bg-neutral-900 border border-lime-400"
-              />
+  id="shareCount"
+  type="number"
+  value={nftCount}
+  onChange={(e) => {
+    const rawValue = e.target.value;
+    if (rawValue === '') {
+      setNftCount(1);
+    } else {
+      const value = parseInt(rawValue);
+      if (!isNaN(value) && value >= 1) {
+        setNftCount(value);
+      }
+    }
+  }}
+  className="w-32 text-center bg-white dark:bg-neutral-900 border border-lime-400 p-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+  placeholder="1"
+/>
               <Button
                 onClick={() => setNftCount(nftCount + 1)}
                 className="w-8 h-8 rounded-full bg-gray-100 dark:bg-neutral-950"
@@ -441,7 +500,7 @@ if (socialsFile) {
                   <div className="text-center">
                     <Calendar className="w-8 h-8 mx-auto text-lime-500" />
                     <h3 className="mt-2 text-lg font-semibold">Date de fin</h3>
-                    <p className="text-2xl font-bold text-lime-600">{project.endDate}</p>
+                    <p className="text-2xl font-bold text-lime-600">{displayEndDate}</p>
                   </div>
                 </CardContent>
               </Card>
