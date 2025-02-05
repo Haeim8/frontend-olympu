@@ -10,9 +10,8 @@ import { ethers } from 'ethers';
 import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import CampaignABI from '@/ABI/CampaignABI.json';
 import { fetchDocumentsFromFirebase } from '@/lib/firebase/firebase';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase/firebase';
-
+import { ref, getDownloadURL, storage, db } from '@/lib/firebase/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 const DEFAULT_PROJECT = {
   name: "Nom du projet",
   raised: "0",
@@ -91,7 +90,12 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         // 2. Extraire le nom du dossier de campagne pour Firebase
         const campaignFolderName = metadata.external_url.split('/').pop();
         console.log("3. Nom du dossier:", campaignFolderName);
-    
+        const campaignDoc = await getDoc(doc(db, "campaign_fire", metadata.name));
+        let firestoreData = {}; 
+        if (campaignDoc.exists()) {
+          firestoreData = campaignDoc.data(); // On assigne les données
+        }
+        
         // 3. Récupérer les fichiers
         console.log("4. Début récupération fichiers Firebase");
         const [rootFiles, whitepaperFiles, pitchDeckFiles, legalFiles, mediaFiles] = await Promise.all([
@@ -161,7 +165,7 @@ if (socialsFile) {
         // 6. Construction du projectMetadata
         const projectMetadata = {
           ...metadata,
-          description: description,
+          description: firestoreData.description || '',
           firebase: {
             documents: {
               whitepaper: whitepaperFiles.length > 0 ? whitepaperFiles[0].url : null,
@@ -169,7 +173,8 @@ if (socialsFile) {
               legalDocuments: legalFiles.map(doc => doc.url),
               media: mediaFiles.map(doc => doc.url)
             },
-            socials: socials
+            socials: firestoreData.social || {},
+            teamMembers: firestoreData.teamMembers || []
           }
         };
     

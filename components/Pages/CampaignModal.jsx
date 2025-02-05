@@ -18,6 +18,9 @@ import { pinataService } from '@/lib/services/storage';
 import CompanySharesNFTCard from '@/components/nft/CompanySharesNFTCard';
 import html2canvas from 'html2canvas';
 import { initializeCampaignFolders, uploadDocument, updateSocialLinks, updateDescription } from '@/lib/firebase/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/firebase';
+
 const SECTORS = [
   "Blockchain", "Finance", "Industrie", "Tech", "Influence", "Gaming",
   "NFT", "DeFi", "DAO", "Infrastructure", "Autre"
@@ -305,10 +308,9 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
       
       const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
   
-      // Upload des métadonnées NFT sur IPFS
+      // Upload des métadonnées NFT sur IPFS (reste pareil)
       const metadata = {
         name: campaignData.name,
-        description: campaignData.description,
         image: `ipfs://${campaignFolderName}/nft-card.png`,
         external_url: `https://firebase-storage-url/${campaignFolderName}`
       };
@@ -331,12 +333,17 @@ export default function CampaignModal({ showCreateCampaign, setShowCreateCampaig
         throw new Error("Échec de l'upload des métadonnées NFT");
       }
   
-      // Initialisation des dossiers Firebase
+      // Initialiser les dossiers Firebase Storage pour les documents (reste pareil)
       await initializeCampaignFolders(campaignFolderName);
-      await updateDescription(campaignFolderName, campaignData.description);
-      await updateSocialLinks(campaignFolderName, campaignData.socials);
   
-      // Upload des documents sur Firebase
+      // Stocker description, socials et teamMembers dans Firestore
+      await setDoc(doc(db, "campaign_fire", campaignData.name), {
+        description: campaignData.description,
+        social: campaignData.socials,
+        teamMembers: campaignData.teamMembers
+      });
+  
+      // Upload des documents sur Firebase Storage (reste pareil)
       const uploadPromises = [];
       const documents = {};
   

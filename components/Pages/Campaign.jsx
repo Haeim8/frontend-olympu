@@ -19,9 +19,19 @@ import { ethers } from 'ethers';
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 import CampaignABI from '@/ABI/CampaignABI.json';
 import DocumentManager from '@/components/Systeme/DocumentManager';
-import { uploadToFirebaseFolder, fetchDocumentsFromFirebase, fetchFileContent } from '@/lib/firebase/firebase';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase/firebase';
+import { updateDoc, doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/firebase';
+
+// Version nettoyée des imports
+import { 
+  uploadToFirebaseFolder, 
+  fetchDocumentsFromFirebase, 
+  fetchFileContent,
+  readFileContent,
+  writeFileContent,
+  loadStorageFile,
+  storage 
+} from '@/lib/firebase/firebase';
 
 const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
@@ -81,38 +91,38 @@ export default function Campaign() {
 
   
 
-  const handleSaveSocials = async () => {
+  const handleSaveDescription = async (e) => {
+    e.preventDefault();
     try {
       setIsLoading(true);
       
-      const socialsData = JSON.stringify(socials);
-      const socialsBlob = new Blob([socialsData], { type: 'application/json' });
-      const socialsFile = new File([socialsBlob], 'socials.json');
+      // Mettre à jour dans Firestore
+      await updateDoc(doc(db, "campaign_fire", campaignData.name), {
+        description: description
+      });
       
-      await uploadToFirebaseFolder(campaignData.folderName, socialsFile);
-      setIsEditingSocials(false);
-      
+      setIsEditingDescription(false);
     } catch (error) {
-      console.error("Erreur sauvegarde socials:", error);
+      console.error("Erreur sauvegarde description:", error);
       setError(error.message);
     } finally {
       setIsLoading(false);
     }
   };
-
-
-  const handleSaveDescription = async () => {
+  
+  const handleSaveSocials = async (e) => {
+    e.preventDefault();
     try {
       setIsLoading(true);
       
-      const descriptionBlob = new Blob([description], { type: 'text/plain' });
-      const descriptionFile = new File([descriptionBlob], 'description.txt');
+      // Mettre à jour dans Firestore
+      await updateDoc(doc(db, "campaign_fire", campaignData.name), {
+        social: socials
+      });
       
-      await uploadToFirebaseFolder(campaignData.folderName, descriptionFile);
-      setIsEditingDescription(false);
-      
+      setIsEditingSocials(false);
     } catch (error) {
-      console.error("Erreur sauvegarde description:", error);
+      console.error("Erreur sauvegarde socials:", error);
       setError(error.message);
     } finally {
       setIsLoading(false);
@@ -169,47 +179,37 @@ export default function Campaign() {
   }, [campaignContract, campaignAddress, platformContract]);
 
   useEffect(() => {
-    // Dans l'useEffect de Campaign.jsx
     const loadCampaignDocuments = async () => {
       if (!campaignData?.folderName) return;
     
       try {
-        console.log("Dossier de campagne:", campaignData.folderName);
-    
-        const [rootFiles, whitepaperFiles, pitchDeckFiles, legalFiles, mediaFiles] = await Promise.all([
-          fetchDocumentsFromFirebase(campaignData.folderName),
-          fetchDocumentsFromFirebase(`${campaignData.folderName}/whitepaper`),
-          fetchDocumentsFromFirebase(`${campaignData.folderName}/pitch-deck`),
-          fetchDocumentsFromFirebase(`${campaignData.folderName}/legal`),
-          fetchDocumentsFromFirebase(`${campaignData.folderName}/media`)
-        ]);
-    
-        setDocuments({
-          whitepaper: whitepaperFiles,
-          pitchDeck: pitchDeckFiles,
-          legal: legalFiles,
-          media: mediaFiles
-        });
-    
-        const socialsFile = rootFiles.find(f => f.name === 'socials.json');
-        const descriptionFile = rootFiles.find(f => f.name === 'description.txt');
-    
-        if (socialsFile && socialsFile.content) {
-          setSocials(socialsFile.content);
+        // Construire le chemin complet avec "campaigns/"
+        const fullPath = `campaigns/${campaignData.folderName}`;
+        
+        // Récupérer les infos de Firestore
+        const campaignDoc = await getDoc(doc(db, "campaign_fire", campaignData.name));
+        if (campaignDoc.exists()) {
+          const data = campaignDoc.data();
+          setDescription(data.description || '');
+          setSocials(data.social || {
+            website: '',
+            twitter: '',
+            github: '',
+            discord: '',
+            telegram: '',
+            medium: ''
+          });
         }
-    
-        if (descriptionFile && descriptionFile.content) {
-          setDescription(descriptionFile.content);
-        }
-    
       } catch (error) {
-        console.error("Erreur récupération documents:", error);
+        console.error("Error:", error);
       }
     };
     
     loadCampaignDocuments();
   }, [campaignData?.folderName]);
 
+
+  
   useEffect(() => {
     if (userCampaigns && userCampaigns.length > 0) {
       setCampaignAddress(userCampaigns[0]);
@@ -691,14 +691,14 @@ const handleNewsFormChange = (field, value) => {
 />
 </TabsContent>
 
-        <TabsContent value="social">
+<TabsContent value="social">
   <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
     <CardHeader>
       <CardTitle className="text-gray-900 dark:text-gray-100">Description du Projet</CardTitle>
     </CardHeader>
     <CardContent>
       {isEditingDescription ? (
-        <div className="space-y-4">
+        <form onSubmit={handleSaveDescription} className="space-y-4">
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -706,14 +706,14 @@ const handleNewsFormChange = (field, value) => {
             placeholder="Description du projet..."
           />
           <div className="flex space-x-2">
-            <Button onClick={handleSaveDescription} className="bg-lime-500 hover:bg-lime-600">
+            <Button type="submit" className="bg-lime-500 hover:bg-lime-600">
               Sauvegarder
             </Button>
-            <Button onClick={() => setIsEditingDescription(false)} variant="outline">
+            <Button type="button" onClick={() => setIsEditingDescription(false)} variant="outline">
               Annuler
             </Button>
           </div>
-        </div>
+        </form>
       ) : (
         <div className="space-y-4">
           <p className="text-gray-700 dark:text-gray-300">{description || "Aucune description"}</p>
@@ -731,7 +731,7 @@ const handleNewsFormChange = (field, value) => {
     </CardHeader>
     <CardContent>
       {isEditingSocials ? (
-        <div className="space-y-4">
+        <form onSubmit={handleSaveSocials} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="website">Site Web</Label>
@@ -795,14 +795,14 @@ const handleNewsFormChange = (field, value) => {
             </div>
           </div>
           <div className="flex space-x-2">
-            <Button onClick={handleSaveSocials} className="bg-lime-500 hover:bg-lime-600">
+            <Button type="submit" className="bg-lime-500 hover:bg-lime-600">
               Sauvegarder
             </Button>
-            <Button onClick={() => setIsEditingSocials(false)} variant="outline">
+            <Button type="button" onClick={() => setIsEditingSocials(false)} variant="outline">
               Annuler
             </Button>
           </div>
-        </div>
+        </form>
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
