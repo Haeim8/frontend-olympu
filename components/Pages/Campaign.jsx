@@ -19,19 +19,11 @@ import { ethers } from 'ethers';
 import DivarProxyABI from '@/ABI/DivarProxyABI.json';
 import CampaignABI from '@/ABI/CampaignABI.json';
 import DocumentManager from '@/components/Systeme/DocumentManager';
-import { updateDoc, doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/firebase';
+import CreatePostModal from './CreatePostModal';
+import { ref as storageRef, listAll as listAllStorage, getDownloadURL } from 'firebase/storage';
+import { updateDoc, doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { db, storage } from '@/lib/firebase/firebase';
 
-// Version nettoyée des imports
-import { 
-  uploadToFirebaseFolder, 
-  fetchDocumentsFromFirebase, 
-  fetchFileContent,
-  readFileContent,
-  writeFileContent,
-  loadStorageFile,
-  storage 
-} from '@/lib/firebase/firebase';
 
 const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
 const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
@@ -88,8 +80,60 @@ export default function Campaign() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [editingPost, setEditingPost] = useState(null);
   
+  const loadPosts = async () => {
+    try {
+      if (!campaignData?.name) return;
+      console.log('Chargement des posts pour:', campaignData.name);
+  
+      // Récupérer la sous-collection 'news' de la campagne depuis Firestore
+      const newsRef = collection(db, 'campaign_fire', campaignData.name, 'news');
+      const newsSnapshot = await getDocs(newsRef);
+      
+      const postsData = newsSnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+  
+      // Trier par date de création
+      const validPosts = postsData.sort((a, b) => 
+        new Date(b.dateCreation) - new Date(a.dateCreation)
+      );
+  
+      console.log('Posts chargés:', validPosts);
+      setPosts(validPosts);
+  
+    } catch (error) {
+      console.error('Erreur chargement des posts:', error);
+    }
+  };
+
+
+useEffect(() => {
+  if (campaignData?.name) {
+    loadPosts();
+  }
+}, [campaignData?.name]);
+
+const handleDeletePost = async (postId) => {
+  if (window.confirm('Voulez-vous vraiment supprimer cet article ?')) {
+    try {
+      await deleteDoc(doc(db, 'campaign_fire', campaignData.name, 'news', postId));
+      loadPosts(); // Recharger les posts
+    } catch (error) {
+      console.error('Erreur suppression post:', error);
+      alert('Erreur lors de la suppression: ' + error.message);
+    }
+  }
+};
+
+const handleEditPost = (post) => {
+  setEditingPost(post);
+  setShowCreatePostModal(true);
+};
 
   const handleSaveDescription = async (e) => {
     e.preventDefault();
@@ -692,6 +736,15 @@ const handleNewsFormChange = (field, value) => {
 </TabsContent>
 
 <TabsContent value="social">
+  <div className="flex justify-end mb-4">
+    <Button 
+      className="bg-lime-500 hover:bg-lime-600 text-white"
+      onClick={() => setShowCreatePostModal(true)}
+    >
+      <Plus className="mr-2 h-4 w-4" />
+      Créer un post
+    </Button>
+  </div>
   <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
     <CardHeader>
       <CardTitle className="text-gray-900 dark:text-gray-100">Description du Projet</CardTitle>
@@ -825,6 +878,63 @@ const handleNewsFormChange = (field, value) => {
       )}
     </CardContent>
   </Card>
+  <Card className="mt-6 bg-white dark:bg-neutral-950 border-0 dark:border-0">
+  <CardHeader>
+    <div className="flex justify-between items-center">
+      <CardTitle className="text-gray-900 dark:text-gray-100">Articles & Actualités</CardTitle>
+      <Button 
+        className="bg-lime-500 hover:bg-lime-600 text-white"
+        onClick={() => setShowCreatePostModal(true)}
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Créer un post
+      </Button>
+    </div>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-6">
+      {posts.length === 0 ? (
+        <p className="text-center text-gray-500 dark:text-gray-400">Aucun article publié</p>
+      ) : (
+        posts.map((post) => (
+          <Card key={post.id} className="bg-gray-50 dark:bg-neutral-900">
+            <CardContent className="p-4">
+              <div className="space-y-2">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {post.titre}
+                  </h3>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(post.dateCreation).toLocaleDateString()}
+                  </span>
+                </div>
+                {post.image && (
+                  <img 
+                    src={post.image} 
+                    alt={post.titre} 
+                    className="w-full h-48 object-cover rounded-md"
+                  />
+                )}
+                <p className="text-gray-700 dark:text-gray-300">{post.contenu}</p>
+                {post.lien && (
+                  <a 
+                    href={post.lien}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-lime-600 dark:text-lime-400 hover:underline flex items-center"
+                  >
+                    <Link className="h-4 w-4 mr-1" />
+                    Source externe
+                  </a>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      )}
+    </div>
+  </CardContent>
+</Card>
 </TabsContent>
       </Tabs>
 
@@ -924,6 +1034,17 @@ const handleNewsFormChange = (field, value) => {
           {/* Contenu du dialogue de certification */}
         </DialogContent>
       </Dialog>
+      <CreatePostModal 
+  isOpen={showCreatePostModal}
+  onClose={() => {
+    setShowCreatePostModal(false);
+    setEditingPost(null);  // Réinitialiser le post en édition
+    loadPosts(); // Recharger les posts après création/modification
+  }}
+  campaignId={campaignAddress}
+  campaignData={campaignData}
+  editingPost={editingPost}  // Passer le post à éditer
+/>
     </div>
   );
 }

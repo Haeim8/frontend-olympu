@@ -357,7 +357,7 @@ if (socialsFile) {
             disabled={isDisabled}
           >
             {buying ? "Achat en cours..." : 
-             isCampaignEnded ? "Campagne terminée" :
+             isCampaignEnded ? "end" :
              isOutOfShares ? "Plus de shares disponibles" :
              `Acheter ${nftCount} Share${nftCount > 1 ? 's' : ''}`}
           </Button>

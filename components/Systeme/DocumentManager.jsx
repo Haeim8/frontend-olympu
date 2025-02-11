@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileText, Loader, Trash } from 'lucide-react';
 import { fetchDocumentsFromFirebase, uploadToFirebaseFolder, deleteFileFromFirebase } from '@/lib/firebase/firebase';
-
 
 export default function DocumentManager({ campaignData, onUpdate }) {
   const [documents, setDocuments] = useState({
@@ -15,14 +14,15 @@ export default function DocumentManager({ campaignData, onUpdate }) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const isLoaded = useRef(false);
 
   useEffect(() => {
     const loadDocs = async () => {
       if (!campaignData?.folderName) return;
-  
+      
+      setIsLoading(true); // Ajout du loading state
+      
       try {
-        console.log("Dossier pour DocumentManager:", campaignData.folderName);
-        
         const [whitepaperFiles, pitchDeckFiles, legalFiles, mediaFiles] = await Promise.all([
           fetchDocumentsFromFirebase(`${campaignData.folderName}/whitepaper`),
           fetchDocumentsFromFirebase(`${campaignData.folderName}/pitch-deck`),
@@ -30,20 +30,27 @@ export default function DocumentManager({ campaignData, onUpdate }) {
           fetchDocumentsFromFirebase(`${campaignData.folderName}/media`)
         ]);
   
-        console.log("Whitepaper:", whitepaperFiles);
-        console.log("Pitch Deck:", pitchDeckFiles);
-        console.log("Documents légaux:", legalFiles);
-        console.log("Média:", mediaFiles);
+        // Mettre à jour les documents seulement si les données ont changé
+        setDocuments(prev => {
+          const newDocs = {
+            whitepaper: whitepaperFiles,
+            pitchDeck: pitchDeckFiles, 
+            legal: legalFiles,
+            media: mediaFiles
+          };
   
-        setDocuments({
-          whitepaper: whitepaperFiles,
-          pitchDeck: pitchDeckFiles, 
-          legal: legalFiles,
-          media: mediaFiles
+          // Vérifier si les données sont différentes
+          if (JSON.stringify(prev) !== JSON.stringify(newDocs)) {
+            return newDocs;
+          }
+          return prev;
         });
   
       } catch (error) {
         console.error("Erreur DocumentManager:", error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
       }
     };
   
