@@ -7,8 +7,6 @@ import { Sparkles, ArrowRight, Shield, Zap } from "lucide-react";
 export function LandingHero({
   darkMode,
   address,
-  userExists,
-  setShowSignup,
   onAccessInterface,
 }) {
   return (
@@ -89,35 +87,19 @@ export function LandingHero({
               {/* Status et boutons */}
               <div className="flex flex-col items-center space-y-3">
                 {address ? (
-                  userExists ? (
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button
+                      className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white border-0 shadow-xl hover:shadow-lime-500/25 transition-all duration-300"
+                      onClick={onAccessInterface}
                     >
-                      <Button
-                        className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white border-0 shadow-xl hover:shadow-lime-500/25 transition-all duration-300"
-                        onClick={onAccessInterface}
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        Lancer l'App
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Button
-                        className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white border-0 shadow-xl hover:shadow-lime-500/25 transition-all duration-300"
-                        onClick={() => setShowSignup(true)}
-                      >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Créer un Compte
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </motion.div>
-                  )
+                      <Zap className="w-4 h-4 mr-2" />
+                      Lancer l'App
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </motion.div>
                 ) : (
                   <div className="text-center space-y-2">
                     <p className="text-sm text-lime-400 font-medium">Veuillez connecter votre portefeuille</p>
