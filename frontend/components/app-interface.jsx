@@ -11,6 +11,7 @@ import News from './Pages/News';
 import Favorites from './Pages/Favorites';
 import Campaign from './Pages/Campaign';
 import CampaignLive from './Pages/CampaignLive';
+import LiveDashboard from './Pages/LiveDashboard';
 import { useDisconnect, useAddress } from '@thirdweb-dev/react';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebase";
@@ -205,7 +206,9 @@ export default function AppInterface() {
       case 'campaign':
         return hasCampaign ? <Campaign /> : <Home {...commonProps} />;
       case 'live':
-        return <CampaignLive />;
+        return <LiveDashboard setActivePage={setActivePage} />;
+      case 'live-session':
+        return <CampaignLive setActivePage={setActivePage} />;
       default:
         return <Home {...commonProps} />;
     }

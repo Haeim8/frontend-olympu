@@ -11,7 +11,7 @@ import DecentralizedChat from '@/components/live/DecentralizedChat';
 import VotingPanel from '@/components/live/VotingPanel';
 import NFTSwapInterface from '@/components/live/NFTSwapInterface';
 
-export default function CampaignLive() {
+export default function CampaignLive({ setActivePage }) {
   const address = useAddress();
   const router = useRouter();
   
@@ -37,7 +37,11 @@ export default function CampaignLive() {
   };
 
   const handleBack = () => {
-    router.back();
+    if (setActivePage) {
+      setActivePage('live');
+    } else {
+      router.back();
+    }
   };
 
   if (!address) {
