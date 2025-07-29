@@ -1,0 +1,198 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { Sparkles, ArrowRight, Shield, Zap } from "lucide-react";
+
+export function LandingHero({
+  darkMode,
+  address,
+  userExists,
+  isRegistered,
+  readLoading,
+  registrationLoading,
+  registrationError,
+  setShowSignup,
+  handleRegisterOnContract,
+  router,
+  isFeeLoading,
+}) {
+  return (
+    <main id="accueil" className="flex-1 relative z-10 flex items-center justify-center min-h-[60vh]">
+      <section className="w-full py-12 px-4">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            className="text-center space-y-6"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+          >
+            {/* Badge animé */}
+            <motion.div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-lime-500/20 to-green-500/20 border border-lime-500/30 backdrop-blur-sm"
+              animate={{ 
+                boxShadow: [
+                  "0 0 15px rgba(132, 204, 22, 0.3)",
+                  "0 0 30px rgba(132, 204, 22, 0.5)",
+                  "0 0 15px rgba(132, 204, 22, 0.3)"
+                ]
+              }}
+              transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+            >
+              <Sparkles className="w-3 h-3 text-lime-400" />
+              <span className="text-xs font-medium text-lime-400">Financement Participatif DeFi</span>
+              <Sparkles className="w-3 h-3 text-lime-400" />
+            </motion.div>
+
+            {/* Titre principal */}
+            <div className="space-y-4">
+              <motion.h1
+                className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.2 }}
+              >
+                <span className={`${darkMode 
+                  ? "bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent" 
+                  : "text-gray-900"
+                }`}>
+                  Soutenez
+                </span>
+                <br />
+                <span className="bg-gradient-to-r from-lime-400 via-green-500 to-lime-400 bg-clip-text text-transparent">
+                  l'avenir
+                </span>
+                <br />
+                <span className={`${darkMode 
+                  ? "bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent" 
+                  : "text-gray-900"
+                }`}>
+                  de l'écosystème
+                </span>
+              </motion.h1>
+
+              <motion.p
+                className={`text-base md:text-lg max-w-3xl mx-auto leading-relaxed ${
+                  darkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 0.4 }}
+              >
+                Contribuez au développement des technologies{" "}
+                <span className="font-semibold text-lime-500">Web3 de pointe</span> et 
+                faites partie de la révolution décentralisée qui façonne notre futur financier.
+              </motion.p>
+            </div>
+
+            {/* CTA Section */}
+            <motion.div
+              className="flex flex-col items-center space-y-4 pt-6"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.6 }}
+            >
+              {/* Status et boutons */}
+              <div className="flex flex-col items-center space-y-3">
+                {address ? (
+                  userExists ? (
+                    readLoading ? (
+                      <div className="flex items-center space-x-2 text-lime-400">
+                        <div className="animate-spin w-4 h-4 border-2 border-lime-400 border-t-transparent rounded-full"></div>
+                        <span className="text-sm">Vérification en cours...</span>
+                      </div>
+                    ) : isRegistered ? (
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Button
+                          className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white border-0 shadow-xl hover:shadow-lime-500/25 transition-all duration-300"
+                          onClick={() => router.push("/app")}
+                        >
+                          <Zap className="w-4 h-4 mr-2" />
+                          Lancer l'App
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Button
+                          className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-xl hover:shadow-red-500/25 transition-all duration-300"
+                          onClick={handleRegisterOnContract}
+                          disabled={registrationLoading || isFeeLoading}
+                        >
+                          <Shield className="w-4 h-4 mr-2" />
+                          {registrationLoading ? "Inscription..." : 
+                           isFeeLoading ? "Chargement des frais..." : 
+                           "S'inscrire sur le Smart Contract"}
+                          {!registrationLoading && <ArrowRight className="w-4 h-4 ml-2" />}
+                        </Button>
+                      </motion.div>
+                    )
+                  ) : (
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white border-0 shadow-xl hover:shadow-lime-500/25 transition-all duration-300"
+                        onClick={() => setShowSignup(true)}
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Créer un Compte
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </motion.div>
+                  )
+                ) : (
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-lime-400 font-medium">Veuillez connecter votre portefeuille</p>
+                    <div className={`flex items-center justify-center space-x-1 text-xs ${
+                      darkMode ? "text-gray-400" : "text-gray-600"
+                    }`}>
+                      <Shield className="w-3 h-3" />
+                      <span>Connexion sécurisée requise</span>
+                    </div>
+                  </div>
+                )}
+                
+                {registrationError && (
+                  <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-center text-sm">
+                    {registrationError}
+                  </div>
+                )}
+              </div>
+
+              {/* Stats en bas */}
+              <motion.div
+                className={`grid grid-cols-3 gap-6 pt-8 border-t ${
+                  darkMode ? "border-gray-700/30" : "border-gray-300/30"
+                }`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 0.8 }}
+              >
+                <div className="text-center">
+                  <div className="text-xl font-bold text-lime-500">24/7</div>
+                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Support actif</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-lime-500">0.05Ξ</div>
+                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Frais d'inscription</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-lime-500">100%</div>
+                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Décentralisé</div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+    </main>
+  );
+}

@@ -1,0 +1,16 @@
+{
+  "network": "sepoliaBase",
+  "chainId": 84532,
+  "deployer": "0x8dfE7918F36ddabF0DcfaB01B2762c6c0a4b9dfC",
+  "timestamp": "2025-07-28T17:07:15.560Z",
+  "contracts": {
+    "NFTRenderer": {
+      "address": "0xD4904a23a91166445B7dd4aebFe7e59280B38F31",
+      "explorerUrl": "https://sepolia-explorer.base.org/address/0xD4904a23a91166445B7dd4aebFe7e59280B38F31"
+    }
+  },
+  "nextSteps": {
+    "upgrade": "Utilise cette adresse pour upgrade DivarProxy",
+    "test": "Teste avec une campagne pour voir les NFTs"
+  }
+}

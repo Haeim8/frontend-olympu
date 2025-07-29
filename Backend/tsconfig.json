@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+      "target": "es2020",
+      "module": "commonjs",
+      "strict": true,
+      "esModuleInterop": true,
+      "outDir": "dist",
+      "resolveJsonModule": true
+    },
+    "include": ["./scripts", "./test", "divartest.js", "divar-test.js"],
+    "files": ["./hardhat.config.js"]
+  }
