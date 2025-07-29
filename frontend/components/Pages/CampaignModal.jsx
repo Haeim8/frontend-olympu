@@ -624,13 +624,13 @@ export default function CampaignModal({
               variant="outline"
               onClick={handlePreviousStep}
               disabled={currentStep === 1}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 px-6 py-2 font-semibold border-2 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ArrowLeft className="h-4 w-4" />
               Précédent
             </Button>
 
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-neutral-800 px-3 py-1 rounded-full font-medium">
               Étape {currentStep} sur 5
             </div>
 
@@ -638,7 +638,7 @@ export default function CampaignModal({
               <Button
                 type="button"
                 onClick={handleNextStep}
-                className="bg-lime-500 hover:bg-lime-600 text-white flex items-center gap-2"
+                className="bg-gradient-to-r from-lime-500 to-lime-600 hover:from-lime-600 hover:to-lime-700 text-white flex items-center gap-2 px-6 py-2 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
                 Suivant
                 <ArrowRight className="h-4 w-4" />

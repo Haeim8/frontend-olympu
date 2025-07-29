@@ -59,18 +59,25 @@ export default function CampaignBasicInfo({
             <Label htmlFor="creatorAddress" className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               Adresse du créateur
             </Label>
-            <InfoTooltip content="L'adresse Ethereum du créateur de la campagne" />
+            <InfoTooltip content="L'adresse Ethereum du créateur de la campagne (connectée automatiquement)" />
           </div>
           <div className="relative">
             <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               id="creatorAddress"
               name="creatorAddress"
-              value={formData.creatorAddress}
+              value={formData.creatorAddress || 'Connectez votre wallet...'}
               readOnly
-              className="pl-10 bg-gray-50 dark:bg-neutral-800 text-gray-600 dark:text-gray-400 cursor-not-allowed border-gray-200 dark:border-neutral-700"
+              className="pl-10 bg-gray-50 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 cursor-not-allowed border-gray-200 dark:border-neutral-700 font-mono text-sm"
+              placeholder="Adresse du wallet connecté"
             />
           </div>
+          {!formData.creatorAddress && (
+            <p className="text-amber-600 dark:text-amber-400 text-sm mt-1 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              Veuillez connecter votre wallet pour continuer
+            </p>
+          )}
         </div>
 
         {/* Nom et symbole */}
@@ -89,7 +96,7 @@ export default function CampaignBasicInfo({
               className="transition-all duration-200 focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             />
             {error?.name && (
-              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <p className="text-red-500 dark:text-red-400 text-sm mt-1 flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
                 <Info className="h-3 w-3" />
                 {error.name}
               </p>
@@ -112,7 +119,7 @@ export default function CampaignBasicInfo({
               style={{ textTransform: 'uppercase' }}
             />
             {error?.symbol && (
-              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <p className="text-red-500 dark:text-red-400 text-sm mt-1 flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
                 <Info className="h-3 w-3" />
                 {error.symbol}
               </p>
@@ -141,7 +148,7 @@ export default function CampaignBasicInfo({
             </SelectContent>
           </Select>
           {error?.sector && (
-            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+            <p className="text-red-500 dark:text-red-400 text-sm mt-1 flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
               <Info className="h-3 w-3" />
               {error.sector}
             </p>
@@ -164,7 +171,7 @@ export default function CampaignBasicInfo({
               className="transition-all duration-200 focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             />
             {error?.otherSector && (
-              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <p className="text-red-500 dark:text-red-400 text-sm mt-1 flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
                 <Info className="h-3 w-3" />
                 {error.otherSector}
               </p>
@@ -189,7 +196,7 @@ export default function CampaignBasicInfo({
           />
           <div className="flex justify-between items-center mt-1">
             {error?.description ? (
-              <p className="text-red-500 text-sm flex items-center gap-1">
+              <p className="text-red-500 dark:text-red-400 text-sm flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
                 <Info className="h-3 w-3" />
                 {error.description}
               </p>
@@ -203,9 +210,9 @@ export default function CampaignBasicInfo({
         </div>
 
         {/* Prix et nombre de parts */}
-        <div className="bg-gray-50 dark:bg-neutral-900 rounded-xl p-6 space-y-4">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-neutral-900 dark:to-neutral-800 rounded-xl p-6 space-y-4 border border-gray-200 dark:border-neutral-700">
           <h3 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-lime-600" />
+            <DollarSign className="h-5 w-5 text-lime-600 dark:text-lime-400" />
             Configuration financière
           </h3>
           
@@ -232,7 +239,7 @@ export default function CampaignBasicInfo({
                 />
               </div>
               {error?.sharePrice && (
-                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                <p className="text-red-500 dark:text-red-400 text-sm mt-1 flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
                   <Info className="h-3 w-3" />
                   {error.sharePrice}
                 </p>
@@ -260,7 +267,7 @@ export default function CampaignBasicInfo({
                 />
               </div>
               {error?.numberOfShares && (
-                <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                <p className="text-red-500 dark:text-red-400 text-sm mt-1 flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
                   <Info className="h-3 w-3" />
                   {error.numberOfShares}
                 </p>
@@ -269,8 +276,9 @@ export default function CampaignBasicInfo({
           </div>
 
           {/* Objectif calculé */}
-          <div className="bg-lime-50 dark:bg-lime-900/20 rounded-lg p-4 border border-lime-200 dark:border-lime-800">
-            <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2 block">
+          <div className="bg-gradient-to-r from-lime-50 to-green-50 dark:from-lime-900/20 dark:to-green-900/20 rounded-lg p-4 border border-lime-200 dark:border-lime-800 shadow-sm">
+            <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2 block flex items-center gap-2">
+              <Target className="h-4 w-4 text-lime-600 dark:text-lime-400" />
               Objectif de financement
             </Label>
             <div className="text-2xl font-bold text-lime-700 dark:text-lime-300">
@@ -304,7 +312,7 @@ export default function CampaignBasicInfo({
               />
             </div>
             {error?.endDate && (
-              <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <p className="text-red-500 dark:text-red-400 text-sm mt-1 flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
                 <Info className="h-3 w-3" />
                 {error.endDate}
               </p>
@@ -354,7 +362,7 @@ export default function CampaignBasicInfo({
             />
           </div>
           {error?.royaltyReceiver && (
-            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+            <p className="text-red-500 dark:text-red-400 text-sm mt-1 flex items-center gap-1 animate-in slide-in-from-left-2 duration-200">
               <Info className="h-3 w-3" />
               {error.royaltyReceiver}
             </p>
