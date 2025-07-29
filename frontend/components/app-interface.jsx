@@ -10,6 +10,7 @@ import Discussions from './Pages/Discussions';
 import News from './Pages/News';
 import Favorites from './Pages/Favorites';
 import Campaign from './Pages/Campaign';
+import CampaignLive from './Pages/CampaignLive';
 import { useDisconnect, useAddress } from '@thirdweb-dev/react';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebase";
@@ -22,6 +23,7 @@ export default function AppInterface() {
   const [darkMode, setDarkMode] = useState(true);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [username, setUsername] = useState("Utilisateur");
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   
   // États de chargement et données
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
@@ -72,9 +74,17 @@ export default function AppInterface() {
     setError(null);
     
     try {
-      // Charger toutes les campagnes via API Manager avec cache intelligent
+      // Charger toutes les campagnes via API Manager (version simplifiée)
       const allCampaigns = await apiManager.getAllCampaigns();
-      const campaignsData = await apiManager.getCampaignsBatch(allCampaigns);
+      const campaignsData = [];
+      
+      // Récupérer les données une par une
+      for (const address of allCampaigns) {
+        const campaignData = await apiManager.getCampaignData(address);
+        if (campaignData) {
+          campaignsData.push(campaignData);
+        }
+      }
       
       // Filtrer les campagnes de l'utilisateur
       const userOwnedCampaigns = campaignsData.filter(
@@ -90,8 +100,7 @@ export default function AppInterface() {
         setActivePage('home');
       }
       
-      // Précharger les données importantes en arrière-plan
-      await apiManager.warmupHomePageCache(campaignsData.slice(0, 6).map(c => c.id));
+      // Pas de préchargement pour le moment (API simplifiée)
       
     } catch (err) {
       console.error('Erreur lors du chargement des campagnes:', err);
@@ -165,12 +174,9 @@ export default function AppInterface() {
     });
   }, []);
   
-  // Gestionnaire de sélection de projet avec préchargement
+  // Gestionnaire de sélection de projet
   const handleSelectProject = useCallback((project) => {
-    // Précharger les détails du projet
-    if (project?.id) {
-      apiManager.preloadCampaignDetails(project.id);
-    }
+    // Pas de préchargement pour le moment (API simplifiée)
   }, []);
   
   // Rendu optimisé des pages avec props intelligentes
@@ -198,6 +204,8 @@ export default function AppInterface() {
         return <Favorites {...commonProps} />;
       case 'campaign':
         return hasCampaign ? <Campaign /> : <Home {...commonProps} />;
+      case 'live':
+        return <CampaignLive />;
       default:
         return <Home {...commonProps} />;
     }
@@ -220,6 +228,8 @@ export default function AppInterface() {
           showMobileMenu={showMobileMenu}
           setShowMobileMenu={setShowMobileMenu}
           hasCampaign={hasCampaign}
+          isExpanded={sidebarExpanded}
+          setIsExpanded={setSidebarExpanded}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-neutral-950 transition-all duration-300 ease-in-out">
           {renderActivePage()}

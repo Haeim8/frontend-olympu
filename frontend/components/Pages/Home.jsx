@@ -38,9 +38,13 @@ export default function Home() {
   // Contrat platform
   const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
   const { contract: platformContract } = useContract(PLATFORM_ADDRESS);
-  const { data: campaignAddresses, isLoading: addressesLoading } = useContractRead(
+  const { data: campaignAddresses, isLoading: addressesLoading, error: contractError } = useContractRead(
     platformContract,
-    "getAllCampaigns"
+    "getAllCampaigns",
+    [],
+    {
+      enabled: !!platformContract
+    }
   );
 
   // Fonction pour calculer les statistiques
@@ -145,8 +149,14 @@ export default function Home() {
     setError(null);
 
     try {
-      // Utiliser le gestionnaire d'API avec cache intelligent
-      const validCampaigns = await apiManager.getCampaignsBatch(campaignAddresses);
+      // Récupérer les campagnes une par une (apiManager simplifié)
+      const validCampaigns = [];
+      for (const address of campaignAddresses) {
+        const campaignData = await apiManager.getCampaignData(address);
+        if (campaignData) {
+          validCampaigns.push(campaignData);
+        }
+      }
       
       // Enrichir les données avec des informations supplémentaires
       const enrichedCampaigns = validCampaigns.map(campaign => ({
@@ -163,8 +173,7 @@ export default function Home() {
       setProjects(enrichedCampaigns);
       calculateStats(enrichedCampaigns);
       
-      // Précharger les données des 6 premières campagnes
-      await apiManager.warmupHomePageCache(enrichedCampaigns.slice(0, 6).map(c => c.id));
+      // Pas de préchargement pour le moment (API simplifié)
       
     } catch (error) {
       console.error("Error fetching campaigns:", error);
@@ -199,8 +208,7 @@ export default function Home() {
 
   const handleViewDetails = useCallback((project) => {
     setSelectedProject(project);
-    // Précharger les détails de la campagne
-    apiManager.preloadCampaignDetails(project.id);
+    // Pas de préchargement pour le moment (API simplifié)
   }, []);
 
   const handleCloseDetails = useCallback(() => {
@@ -217,11 +225,9 @@ export default function Home() {
     fetchAllCampaigns();
   }, [fetchAllCampaigns]);
 
-  // Préchargement intelligent au survol
+  // Préchargement intelligent au survol (désactivé pour API simplifié)
   const handlePreloadHover = useCallback((campaignId) => {
-    if (campaignId) {
-      apiManager.preloadCampaignDetails(campaignId);
-    }
+    // Pas de préchargement pour le moment
   }, []);
 
   // Calcul des statistiques pour les filtres et header

@@ -16,7 +16,8 @@ import {
   Settings,
   HelpCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Video
 } from "lucide-react";
 
 const getMenuItems = (hasCampaign) => {
@@ -34,6 +35,13 @@ const getMenuItems = (hasCampaign) => {
       id: 'wallet',
       description: 'Vos investissements',
       badge: null
+    },
+    { 
+      icon: Video, 
+      title: 'Live DAO', 
+      id: 'live',
+      description: 'Sessions de gouvernance',
+      badge: 'BETA'
     }
   ];
 
@@ -100,7 +108,7 @@ export default function Sidebar({
     setIsExpanded(!isExpanded);
   };
 
-  const SidebarItem = ({ item, section }) => {
+  const SidebarItem = ({ item }) => {
     const isActive = activePage === item.id;
     const showTooltip = !isExpanded && hoveredItem === item.id;
 
