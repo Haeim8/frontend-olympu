@@ -140,16 +140,28 @@ export default function CampaignModal({
   useEffect(() => {
     if (!showCreateCampaign) {
       setCurrentStep(1);
-      setFormData(INITIAL_FORM_DATA);
+      // Reset mais garde l'adresse si elle existe
+      setFormData({
+        ...INITIAL_FORM_DATA,
+        creatorAddress: address || '',
+        royaltyReceiver: address || ''
+      });
       setErrors({});
       setStatus('idle');
       setTransactionHash('');
       setCardImage(null);
-      
-      // Optionnel: Vider le cache si nécessaire pour libérer la mémoire
-      // apiManager.clearCache(); // Décommentez si vous voulez vider le cache à chaque fermeture
+    } else {
+      // Quand le modal s'ouvre, s'assurer que l'adresse est définie
+      if (address) {
+        console.log('Modal opened - setting address:', address);
+        setFormData(prev => ({
+          ...prev,
+          creatorAddress: address,
+          royaltyReceiver: address
+        }));
+      }
     }
-  }, [showCreateCampaign]);
+  }, [showCreateCampaign, address]);
 
   // Validation des étapes
   const validateStep = useCallback((step) => {
@@ -615,8 +627,8 @@ export default function CampaignModal({
 
   return (
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden bg-white dark:bg-neutral-900 border-0 shadow-2xl">
-        <DialogHeader className="pb-0">
+      <DialogContent className="sm:max-w-4xl h-[90vh] max-h-[90vh] flex flex-col bg-white dark:bg-neutral-900 border-0 shadow-2xl">
+        <DialogHeader className="pb-4 flex-shrink-0">
           <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             Créer une nouvelle campagne
           </DialogTitle>
@@ -627,20 +639,22 @@ export default function CampaignModal({
 
         {/* Indicateur d'étapes */}
         {status === 'idle' && (
-          <StepIndicator currentStep={currentStep} totalSteps={5} />
+          <div className="flex-shrink-0 mb-4">
+            <StepIndicator currentStep={currentStep} totalSteps={5} />
+          </div>
         )}
 
-        {/* Contenu principal avec hauteur fixe */}
-        <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Contenu principal scrollable */}
+        <div className="flex flex-col flex-1 min-h-0">
           <ScrollArea className="flex-1 px-2">
-            <div className="min-h-[400px] pb-4">
+            <div className="pb-6">
               {renderStepContent()}
             </div>
           </ScrollArea>
 
           {/* Navigation fixe en bas */}
           {status === 'idle' && (
-            <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+            <div className="flex justify-between items-center pt-4 px-2 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex-shrink-0">
             <Button
               type="button"
               variant="outline"

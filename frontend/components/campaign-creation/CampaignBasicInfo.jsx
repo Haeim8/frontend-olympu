@@ -35,6 +35,7 @@ export default function CampaignBasicInfo({
   onInputChange,
   onSelectChange
 }) {
+  console.log('CampaignBasicInfo - formData.creatorAddress:', formData.creatorAddress);
   const targetAmount = (parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0));
 
   return (
