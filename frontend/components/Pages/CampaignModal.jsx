@@ -106,12 +106,33 @@ export default function CampaignModal({
 
   // Initialisation de l'adresse
   useEffect(() => {
+    console.log('CampaignModal - Address from useAddress:', address);
     if (address) {
       setFormData(prev => ({
         ...prev,
         creatorAddress: address,
         royaltyReceiver: address
       }));
+    } else {
+      // Fallback: essayer de récupérer l'adresse depuis localStorage ou window.ethereum
+      const tryGetAddress = async () => {
+        try {
+          if (typeof window !== 'undefined' && window.ethereum) {
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            if (accounts && accounts.length > 0) {
+              console.log('Fallback address found:', accounts[0]);
+              setFormData(prev => ({
+                ...prev,
+                creatorAddress: accounts[0],
+                royaltyReceiver: accounts[0]
+              }));
+            }
+          }
+        } catch (error) {
+          console.error('Error getting fallback address:', error);
+        }
+      };
+      tryGetAddress();
     }
   }, [address]);
 
@@ -429,7 +450,7 @@ export default function CampaignModal({
       if (campaignAddress) {
         try {
           // Ajouter la nouvelle campagne au cache des campagnes
-          const allCampaigns = await apiManager.getAllCampaigns(false); // Force refresh
+          await apiManager.getAllCampaigns(false); // Force refresh
           
           // Précharger les données de la campagne nouvellement créée
           setTimeout(async () => {
@@ -594,7 +615,7 @@ export default function CampaignModal({
 
   return (
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden bg-white dark:bg-neutral-900 border-0 shadow-2xl">
         <DialogHeader className="pb-0">
           <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             Créer une nouvelle campagne
@@ -609,16 +630,17 @@ export default function CampaignModal({
           <StepIndicator currentStep={currentStep} totalSteps={5} />
         )}
 
-        {/* Contenu principal */}
-        <ScrollArea className="flex-1 px-2">
-          <div className="min-h-[400px]">
-            {renderStepContent()}
-          </div>
-        </ScrollArea>
+        {/* Contenu principal avec hauteur fixe */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <ScrollArea className="flex-1 px-2">
+            <div className="min-h-[400px] pb-4">
+              {renderStepContent()}
+            </div>
+          </ScrollArea>
 
-        {/* Navigation */}
-        {status === 'idle' && (
-          <div className="flex justify-between items-center pt-6 border-t border-gray-200 dark:border-neutral-800">
+          {/* Navigation fixe en bas */}
+          {status === 'idle' && (
+            <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
             <Button
               type="button"
               variant="outline"
@@ -648,6 +670,7 @@ export default function CampaignModal({
             )}
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
