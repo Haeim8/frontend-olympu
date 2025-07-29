@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
+import { useAddress } from "@thirdweb-dev/react";
 import { db } from "@/lib/firebase/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import FundRaisingPlatformABI from "@/ABI/DivarProxyABI.json";
 
 // Composants réutilisables - Version ShadCN
 import { LandingHeader } from "./landing/LandingHeader";
@@ -18,11 +17,10 @@ import { LandingFooter } from "./landing/LandingFooter";
 import { LandingSignupModal } from "./landing/LandingSignupModal";
 import { LandingBackground } from "./landing/LandingBackground";
 
-export default function Home({ onAccessInterface, userExists: propUserExists, isRegistered: propIsRegistered }) {
+export default function Home({ onAccessInterface }) {
   const [darkMode, setDarkMode] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-  const [userExists, setUserExists] = useState(propUserExists || false);
-  const [isRegistered, setIsRegistered] = useState(propIsRegistered || false);
+  const [userExists, setUserExists] = useState(false);
   const [formData, setFormData] = useState({
     photo: "",
     username: "",
@@ -30,50 +28,24 @@ export default function Home({ onAccessInterface, userExists: propUserExists, is
     socialMedia: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [registrationLoading, setRegistrationLoading] = useState(false);
-  const [registrationError, setRegistrationError] = useState(null);
 
   const address = useAddress();
   const router = useRouter();
-  const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
 
-  const { contract } = useContract(contractAddress, FundRaisingPlatformABI);
-
-  const { data: isRegisteredData, isLoading: readLoading, error: readError } = useContractRead(
-    contract,
-    "isUserRegistered",
-    [address]
-  );
-
-  const { data: registrationFeeETH, isLoading: isFeeLoading } = useContractRead(
-    contract,
-    "getRegistrationFeeETH",
-    []
-  );
-
-  // Mettre à jour les états locaux quand les props changent
+  // Vérifier si l'utilisateur a un profil Firebase
   useEffect(() => {
-    if (propUserExists !== undefined) {
-      setUserExists(propUserExists);
-    }
-  }, [propUserExists]);
-
-  useEffect(() => {
-    if (propIsRegistered !== undefined) {
-      setIsRegistered(propIsRegistered);
-    }
-  }, [propIsRegistered]);
-
-  useEffect(() => {
-    if (isRegisteredData !== undefined) {
-      setIsRegistered(isRegisteredData);
-      console.log(`User registered in contract: ${isRegisteredData}`);
-    }
-    if (readError) {
-      console.error("Erreur lors de la lecture du contrat:", readError);
-      setRegistrationError(".");
-    }
-  }, [isRegisteredData, readError]);
+    const checkUserProfile = async () => {
+      if (address) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", address));
+          setUserExists(userDoc.exists());
+        } catch (error) {
+          console.error("Erreur lors de la vérification du profil:", error);
+        }
+      }
+    };
+    checkUserProfile();
+  }, [address]);
 
   useEffect(() => {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -106,7 +78,6 @@ export default function Home({ onAccessInterface, userExists: propUserExists, is
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setRegistrationError(null);
 
     try {
       await setDoc(doc(db, "users", address), {
@@ -119,48 +90,13 @@ export default function Home({ onAccessInterface, userExists: propUserExists, is
       console.log("Profil créé:", formData);
       setShowSignup(false);
       setUserExists(true);
-
-      if (contract && registrationFeeETH) {
-        setRegistrationLoading(true);
-        console.log("Appel de la fonction registerUser");
-        const tx = await contract.call("registerUser", [], {
-          value: registrationFeeETH
-        });
-        
-        console.log("Transaction réussie:", tx);
-        await tx.wait();
-        
-        setIsRegistered(true);
-        alert("Inscription réussie !");
-      }
+      alert("Profil créé avec succès !");
+      
     } catch (error) {
-      console.error("Erreur lors de l'inscription:", error);
-      setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
+      console.error("Erreur lors de la création du profil:", error);
+      alert("Erreur lors de la création du profil. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);
-      setRegistrationLoading(false);
-    }
-  };
-
-  const handleRegisterOnContract = async () => {
-    try {
-      setRegistrationLoading(true);
-      console.log("Appel de la fonction registerUser");
-      const tx = await contract.call("registerUser", [], {
-        value: registrationFeeETH
-      });
-      console.log("Transaction réussie:", tx);
-
-      await tx.wait();
-
-      setIsRegistered(true);
-      alert("Inscription réussie !");
-      checkUserProfileAndContract();
-    } catch (error) {
-      console.error("Erreur lors de l'inscription:", error);
-      setRegistrationError("Échec de l'inscription. Veuillez réessayer.");
-    } finally {
-      setRegistrationLoading(false);
     }
   };
 
@@ -179,14 +115,8 @@ export default function Home({ onAccessInterface, userExists: propUserExists, is
           darkMode={darkMode}
           address={address}
           userExists={userExists}
-          isRegistered={isRegistered}
-          readLoading={readLoading}
-          registrationLoading={registrationLoading}
-          registrationError={registrationError}
           setShowSignup={setShowSignup}
-          handleRegisterOnContract={handleRegisterOnContract}
-          router={router}
-          isFeeLoading={isFeeLoading}
+          onAccessInterface={onAccessInterface}
         />
         
         <LandingInfoSection darkMode={darkMode} />

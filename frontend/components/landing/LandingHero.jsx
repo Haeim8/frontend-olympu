@@ -8,14 +8,8 @@ export function LandingHero({
   darkMode,
   address,
   userExists,
-  isRegistered,
-  readLoading,
-  registrationLoading,
-  registrationError,
   setShowSignup,
-  handleRegisterOnContract,
-  router,
-  isFeeLoading,
+  onAccessInterface,
 }) {
   return (
     <main id="accueil" className="flex-1 relative z-10 flex items-center justify-center min-h-[60vh]">
@@ -96,43 +90,19 @@ export function LandingHero({
               <div className="flex flex-col items-center space-y-3">
                 {address ? (
                   userExists ? (
-                    readLoading ? (
-                      <div className="flex items-center space-x-2 text-lime-400">
-                        <div className="animate-spin w-4 h-4 border-2 border-lime-400 border-t-transparent rounded-full"></div>
-                        <span className="text-sm">Vérification en cours...</span>
-                      </div>
-                    ) : isRegistered ? (
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Button
+                        className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white border-0 shadow-xl hover:shadow-lime-500/25 transition-all duration-300"
+                        onClick={onAccessInterface}
                       >
-                        <Button
-                          className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white border-0 shadow-xl hover:shadow-lime-500/25 transition-all duration-300"
-                          onClick={() => router.push("/app")}
-                        >
-                          <Zap className="w-4 h-4 mr-2" />
-                          Lancer l'App
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </Button>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Button
-                          className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-xl hover:shadow-red-500/25 transition-all duration-300"
-                          onClick={handleRegisterOnContract}
-                          disabled={registrationLoading || isFeeLoading}
-                        >
-                          <Shield className="w-4 h-4 mr-2" />
-                          {registrationLoading ? "Inscription..." : 
-                           isFeeLoading ? "Chargement des frais..." : 
-                           "S'inscrire sur le Smart Contract"}
-                          {!registrationLoading && <ArrowRight className="w-4 h-4 ml-2" />}
-                        </Button>
-                      </motion.div>
-                    )
+                        <Zap className="w-4 h-4 mr-2" />
+                        Lancer l'App
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </motion.div>
                   ) : (
                     <motion.div
                       whileHover={{ scale: 1.05 }}
@@ -159,12 +129,6 @@ export function LandingHero({
                     </div>
                   </div>
                 )}
-                
-                {registrationError && (
-                  <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-center text-sm">
-                    {registrationError}
-                  </div>
-                )}
               </div>
 
               {/* Stats en bas */}
@@ -181,8 +145,8 @@ export function LandingHero({
                   <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Support actif</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-lime-500">0.05Ξ</div>
-                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Frais d'inscription</div>
+                  <div className="text-xl font-bold text-lime-500">GRATUIT</div>
+                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Inscription</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xl font-bold text-lime-500">100%</div>
