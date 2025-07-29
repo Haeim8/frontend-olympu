@@ -13,6 +13,7 @@ import TransactionHistory from '@/components/campaign/finance/TransactionHistory
 import CampaignInvestors from '@/components/campaign/CampaignInvestors';
 import CampaignDocuments from '@/components/campaign/CampaignDocuments';
 import CampaignSocial from '@/components/campaign/CampaignSocial';
+import LiveScheduler from '@/components/campaign/LiveScheduler';
 
 // Import des dialogs
 import ReopenCampaignDialog from '@/components/campaign/dialogs/ReopenCampaignDialog';
@@ -167,6 +168,21 @@ export default function Campaign() {
     setCampaignData(prev => prev ? { ...prev, certificationPending: true } : null);
   }, []);
 
+  // Gestionnaires pour les sessions live
+  const handleScheduleLive = useCallback((sessionData) => {
+    console.log('Live session scheduled:', sessionData);
+    // Ici on appellerait le smart contract pour programmer la session
+    // et envoyer les notifications aux holders NFT
+  }, []);
+
+  const handleStartLive = useCallback(() => {
+    console.log('Starting live session');
+    // Rediriger vers la page live
+    if (typeof window !== 'undefined') {
+      window.open(`/campaign/${campaignAddress}/live`, '_blank');
+    }
+  }, [campaignAddress]);
+
   // Rendu conditionnel pour les états d'erreur
   if (!address) {
     return (
@@ -214,6 +230,12 @@ export default function Campaign() {
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
               Social
+            </TabsTrigger>
+            <TabsTrigger 
+              value="live" 
+              className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
+            >
+              Sessions Live
             </TabsTrigger>
           </TabsList>
 
@@ -263,6 +285,15 @@ export default function Campaign() {
               campaignData={campaignData}
               campaignAddress={campaignAddress}
               onSocialUpdate={handleSocialUpdate}
+            />
+          </TabsContent>
+
+          {/* Onglet Sessions Live */}
+          <TabsContent value="live">
+            <LiveScheduler
+              campaignData={campaignData}
+              onScheduleLive={handleScheduleLive}
+              onStartLive={handleStartLive}
             />
           </TabsContent>
         </Tabs>
