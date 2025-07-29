@@ -3,7 +3,7 @@ import { ThirdwebProvider } from '@thirdweb-dev/react';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Base, BaseSepoliaTestnet } from "@thirdweb-dev/chains";
 
-// Chain Base Sepolia avec wallet_addEthereumChain params
+// Chain Base Sepolia avec QuickNode RPC
 const BaseSepoliaConfig = {
   chainId: 84532,
   name: "Base Sepolia",
@@ -14,7 +14,10 @@ const BaseSepoliaConfig = {
     symbol: "ETH",
     decimals: 18,
   },
-  rpc: ["https://sepolia.base.org"],
+  rpc: [
+    process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL || "https://sepolia.base.org",
+    "https://sepolia.base.org" // Fallback
+  ],
   blockExplorer: {
     name: "BaseScan",
     url: "https://sepolia.basescan.org",
