@@ -3,7 +3,7 @@ import FundRaisingPlatformABI from '../../abis/FundRaisingPlatformABI.json';
 import CampaignABI from 'ABI/CampaignABI.json'; // Si nécessaire
 import { useEffect } from 'react';
 
-const FUNDRAISING_PLATFORM_ADDRESS = '0xF334d4CEcB73bc95e032949b9437A1eE6D4C6019'; // Adresse déployée
+const FUNDRAISING_PLATFORM_ADDRESS = '0xEF19D1E5510321a5Fbf7F0F701F8162345c40B90'; // Adresse déployée DivarProxy
 const CAMPAIGN_ADDRESS = '0xYourCampaignContractAddress'; // Adresse déployée
 
 const useHasNFT = (address, campaignId) => {

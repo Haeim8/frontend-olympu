@@ -24,7 +24,7 @@ export const useUserRegistration = () => {
   const [showSignup, setShowSignup] = useState(false)
 
   const address = useAddress()
-  const contractAddress = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941"
+  const contractAddress = "0xEF19D1E5510321a5Fbf7F0F701F8162345c40B90"
   const { contract } = useContract(contractAddress, FundRaisingPlatformABI)
 
   const {

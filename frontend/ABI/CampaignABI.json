@@ -119,6 +119,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_fromTokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_toTokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "BatchMetadataUpdate",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "treasury",
@@ -246,6 +265,19 @@
       }
     ],
     "name": "FundsTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "MetadataUpdate",
     "type": "event"
   },
   {
@@ -1391,6 +1423,19 @@
   {
     "inputs": [
       {
+        "internalType": "string",
+        "name": "baseURI",
+        "type": "string"
+      }
+    ],
+    "name": "setBaseURI",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -1402,44 +1447,6 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "socialLinks",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "website",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "twitter",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "github",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "discord",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "telegram",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "medium",
-        "type": "string"
       }
     ],
     "stateMutability": "view",
