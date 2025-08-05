@@ -22,12 +22,25 @@ class ApiManager {
   }
 
   async initializeWeb3() {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      const { ethers } = await import('ethers');
+    const { ethers } = await import('ethers');
+    
+    // Priorité à QuickNode RPC pour une meilleure performance
+    const quicknodeUrl = process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL;
+    const fallbackUrl = "https://sepolia.base.org";
+    
+    if (quicknodeUrl) {
+      console.log('🚀 Utilisation de QuickNode RPC');
+      this.provider = new ethers.providers.JsonRpcProvider(quicknodeUrl);
+      return true;
+    } else if (typeof window !== 'undefined' && window.ethereum) {
+      console.log('🦊 Utilisation du wallet MetaMask');
       this.provider = new ethers.providers.Web3Provider(window.ethereum);
       return true;
+    } else {
+      console.log('🌐 Utilisation du RPC public Base Sepolia');
+      this.provider = new ethers.providers.JsonRpcProvider(fallbackUrl);
+      return true;
     }
-    return false;
   }
 
   async loadABIs() {

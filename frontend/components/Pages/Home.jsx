@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useContract, useContractRead } from '@thirdweb-dev/react';
 import { apiManager } from '@/lib/services/api-manager';
 
 // Import des composants modulaires
@@ -35,17 +34,10 @@ export default function Home() {
     totalRaised: 0
   });
 
-  // Contrat platform
-  const PLATFORM_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
-  const { contract: platformContract } = useContract(PLATFORM_ADDRESS);
-  const { data: campaignAddresses, isLoading: addressesLoading, error: contractError } = useContractRead(
-    platformContract,
-    "getAllCampaigns",
-    [],
-    {
-      enabled: !!platformContract
-    }
-  );
+  // États pour les adresses de campagnes (remplace ThirdWeb)
+  const [campaignAddresses, setCampaignAddresses] = useState([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [contractError, setContractError] = useState(null);
 
   // Fonction pour calculer les statistiques
   const calculateStats = useCallback((campaigns) => {
@@ -138,9 +130,26 @@ export default function Home() {
     return filtered;
   }, []);
 
+  // Fonction pour charger les adresses des campagnes
+  const fetchCampaignAddresses = useCallback(async () => {
+    setAddressesLoading(true);
+    setContractError(null);
+    
+    try {
+      const addresses = await apiManager.getAllCampaigns();
+      setCampaignAddresses(addresses);
+    } catch (error) {
+      console.error("Error fetching campaign addresses:", error);
+      setContractError(error.message);
+      setCampaignAddresses([]);
+    } finally {
+      setAddressesLoading(false);
+    }
+  }, []);
+
   // Fonction pour charger toutes les campagnes avec cache intelligent
   const fetchAllCampaigns = useCallback(async () => {
-    if (!campaignAddresses || !platformContract) {
+    if (!campaignAddresses || campaignAddresses.length === 0) {
       setIsLoading(false);
       return;
     }
@@ -181,14 +190,19 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [platformContract, campaignAddresses, calculateStats]);
+  }, [campaignAddresses, calculateStats]);
 
-  // Effet pour charger les campagnes
+  // Effet pour charger les adresses des campagnes au démarrage
   useEffect(() => {
-    if (!addressesLoading && platformContract) {
+    fetchCampaignAddresses();
+  }, [fetchCampaignAddresses]);
+
+  // Effet pour charger les campagnes une fois les adresses récupérées
+  useEffect(() => {
+    if (!addressesLoading && campaignAddresses.length > 0) {
       fetchAllCampaigns();
     }
-  }, [platformContract, campaignAddresses, addressesLoading, fetchAllCampaigns]);
+  }, [campaignAddresses, addressesLoading, fetchAllCampaigns]);
 
   // Effet pour appliquer les filtres
   useEffect(() => {
@@ -203,8 +217,8 @@ export default function Home() {
 
   const handleCampaignCreated = useCallback(() => {
     setShowCreateCampaign(false);
-    fetchAllCampaigns();
-  }, [fetchAllCampaigns]);
+    fetchCampaignAddresses();
+  }, [fetchCampaignAddresses]);
 
   const handleViewDetails = useCallback((project) => {
     setSelectedProject(project);
@@ -222,8 +236,8 @@ export default function Home() {
   const handleRefresh = useCallback(() => {
     // Vider le cache et recharger
     apiManager.clearCache();
-    fetchAllCampaigns();
-  }, [fetchAllCampaigns]);
+    fetchCampaignAddresses();
+  }, [fetchCampaignAddresses]);
 
   // Préchargement intelligent au survol (désactivé pour API simplifié)
   const handlePreloadHover = useCallback((campaignId) => {
