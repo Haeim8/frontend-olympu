@@ -246,27 +246,75 @@ class BlockchainCache {
   }
 
   async fetchCampaignData(campaignId) {
-    return null;
+    try {
+      const { apiManager } = await import('./api-manager.js');
+      return await apiManager.getCampaignData(campaignId, false);
+    } catch (error) {
+      console.error('Erreur fetchCampaignData:', error);
+      return null;
+    }
   }
 
   async fetchInvestorsData(campaignId) {
-    return null;
+    try {
+      const { apiManager } = await import('./api-manager.js');
+      return await apiManager.getCampaignInvestors(campaignId, false);
+    } catch (error) {
+      console.error('Erreur fetchInvestorsData:', error);
+      return null;
+    }
   }
 
   async fetchTransactionsData(campaignId) {
-    return null;
+    try {
+      const { apiManager } = await import('./api-manager.js');
+      return await apiManager.getCampaignTransactions(campaignId, false);
+    } catch (error) {
+      console.error('Erreur fetchTransactionsData:', error);
+      return null;
+    }
   }
 
   async refreshCampaignData(campaignId) {
-    return null;
+    try {
+      const data = await this.fetchCampaignData(campaignId);
+      if (data) {
+        const key = this.generateKey('campaign', campaignId);
+        this.set(key, data, this.defaultTTL);
+      }
+      return data;
+    } catch (error) {
+      console.error('Erreur refreshCampaignData:', error);
+      return null;
+    }
   }
 
   async refreshInvestorsData(campaignId) {
-    return null;
+    try {
+      const data = await this.fetchInvestorsData(campaignId);
+      if (data) {
+        const key = this.generateKey('campaign_investors', campaignId);
+        this.set(key, data, this.defaultTTL);
+      }
+      return data;
+    } catch (error) {
+      console.error('Erreur refreshInvestorsData:', error);
+      return null;
+    }
   }
 
   async refreshTransactionsData(campaignId) {
-    return null;
+    try {
+      const data = await this.fetchTransactionsData(campaignId);
+      if (data) {
+        const key = this.generateKey('campaign_transactions', campaignId);
+        this.set(key, data, this.defaultTTL);
+      }
+      return data;
+    } catch (error) {
+      console.error('Erreur refreshTransactionsData:', error);
+      return null;
+    }
   }
 }
 
