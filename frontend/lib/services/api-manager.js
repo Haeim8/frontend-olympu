@@ -325,15 +325,28 @@ class ApiManager {
     if (!value) return "0";
     
     try {
-      // Conversion simple sans import dynamique pour éviter les problèmes async
-      const valueStr = value.toString();
-      if (valueStr === '0') return "0";
+      let numericValue;
       
-      // Conversion basique de Wei vers Ether (diviser par 10^18)
-      const ethValue = parseFloat(valueStr) / Math.pow(10, 18);
+      // Si c'est un objet BigNumber avec .hex
+      if (typeof value === 'object' && value.hex) {
+        numericValue = parseInt(value.hex, 16);
+      } 
+      // Si c'est déjà une string hex
+      else if (typeof value === 'string' && value.startsWith('0x')) {
+        numericValue = parseInt(value, 16);
+      }
+      // Si c'est un nombre ou string normale
+      else {
+        numericValue = parseFloat(value.toString());
+      }
+      
+      if (numericValue === 0) return "0";
+      
+      // Conversion de Wei vers Ether (diviser par 10^18)
+      const ethValue = numericValue / Math.pow(10, 18);
       return ethValue.toString();
     } catch (error) {
-      console.error('Erreur formatEthValue:', error);
+      console.error('Erreur formatEthValue:', error, 'value:', value);
       return "0";
     }
   }
