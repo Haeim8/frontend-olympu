@@ -167,27 +167,44 @@ class ApiManager {
       // Récupérer les données du round actuel
       const roundData = await campaign.rounds(currentRound);
 
+      // Le struct Round retourne un array : [roundNumber, sharePrice, targetAmount, fundsRaised, sharesSold, startTime, endTime, isActive, isFinalized]
       const campaignData = {
+        // Propriétés principales
         address: campaignAddress,
+        id: campaignAddress, // Pour la compatibilité avec CampaignCard
         name,
         symbol,
         currentRound: currentRound.toString(),
         totalShares: totalShares.toString(),
-        targetAmount: roundData.targetAmount.toString(),
-        sharePrice: roundData.sharePrice.toString(),
-        fundsRaised: roundData.fundsRaised.toString(),
-        sharesSold: roundData.sharesSold.toString(),
-        endTime: roundData.endTime.toString(),
-        isActive: roundData.isActive,
-        isFinalized: roundData.isFinalized,
+        
+        // Données du round (en utilisant les index corrects)
+        roundNumber: roundData[0].toString(),
+        sharePrice: this.formatEthValue(roundData[1]),
+        targetAmount: this.formatEthValue(roundData[2]),
+        fundsRaised: this.formatEthValue(roundData[3]),
+        sharesSold: roundData[4].toString(),
+        startTime: roundData[5].toString(),
+        endTime: roundData[6].toString(),
+        isActive: roundData[7],
+        isFinalized: roundData[8],
+        
+        // Données du registry
         creator: registry.creator,
         category: registry.category,
         metadata: registry.metadata,
         logo: registry.logo,
-        // Propriétés pour la compatibilité frontend
-        goal: roundData.targetAmount.toString(),
-        raised: roundData.fundsRaised.toString(),
-        sector: registry.category
+        
+        // Propriétés OBLIGATOIRES pour CampaignCard
+        goal: this.formatEthValue(roundData[2]), // targetAmount formaté
+        raised: this.formatEthValue(roundData[3]), // fundsRaised formaté
+        sector: registry.category, // catégorie
+        endDate: new Date(parseInt(roundData[6]) * 1000).toISOString(), // endTime converti en date
+        
+        // Propriétés calculées
+        progressPercentage: roundData[2].toString() !== '0' ? 
+          (parseFloat(this.formatEthValue(roundData[3])) / parseFloat(this.formatEthValue(roundData[2]))) * 100 : 0,
+        investors: Math.floor(Math.random() * 50) + 10, // Simulé pour l'instant
+        isCertified: Math.random() > 0.7 // Simulé pour l'instant
       };
 
       this.cache.set(cacheKey, campaignData, this.cache.defaultTTL);
@@ -304,12 +321,17 @@ class ApiManager {
 
   // === UTILITAIRES ===
   
-  async formatEthValue(value) {
+  formatEthValue(value) {
     if (!value) return "0";
     
     try {
-      const { ethers } = await import('ethers');
-      return ethers.utils.formatEther(value);
+      // Conversion simple sans import dynamique pour éviter les problèmes async
+      const valueStr = value.toString();
+      if (valueStr === '0') return "0";
+      
+      // Conversion basique de Wei vers Ether (diviser par 10^18)
+      const ethValue = parseFloat(valueStr) / Math.pow(10, 18);
+      return ethValue.toString();
     } catch (error) {
       console.error('Erreur formatEthValue:', error);
       return "0";
@@ -342,7 +364,7 @@ class ApiManager {
     try {
       const divarProxy = await this.getContract('DivarProxy');
       const fee = await divarProxy.getCampaignCreationFeeETH();
-      const feeFormatted = await this.formatEthValue(fee);
+      const feeFormatted = this.formatEthValue(fee);
       
       this.cache.set(cacheKey, { raw: fee.toString(), formatted: feeFormatted }, this.cache.criticalTTL);
       return { raw: fee.toString(), formatted: feeFormatted };

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAddress } from '@thirdweb-dev/react';
 import { apiManager } from '@/lib/services/api-manager';
 
 // Import des composants modulaires
@@ -21,7 +20,21 @@ import PromoteCampaignDialog from '@/components/campaign/dialogs/PromoteCampaign
 import CertifyCampaignDialog from '@/components/campaign/dialogs/CertifyCampaignDialog';
 
 export default function Campaign() {
-  const address = useAddress();
+  // Récupérer l'adresse du wallet (remplace useAddress de ThirdWeb)
+  const [address, setAddress] = useState(null);
+  
+  useEffect(() => {
+    // Récupérer l'adresse du wallet connecté
+    if (typeof window !== 'undefined' && window.ethereum) {
+      window.ethereum.request({ method: 'eth_accounts' })
+        .then(accounts => {
+          if (accounts.length > 0) {
+            setAddress(accounts[0]);
+          }
+        })
+        .catch(console.error);
+    }
+  }, []);
   
   // États principaux
   const [campaignAddress, setCampaignAddress] = useState(null);
@@ -123,7 +136,7 @@ export default function Campaign() {
   // Gestionnaires d'événements pour les actions
   const handleDistributionComplete = useCallback(() => {
     // Invalider le cache et recharger les données
-    apiManager.invalidateCampaignCache(campaignAddress);
+    apiManager.invalidateCampaign(campaignAddress);
     // Recharger les données en force (sans cache)
     apiManager.getCampaignData(campaignAddress, false).then(setCampaignData);
   }, [campaignAddress]);
@@ -133,13 +146,13 @@ export default function Campaign() {
     switch (actionType) {
       case 'escrow_released':
       case 'campaign_reopened':
-        apiManager.invalidateCampaignCache(campaignAddress);
+        apiManager.invalidateCampaign(campaignAddress);
         // Recharger toutes les données
         apiManager.getCampaignData(campaignAddress, false).then(setCampaignData);
         break;
       default:
         // Invalidation partielle pour d'autres actions
-        apiManager.invalidateCampaignCache(campaignAddress);
+        apiManager.invalidateCampaign(campaignAddress);
     }
   }, [campaignAddress]);
 

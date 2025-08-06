@@ -3,9 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
 import { apiManager } from '@/lib/services/api-manager';
-import CampaignABI from '@/ABI/CampaignABI.json';
 
 // Import des composants modulaires
 import ProjectHeader from '@/components/project/ProjectHeader';
@@ -34,10 +32,20 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     ipfs: null
   });
 
-  const userAddress = useAddress();
-
-  const { contract: campaignContract } = useContract(project.id, CampaignABI);
-  const { mutateAsync: buyShares, isLoading: buying } = useContractWrite(campaignContract, "buyShares");
+  // Récupérer l'adresse du wallet (remplace useAddress de ThirdWeb)
+  const [userAddress, setUserAddress] = useState(null);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.ethereum) {
+      window.ethereum.request({ method: 'eth_accounts' })
+        .then(accounts => {
+          if (accounts.length > 0) {
+            setUserAddress(accounts[0]);
+          }
+        })
+        .catch(console.error);
+    }
+  }, []);
 
   useEffect(() => {
     setShowProjectDetails(!!selectedProject);
