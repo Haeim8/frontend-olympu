@@ -24,10 +24,16 @@ class ApiManager {
   async initializeWeb3() {
     const { ethers } = await import('ethers');
     
-    // Priorité à QuickNode RPC pour une meilleure performance
-    const quicknodeUrl = process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL;
+    // Priorité au RPC public pour éviter les limites de rate
     const fallbackUrl = "https://sepolia.base.org";
+    const quicknodeUrl = process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL;
     
+    // Utiliser RPC public en priorité pour éviter 429 errors
+    console.log('🌐 Utilisation du RPC public Base Sepolia');
+    this.provider = new ethers.providers.JsonRpcProvider(fallbackUrl);
+    return true;
+    
+    /* QuickNode désactivé temporairement - rate limit atteint
     if (quicknodeUrl) {
       console.log('🚀 Utilisation de QuickNode RPC');
       this.provider = new ethers.providers.JsonRpcProvider(quicknodeUrl);
@@ -41,18 +47,18 @@ class ApiManager {
       this.provider = new ethers.providers.JsonRpcProvider(fallbackUrl);
       return true;
     }
+    */
   }
 
   async loadABIs() {
     if (Object.keys(this.abis).length > 0) return;
 
     try {
-      const [divarAbi, campaignAbi, keeperAbi, priceAbi] = await Promise.all([
-        import('/ABI/DivarProxyABI.json'),
-        import('/ABI/CampaignABI.json'),
-        import('/ABI/CampaignKeeperABI.json'),
-        import('/ABI/PriceConsumerV3ABI.json')
-      ]);
+      // Import dynamique des ABIs
+      const divarAbi = await import('../../ABI/DivarProxyABI.json');
+      const campaignAbi = await import('../../ABI/CampaignABI.json');
+      const keeperAbi = await import('../../ABI/CampaignKeeperABI.json');
+      const priceAbi = await import('../../ABI/PriceConsumerV3ABI.json');
 
       this.abis = {
         DivarProxy: divarAbi.default,
@@ -154,20 +160,41 @@ class ApiManager {
         name,
         symbol,
         currentRound,
-        totalShares,
-        registry
+        totalShares
       ] = await Promise.all([
         campaign.name(),
         campaign.symbol(),
         campaign.getCurrentRound(),
-        campaign.totalSupply(),
-        divarProxy.campaignRegistry(campaignAddress)
+        campaign.totalSupply()
       ]);
 
-      // Récupérer les données du round actuel
-      const roundData = await campaign.rounds(currentRound);
+      // Récupération du registry avec la VRAIE fonction getCampaignRegistry
+      const registry = await divarProxy.getCampaignRegistry(campaignAddress);
+
+      // Récupérer les données du round actuel avec gestion d'erreur  
+      const currentRoundNumber = typeof currentRound === 'object' && currentRound.toNumber ? currentRound.toNumber() : parseInt(currentRound.toString());
+      const roundData = await campaign.rounds(currentRoundNumber);
+
+      // Validation que roundData est un array avec les bonnes propriétés
+      if (!Array.isArray(roundData) || roundData.length < 9) {
+        throw new Error(`Invalid roundData structure: ${JSON.stringify(roundData)}`);
+      }
 
       // Le struct Round retourne un array : [roundNumber, sharePrice, targetAmount, fundsRaised, sharesSold, startTime, endTime, isActive, isFinalized]
+      console.log('🔍 Debug roundData COMPLET:', {
+        0: roundData[0]?.toString(),
+        1: roundData[1]?.toString(),
+        2: roundData[2]?.toString(),  
+        3: roundData[3]?.toString(),
+        4: roundData[4]?.toString(),
+        5: `${roundData[5]?.toString()} (${new Date(parseInt(roundData[5]) * 1000).toLocaleString()})`, // startTime
+        6: `${roundData[6]?.toString()} (${new Date(parseInt(roundData[6]) * 1000).toLocaleString()})`, // endTime
+        7: roundData[7],  // isActive
+        8: roundData[8],  // isFinalized
+        currentTime: `${Math.floor(Date.now()/1000)} (${new Date().toLocaleString()})`,
+        length: roundData.length
+      });
+      
       const campaignData = {
         // Propriétés principales
         address: campaignAddress,
@@ -203,8 +230,8 @@ class ApiManager {
         // Propriétés calculées
         progressPercentage: roundData[2].toString() !== '0' ? 
           (parseFloat(this.formatEthValue(roundData[3])) / parseFloat(this.formatEthValue(roundData[2]))) * 100 : 0,
-        investors: Math.floor(Math.random() * 50) + 10, // Simulé pour l'instant
-        isCertified: Math.random() > 0.7 // Simulé pour l'instant
+        investors: parseInt(roundData[4]) || 0, // Nombre de shares vendues = nombre d'investisseurs approximatif
+        isCertified: false // À implémenter plus tard
       };
 
       this.cache.set(cacheKey, campaignData, this.cache.defaultTTL);
@@ -325,26 +352,42 @@ class ApiManager {
     if (!value) return "0";
     
     try {
+      // PROTECTION: Si c'est un array, on ne traite pas
+      if (Array.isArray(value)) {
+        console.warn('formatEthValue reçoit un array, valeur ignorée:', value);
+        return "0";
+      }
+
       let numericValue;
       
-      // Si c'est un objet BigNumber avec .hex
-      if (typeof value === 'object' && value.hex) {
-        numericValue = parseInt(value.hex, 16);
+      // Si c'est un objet BigNumber avec _hex ou hex
+      if (typeof value === 'object' && (value._hex || value.hex)) {
+        numericValue = parseInt(value._hex || value.hex, 16);
       } 
       // Si c'est déjà une string hex
       else if (typeof value === 'string' && value.startsWith('0x')) {
         numericValue = parseInt(value, 16);
+      }
+      // Si c'est un BigNumber objet avec toString()
+      else if (typeof value === 'object' && typeof value.toString === 'function') {
+        const strValue = value.toString();
+        numericValue = parseFloat(strValue);
       }
       // Si c'est un nombre ou string normale
       else {
         numericValue = parseFloat(value.toString());
       }
       
-      if (numericValue === 0) return "0";
+      if (numericValue === 0 || isNaN(numericValue)) return "0";
       
       // Conversion de Wei vers Ether (diviser par 10^18)
       const ethValue = numericValue / Math.pow(10, 18);
-      return ethValue.toString();
+      
+      // Si la valeur est très petite, utiliser plus de décimales
+      if (ethValue < 0.000001) {
+        return ethValue.toFixed(9);
+      }
+      return ethValue.toFixed(6);
     } catch (error) {
       console.error('Erreur formatEthValue:', error, 'value:', value);
       return "0";
@@ -384,6 +427,61 @@ class ApiManager {
     } catch (error) {
       console.error('Erreur getCampaignCreationFee:', error);
       return { raw: "0", formatted: "0" };
+    }
+  }
+
+  // === CRÉATION DE CAMPAGNE ===
+  
+  async createCampaign(campaignData) {
+    try {
+      const divarProxy = await this.getContract('DivarProxy');
+      
+      // Récupération des frais de création
+      const fee = await divarProxy.getCampaignCreationFeeETH();
+      
+      const tx = await divarProxy.createCampaign(
+        campaignData.name,
+        campaignData.symbol,
+        campaignData.targetAmount,
+        campaignData.sharePrice,
+        campaignData.endTime,
+        campaignData.category,
+        campaignData.metadata,
+        campaignData.royaltyFee,
+        campaignData.logo,
+        { value: fee }
+      );
+      
+      console.log('✅ Transaction de création envoyée:', tx.hash);
+      const receipt = await tx.wait();
+      console.log('✅ Transaction confirmée, gas utilisé:', receipt.gasUsed?.toString());
+      
+      // Extraire l'adresse de la nouvelle campagne depuis les events
+      const campaignCreatedEvent = receipt.events?.find(e => e.event === 'CampaignCreated');
+      
+      if (campaignCreatedEvent) {
+        const campaignAddress = campaignCreatedEvent.args?.campaignAddress;
+        console.log('✅ Nouvelle campagne créée:', campaignAddress);
+        
+        // Invalider le cache pour forcer le rechargement
+        this.invalidateCache('campaigns');
+        
+        return {
+          success: true,
+          campaignAddress,
+          txHash: tx.hash,
+          receipt
+        };
+      } else {
+        throw new Error('Événement CampaignCreated non trouvé');
+      }
+      
+    } catch (error) {
+      console.error('Erreur createCampaign:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 

@@ -59,30 +59,16 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       setIsLoading(true);
       setError(null);
 
-      // Utiliser api-manager pour récupérer les détails du projet avec cache
-      const projectDetails = await apiManager.fetchWithRetry(async () => {
-        return await apiManager.getCampaignData(project.id);
-      });
+      // Utiliser seulement les données blockchain - pas de système centralisé
+      const projectDetails = await apiManager.getCampaignData(project.id);
 
       if (projectDetails) {
         setProjectData(projectDetails);
-        
-        // Précharger les données liées si disponibles
-        if (projectDetails.relatedCampaigns) {
-          projectDetails.relatedCampaigns.forEach(campaignAddress => {
-            apiManager.preloadCampaignDetails(campaignAddress);
-          });
-        }
       }
 
-      // Récupérer les transactions avec cache
-      const transactionData = await apiManager.fetchWithRetry(async () => {
-        return await apiManager.getCampaignTransactions(project.id);
-      });
-
-      if (transactionData) {
-        setTransactions(transactionData);
-      }
+      // TODO: Récupérer les transactions depuis la blockchain directement
+      // Pour l'instant on laisse vide en attendant l'implémentation on-chain
+      setTransactions([]);
 
     } catch (error) {
       console.error('Erreur lors du chargement des données du projet:', error);
@@ -105,21 +91,18 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     }
 
     try {
-      const result = await apiManager.fetchWithRetry(async () => {
-        const totalValue = apiManager.parseEthValue(
-          (nftCount * parseFloat(project.sharePrice)).toString()
-        );
+      // Achat direct sans fetchWithRetry - tout sur blockchain
+      const totalValue = apiManager.parseEthValue(
+        (nftCount * parseFloat(project.sharePrice)).toString()
+      );
 
-        const receipt = await buyShares({
-          args: [nftCount],
-          overrides: { value: totalValue }
-        });
-        
-        return receipt;
+      const receipt = await buyShares({
+        args: [nftCount],
+        overrides: { value: totalValue }
       });
 
-      if (result?.transactionHash) {
-        console.log("Transaction confirmée:", result.transactionHash);
+      if (receipt?.transactionHash) {
+        console.log("Transaction confirmée:", receipt.transactionHash);
         
         // Invalider le cache pour recharger les données mises à jour
         apiManager.invalidateCache(`campaign_${project.id}`);
@@ -134,7 +117,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       console.error("Erreur lors de l'achat:", err);
       setError(err.message || 'Erreur lors de la transaction');
     }
-  }, [userAddress, project.sharePrice, project.id, buyShares, loadProjectData]);
+  }, [userAddress, project.sharePrice, project.id, loadProjectData]);
 
   const handleShare = useCallback(() => {
     if (navigator.share) {
@@ -213,7 +196,6 @@ export default function ProjectDetails({ selectedProject, onClose }) {
               project={project}
               onBuyShares={handleBuyShares}
               isLoading={isLoading}
-              buying={buying}
             />
 
             {/* Tabs */}

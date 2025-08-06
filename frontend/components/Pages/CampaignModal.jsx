@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
-import { useContract, useContractWrite, useAddress } from '@thirdweb-dev/react';
+import { useAddress } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 import html2canvas from 'html2canvas';
 import { pinataService } from '@/lib/services/storage';
@@ -55,33 +55,7 @@ const INITIAL_FORM_DATA = {
   acceptTerms: false
 };
 
-const CONTRACT_ADDRESS = "0x9fc348c0f4f4b1Ad6CaB657a7C519381FC5D3941";
-const CONTRACT_ABI = [
-  {
-    "inputs": [
-      { "type": "string", "name": "_name" },
-      { "type": "string", "name": "_symbol" },
-      { "type": "uint256", "name": "_targetAmount" },
-      { "type": "uint256", "name": "_sharePrice" },
-      { "type": "uint256", "name": "_endTime" },
-      { "type": "string", "name": "_category" },
-      { "type": "string", "name": "_metadata" },
-      { "type": "uint96", "name": "_royaltyFee" },
-      { "type": "string", "name": "_logo" }
-    ],
-    "name": "createCampaign",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "type": "function",
-    "name": "getCampaignCreationFeeETH", 
-    "inputs": [],
-    "outputs": [{ "type": "uint256" }],
-    "stateMutability": "view"
-  }
-];
+// Les contrats sont maintenant gérés par api-manager
 
 export default function CampaignModal({ 
   showCreateCampaign, 
@@ -101,8 +75,7 @@ export default function CampaignModal({
 
   // Hooks blockchain
   const address = useAddress();
-  const { contract } = useContract(CONTRACT_ADDRESS, CONTRACT_ABI);
-  const { mutateAsync: createCampaign, isLoading: writeLoading } = useContractWrite(contract, "createCampaign");
+  const [writeLoading, setWriteLoading] = useState(false);
 
   // Initialisation de l'adresse
   useEffect(() => {
@@ -427,35 +400,31 @@ export default function CampaignModal({
       const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
 
       // Obtenir les frais de création avec retry logic
-      const campaignFee = await apiManager.fetchWithRetry(async () => {
-        return await contract.call("getCampaignCreationFeeETH", []);
-      });
+      const feeData = await apiManager.getCampaignCreationFee();
+      const campaignFee = feeData.raw;
 
-      // Créer la campagne sur la blockchain avec retry logic
-      const result = await apiManager.fetchWithRetry(async () => {
-        return await createCampaign({
-          args: [
-            formData.name,
-            formData.symbol,
-            targetAmountWei,
-            sharePriceWei,
-            Math.floor(new Date(formData.endDate).getTime() / 1000),
-            formData.sector,
-            metadataURI,
-            ethers.BigNumber.from(formData.royaltyFee),
-            ""
-          ],
-          overrides: {
-            value: campaignFee
-          }
-        });
+      // Créer la campagne sur la blockchain avec api-manager
+      setWriteLoading(true);
+      const result = await apiManager.createCampaign({
+        name: formData.name,
+        symbol: formData.symbol,
+        targetAmount: targetAmountWei,
+        sharePrice: sharePriceWei,
+        endTime: Math.floor(new Date(formData.endDate).getTime() / 1000),
+        category: formData.sector, // _category parameter
+        metadata: metadataURI, // _metadata parameter
+        royaltyFee: ethers.BigNumber.from(formData.royaltyFee),
+        logo: "" // _logo parameter (empty string for now)
       });
+      setWriteLoading(false);
 
-      const receipt = result.receipt;
-      const event = receipt.events?.find(e => e.event === 'CampaignCreated');
-      const campaignAddress = event?.args?.campaignAddress;
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      const campaignAddress = result.campaignAddress;
       
-      setTransactionHash(receipt.transactionHash);
+      setTransactionHash(result.txHash);
       setStatus('success');
       
       // Précharger les données de la nouvelle campagne dans le cache
@@ -490,7 +459,7 @@ export default function CampaignModal({
           : error.message 
       });
     }
-  }, [formData, validateStep, status, createCampaignFolder, contract, createCampaign, onCampaignCreated]);
+  }, [formData, validateStep, status, createCampaignFolder, address, onCampaignCreated]);
 
   // Rendu du contenu selon l'étape
   const renderStepContent = () => {

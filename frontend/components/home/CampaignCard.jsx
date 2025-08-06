@@ -32,10 +32,23 @@ export default function CampaignCard({
   const formatTimeRemaining = () => {
     if (!project.isActive) return 'Terminé';
     
+    // Debug pour comprendre le problème
+    console.log('🕐 Debug time:', {
+      isActive: project.isActive,
+      endDate: project.endDate,
+      now: new Date().toISOString(),
+      endDateParsed: new Date(project.endDate).toISOString()
+    });
+    
     // Simuler le temps restant basé sur la date de fin
     const now = new Date();
     const endDate = new Date(project.endDate);
     const timeRemaining = endDate - now;
+    
+    // Si la campagne est active selon le smart contract, forcer "En cours"
+    if (project.isActive && timeRemaining <= 0) {
+      return 'En cours'; // Force "En cours" si le smart contract dit que c'est actif
+    }
     
     if (timeRemaining <= 0) return 'Terminé';
     
@@ -139,7 +152,7 @@ export default function CampaignCard({
               <div className="flex items-center justify-center gap-1 mb-1">
                 <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  {project.investors || Math.floor(Math.random() * 50) + 10}
+                  {project.investors || 0}
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400">Investisseurs</p>

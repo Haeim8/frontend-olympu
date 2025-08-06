@@ -539,6 +539,77 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "_campaign",
+        "type": "address"
+      }
+    ],
+    "name": "getCampaignRegistry",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "campaignAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creationTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "targetAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "category",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "isActive",
+            "type": "bool"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "metadata",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "logo",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "escrowAddress",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct DivarStorage.CampaignInfo",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "string",
         "name": "_category",
         "type": "string"

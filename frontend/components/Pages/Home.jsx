@@ -136,7 +136,7 @@ export default function Home() {
     setContractError(null);
     
     try {
-      const addresses = await apiManager.getAllCampaigns();
+      const addresses = await apiManager.getAllCampaigns(false); // Pas de cache pour forcer le rechargement
       setCampaignAddresses(addresses);
     } catch (error) {
       console.error("Error fetching campaign addresses:", error);
@@ -158,12 +158,23 @@ export default function Home() {
     setError(null);
 
     try {
-      // Récupérer les campagnes une par une (apiManager simplifié)
+      // Récupérer les campagnes une par une avec délai pour éviter rate limiting
       const validCampaigns = [];
-      for (const address of campaignAddresses) {
-        const campaignData = await apiManager.getCampaignData(address);
-        if (campaignData) {
-          validCampaigns.push(campaignData);
+      for (let i = 0; i < campaignAddresses.length; i++) {
+        const address = campaignAddresses[i];
+        
+        try {
+          const campaignData = await apiManager.getCampaignData(address, false); // Pas de cache pour forcer le rechargement
+          if (campaignData) {
+            validCampaigns.push(campaignData);
+          }
+        } catch (error) {
+          console.warn(`Erreur chargement campagne ${address}:`, error.message);
+        }
+        
+        // Délai de 500ms entre chaque requête pour éviter le rate limiting
+        if (i < campaignAddresses.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
       
@@ -221,6 +232,9 @@ export default function Home() {
   }, [fetchCampaignAddresses]);
 
   const handleViewDetails = useCallback((project) => {
+    console.log('🔍 Project selected:', project);
+    console.log('🔍 isActive:', project.isActive);
+    console.log('🔍 endDate:', project.endDate);
     setSelectedProject(project);
     // Pas de préchargement pour le moment (API simplifié)
   }, []);
