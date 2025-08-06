@@ -154,38 +154,40 @@ class ApiManager {
         name,
         symbol,
         currentRound,
-        totalInvestors,
         totalShares,
-        targetAmount,
-        endTime,
-        isActive,
         registry
       ] = await Promise.all([
         campaign.name(),
         campaign.symbol(),
         campaign.getCurrentRound(),
-        campaign.totalInvestors(),
         campaign.totalSupply(),
-        campaign.targetAmount(),
-        campaign.endTime(),
-        campaign.isActive(),
         divarProxy.campaignRegistry(campaignAddress)
       ]);
+
+      // Récupérer les données du round actuel
+      const roundData = await campaign.rounds(currentRound);
 
       const campaignData = {
         address: campaignAddress,
         name,
         symbol,
         currentRound: currentRound.toString(),
-        totalInvestors: totalInvestors.toString(),
         totalShares: totalShares.toString(),
-        targetAmount: targetAmount.toString(),
-        endTime: endTime.toString(),
-        isActive,
+        targetAmount: roundData.targetAmount.toString(),
+        sharePrice: roundData.sharePrice.toString(),
+        fundsRaised: roundData.fundsRaised.toString(),
+        sharesSold: roundData.sharesSold.toString(),
+        endTime: roundData.endTime.toString(),
+        isActive: roundData.isActive,
+        isFinalized: roundData.isFinalized,
         creator: registry.creator,
         category: registry.category,
         metadata: registry.metadata,
-        logo: registry.logo
+        logo: registry.logo,
+        // Propriétés pour la compatibilité frontend
+        goal: roundData.targetAmount.toString(),
+        raised: roundData.fundsRaised.toString(),
+        sector: registry.category
       };
 
       this.cache.set(cacheKey, campaignData, this.cache.defaultTTL);
@@ -206,17 +208,31 @@ class ApiManager {
 
     try {
       const campaign = await this.getContract('Campaign', campaignAddress);
-      const totalInvestors = await campaign.totalInvestors();
-      const investors = [];
-
-      for (let i = 0; i < totalInvestors; i++) {
-        const investorAddress = await campaign.investors(i);
-        const shares = await campaign.balanceOf(investorAddress);
-        investors.push({
-          address: investorAddress,
-          shares: shares.toString()
-        });
+      
+      // Récupérer tous les holders de NFT (investisseurs)
+      const totalSupply = await campaign.totalSupply();
+      const investorMap = new Map();
+      
+      // Parcourir tous les tokens pour trouver les propriétaires
+      for (let tokenId = 1; tokenId <= totalSupply; tokenId++) {
+        try {
+          const owner = await campaign.ownerOf(tokenId);
+          if (investorMap.has(owner)) {
+            investorMap.set(owner, investorMap.get(owner) + 1);
+          } else {
+            investorMap.set(owner, 1);
+          }
+        } catch (e) {
+          // Token peut ne plus exister
+          continue;
+        }
       }
+      
+      // Convertir en tableau
+      const investors = Array.from(investorMap.entries()).map(([address, shares]) => ({
+        address,
+        shares: shares.toString()
+      }));
 
       this.cache.set(cacheKey, investors, this.cache.defaultTTL);
       return investors;
