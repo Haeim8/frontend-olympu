@@ -60,10 +60,19 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       setError(null);
 
       // Utiliser seulement les données blockchain - pas de système centralisé
-      const projectDetails = await apiManager.getCampaignData(project.id);
+      const [projectDetails, ipfsDocuments] = await Promise.all([
+        apiManager.getCampaignData(project.id),
+        apiManager.getCampaignDocuments(project.id)
+      ]);
 
       if (projectDetails) {
-        setProjectData(projectDetails);
+        const combinedData = {
+          ...projectDetails,
+          ipfs: ipfsDocuments
+        };
+        console.log('🔍 Combined project data:', combinedData);
+        console.log('🔍 IPFS documents:', ipfsDocuments);
+        setProjectData(combinedData);
       }
 
       // TODO: Récupérer les transactions depuis la blockchain directement
@@ -178,19 +187,20 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   return (
     <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
       <DialogContent className="bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 max-w-6xl max-h-[95vh] overflow-hidden p-0">
-        <div className="flex flex-col h-full max-h-[95vh]">
-          {/* Header */}
-          <div className="flex-shrink-0 p-6 border-b border-gray-200 dark:border-neutral-800">
+        <div className="h-full max-h-[95vh] overflow-y-auto">
+          {/* Tout le contenu est maintenant scrollable */}
+          <div className="p-6">
+            {/* Header */}
             <ProjectHeader
               project={project}
+              projectData={projectData}
               isFavorite={isFavorite}
               onFavorite={handleFavorite}
               onShare={handleShare}
             />
-          </div>
-
-          {/* Content scrollable */}
-          <div className="flex-1 overflow-y-auto p-6">
+            
+            {/* Séparateur */}
+            <div className="border-b border-gray-200 dark:border-neutral-800 my-6"></div>
             {/* Share Selector */}
             <ShareSelector
               project={project}

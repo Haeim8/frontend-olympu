@@ -4,10 +4,11 @@ import React from 'react';
 import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Share2, Star, TrendingUp, Users, Calendar } from 'lucide-react';
+import { Share2, Star, TrendingUp, Users, Calendar, ExternalLink, Globe, Twitter, Github } from 'lucide-react';
 
 export default function ProjectHeader({ 
   project, 
+  projectData,
   isFavorite, 
   onFavorite, 
   onShare 
@@ -146,6 +147,152 @@ export default function ProjectHeader({
             <span>{project.goal} ETH objectif</span>
           </div>
         </div>
+
+        {/* Équipe du projet */}
+        {projectData?.ipfs?.teamMembers && projectData.ipfs.teamMembers.length > 0 && (
+          <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-neutral-700/50 mt-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Users className="h-5 w-5 text-indigo-600" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Équipe du projet
+              </h3>
+              <Badge className="bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300">
+                {projectData.ipfs.teamMembers.length} membre(s)
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {projectData.ipfs.teamMembers.map((member, index) => (
+                <div key={index} className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-sm rounded-lg p-4 border border-gray-200/30 dark:border-neutral-700/30 hover:shadow-md transition-all">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center">
+                      <Users className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate">
+                        {member.name || 'Nom non spécifié'}
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {member.role || 'Rôle non spécifié'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {member.socials && (Object.keys(member.socials).length > 0) && (
+                    <div className="flex space-x-2">
+                      {member.socials.twitter && (
+                        <a 
+                          href={member.socials.twitter} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
+                        >
+                          Twitter
+                        </a>
+                      )}
+                      {member.socials.linkedin && (
+                        <a 
+                          href={member.socials.linkedin} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
+                        >
+                          LinkedIn
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Réseaux sociaux */}
+        {projectData?.ipfs?.socials && Object.values(projectData.ipfs.socials).some(social => social) && (
+          <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-neutral-700/50 mt-4">
+            <div className="flex items-center gap-3 mb-4">
+              <ExternalLink className="h-5 w-5 text-green-600" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Liens et réseaux sociaux
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {projectData.ipfs.socials.website && (
+                <a 
+                  href={projectData.ipfs.socials.website} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-blue-200/50 dark:border-blue-800/50 hover:shadow-md hover:scale-105 transition-all group"
+                >
+                  <ExternalLink className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Site web</span>
+                </a>
+              )}
+              
+              {projectData.ipfs.socials.twitter && (
+                <a 
+                  href={projectData.ipfs.socials.twitter} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-sky-200/50 dark:border-sky-800/50 hover:shadow-md hover:scale-105 transition-all group"
+                >
+                  <ExternalLink className="h-4 w-4 text-sky-600 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium text-sky-600 dark:text-sky-400">Twitter</span>
+                </a>
+              )}
+              
+              {projectData.ipfs.socials.github && (
+                <a 
+                  href={projectData.ipfs.socials.github} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-gray-200/50 dark:border-gray-800/50 hover:shadow-md hover:scale-105 transition-all group"
+                >
+                  <ExternalLink className="h-4 w-4 text-gray-600 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">GitHub</span>
+                </a>
+              )}
+              
+              {projectData.ipfs.socials.discord && (
+                <a 
+                  href={projectData.ipfs.socials.discord} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50 hover:shadow-md hover:scale-105 transition-all group"
+                >
+                  <ExternalLink className="h-4 w-4 text-indigo-600 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Discord</span>
+                </a>
+              )}
+              
+              {projectData.ipfs.socials.telegram && (
+                <a 
+                  href={projectData.ipfs.socials.telegram} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-blue-200/50 dark:border-blue-800/50 hover:shadow-md hover:scale-105 transition-all group"
+                >
+                  <ExternalLink className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Telegram</span>
+                </a>
+              )}
+              
+              {projectData.ipfs.socials.medium && (
+                <a 
+                  href={projectData.ipfs.socials.medium} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-green-200/50 dark:border-green-800/50 hover:shadow-md hover:scale-105 transition-all group"
+                >
+                  <ExternalLink className="h-4 w-4 text-green-600 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium text-green-600 dark:text-green-400">Medium</span>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Decorative elements */}
         <div className="absolute top-4 right-4 w-20 h-20 bg-gradient-to-br from-lime-400/20 to-emerald-500/20 rounded-full blur-xl animate-pulse"></div>

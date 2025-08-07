@@ -108,8 +108,7 @@ export default function Campaign() {
           
           setCampaignData(enrichedData);
           
-          // Précharger les données connexes en arrière-plan
-          apiManager.preloadCampaignDetails(campaignAddress);
+          // Données chargées avec succès
           
         } else {
           setError("Impossible de charger les données de campagne");
@@ -129,7 +128,8 @@ export default function Campaign() {
   // Préchargement intelligent au survol
   const handlePreloadHover = useCallback((identifier) => {
     if (identifier && identifier !== campaignAddress) {
-      apiManager.preloadCampaignDetails(identifier);
+      // Préchargement simple des données de base
+      apiManager.getCampaignData(identifier);
     }
   }, [campaignAddress]);
 

@@ -302,81 +302,89 @@ export default function CampaignModal({
     setCurrentStep(prev => Math.max(prev - 1, 1));
   }, [currentStep]);
 
-  // Création du dossier IPFS avec retry logic
-  const createCampaignFolder = useCallback(async (campaignData) => {
-    const campaignFolderName = `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`;
-    const filesToUpload = [];
-
-    // Métadonnées NFT
-    const nftMetadata = {
-      name: campaignData.name,
-      description: campaignData.description || "",
-      image: `ipfs://${campaignFolderName}/nft-card.png`,
-      attributes: [
-        { trait_type: "Sector", value: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector },
-        { trait_type: "Background Color", value: campaignData.nftCustomization.backgroundColor },
-        { trait_type: "Text Color", value: campaignData.nftCustomization.textColor }
-      ]
-    };
-
-    filesToUpload.push({
-      content: new Blob([JSON.stringify(nftMetadata, null, 2)], { type: 'application/json' }),
-      path: `${campaignFolderName}/nft-metadata.json`
-    });
-
-    // Ajout de l'image de la carte
-    if (cardImage) {
-      filesToUpload.push({
-        content: cardImage,
-        path: `${campaignFolderName}/nft-card.png`
-      });
-    }
-
-    // Documents
-    Object.entries(campaignData.documents).forEach(([docType, files]) => {
-      if (files && files.length > 0) {
-        files.forEach(file => {
-          filesToUpload.push({
-            content: file,
-            path: `${campaignFolderName}/documents/${docType}/${file.name}`
-          });
-        });
+  // Upload IPFS avec Web3.Storage
+  const uploadToIPFS = useCallback(async (campaignData) => {
+    try {
+      const { create } = await import('@storacha/client');
+      const client = await create();
+      await client.login(process.env.NEXT_PUBLIC_W3UP_EMAIL);
+      
+      // Vérifier et définir l'espace de travail
+      const spaces = Array.from(client.spaces());
+      if (spaces.length === 0) {
+        // Créer un nouvel espace si aucun n'existe
+        await client.createSpace('livar-campaigns');
+      } else {
+        // Utiliser le premier espace disponible
+        client.setCurrentSpace(spaces[0].did());
       }
-    });
-
-    // Métadonnées de campagne
-    const contractMetadata = {
-      name: campaignData.name,
-      symbol: campaignData.symbol,
-      sharePrice: campaignData.sharePrice,
-      numberOfShares: campaignData.numberOfShares,
-      targetAmount: (parseFloat(campaignData.sharePrice) * parseFloat(campaignData.numberOfShares)).toString(),
-      endTime: Math.floor(new Date(campaignData.endDate).getTime() / 1000),
-      sector: campaignData.sector,
-      royaltyFee: campaignData.royaltyFee,
-      socials: campaignData.socials,
-      teamMembers: campaignData.teamMembers
-    };
-
-    filesToUpload.push({
-      content: new Blob([JSON.stringify(contractMetadata, null, 2)], { type: 'application/json' }),
-      path: `${campaignFolderName}/metadata.json`
-    });
-
-    // Upload sur IPFS avec retry logic d'api-manager
-    const result = await apiManager.fetchWithRetry(async () => {
-      return await pinataService.uploadDirectory(campaignFolderName, filesToUpload);
-    });
-    
-    if (!result.success) {
-      throw new Error("Échec de l'upload IPFS");
+      
+      const files = [];
+      const documentReferences = {};
+      
+      // D'abord traiter les documents pour créer les références
+      Object.entries(campaignData.documents).forEach(([docType, docFiles]) => {
+        if (docFiles && docFiles.length > 0) {
+          documentReferences[docType] = [];
+          docFiles.forEach(file => {
+            const fileName = `${docType}_${file.name}`;
+            documentReferences[docType].push({
+              name: file.name,
+              fileName: fileName,
+              type: file.type,
+              size: file.size
+            });
+            files.push(new File([file], fileName, { type: file.type }));
+          });
+        }
+      });
+      
+      // Métadonnées campagne (JSON principal) avec références aux documents
+      const campaignMetadata = {
+        name: campaignData.name,
+        description: campaignData.description,
+        sector: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector,
+        sharePrice: campaignData.sharePrice,
+        numberOfShares: campaignData.numberOfShares,
+        endTime: Math.floor(new Date(campaignData.endDate).getTime() / 1000),
+        teamMembers: campaignData.teamMembers,
+        socials: campaignData.socials,
+        royaltyFee: campaignData.royaltyFee,
+        documents: documentReferences  // ✅ Ajout des références aux fichiers
+      };
+      
+      files.push(new File([JSON.stringify(campaignMetadata, null, 2)], 'campaign-data.json', { type: 'application/json' }));
+      
+      // Métadonnées NFT
+      const nftMetadata = {
+        name: campaignData.name,
+        description: campaignData.description || "",
+        attributes: [
+          { trait_type: "Sector", value: campaignData.sector === 'Autre' ? campaignData.otherSector : campaignData.sector },
+          { trait_type: "Background Color", value: campaignData.nftCustomization.backgroundColor },
+          { trait_type: "Text Color", value: campaignData.nftCustomization.textColor }
+        ]
+      };
+      
+      files.push(new File([JSON.stringify(nftMetadata, null, 2)], 'nft-metadata.json', { type: 'application/json' }));
+      
+      // Image NFT card
+      if (cardImage) {
+        files.push(new File([cardImage], 'nft-card.png', { type: 'image/png' }));
+      }
+      
+      const cid = await client.uploadDirectory(files);
+      
+      return {
+        success: true,
+        ipfsHash: cid,
+        campaignFolderName: `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`
+      };
+      
+    } catch (error) {
+      console.error('Erreur upload IPFS:', error);
+      throw new Error(`Échec upload IPFS: ${error.message}`);
     }
-
-    return {
-      success: true,
-      ipfsHash: result.ipfsHash,
-      campaignFolderName: campaignFolderName
-    };
   }, [cardImage]);
 
   // Soumission du formulaire
@@ -388,14 +396,13 @@ export default function CampaignModal({
     setErrors({});
 
     try {
-      // Créer le dossier IPFS
-      const ipfsResult = await createCampaignFolder(formData);
+      // Upload sur IPFS
+      const ipfsResult = await uploadToIPFS(formData);
       if (!ipfsResult.success) {
         throw new Error("Échec de l'upload IPFS");
       }
 
-      const { campaignFolderName } = ipfsResult;
-      const metadataURI = `ipfs://${ipfsResult.ipfsHash}/${campaignFolderName}/nft-metadata.json`;
+      const metadataURI = `ipfs://${ipfsResult.ipfsHash}`;
       const sharePriceWei = ethers.utils.parseEther(formData.sharePrice);
       const targetAmountWei = sharePriceWei.mul(ethers.BigNumber.from(formData.numberOfShares));
 
@@ -436,7 +443,6 @@ export default function CampaignModal({
           // Précharger les données de la campagne nouvellement créée
           setTimeout(async () => {
             await apiManager.getCampaignData(campaignAddress, false);
-            await apiManager.preloadCampaignDetails(campaignAddress);
           }, 2000); // Délai pour laisser la blockchain se synchroniser
           
         } catch (cacheError) {
@@ -459,7 +465,7 @@ export default function CampaignModal({
           : error.message 
       });
     }
-  }, [formData, validateStep, status, createCampaignFolder, address, onCampaignCreated]);
+  }, [formData, validateStep, status, uploadToIPFS, address, onCampaignCreated]);
 
   // Rendu du contenu selon l'étape
   const renderStepContent = () => {
@@ -575,7 +581,7 @@ export default function CampaignModal({
           <CampaignNFTPreview
             ref={cardRef}
             formData={formData}
-            contractAddress={CONTRACT_ADDRESS}
+            contractAddress={apiManager.contractAddresses.DivarProxy}
             onCustomizationChange={handleNFTCustomizationChange}
           />
         );

@@ -71,7 +71,7 @@ class ApiManager {
     }
   }
 
-  async getContract(contractName, address = null) {
+  async getContract(contractName, address = null, needsSigner = false) {
     if (!this.provider) {
       await this.initializeWeb3();
     }
@@ -83,14 +83,26 @@ class ApiManager {
     await this.loadABIs();
 
     const contractAddress = address || this.contractAddresses[contractName];
-    const contractKey = `${contractName}_${contractAddress}`;
+    const contractKey = `${contractName}_${contractAddress}${needsSigner ? '_signer' : ''}`;
 
     if (!this.contracts[contractKey]) {
       const { ethers } = await import('ethers');
+      let providerOrSigner = this.provider;
+      
+      if (needsSigner) {
+        // Pour les transactions, utiliser le wallet connecté
+        if (typeof window !== 'undefined' && window.ethereum) {
+          const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+          providerOrSigner = web3Provider.getSigner();
+        } else {
+          throw new Error('Wallet non connecté - requis pour les transactions');
+        }
+      }
+      
       this.contracts[contractKey] = new ethers.Contract(
         contractAddress,
         this.abis[contractName],
-        this.provider
+        providerOrSigner
       );
     }
 
@@ -221,6 +233,9 @@ class ApiManager {
         metadata: registry.metadata,
         logo: registry.logo,
         
+        // Récupération métadonnées IPFS
+        ipfsHash: registry.metadata.replace('ipfs://', ''),
+        
         // Propriétés OBLIGATOIRES pour CampaignCard
         goal: this.formatEthValue(roundData[2]), // targetAmount formaté
         raised: this.formatEthValue(roundData[3]), // fundsRaised formaté
@@ -346,6 +361,147 @@ class ApiManager {
     }
   }
 
+  // === RÉCUPÉRATION IPFS ===
+  
+  async getCampaignDocuments(campaignAddress) {
+    try {
+      const divarProxy = await this.getContract('DivarProxy');
+      const registry = await divarProxy.getCampaignRegistry(campaignAddress);
+      
+      console.log('🔍 Registry data:', {
+        address: registry.campaignAddress,
+        name: registry.name,
+        metadata: registry.metadata
+      });
+      
+      if (!registry.metadata || !registry.metadata.startsWith('ipfs://')) {
+        console.log('❌ Metadata invalide:', registry.metadata);
+        return null;
+      }
+      
+      const ipfsHash = registry.metadata.replace('ipfs://', '');
+      
+      // 1. Récupérer le JSON principal
+      const gateways = [
+        `https://${ipfsHash}.ipfs.w3s.link/campaign-data.json`,
+        `https://ipfs.io/ipfs/${ipfsHash}/campaign-data.json`,
+        `https://gateway.pinata.cloud/ipfs/${ipfsHash}/campaign-data.json`
+      ];
+      
+      let response;
+      let lastError;
+      
+      for (const gateway of gateways) {
+        try {
+          response = await fetch(gateway);
+          if (response.ok) break;
+        } catch (error) {
+          lastError = error;
+          console.warn(`Gateway ${gateway} failed:`, error.message);
+        }
+      }
+      
+      if (!response || !response.ok) {
+        throw new Error(`Tous les gateways IPFS ont échoué. Dernier erreur: ${lastError?.message}`);
+      }
+      
+      const campaignData = await response.json();
+      
+      // 2. Si pas de documents dans le JSON, essayer de les détecter automatiquement
+      if (!campaignData.documents) {
+        console.log('🔍 Pas de documents dans JSON, détection automatique...');
+        campaignData.documents = await this.detectIPFSDocuments(ipfsHash);
+      }
+      
+      return campaignData;
+    } catch (error) {
+      console.error('Erreur récupération documents IPFS:', error);
+      return null;
+    }
+  }
+  
+  // Nouvelle fonction pour détecter automatiquement les fichiers IPFS
+  async detectIPFSDocuments(ipfsHash) {
+    try {
+      console.log('🔍 Détection automatique des fichiers pour CID:', ipfsHash);
+      
+      // Patterns de fichiers à détecter
+      const documentPatterns = {
+        whitepaper: /^whitepaper_(.+)$/,
+        pitchDeck: /^pitchDeck_(.+)$/,
+        legalDocuments: /^legalDocuments_(.+)$/,
+        media: /^media_(.+)$/
+      };
+      
+      const detectedDocuments = {
+        whitepaper: [],
+        pitchDeck: [],
+        legalDocuments: [],
+        media: []
+      };
+      
+      // Liste connue des fichiers (depuis ta campagne)
+      const knownFiles = [
+        'whitepaper_mockup.png',
+        'pitchDeck_mockup.png', 
+        'legalDocuments_mockup.png',
+        'media_mockup.png'
+      ];
+      
+      // Vérifier chaque fichier connu
+      for (const fileName of knownFiles) {
+        for (const [docType, pattern] of Object.entries(documentPatterns)) {
+          const match = fileName.match(pattern);
+          if (match) {
+            const originalName = match[1];
+            const fileExtension = originalName.split('.').pop();
+            const fileType = this.getFileType(fileExtension);
+            
+            // Tester la disponibilité du fichier
+            const testUrl = `https://${ipfsHash}.ipfs.w3s.link/${fileName}`;
+            try {
+              const testResponse = await fetch(testUrl, { method: 'HEAD' });
+              if (testResponse.ok) {
+                detectedDocuments[docType].push({
+                  name: originalName,
+                  fileName: fileName,
+                  type: fileType,
+                  url: testUrl,
+                  size: testResponse.headers.get('content-length') || 'Unknown'
+                });
+                console.log(`✅ Fichier détecté: ${fileName}`);
+              }
+            } catch (error) {
+              console.warn(`❌ Fichier non accessible: ${fileName}`, error.message);
+            }
+          }
+        }
+      }
+      
+      console.log('🎉 Documents détectés:', detectedDocuments);
+      return detectedDocuments;
+      
+    } catch (error) {
+      console.error('Erreur détection documents IPFS:', error);
+      return {};
+    }
+  }
+  
+  // Fonction utilitaire pour déterminer le type de fichier
+  getFileType(extension) {
+    const types = {
+      'pdf': 'application/pdf',
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'gif': 'image/gif',
+      'mp4': 'video/mp4',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    };
+    return types[extension.toLowerCase()] || 'application/octet-stream';
+  }
+
   // === UTILITAIRES ===
   
   formatEthValue(value) {
@@ -434,7 +590,7 @@ class ApiManager {
   
   async createCampaign(campaignData) {
     try {
-      const divarProxy = await this.getContract('DivarProxy');
+      const divarProxy = await this.getContract('DivarProxy', null, true); // needsSigner = true
       
       // Récupération des frais de création
       const fee = await divarProxy.getCampaignCreationFeeETH();

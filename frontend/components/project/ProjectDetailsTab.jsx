@@ -87,18 +87,25 @@ const MediaGallery = ({ media = [] }) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {media.map((mediaUrl, index) => (
-          <div 
-            key={index} 
-            className="relative group cursor-pointer bg-gray-100 dark:bg-neutral-800 rounded-xl overflow-hidden aspect-square"
-            onClick={() => setSelectedMedia(mediaUrl)}
-          >
-            <img 
-              src={mediaUrl}
-              alt={`Media ${index + 1}`}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              loading="lazy"
-            />
+        {media.map((mediaItem, index) => {
+          // Gérer les deux formats : objet {url, name, etc.} ou simple string
+          const mediaUrl = typeof mediaItem === 'string' ? mediaItem : mediaItem?.url;
+          const mediaName = typeof mediaItem === 'object' ? mediaItem?.name : `Media ${index + 1}`;
+          
+          if (!mediaUrl) return null;
+          
+          return (
+            <div 
+              key={index} 
+              className="relative group cursor-pointer bg-gray-100 dark:bg-neutral-800 rounded-xl overflow-hidden aspect-square"
+              onClick={() => setSelectedMedia(mediaUrl)}
+            >
+              <img 
+                src={mediaUrl}
+                alt={mediaName}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                loading="lazy"
+              />
             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
               <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
@@ -107,7 +114,8 @@ const MediaGallery = ({ media = [] }) => {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Modal pour média sélectionné */}
@@ -223,7 +231,16 @@ export default function ProjectDetailsTab({ projectData }) {
     );
   }
 
-  const { firebase } = projectData;
+  const { ipfs, firebase } = projectData;
+  
+  console.log('🔍 ProjectDetailsTab received:', { ipfs, firebase });
+  console.log('🔍 IPFS structure détaillée:', {
+    documents: ipfs?.documents,
+    teamMembers: ipfs?.teamMembers,
+    socials: ipfs?.socials,
+    allKeys: Object.keys(ipfs || {}),
+    fullData: ipfs
+  });
 
   return (
     <ScrollArea className="h-[600px] pr-4">
@@ -241,7 +258,7 @@ export default function ProjectDetailsTab({ projectData }) {
             </div>
             <div className="prose dark:prose-invert max-w-none">
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
-                {firebase?.description || projectData.description || "Aucune description disponible pour ce projet."}
+                {ipfs?.description || firebase?.description || projectData.description || "Aucune description disponible pour ce projet."}
               </p>
             </div>
           </div>
@@ -261,14 +278,51 @@ export default function ProjectDetailsTab({ projectData }) {
               </div>
               <Badge className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
                 {[
-                  firebase?.documents?.whitepaper,
-                  firebase?.documents?.pitchDeck,
-                  ...(Array.isArray(firebase?.documents?.legalDocuments) ? firebase.documents.legalDocuments : [])
+                  ipfs?.documents?.whitepaper || firebase?.documents?.whitepaper,
+                  ipfs?.documents?.pitchDeck || firebase?.documents?.pitchDeck,
+                  ...(Array.isArray(ipfs?.documents?.legalDocuments || firebase?.documents?.legalDocuments) ? (ipfs?.documents?.legalDocuments || firebase?.documents?.legalDocuments) : [])
                 ].filter(Boolean).length} document(s)
               </Badge>
             </div>
 
             <div className="space-y-4">
+              {/* Whitepaper */}
+              {ipfs?.documents?.whitepaper?.map((doc, index) => (
+                <DocumentLink
+                  key={`whitepaper-${index}`}
+                  title={doc.name || "Whitepaper"}
+                  url={doc.url}
+                  type={doc.type?.startsWith('image') ? 'image' : 'document'}
+                  fileName={doc.fileName}
+                  size={doc.size}
+                />
+              ))}
+              
+              {/* Pitch Deck */}
+              {ipfs?.documents?.pitchDeck?.map((doc, index) => (
+                <DocumentLink
+                  key={`pitchDeck-${index}`}
+                  title={doc.name || "Pitch Deck"}
+                  url={doc.url}
+                  type={doc.type?.startsWith('image') ? 'image' : 'document'}
+                  fileName={doc.fileName}
+                  size={doc.size}
+                />
+              ))}
+              
+              {/* Documents légaux */}
+              {ipfs?.documents?.legalDocuments?.map((doc, index) => (
+                <DocumentLink
+                  key={`legal-${index}`}
+                  title={doc.name || `Document légal ${index + 1}`}
+                  url={doc.url}
+                  type={doc.type?.startsWith('image') ? 'image' : 'document'}
+                  fileName={doc.fileName}
+                  size={doc.size}
+                />
+              ))}
+              
+              {/* Fallback pour ancienne structure */}
               {firebase?.documents?.whitepaper && (
                 <DocumentLink
                   title="Whitepaper"
@@ -285,24 +339,12 @@ export default function ProjectDetailsTab({ projectData }) {
                 />
               )}
               
-              {firebase?.documents?.legalDocuments && (
-                Array.isArray(firebase.documents.legalDocuments) 
-                  ? firebase.documents.legalDocuments.map((doc, index) => (
-                      <DocumentLink
-                        key={index}
-                        title={`Document légal ${index + 1}`}
-                        url={doc}
-                        type="document"
-                      />
-                    ))
-                  : <DocumentLink
-                      title="Document légal"
-                      url={firebase.documents.legalDocuments}
-                      type="document"
-                    />
-              )}
-              
-              {(!firebase?.documents || Object.keys(firebase?.documents || {}).length === 0) && (
+              {/* Message si aucun document */}
+              {(!ipfs?.documents || (
+                (!ipfs.documents.whitepaper?.length) && 
+                (!ipfs.documents.pitchDeck?.length) && 
+                (!ipfs.documents.legalDocuments?.length)
+              )) && !firebase?.documents && (
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">
@@ -327,13 +369,26 @@ export default function ProjectDetailsTab({ projectData }) {
                 </h3>
               </div>
               <Badge className="bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
-                {firebase?.documents?.media?.length || 0} média(s)
+                {(ipfs?.documents?.media || firebase?.documents?.media)?.length || 0} média(s)
               </Badge>
             </div>
 
-            <MediaGallery media={firebase?.documents?.media} />
+            <MediaGallery media={ipfs?.documents?.media || firebase?.documents?.media} />
+            
+            {/* Affichage en liste si pas de galerie */}
+            {ipfs?.documents?.media?.map((media, index) => (
+              <DocumentLink
+                key={`media-${index}`}
+                title={media.name || `Média ${index + 1}`}
+                url={media.url}
+                type={media.type?.startsWith('image') ? 'image' : media.type?.startsWith('video') ? 'video' : 'document'}
+                fileName={media.fileName}
+                size={media.size}
+              />
+            ))}
           </div>
         </section>
+
 
         {/* Retours sur investissement */}
         {firebase?.investmentReturns && (
