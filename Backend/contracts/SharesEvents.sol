@@ -38,9 +38,6 @@ contract SharesEvents {
         uint256 amountPerShare
     );
 
-    event NFTsBurned(
-        uint256[] tokenIds
-    );
 
     event MetadataUpdated(
         string newMetadata
@@ -66,7 +63,6 @@ contract SharesEvents {
         uint256 timestamp
     );
 
-    // **Ajout de l'Événement `DividendsClaimed`**
     event DividendsClaimed(
         address indexed investor,
         uint256 amount,

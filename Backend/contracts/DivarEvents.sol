@@ -2,12 +2,6 @@
 pragma solidity ^0.8.20;
 
 contract DivarEvents {
-    event UserRegistered(
-        address indexed user,
-        uint256 timestamp,
-        uint256 registrationFee
-    );
-    
     event CampaignCreated(
         address indexed campaignAddress,
         address indexed creator,
@@ -42,7 +36,9 @@ contract DivarEvents {
      uint256 currentFunding,
      uint256 remainingTime
     );
-      event PriceConsumerUpdated(
+
+    event PriceConsumerUpdated(
         address indexed newPriceConsumer
-    ); 
+    );
+     
 }

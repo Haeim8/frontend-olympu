@@ -27,7 +27,7 @@ constructor(address _campaignKeeper) {
         bool isActive;
         bool isFinalized;
     }
-    
+
     struct Investment {
         address investor;
         uint256 amount;
@@ -43,17 +43,7 @@ constructor(address _campaignKeeper) {
         bool isReleased; 
     }
 
-    struct SocialLinks {
-        string website;
-        string twitter;
-        string github;
-        string discord;
-        string telegram;
-        string medium;
-    }
-
     Escrow public escrow;
-    SocialLinks public socialLinks;
 
     // Informations de base
     address public startup;
@@ -72,10 +62,10 @@ constructor(address _campaignKeeper) {
     mapping(address => uint256) public sharesOwned;
     mapping(address => uint256) public unclaimedDividends; // Dividendes non réclamés par chaque investisseur
     mapping(address => bool) public isInvestor;
-    mapping(uint256 => bool) public tokenBurned;
+    mapping(uint256 => bool) public tokenBurned; // Pour éviter les double-burns lors de refunds
 
     // Arrays
     address[] public investors;
-    Investment[] public allInvestments; 
+    Investment[] public allInvestments;
     address[] public allCampaigns;
 }

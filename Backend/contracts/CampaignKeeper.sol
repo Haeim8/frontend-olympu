@@ -68,7 +68,7 @@ contract CampaignKeeper is AutomationCompatibleInterface {
         
         try campaign.finalizeRound() {
             emit UpkeepPerformed(campaignAddress, roundNumber, true);
-            try campaign.burnUnsoldNFTs() {} catch {}
+            // Note: burnUnsoldNFTs removed - NFTs only exist when purchased
         } catch {
             emit UpkeepPerformed(campaignAddress, roundNumber, false);
         }

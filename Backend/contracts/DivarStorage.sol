@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
+
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./PriceConsumerV3.sol";
 
 contract DivarStorage is Initializable {
-    uint256 public constant REGISTRATION_FEE_USD = 2000;
-    uint256 public constant CAMPAIGN_CREATION_FEE_USD = 8500;
+    // Constants
     uint256 public constant PLATFORM_COMMISSION_PERCENT = 15;
+
+
 
     struct CampaignInfo {
         address campaignAddress;
@@ -21,33 +22,22 @@ contract DivarStorage is Initializable {
         address escrowAddress;
     }
 
+   
     address public treasury;
-    mapping(address => bool) public registeredUsers;
+    address public priceConsumer;
     mapping(address => CampaignInfo) public campaignRegistry;
     mapping(address => address[]) public campaignsByCreator;
-    mapping(string => address[]) campaignsByCategory;
+    mapping(string => address[]) public campaignsByCategory;
+    
     address[] public allCampaigns;
-    PriceConsumerV3 public priceConsumer;
-
-  function updatePriceConsumerAddress(address _priceConsumer) internal {
-    require(_priceConsumer != address(0), "Invalid price consumer");
-    priceConsumer = PriceConsumerV3(_priceConsumer);
-} 
-
-function initialize(address _treasury, address _priceConsumer) public virtual initializer {
-    require(_treasury != address(0), "Invalid treasury");
-    require(_priceConsumer != address(0), "Invalid price consumer");
-    treasury = _treasury;
-    priceConsumer = PriceConsumerV3(_priceConsumer);
-}
-
-    function getRegistrationFeeETH() public view returns (uint256) {
-        return priceConsumer.convertUSDToETH(REGISTRATION_FEE_USD);
-    }
-
-    function getCampaignCreationFeeETH() public view returns (uint256) {
-        return priceConsumer.convertUSDToETH(CAMPAIGN_CREATION_FEE_USD);
+   
+    function _initializeStorage(address _treasury, address _priceConsumer) internal onlyInitializing {
+        require(_treasury != address(0), "DIVAR: Invalid treasury");
+        require(_priceConsumer != address(0), "DIVAR: Invalid price consumer");
+        treasury = _treasury;
+        priceConsumer = _priceConsumer;
     }
     
-    uint256[47] private __gap;
+    uint256[48] private __gap;
+
 }

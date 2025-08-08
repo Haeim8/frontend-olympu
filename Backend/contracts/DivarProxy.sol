@@ -9,6 +9,7 @@ import "./DivarStorage.sol";
 import "./DivarEvents.sol";
 import "./Campaign.sol";
 import "./CampaignKeeper.sol";
+import "./PriceConsumerV3.sol";
 
 interface ICampaignKeeper {
     function registerCampaign(address campaign) external;
@@ -25,11 +26,6 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
     bytes public campaignBytecode;
     address public campaignKeeper;
     
-    // Modifiers
-    modifier onlyRegisteredUser() {
-        require(registeredUsers[msg.sender], "DIVAR: User not registered");
-        _;
-    }
     
 
     function registerCampaignForUpkeep(address campaignAddress) internal {
@@ -44,8 +40,7 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
         _disableInitializers();
     }
 
-   
-function initialize(
+    function initialize(
     address _treasury,
     address _campaignKeeper,
     address _priceConsumer
@@ -54,28 +49,15 @@ function initialize(
     require(_campaignKeeper != address(0), "DIVAR: Invalid keeper");
     require(_priceConsumer != address(0), "DIVAR: Invalid price consumer");
     
-    DivarStorage.initialize(_treasury, _priceConsumer);
-    campaignKeeper = _campaignKeeper;
-    
     __Ownable_init();
+    _transferOwnership(_treasury);
     __UUPSUpgradeable_init();
     __Pausable_init();
-}
-uint256 private constant PRICE_TOLERANCE = 2; // 2% de tolérance
-
-
-function registerUser() external payable {
-    require(!registeredUsers[msg.sender], "DIVAR: Already registered");
-    uint256 requiredFee = getRegistrationFeeETH();
-    uint256 minFee = requiredFee * (100 - PRICE_TOLERANCE) / 100;
-    uint256 maxFee = requiredFee * (100 + PRICE_TOLERANCE) / 100;
-    require(msg.value >= minFee && msg.value <= maxFee, "DIVAR: Incorrect fee");
     
-    registeredUsers[msg.sender] = true;
-    payable(treasury).sendValue(msg.value);
-    
-    emit UserRegistered(msg.sender, block.timestamp, msg.value);
+    _initializeStorage(_treasury, _priceConsumer);
+    campaignKeeper = _campaignKeeper;
 }
+
     // Fonction pour définir le bytecode du contrat Campaign
     function setCampaignBytecode(bytes memory _bytecode) external onlyOwner {
         campaignBytecode = _bytecode;
@@ -91,12 +73,23 @@ function registerUser() external payable {
      campaignKeeper = _newKeeper;
     }
 
-
-   
-    
-    function isUserRegistered(address user) external view returns (bool) {
-        return registeredUsers[user];
+    // Fonction pour calculer les frais en temps réel (85 USD en ETH)
+    function getCampaignCreationFeeETH() public view returns (uint256) {
+        uint256 feeInUSDCents = 8500; // 85 USD = 8500 cents
+        // Pour test local - pas de Chainlink
+        if (block.chainid == 31337) {
+            return 0.001 ether; // Fee fixe pour hardhat local
+        }
+        return PriceConsumerV3(priceConsumer).convertUSDToETH(feeInUSDCents);
     }
+    
+    function updatePriceConsumer(address _newPriceConsumer) external onlyOwner {
+        require(_newPriceConsumer != address(0), "Invalid price consumer address");
+        priceConsumer = _newPriceConsumer;
+        emit PriceConsumerUpdated(_newPriceConsumer);
+    }
+
+
 
     
     function createCampaign(
@@ -109,7 +102,7 @@ function registerUser() external payable {
     string memory _metadata,
     uint96 _royaltyFee,
     string memory _logo
-) external payable onlyRegisteredUser whenNotPaused {
+) external payable whenNotPaused {
     require(bytes(_name).length > 0, "DIVAR: Name required");
     require(_targetAmount > 0, "DIVAR: Invalid target");
     require(_sharePrice > 0, "DIVAR: Invalid price");
@@ -131,8 +124,8 @@ function registerUser() external payable {
     _royaltyFee,     // _royaltyFee
     treasury,        // _royaltyReceiver
     _metadata,       // _metadata
-    address(this),   // Ajout de la virgule ici
-    campaignKeeper   // Campaign Keeper address
+    address(this),   // _divarProxy
+    campaignKeeper   // _campaignKeeper
 );
 
     bytes memory bytecode = abi.encodePacked(
@@ -195,11 +188,13 @@ function registerUser() external payable {
         return campaignsByCategory[_category];
     }
 
+    function getCampaignRegistry(address _campaign) external view returns (CampaignInfo memory) {
+        return campaignRegistry[_campaign];
+    }
+
     function checkUserStatus(address _user) external view returns (
-        bool isRegistered,
         uint256 campaignCount
     ) {
-        isRegistered = registeredUsers[_user];
         campaignCount = campaignsByCreator[_user].length;
     }
 
@@ -219,16 +214,8 @@ function registerUser() external payable {
         }
         emit PlatformStatusChanged(paused());
     }
-    
-    function updatePriceConsumer(address _newPriceConsumer) external onlyOwner {
-    require(_newPriceConsumer != address(0), "Invalid price consumer address");
-    DivarStorage.updatePriceConsumerAddress(_newPriceConsumer);
-    emit PriceConsumerUpdated(_newPriceConsumer);
-}
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
-    
-    
 
     function getVersion() external pure returns (string memory) {
         return "1.0.0";

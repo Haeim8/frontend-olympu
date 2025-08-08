@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
 import "./SharesStorage.sol";
 import "./SharesEvents.sol";
 
@@ -17,8 +18,9 @@ import "./SharesEvents.sol";
  * @dev Contrat représentant une campagne de financement participatif avec des parts sous forme de NFTs.
  */
 
-contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, Ownable, SharesEvents, SharesStorage, ReentrancyGuard, AccessControl {
+contract Campaign is ERC721, ERC721Enumerable, ERC721Royalty, Ownable, SharesEvents, SharesStorage, ReentrancyGuard, AccessControl {
     using Strings for uint256;
+    using Base64 for bytes;
     using Address for address payable;
     address public immutable divarProxy;
     bool public isRegisteredForUpkeep;
@@ -37,6 +39,7 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         _;
     }
 
+   
 
     /**
      * @dev Constructeur du contrat Campaign.
@@ -86,7 +89,7 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         metadata = _metadata;
         canReceiveDividends = false;
         divarProxy = _divarProxy;
-
+        
         rounds[1] = Round({
             roundNumber: 1,
             sharePrice: _sharePrice,
@@ -109,12 +112,32 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         _transferOwnership(_startup);
     }
 
+    
 
-    function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
-        require(_exists(tokenId), "URI query for nonexistent token");
-        // TODO: Implement NFTRenderer contract for visual generation
-        return "";
-    }
+   // Nouvelle fonction helper
+function getMetadataJSON(uint256 tokenId) internal view returns (string memory) {
+    (uint256 round, uint256 number) = getNFTInfo(tokenId);
+    return string.concat(
+        '{"name":"', campaignName, ' Share #', Strings.toString(tokenId),
+        '","description":"Share #', Strings.toString(number), ' of Round ', Strings.toString(round),
+        '","image":"', metadata,
+        '","attributes":[',
+            '{"trait_type":"Campaign","value":"', campaignName, '"},',
+            '{"trait_type":"Round","value":', Strings.toString(round), '},',
+            '{"trait_type":"Share","value":', Strings.toString(number), '}',
+        ']}'
+    );
+}
+
+// tokenURI mis à jour
+function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
+    require(_exists(tokenId), "Token does not exist");
+    string memory json = getMetadataJSON(tokenId);
+    return string.concat(
+        "data:application/json;base64,",
+        Base64.encode(bytes(json))
+    );
+}
 
     /**
      * @dev Fonction permettant à un utilisateur d'acheter des parts (shares) sous forme de NFTs.
@@ -175,13 +198,14 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         });
 
         investmentsByAddress[msg.sender].push(inv);
-        allInvestments.push(inv);
+        allInvestments.push(inv); // **Erreur corrigée : allInvestments est maintenant déclaré dans SharesStorage.sol**
         emit SharesPurchased(msg.sender, _numShares, currentRound);
         
         // Vérification et finalisation du round si l'objectif est atteint
-        if(round.fundsRaised >= (round.targetAmount * (100 - PLATFORM_COMMISSION_PERCENT) / 100)) {
-        _autoFinalize();
-        }
+        // DÉSACTIVÉ pour tests locaux - En production, Chainlink Keeper gère la finalisation
+        // if(round.fundsRaised >= (round.targetAmount * (100 - PLATFORM_COMMISSION_PERCENT) / 100)) {
+        // _autoFinalize();
+        // }
     }
 
 
@@ -203,14 +227,31 @@ function _finalizeRoundInternal() private {
     round.isActive = false;
     round.isFinalized = true;
     
+    // DAO Live: Création de l'escrow SANS releaseTime automatique
     escrow = Escrow({
         amount: address(this).balance,
-        releaseTime: block.timestamp + 1 days,
+        releaseTime: 0,  // Sera défini après le live
         isReleased: false
     });
 
+    // DAO Live: Initialisation de la session live
+    liveSession = LiveSession({
+        schedulingDeadline: block.timestamp + SCHEDULE_DEADLINE,  // 15 jours
+        scheduledTimestamp: 0,
+        actualTimestamp: 0,
+        completedTimestamp: 0,
+        claimDeadline: 0,
+        withdrawDeadline: 0,
+        isScheduled: false,
+        isStarted: false,
+        isCompleted: false,
+        streamUrl: "",
+        description: "",
+        minimumDuration: 15 minutes
+    });
+
     emit RoundFinalized(currentRound, true);
-    emit EscrowSetup(escrow.amount, escrow.releaseTime);
+    emit EscrowSetup(escrow.amount, 0);  // releaseTime = 0 car dépend du live
 }
 
      function finalizeRound() external onlyKeeper {
@@ -231,11 +272,12 @@ function _finalizeRoundInternal() private {
     }
 
     /**
-     * @dev Fonction permettant à la startup de réclamer les fonds de l'escrow après le délai.
+     * @dev Fonction permettant à la startup de réclamer les fonds de l'escrow après le live et délai.
      */
     function claimEscrow() external onlyStartup nonReentrant {
         require(escrow.amount > 0, "No funds in escrow");
         require(!escrow.isReleased, "Funds already released");
+        require(liveSession.isCompleted, "Live session not completed");  // DAO Live: NOUVEAU
         require(block.timestamp >= escrow.releaseTime, "Release time not reached");
         
         escrow.isReleased = true;
@@ -262,6 +304,181 @@ function _finalizeRoundInternal() private {
             escrow.releaseTime,
             escrow.releaseTime > block.timestamp ? escrow.releaseTime - block.timestamp : 0,
             escrow.isReleased
+        );
+    }
+
+    // ===== NOUVELLES FONCTIONS DAO LIVE =====
+
+    /**
+     * @dev Permet au créateur de programmer une session live
+     * @param _scheduledTimestamp Timestamp de la session programmée
+     * @param _streamUrl URL du stream (optionnel)
+     * @param _description Description de la session
+     */
+    function scheduleLiveSession(
+        uint256 _scheduledTimestamp,
+        string memory _streamUrl,
+        string memory _description
+    ) external onlyStartup {
+        require(rounds[currentRound].isFinalized, "Round not finalized");
+        require(!liveSession.isScheduled, "Live already scheduled");
+        require(block.timestamp <= liveSession.schedulingDeadline, "Too late to schedule");
+        require(_scheduledTimestamp >= block.timestamp + SCHEDULE_NOTICE, "Need 48h notice");
+        require(_scheduledTimestamp <= liveSession.schedulingDeadline, "Must be within deadline");
+
+        liveSession.scheduledTimestamp = _scheduledTimestamp;
+        liveSession.streamUrl = _streamUrl;
+        liveSession.description = _description;
+        liveSession.isScheduled = true;
+
+        emit LiveSessionScheduled(currentRound, _scheduledTimestamp, _streamUrl, _description);
+    }
+
+    /**
+     * @dev Permet au créateur de démarrer la session live
+     */
+    function startLiveSession() external onlyStartup {
+        require(liveSession.isScheduled, "Live not scheduled");
+        require(!liveSession.isStarted, "Live already started");
+        require(block.timestamp >= liveSession.scheduledTimestamp, "Too early to start");
+        require(block.timestamp <= liveSession.scheduledTimestamp + 2 hours, "Too late to start");
+
+        liveSession.actualTimestamp = block.timestamp;
+        liveSession.isStarted = true;
+
+        emit LiveSessionStarted(currentRound, block.timestamp, startup);
+    }
+
+    /**
+     * @dev Permet au créateur de terminer la session live
+     */
+    function completeLiveSession() external onlyStartup {
+        require(liveSession.isStarted, "Live not started");
+        require(!liveSession.isCompleted, "Live already completed");
+        require(block.timestamp >= liveSession.actualTimestamp + liveSession.minimumDuration, "Minimum duration not reached");
+
+        liveSession.completedTimestamp = block.timestamp;
+        liveSession.isCompleted = true;
+        
+        // Définir les délais pour les investisseurs et le créateur
+        liveSession.claimDeadline = block.timestamp + CLAIM_PERIOD;  // 24h pour échanger
+        liveSession.withdrawDeadline = block.timestamp + WITHDRAW_DELAY;  // 48h pour récupérer
+        
+        // MAINTENANT on peut définir quand l'escrow sera libérable
+        escrow.releaseTime = liveSession.withdrawDeadline;
+
+        uint256 duration = block.timestamp - liveSession.actualTimestamp;
+        emit LiveSessionCompleted(currentRound, block.timestamp, duration);
+    }
+
+    /**
+     * @dev Permet aux investisseurs d'échanger leurs NFTs contre ETH après le live
+     * @param tokenIds Tableau des IDs des NFTs à échanger
+     */
+    function swapNFTsAfterLive(uint256[] memory tokenIds) external nonReentrant {
+        require(liveSession.isCompleted, "Live session not completed");
+        require(block.timestamp <= liveSession.claimDeadline, "Claim period expired");
+        require(tokenIds.length > 0, "No tokens provided");
+
+        uint256 totalRefund = 0;
+        // Remboursement basé sur le montant NET réellement dans le contrat (après commission)
+        Round storage round = rounds[currentRound];
+        uint256 refundPerNFT = (round.sharePrice * (100 - PLATFORM_COMMISSION_PERCENT)) / 100;
+
+        for(uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 tokenId = tokenIds[i];
+            require(ownerOf(tokenId) == msg.sender, "Not token owner");
+            require(!tokenBurned[tokenId], "Token already burned");
+
+            totalRefund += refundPerNFT;
+            
+            // Burn le NFT
+            _burn(tokenId);
+            tokenBurned[tokenId] = true;
+        }
+
+        require(address(this).balance >= totalRefund, "Insufficient contract balance");
+        require(escrow.amount >= totalRefund, "Insufficient escrow balance");
+
+        // Réduire l'escrow du montant remboursé
+        escrow.amount -= totalRefund;
+        
+        // Mettre à jour les parts possédées
+        sharesOwned[msg.sender] -= tokenIds.length;
+
+        // Transférer les fonds
+        payable(msg.sender).sendValue(totalRefund);
+
+        emit NFTsSwappedAfterLive(msg.sender, tokenIds.length, totalRefund, block.timestamp);
+    }
+
+    /**
+     * @dev Fonction d'urgence si le créateur ne programme pas de live dans les 15 jours
+     */
+    function emergencyRefundAll() external nonReentrant {
+        require(rounds[currentRound].isFinalized, "Round not finalized");
+        require(block.timestamp > liveSession.schedulingDeadline, "Still time to schedule");
+        require(!liveSession.isScheduled, "Live is scheduled");
+        require(balanceOf(msg.sender) > 0, "No NFTs owned");
+
+        uint256 userNFTCount = balanceOf(msg.sender);
+        // Remboursement basé sur le montant NET réellement dans le contrat (après commission)
+        Round storage round = rounds[currentRound];
+        uint256 refundPerNFT = (round.sharePrice * (100 - PLATFORM_COMMISSION_PERCENT)) / 100;
+        uint256 refundAmount = userNFTCount * refundPerNFT;
+        
+        require(address(this).balance >= refundAmount, "Insufficient contract balance");
+
+        // Burn tous les NFTs de l'utilisateur
+        uint256[] memory tokenIds = new uint256[](userNFTCount);
+        for(uint256 i = 0; i < userNFTCount; i++) {
+            uint256 tokenId = tokenOfOwnerByIndex(msg.sender, 0);
+            tokenIds[i] = tokenId;
+            _burn(tokenId);
+            tokenBurned[tokenId] = true;
+        }
+
+        // Mettre à jour les parts possédées et le compteur global
+        sharesOwned[msg.sender] = 0;
+        rounds[currentRound].sharesSold -= userNFTCount;  // Remettre les shares à disposition
+        
+        // Réduire l'escrow
+        escrow.amount -= refundAmount;
+
+        // Transférer les fonds
+        payable(msg.sender).sendValue(refundAmount);
+
+        emit EmergencyRefundClaimed(msg.sender, userNFTCount, refundAmount, block.timestamp);
+    }
+
+    /**
+     * @dev Fonction pour obtenir les informations sur la session live
+     */
+    function getLiveSessionInfo() external view returns (
+        uint256 schedulingDeadline,
+        uint256 scheduledTimestamp,
+        uint256 actualTimestamp,
+        uint256 completedTimestamp,
+        uint256 claimDeadline,
+        uint256 withdrawDeadline,
+        bool isScheduled,
+        bool isStarted,
+        bool isCompleted,
+        string memory streamUrl,
+        string memory description
+    ) {
+        return (
+            liveSession.schedulingDeadline,
+            liveSession.scheduledTimestamp,
+            liveSession.actualTimestamp,
+            liveSession.completedTimestamp,
+            liveSession.claimDeadline,
+            liveSession.withdrawDeadline,
+            liveSession.isScheduled,
+            liveSession.isStarted,
+            liveSession.isCompleted,
+            liveSession.streamUrl,
+            liveSession.description
         );
     }
     
@@ -293,8 +510,8 @@ function _finalizeRoundInternal() private {
             }
             require(found, "No investment found in current round");
             
-            // Calcul du montant de remboursement (85% du prix de la part)
-            uint256 refundAmount = (round.sharePrice * 85) / 100;
+            // Calcul du montant de remboursement basé sur ce qui reste réellement dans le contrat (après commission)
+            uint256 refundAmount = (round.sharePrice * (100 - PLATFORM_COMMISSION_PERCENT)) / 100;
             totalRefundAmount += refundAmount;
             refundedShares++;
             
@@ -389,6 +606,27 @@ function _finalizeRoundInternal() private {
         emit DividendsClaimed(msg.sender, amount, block.timestamp);
     }
 
+    /**
+     * @dev Fonction permettant à la startup de brûler les NFTs non vendus après la finalisation du round.
+     */
+    function burnUnsoldNFTs() external onlyKeeper {
+    Round storage round = rounds[currentRound];
+    require(round.isFinalized, "Round not finalized");
+
+    uint256 totalPossibleShares = round.targetAmount / round.sharePrice;
+    uint256[] memory tokensToBurn = new uint256[](totalPossibleShares - round.sharesSold);
+    uint256 burnCount = 0;
+
+    for(uint256 i = round.sharesSold + 1; i <= totalPossibleShares; i++) {
+        if(!_exists(i) || tokenBurned[i]) continue;
+        _burn(i);
+        tokenBurned[i] = true;
+        tokensToBurn[burnCount] = i;
+        burnCount++;
+    }
+
+    emit NFTsBurned(tokensToBurn);
+}
 
     /**
      * @dev Fonction pour obtenir les détails du round actuel.
@@ -448,23 +686,27 @@ function _finalizeRoundInternal() private {
     /**
      * @dev Fonction interne pour brûler un token, intégrant ERC721Royalty et ERC721URIStorage.
      */
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage, ERC721Royalty) {
-        super._burn(tokenId);
-    }
+   function _burn(uint256 tokenId) internal override(ERC721, ERC721Royalty) {
+    super._burn(tokenId);
+}
+
+
 
     /**
      * @dev Fonction pour vérifier si une interface est supportée.
      * @param interfaceId ID de l'interface.
      * @return bool Indique si l'interface est supportée.
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, AccessControl)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
+    
+
+function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    override(ERC721, ERC721Enumerable, ERC721Royalty, AccessControl)
+    returns (bool)
+{
+    return super.supportsInterface(interfaceId);
+}
 
     /// @dev Fonction pour recevoir des ETH
     receive() external payable {}
