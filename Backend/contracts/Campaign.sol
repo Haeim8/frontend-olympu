@@ -11,6 +11,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./SharesStorage.sol";
 import "./SharesEvents.sol";
+import "./CampaignDAO.sol";
+import "./CampaignGovernance.sol";
 
 /**
  * @title Campaign
@@ -22,6 +24,14 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
     using Address for address payable;
     address public immutable divarProxy;
     bool public isRegisteredForUpkeep;
+    
+    // DAO Integration
+    CampaignDAO public campaignDAO;
+    bool public daoPhaseActive;
+    
+    // 🗳️ Governance Integration
+    CampaignGovernance public campaignGovernance;
+    
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
     modifier onlyKeeper() {
      require(hasRole(KEEPER_ROLE, msg.sender), "Caller is not a keeper");
@@ -65,7 +75,7 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         address _royaltyReceiver,
         string memory _metadata,
         address _divarProxy,
-        address _campaignKeeper              
+        address _campaignKeeper
     ) ERC721(_name, _symbol) SharesStorage(_campaignKeeper) AccessControl() {
 
         require(_startup != address(0), "Invalid startup address");
@@ -86,6 +96,7 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         metadata = _metadata;
         canReceiveDividends = false;
         divarProxy = _divarProxy;
+       
 
         rounds[1] = Round({
             roundNumber: 1,
@@ -93,7 +104,6 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
             targetAmount: _targetAmount,
             fundsRaised: 0,
             sharesSold: 0,
-            startTime: block.timestamp,
             endTime: _endTime,
             isActive: true,
             isFinalized: false
@@ -109,11 +119,47 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         _transferOwnership(_startup);
     }
 
+    /**
+     * @dev 🆕 Connecte le contrat DAO à cette campagne (appelé après déploiement)
+     */
+    function setDAOContract(address _daoContract) external onlyStartup {
+        require(_daoContract != address(0), "Invalid DAO address");
+        require(address(campaignDAO) == address(0), "DAO already set");
+        
+        campaignDAO = CampaignDAO(payable(_daoContract));
+    }
+
+    /**
+     * @dev 🗳️ Connecte le contrat de gouvernance à cette campagne
+     */
+    function setGovernanceContract(address _governanceContract) external onlyStartup {
+        require(_governanceContract != address(0), "Invalid governance address");
+        require(address(campaignGovernance) == address(0), "Governance already set");
+        
+        campaignGovernance = CampaignGovernance(_governanceContract);
+    }
+
+    /**
+     * @dev 🆕 Permet au DAO de brûler un NFT lors d'un échange ET envoie les fonds directement
+     */
+    function burnNFTForExchange(uint256 tokenId, address owner, uint256 refundAmount) external {
+        require(msg.sender == address(campaignDAO), "Only DAO can burn for exchange");
+        require(ownerOf(tokenId) == owner, "Token owner mismatch");
+        require(!tokenBurned[tokenId], "Token already burned");
+        require(address(this).balance >= refundAmount, "Insufficient balance");
+        
+        tokenBurned[tokenId] = true;
+        _burn(tokenId);
+        
+        // Campaign envoie les fonds directement à l'utilisateur
+        payable(owner).sendValue(refundAmount);
+    }
+
+
 
     function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
         require(_exists(tokenId), "URI query for nonexistent token");
-        // TODO: Implement NFTRenderer contract for visual generation
-        return "";
+        return super.tokenURI(tokenId);
     }
 
     /**
@@ -131,7 +177,7 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         require(round.targetAmount > 0 && round.sharePrice > 0, "Invalid round configuration");
 
         // Calcul des commissions et du montant net
-        uint256 commission = (msg.value * PLATFORM_COMMISSION_PERCENT) / 100;
+        uint256 commission = (msg.value * platformCommissionPercent) / 100;
         uint256 netAmount = msg.value - commission;  
 
         // Vérification que le montant net ne dépasse pas l'objectif
@@ -162,6 +208,10 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
          uint256 tokenId = startTokenId + i;
          _mint(msg.sender, tokenId);
          tokenIds[i] = tokenId;
+         
+         // 🆕 ENREGISTRER LE PRIX D'ACHAT pour remboursement équitable
+         tokenPurchasePrice[tokenId] = round.sharePrice;
+         
         }
 
         // Enregistrement de l'investissement
@@ -179,7 +229,7 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
         emit SharesPurchased(msg.sender, _numShares, currentRound);
         
         // Vérification et finalisation du round si l'objectif est atteint
-        if(round.fundsRaised >= (round.targetAmount * (100 - PLATFORM_COMMISSION_PERCENT) / 100)) {
+        if(round.fundsRaised >= (round.targetAmount * (100 - platformCommissionPercent) / 100)) {
         _autoFinalize();
         }
     }
@@ -196,7 +246,7 @@ function _finalizeRoundInternal() private {
     require(!round.isFinalized, "Already finalized");
     require(
         block.timestamp > round.endTime || 
-        round.fundsRaised >= round.targetAmount,
+        round.fundsRaised >= (round.targetAmount * (100 - platformCommissionPercent) / 100),
         "Cannot finalize yet"
     );
 
@@ -208,6 +258,12 @@ function _finalizeRoundInternal() private {
         releaseTime: block.timestamp + 1 days,
         isReleased: false
     });
+
+    // 🆕 DÉMARRER LA PHASE DAO AUTOMATIQUEMENT
+    if (address(campaignDAO) != address(0)) {
+        daoPhaseActive = true;
+        campaignDAO.startDAOPhase();
+    }
 
     emit RoundFinalized(currentRound, true);
     emit EscrowSetup(escrow.amount, escrow.releaseTime);
@@ -232,11 +288,19 @@ function _finalizeRoundInternal() private {
 
     /**
      * @dev Fonction permettant à la startup de réclamer les fonds de l'escrow après le délai.
+     * 🆕 MODIFIÉ : Bloqué si phase DAO active, autorisé seulement après validation DAO
      */
-    function claimEscrow() external onlyStartup nonReentrant {
+    function claimEscrow() external nonReentrant {
         require(escrow.amount > 0, "No funds in escrow");
         require(!escrow.isReleased, "Funds already released");
         require(block.timestamp >= escrow.releaseTime, "Release time not reached");
+        
+        // 🆕 VÉRIFICATION DAO : Si DAO active, seul le DAO peut appeler
+        if (daoPhaseActive) {
+            require(msg.sender == address(campaignDAO), "DAO phase active - only DAO can release");
+        } else {
+            require(msg.sender == startup, "Only startup can call");
+        }
         
         escrow.isReleased = true;
         payable(startup).sendValue(escrow.amount);
@@ -266,14 +330,10 @@ function _finalizeRoundInternal() private {
     }
     
     /**
-     * @dev Fonction permettant à un investisseur de rembourser ses parts avant la fin du round.
+     * @dev 🔥 NOUVELLE LOGIQUE - Remboursement avec vérifications de phase et fonds
      * @param tokenIds Tableau des IDs des tokens à rembourser.
      */
     function refundShares(uint256[] memory tokenIds) external nonReentrant {
-        Round storage round = rounds[currentRound];
-        require(round.isActive, "Round not active");
-        require(block.timestamp <= round.endTime, "Round has ended");
-        
         uint256 totalRefundAmount = 0;
         uint256 refundedShares = 0;
         
@@ -282,35 +342,41 @@ function _finalizeRoundInternal() private {
             require(ownerOf(tokenId) == msg.sender, "Not token owner");
             require(!tokenBurned[tokenId], "Token already burned");
             
-            // Vérification de l'investissement dans le round actuel
-            Investment[] storage investments = investmentsByAddress[msg.sender];
-            bool found = false;
-            for(uint256 j = 0; j < investments.length; j++) {
-                if(investments[j].roundNumber == round.roundNumber) {
-                    found = true;
-                    break;
-                }
-            }
-            require(found, "No investment found in current round");
+            // 🆕 VÉRIFICATION INTELLIGENTE DES RÈGLES DE REMBOURSEMENT
+            require(_canRefundToken(tokenId), _getRefundErrorMessage(tokenId));
             
-            // Calcul du montant de remboursement (85% du prix de la part)
-            uint256 refundAmount = (round.sharePrice * 85) / 100;
+            // 🆕 REMBOURSEMENT ÉQUITABLE : Prix d'achat original
+            uint256 originalPrice = tokenPurchasePrice[tokenId];
+            require(originalPrice > 0, "Invalid token purchase price");
+            uint256 refundAmount = (originalPrice * (100 - platformCommissionPercent)) / 100;
             totalRefundAmount += refundAmount;
             refundedShares++;
-            
-            // Burn du token et marquage comme brûlé
-            _burn(tokenId);
-            tokenBurned[tokenId] = true;
         }
         
-        require(refundedShares > 0, "No shares to refund");
-        require(totalRefundAmount <= address(this).balance, "Insufficient contract balance");
+        require(refundedShares > 0, "No tokens to refund");
         
-        // Mise à jour des parts possédées et des parts vendues
-        sharesOwned[msg.sender] -= refundedShares;
-        round.sharesSold -= refundedShares;
+        // 🔥 VÉRIFICATION FONDS AVANT BURN (protection contre bank run)
+        require(totalRefundAmount <= address(this).balance, 
+                string(abi.encodePacked("Insufficient funds: need ", 
+                       _formatEth(totalRefundAmount), " ETH, available ", 
+                       _formatEth(address(this).balance), " ETH")));
         
-        // Transfert du montant remboursé à l'investisseur
+        // Burn des tokens après toutes les vérifications
+        for(uint256 i = 0; i < tokenIds.length; i++) {
+            _burn(tokenIds[i]);
+            tokenBurned[tokenIds[i]] = true;
+        }
+        
+        // Mise à jour des stats si nécessaire (round actuel uniquement)
+        if (_isCurrentRoundToken(tokenIds[0])) {
+            Round storage round = rounds[currentRound];
+            round.sharesSold -= refundedShares;
+            if (sharesOwned[msg.sender] >= refundedShares) {
+                sharesOwned[msg.sender] -= refundedShares;
+            }
+        }
+        
+        // Transfert du montant remboursé
         payable(msg.sender).sendValue(totalRefundAmount);
         
         emit SharesRefunded(msg.sender, refundedShares, totalRefundAmount);
@@ -339,7 +405,6 @@ function _finalizeRoundInternal() private {
             targetAmount: _targetAmount,
             fundsRaised: 0,
             sharesSold: 0,
-            startTime: block.timestamp,
             endTime: block.timestamp + _duration,
             isActive: true,
             isFinalized: false
@@ -433,6 +498,219 @@ function _finalizeRoundInternal() private {
         return investmentsByAddress[investor];
     }
 
+    // 🗳️ GOVERNANCE FUNCTIONS
+
+    /**
+     * @dev 🗳️ Changer la commission plateforme via gouvernance
+     * Appelé uniquement par le contrat de gouvernance après vote
+     */
+    function governanceChangeCommission(uint256 newCommissionPercent) external {
+        require(msg.sender == address(campaignGovernance), "Only governance can call");
+        require(newCommissionPercent <= 25, "Commission too high (max 25%)");
+        
+        platformCommissionPercent = newCommissionPercent;
+        
+        // Événement sera émis si nécessaire plus tard
+        // emit CommissionChanged(oldCommission, newCommissionPercent, block.timestamp);
+    }
+
+    /**
+     * @dev 🗳️ Distribution de dividendes exceptionnels via gouvernance
+     */
+    function governanceDistributeDividends(uint256 amount) external payable {
+        require(msg.sender == address(campaignGovernance), "Only governance can call");
+        require(amount > 0 && msg.value == amount, "Invalid dividend amount");
+        require(totalSupply() > 0, "No shares exist");
+
+        uint256 amountPerShare = amount / totalSupply();
+        
+        // Parcourir les investisseurs uniques et distribuer les dividendes
+        for (uint256 i = 0; i < investors.length; i++) {
+            address investor = investors[i];
+            if (sharesOwned[investor] > 0) {
+                unclaimedDividends[investor] += amountPerShare * sharesOwned[investor];
+            }
+        }
+
+        canReceiveDividends = true;
+        emit DividendsDistributed(amount, block.timestamp);
+        emit DividendDetailsUpdated(amountPerShare);
+    }
+
+    /**
+     * @dev 🗳️ Obtenir des informations pour la gouvernance
+     */
+    function getGovernanceInfo() external view returns (
+        uint256 totalNFTSupply,
+        uint256 totalInvestors,
+        uint256 currentCommission,
+        bool governanceActive
+    ) {
+        return (
+            totalSupply(),
+            investors.length,
+            platformCommissionPercent,
+            address(campaignGovernance) != address(0)
+        );
+    }
+
+    /**
+     * @dev 🆕 Récupérer le prix d'achat original d'un NFT (pour remboursement équitable)
+     */
+    function getTokenPurchasePrice(uint256 tokenId) external view returns (uint256) {
+        return tokenPurchasePrice[tokenId];
+    }
+    
+    // 🔥 NOUVELLES FONCTIONS UTILITAIRES POUR REMBOURSEMENT
+    
+    /**
+     * @dev Identifier le round d'un NFT à partir de son ID
+     */
+    function getNFTRound(uint256 tokenId) public pure returns (uint256) {
+        return tokenId / 1_000_000;
+    }
+    
+    /**
+     * @dev Vérifier si un token appartient au round actuel
+     */
+    function _isCurrentRoundToken(uint256 tokenId) internal view returns (bool) {
+        return getNFTRound(tokenId) == currentRound;
+    }
+    
+    /**
+     * @dev RÈGLES DE REMBOURSEMENT - Vérifier si un token peut être remboursé
+     */
+    function _canRefundToken(uint256 tokenId) internal view returns (bool) {
+        uint256 tokenRound = getNFTRound(tokenId);
+        
+        // 🆕 RÈGLE 1: NFTs du round actuel → Remboursables si round actif OU pendant échange DAO
+        if (tokenRound == currentRound) {
+            Round storage round = rounds[currentRound];
+            
+            // Si round actif → OK
+            if (round.isActive && block.timestamp <= round.endTime) {
+                return true;
+            }
+            
+            // Si round finalisé ET DAO en période d'échange → OK aussi
+            if (round.isFinalized && daoPhaseActive && address(campaignDAO) != address(0)) {
+                try campaignDAO.getCurrentPhase() returns (CampaignDAO.DAOPhase phase) {
+                    return phase == CampaignDAO.DAOPhase.EXCHANGE_PERIOD;
+                } catch {
+                    return false;
+                }
+            }
+            
+            return false;
+        }
+        
+        // 🆕 RÈGLE 2: NFTs des rounds précédents → Remboursables SEULEMENT pendant période d'échange DAO
+        if (tokenRound < currentRound) {
+            if (!daoPhaseActive || address(campaignDAO) == address(0)) {
+                return false;
+            }
+            // Vérifier que DAO est en phase EXCHANGE_PERIOD
+            try campaignDAO.getCurrentPhase() returns (CampaignDAO.DAOPhase phase) {
+                return phase == CampaignDAO.DAOPhase.EXCHANGE_PERIOD;
+            } catch {
+                return false;
+            }
+        }
+        
+        // NFTs de rounds futurs = impossible
+        return false;
+    }
+    
+    /**
+     * @dev Messages d'erreur explicatifs pour le remboursement
+     */
+    function _getRefundErrorMessage(uint256 tokenId) internal view returns (string memory) {
+        uint256 tokenRound = getNFTRound(tokenId);
+        
+        if (tokenRound == currentRound) {
+            Round storage round = rounds[currentRound];
+            if (!round.isActive) {
+                return "Current round is not active";
+            }
+            if (block.timestamp > round.endTime) {
+                return "Current round has ended";
+            }
+            return "Current round token should be refundable";
+        }
+        
+        if (tokenRound < currentRound) {
+            if (!daoPhaseActive) {
+                return string(abi.encodePacked("NFT from round ", _toString(tokenRound), 
+                       " can only be refunded during DAO exchange period"));
+            }
+            if (address(campaignDAO) == address(0)) {
+                return "DAO not connected yet";
+            }
+            // Vérifier phase DAO
+            try campaignDAO.getCurrentPhase() returns (CampaignDAO.DAOPhase phase) {
+                if (phase != CampaignDAO.DAOPhase.EXCHANGE_PERIOD) {
+                    return string(abi.encodePacked("NFT from round ", _toString(tokenRound), 
+                           " can only be refunded during DAO exchange period (after live)"));
+                }
+            } catch {
+                return "DAO phase check failed";
+            }
+            return "Previous round token should be refundable during DAO exchange";
+        }
+        
+        return "Invalid token round";
+    }
+    
+    /**
+     * @dev Formater ETH pour les messages d'erreur
+     */
+    function _formatEth(uint256 amount) internal pure returns (string memory) {
+        return string(abi.encodePacked(_toString(amount / 1e18), ".", 
+                     _toString((amount % 1e18) / 1e15), " ETH"));
+    }
+    
+    /**
+     * @dev Convertir uint256 en string
+     */
+    function _toString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+    
+    // 🔥 FONCTIONS PUBLIQUES POUR UIs ET DEBUGGING
+    
+    /**
+     * @dev Vérifier si un token peut être remboursé (fonction publique)
+     */
+    function canRefundToken(uint256 tokenId) external view returns (bool, string memory) {
+        bool canRefund = _canRefundToken(tokenId);
+        string memory message = canRefund ? "Token can be refunded" : _getRefundErrorMessage(tokenId);
+        return (canRefund, message);
+    }
+    
+    /**
+     * @dev Calculer le montant de remboursement pour un token
+     */
+    function getRefundAmount(uint256 tokenId) external view returns (uint256) {
+        uint256 originalPrice = tokenPurchasePrice[tokenId];
+        if (originalPrice == 0) return 0;
+        return (originalPrice * (100 - platformCommissionPercent)) / 100;
+    }
+
     /**
      * @dev Fonction interne appelée avant chaque transfert de token pour intégrer ERC721Enumerable.
      */
@@ -471,7 +749,7 @@ function _finalizeRoundInternal() private {
 
     /// @dev Fonction de fallback pour gérer les appels non existants
     fallback() external payable {
-        revert("Function does not exist");
+        revert("Function not found in Campaign contract");
     }
     
     }

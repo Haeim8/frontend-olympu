@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract DivarStorage is Initializable {
-    // Constants
-    uint256 public constant PLATFORM_COMMISSION_PERCENT = 15;
+    // Platform settings - now variable instead of constant
+    uint256 public platformCommissionPercent = 15;
 
 
 

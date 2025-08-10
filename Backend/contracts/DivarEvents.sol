@@ -40,5 +40,10 @@ contract DivarEvents {
     event PriceConsumerUpdated(
         address indexed newPriceConsumer
     );
+
+    event PlatformCommissionUpdated(
+        uint256 oldCommission,
+        uint256 newCommission
+    );
      
 }

@@ -68,4 +68,11 @@ contract SharesEvents {
         uint256 amount,
         uint256 timestamp
     );
+
+    // 🗳️ Governance Events
+    event CommissionChanged(
+        uint256 oldCommission,
+        uint256 newCommission,
+        uint256 timestamp
+    );
 }

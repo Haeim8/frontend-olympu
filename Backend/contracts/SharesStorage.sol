@@ -6,8 +6,8 @@ pragma solidity ^0.8.20;
  * @dev Contrat de stockage pour la gestion des parts, des investissements et des dividendes.
  */
 contract SharesStorage {
-    // Constants
-    uint256 public constant PLATFORM_COMMISSION_PERCENT = 15;
+    // Platform settings - now variable instead of constant  
+    uint256 public platformCommissionPercent = 15;
    
     address public campaignKeeper;
 
@@ -22,7 +22,6 @@ constructor(address _campaignKeeper) {
         uint256 targetAmount;
         uint256 fundsRaised;
         uint256 sharesSold;
-        uint256 startTime;
         uint256 endTime;
         bool isActive;
         bool isFinalized;
@@ -63,6 +62,7 @@ constructor(address _campaignKeeper) {
     mapping(address => uint256) public unclaimedDividends; // Dividendes non réclamés par chaque investisseur
     mapping(address => bool) public isInvestor;
     mapping(uint256 => bool) public tokenBurned; // Pour éviter les double-burns lors de refunds
+    mapping(uint256 => uint256) public tokenPurchasePrice; // Prix d'achat de chaque NFT (pour remboursement équitable)
 
     // Arrays
     address[] public investors;

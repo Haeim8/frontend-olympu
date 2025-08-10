@@ -89,6 +89,14 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
         emit PriceConsumerUpdated(_newPriceConsumer);
     }
 
+    function updatePlatformCommission(uint256 _newCommissionPercent) external onlyOwner {
+        require(_newCommissionPercent <= 25, "Commission cannot exceed 25%");
+        require(_newCommissionPercent >= 5, "Commission cannot be less than 5%");
+        uint256 oldCommission = platformCommissionPercent;
+        platformCommissionPercent = _newCommissionPercent;
+        emit PlatformCommissionUpdated(oldCommission, _newCommissionPercent);
+    }
+
 
 
     

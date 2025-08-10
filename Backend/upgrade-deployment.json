@@ -1,0 +1,13 @@
+{
+  "network": "sepoliaBase",
+  "timestamp": "2025-08-09T08:40:56.664Z",
+  "addresses": {
+    "proxy": "0x89Eba0c82c1f16433473A9A06690BfaAC2c7a1b4",
+    "liveSessionManager": "0xb646a991702f63255bbE7a4B9cbAc95C3b3F2909",
+    "campaignKeeper": "0x7BA165d19De799DA8070D3c1C061933551726D1E",
+    "newCampaigns": [
+      "0x81C3D8f4df5dfCaA4359E4A9eaC38c034284811F"
+    ]
+  },
+  "version": "2.0.0"
+}
