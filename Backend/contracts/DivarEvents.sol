@@ -41,9 +41,11 @@ contract DivarEvents {
         address indexed newPriceConsumer
     );
 
-    event PlatformCommissionUpdated(
-        uint256 oldCommission,
-        uint256 newCommission
+    event CampaignRegisteredForUpkeep(
+        address indexed campaignAddress,
+        bool success
     );
+
+    // Événement commission supprimé - commission désormais fixe
      
 }

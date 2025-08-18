@@ -13,6 +13,9 @@ import "./PriceConsumerV3.sol";
 
 interface ICampaignKeeper {
     function registerCampaign(address campaign) external;
+    function isCampaignRegistered(address campaign) external view returns (bool);
+    function checkUpkeep(bytes calldata checkData) external view returns (bool upkeepNeeded, bytes memory performData);
+    function performUpkeep(bytes calldata performData) external;
 }
 
 /**
@@ -28,11 +31,16 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
     
     
 
-    function registerCampaignForUpkeep(address campaignAddress) internal {
+    function registerCampaignForUpkeep(address campaignAddress) internal returns (bool success) {
      try ICampaignKeeper(campaignKeeper).registerCampaign(campaignAddress) {
-        // Enregistrement réussi
+        // Enregistrement réussi - mettre à jour la variable dans Campaign
+        Campaign(payable(campaignAddress)).setRegisteredForUpkeep(true);
+        emit CampaignRegisteredForUpkeep(campaignAddress, true);
+        return true;
      } catch {
-        // Continue même si l'enregistrement échoue
+        // Échec enregistrement - garder trace
+        emit CampaignRegisteredForUpkeep(campaignAddress, false);
+        return false;
      }
     }
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -72,6 +80,8 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
      require(_newKeeper != address(0), "Invalid keeper address");
      campaignKeeper = _newKeeper;
     }
+    
+    
 
     // Fonction pour calculer les frais en temps réel (85 USD en ETH)
     function getCampaignCreationFeeETH() public view returns (uint256) {
@@ -89,13 +99,7 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
         emit PriceConsumerUpdated(_newPriceConsumer);
     }
 
-    function updatePlatformCommission(uint256 _newCommissionPercent) external onlyOwner {
-        require(_newCommissionPercent <= 25, "Commission cannot exceed 25%");
-        require(_newCommissionPercent >= 5, "Commission cannot be less than 5%");
-        uint256 oldCommission = platformCommissionPercent;
-        platformCommissionPercent = _newCommissionPercent;
-        emit PlatformCommissionUpdated(oldCommission, _newCommissionPercent);
-    }
+    // Commission supprimée - désormais fixe à 12%
 
 
 
@@ -173,8 +177,11 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
     campaignsByCategory[_category].push(campaignAddress);
     allCampaigns.push(campaignAddress);
 
-     registerCampaignForUpkeep(campaignAddress);  // D'abord appeler la fonction
-    emit CampaignCreated(                        // Ensuite émettre l'événement
+    
+    // Enregistrer pour automation
+    registerCampaignForUpkeep(campaignAddress);
+    
+    emit CampaignCreated(
         campaignAddress,
         msg.sender,
         _name,

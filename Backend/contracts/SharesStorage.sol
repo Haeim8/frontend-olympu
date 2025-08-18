@@ -6,8 +6,8 @@ pragma solidity ^0.8.20;
  * @dev Contrat de stockage pour la gestion des parts, des investissements et des dividendes.
  */
 contract SharesStorage {
-    // Platform settings - now variable instead of constant  
-    uint256 public platformCommissionPercent = 15;
+    // Platform settings - commission fixe de 12%
+    uint256 public constant PLATFORM_COMMISSION_PERCENT = 12;
    
     address public campaignKeeper;
 
@@ -67,5 +67,4 @@ constructor(address _campaignKeeper) {
     // Arrays
     address[] public investors;
     Investment[] public allInvestments;
-    address[] public allCampaigns;
 }

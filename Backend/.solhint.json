@@ -1,0 +1,15 @@
+{
+  "extends": "solhint:default",
+  "rules": {
+    "no-global-import": "off",
+    "max-line-length": "off",
+    "not-rely-on-time": "off",
+    "func-visibility": "off",
+    "state-visibility": "off",
+    "compiler-version": "off",
+    "avoid-low-level-calls": "off",
+    "avoid-call-value": "off",
+    "avoid-tx-origin": "off",
+    "check-send-result": "off"
+  }
+}
