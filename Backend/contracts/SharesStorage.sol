@@ -64,6 +64,13 @@ constructor(address _campaignKeeper) {
     mapping(uint256 => bool) public tokenBurned; // Pour éviter les double-burns lors de refunds
     mapping(uint256 => uint256) public tokenPurchasePrice; // Prix d'achat de chaque NFT (pour remboursement équitable)
 
+    // NFT Customization
+    address public nftRenderer;
+    string public nftBackgroundColor;
+    string public nftTextColor; 
+    string public nftLogoUrl;
+    string public nftSector;
+
     // Arrays
     address[] public investors;
     Investment[] public allInvestments;

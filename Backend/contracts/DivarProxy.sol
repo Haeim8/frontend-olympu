@@ -57,12 +57,12 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
     require(_campaignKeeper != address(0), "DIVAR: Invalid keeper");
     require(_priceConsumer != address(0), "DIVAR: Invalid price consumer");
     
+    _initializeStorage(_treasury, _priceConsumer);
     __Ownable_init();
     _transferOwnership(_treasury);
     __UUPSUpgradeable_init();
     __Pausable_init();
     
-    _initializeStorage(_treasury, _priceConsumer);
     campaignKeeper = _campaignKeeper;
 }
 

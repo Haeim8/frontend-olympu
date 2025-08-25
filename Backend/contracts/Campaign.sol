@@ -12,6 +12,24 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "./SharesStorage.sol";
 import "./SharesEvents.sol";
 
+interface INFTRenderer {
+    struct NFTCustomization {
+        string backgroundColor;
+        string textColor;
+        string logoUrl;
+        string companyName;
+        string sector;
+    }
+    
+    function generateTokenURI(
+        uint256 tokenId,
+        address contractAddress,
+        NFTCustomization memory customization,
+        uint256 round,
+        uint256 number
+    ) external pure returns (string memory);
+}
+
 /**
  * @title Campaign
  * @dev Contrat représentant une campagne de financement participatif avec des parts sous forme de NFTs.
@@ -127,7 +145,28 @@ contract Campaign is ERC721, ERC721Enumerable, ERC721URIStorage, ERC721Royalty, 
 
     function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
         require(_exists(tokenId), "URI query for nonexistent token");
-        return super.tokenURI(tokenId);
+        
+        if (nftRenderer == address(0)) {
+            return super.tokenURI(tokenId);
+        }
+        
+        (uint256 round, uint256 number) = getNFTInfo(tokenId);
+        
+        INFTRenderer.NFTCustomization memory customization = INFTRenderer.NFTCustomization({
+            backgroundColor: nftBackgroundColor,
+            textColor: nftTextColor,
+            logoUrl: nftLogoUrl,
+            companyName: campaignName,
+            sector: nftSector
+        });
+        
+        return INFTRenderer(nftRenderer).generateTokenURI(
+            tokenId,
+            address(this),
+            customization,
+            round,
+            number
+        );
     }
 
     /**
@@ -353,7 +392,6 @@ function _finalizeRoundInternal() private {
     ) external onlyStartup {
         require(rounds[currentRound].isFinalized, "Current round not finalized");
         require(_sharePrice > rounds[currentRound].sharePrice, "New price must be higher");
-        require(_sharePrice >= rounds[currentRound].sharePrice * 85 / 100, "Price cannot decrease more than 15%");
         require(_sharePrice <= rounds[currentRound].sharePrice * 300 / 100, "Price cannot increase more than 200%");
         
         currentRound++;
@@ -458,6 +496,22 @@ function _finalizeRoundInternal() private {
 
     // 🗳️ GOVERNANCE FUNCTIONS
 
+    /**
+     * @dev Configure le renderer et les paramètres NFT
+     */
+    function setupNFTCustomization(
+        address _nftRenderer,
+        string memory _backgroundColor,
+        string memory _textColor,
+        string memory _logoUrl,
+        string memory _sector
+    ) external onlyStartup {
+        nftRenderer = _nftRenderer;
+        nftBackgroundColor = _backgroundColor;
+        nftTextColor = _textColor;
+        nftLogoUrl = _logoUrl;
+        nftSector = _sector;
+    }
 
     /**
      * @dev 🆕 Récupérer le prix d'achat original d'un NFT (pour remboursement équitable)
