@@ -4,6 +4,11 @@
   "iconUrl": "https://livarhub.xyz/icon.png",
   "url": "https://livarhub.xyz",
   "splashImageUrl": "https://livarhub.xyz/splash.png",
+  "accountAssociation": {
+    "header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+    "payload": "eyJkb21haW4iOiJsaXZhcmh1Yi54eXoifQ",
+    "signature": "signature_placeholder"
+  },
   "frame": {
     "name": "Livar Campaign",
     "iconUrl": "https://livarhub.xyz/frame-icon.png",
