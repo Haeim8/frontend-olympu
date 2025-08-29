@@ -12,6 +12,6 @@
     "webhookUrl": "https://livarhub.xyz/api/frame/webhook"
   },
   "baseBuilder": {
-    "allowedAddresses": ["0x545e29a829d928366d577d25fddd40e3bbe7e10d"]
+    "allowedAddresses": ["0x545e29A829d928366D577D25FDdd40E3bBE7e10D"]
   }
 }
