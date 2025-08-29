@@ -14,6 +14,10 @@ contract CampaignKeeper is AutomationCompatibleInterface {
         uint256 timestamp
     );
     
+    modifier validAddress(address _addr) {
+        require(_addr != address(0), "Invalid address");
+        _;
+    }
     
     DivarProxy public immutable divarProxy;
     mapping(address => bool) public registeredCampaigns;
@@ -21,8 +25,7 @@ contract CampaignKeeper is AutomationCompatibleInterface {
     uint256 public lastCheckTime;
     uint256 public constant CHECK_INTERVAL = 1 hours;
     
-    constructor(address payable _divarProxy) {
-        require(_divarProxy != address(0), "KEEPER: Invalid proxy address");
+    constructor(address payable _divarProxy) validAddress(_divarProxy) {
         divarProxy = DivarProxy(_divarProxy);
         lastCheckTime = block.timestamp;
     }
@@ -89,8 +92,7 @@ contract CampaignKeeper is AutomationCompatibleInterface {
     
     
     // 🆕 FINALISER UNE CAMPAGNE (lance automatiquement la phase DAO)
-    function _finalizeCampaign(address campaignAddress, uint256 roundNumber) internal {
-        require(campaignAddress != address(0), "KEEPER: Invalid campaign address");
+    function _finalizeCampaign(address campaignAddress, uint256 roundNumber) internal validAddress(campaignAddress) {
         require(registeredCampaigns[campaignAddress], "KEEPER: Campaign not registered");
         
         Campaign campaign = Campaign(payable(campaignAddress));
@@ -103,9 +105,8 @@ contract CampaignKeeper is AutomationCompatibleInterface {
     }
     
 
-    function registerCampaign(address campaign) external {
+    function registerCampaign(address campaign) external validAddress(campaign) {
         require(msg.sender == address(divarProxy), "KEEPER: Only DivarProxy can register");
-        require(campaign != address(0), "KEEPER: Invalid campaign address");
         registeredCampaigns[campaign] = true;
     }
     

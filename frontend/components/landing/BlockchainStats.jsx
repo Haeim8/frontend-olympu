@@ -1,24 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useContract, useContractRead } from "@thirdweb-dev/react";
 import { motion } from "framer-motion";
 import { TrendingUp, Users, Target } from "lucide-react";
-import FundRaisingPlatformABI from "@/ABI/DivarProxyABI.json";
+import { useTranslation } from '@/hooks/useLanguage';
+import { apiManager } from '@/lib/services/api-manager';
 
 export function BlockchainStats({ darkMode }) {
+  const { t } = useTranslation();
   const [animatedStats, setAnimatedStats] = useState({
     users: 0,
     campaigns: 0,
     totalRaised: 0
   });
+  const [allCampaigns, setAllCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const contractAddress = "0x89Eba0c82c1f16433473A9A06690BfaAC2c7a1b4"; // Adresse correcte DivarProxy
-  const { contract } = useContract(contractAddress, FundRaisingPlatformABI);
+  // Chargement des campagnes via API Manager
+  useEffect(() => {
+    const loadCampaigns = async () => {
+      try {
+        setLoading(true);
+        const campaigns = await apiManager.getAllCampaigns();
+        setAllCampaigns(campaigns);
+      } catch (error) {
+        console.error('Erreur chargement campagnes:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // SIMULATION: Récupération des campagnes existantes pour calculer les stats
-  const { data: allCampaigns } = useContractRead(contract, "getAllCampaigns", []);
-  
+    loadCampaigns();
+  }, []);
+
   // Calcul simulé du nombre d'utilisateurs (basé sur le nombre de campagnes * estimation)
   const userCount = allCampaigns ? Math.max(allCampaigns.length * 12 + 147, 147) : 147;
   
@@ -67,21 +81,21 @@ export function BlockchainStats({ darkMode }) {
     {
       icon: Users,
       value: animatedStats.users,
-      label: "Utilisateurs inscrits",
+      label: t('landing.stats.registeredUsers'),
       suffix: "",
       color: "from-blue-400 to-blue-600"
     },
     {
       icon: Target,
       value: animatedStats.campaigns,
-      label: "Campagnes actives",
+      label: t('landing.stats.activeCampaigns'),
       suffix: "",
       color: "from-purple-400 to-purple-600"
     },
     {
       icon: TrendingUp,
       value: animatedStats.totalRaised,
-      label: "ETH collectés",
+      label: t('landing.stats.ethCollected'),
       suffix: "Ξ",
       color: "from-lime-400 to-green-600"
     }
@@ -98,10 +112,10 @@ export function BlockchainStats({ darkMode }) {
           viewport={{ once: true }}
         >
           <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
-            Statistiques en temps réel
+            {t('landing.stats.realTimeTitle')}
           </h2>
           <p className={`text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-            Données directement depuis la blockchain Ethereum
+            {t('landing.stats.blockchainData')}
           </p>
         </motion.div>
 
@@ -159,7 +173,7 @@ export function BlockchainStats({ darkMode }) {
         >
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-            Mis à jour en temps réel depuis la blockchain
+            {t('landing.stats.realTimeUpdate')}
           </span>
         </motion.div>
       </div>

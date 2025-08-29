@@ -58,4 +58,16 @@ contract PriceConsumerV3 {
     
     return usdAmount;
 }
+
+    /**
+     * @dev Fonction utilitaire pour obtenir un prix en ETH avec fallback pour tests locaux
+     * @param usdCents Prix en cents USD (ex: 8500 pour 85$)
+     * @param testEthPrice Prix fixe en ETH pour tests locaux (chainid 31337)
+     */
+    function getETHPriceWithTestFallback(uint256 usdCents, uint256 testEthPrice) public view returns (uint256) {
+        if (block.chainid == 31337) {
+            return testEthPrice;
+        }
+        return convertUSDToETH(usdCents);
+    }
 }

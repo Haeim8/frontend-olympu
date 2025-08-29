@@ -52,17 +52,16 @@ constructor(address _campaignKeeper) {
 
     // Variables financières
     uint256 public currentRound;
-    uint256 public totalFundsRaised;
-    bool public canReceiveDividends;
+    uint256 public nextTokenId = 1; // Compteur séquentiel pour les NFT IDs
 
     // Mappings
     mapping(uint256 => Round) public rounds;
     mapping(address => Investment[]) public investmentsByAddress;
     mapping(address => uint256) public sharesOwned;
-    mapping(address => uint256) public unclaimedDividends; // Dividendes non réclamés par chaque investisseur
-    mapping(address => bool) public isInvestor;
+    mapping(address => uint256) public unclaimedDividends; // Dividendes réclamés par chaque investisseur
     mapping(uint256 => bool) public tokenBurned; // Pour éviter les double-burns lors de refunds
     mapping(uint256 => uint256) public tokenPurchasePrice; // Prix d'achat de chaque NFT (pour remboursement équitable)
+    mapping(uint256 => uint256) public tokenRound; // Round de chaque token (remplace le calcul hardcodé)
 
     // NFT Customization
     address public nftRenderer;
@@ -71,7 +70,10 @@ constructor(address _campaignKeeper) {
     string public nftLogoUrl;
     string public nftSector;
 
-    // Arrays
-    address[] public investors;
-    Investment[] public allInvestments;
+    // Total supply pour calculer les dividendes
+    uint256 public totalSharesIssued;
+    
+    // Système de dividendes simplifié
+    uint256 public totalDividendsDeposited;
+    uint256 public dividendsPerShare;
 }

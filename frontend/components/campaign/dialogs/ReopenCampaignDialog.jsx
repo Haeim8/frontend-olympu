@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslation } from '@/hooks/useLanguage';
 import { Calendar, DollarSign, Repeat, AlertTriangle, Info } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
 
@@ -17,6 +18,7 @@ export default function ReopenCampaignDialog({
   campaignAddress, 
   onSuccess 
 }) {
+  const { t } = useTranslation();
   const [reopenForm, setReopenForm] = useState({
     goal: "",
     sharePrice: "",
@@ -33,11 +35,11 @@ export default function ReopenCampaignDialog({
 
   const validateForm = () => {
     if (!reopenForm.goal || parseFloat(reopenForm.goal) <= 0) {
-      return "L'objectif doit être supérieur à 0";
+      return t('dialog.reopen.validation.goalPositive');
     }
     
     if (!reopenForm.sharePrice || parseFloat(reopenForm.sharePrice) <= 0) {
-      return "Le prix des NFTs doit être supérieur à 0";
+      return t('dialog.reopen.validation.pricePositive');
     }
     
     if (parseFloat(reopenForm.sharePrice) < parseFloat(campaignData?.nftPrice || 0)) {

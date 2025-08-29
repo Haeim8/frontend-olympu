@@ -5,11 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
-import { useAddress } from '@thirdweb-dev/react';
+import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
 import html2canvas from 'html2canvas';
 import { pinataService } from '@/lib/services/storage';
 import { apiManager } from '@/lib/services/api-manager';
+import { useTranslation } from '@/hooks/useLanguage';
 
 // Import des composants modulaires
 import StepIndicator from '@/components/campaign-creation/CampaignFormSteps';
@@ -62,6 +63,8 @@ export default function CampaignModal({
   setShowCreateCampaign, 
   onCampaignCreated 
 }) {
+  const { t } = useTranslation();
+  
   // États
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
@@ -74,7 +77,7 @@ export default function CampaignModal({
   const cardRef = useRef(null);
 
   // Hooks blockchain
-  const address = useAddress();
+  const { address } = useAccount();
   const [writeLoading, setWriteLoading] = useState(false);
 
   // Initialisation de l'adresse
@@ -142,36 +145,36 @@ export default function CampaignModal({
     
     switch(step) {
       case 1:
-        if (!formData.name.trim()) newErrors.name = "Le nom est requis";
-        if (!formData.symbol.trim()) newErrors.symbol = "Le symbole est requis";
-        if (!formData.sector) newErrors.sector = "Le secteur est requis";
+        if (!formData.name.trim()) newErrors.name = t('campaign.validation.nameRequired');
+        if (!formData.symbol.trim()) newErrors.symbol = t('campaign.validation.symbolRequired');
+        if (!formData.sector) newErrors.sector = t('campaign.validation.sectorRequired');
         if (formData.sector === 'Autre' && !formData.otherSector.trim()) {
-          newErrors.otherSector = "Veuillez préciser le secteur";
+          newErrors.otherSector = t('campaign.validation.specifySector');
         }
-        if (!formData.description.trim()) newErrors.description = "La description est requise";
+        if (!formData.description.trim()) newErrors.description = t('campaign.validation.descriptionRequired');
         if (!formData.sharePrice || parseFloat(formData.sharePrice) <= 0) {
-          newErrors.sharePrice = "Le prix par part doit être supérieur à 0";
+          newErrors.sharePrice = t('campaign.validation.sharePricePositive');
         }
         if (!formData.numberOfShares || parseInt(formData.numberOfShares) <= 0) {
-          newErrors.numberOfShares = "Le nombre de parts doit être supérieur à 0";
+          newErrors.numberOfShares = t('campaign.validation.sharesPositive');
         }
         if (!formData.endDate || new Date(formData.endDate).getTime() <= Date.now()) {
-          newErrors.endDate = "La date de fin doit être dans le futur";
+          newErrors.endDate = t('campaign.validation.futureDateRequired');
         }
         if (!formData.royaltyReceiver.trim()) {
-          newErrors.royaltyReceiver = "L'adresse de réception est requise";
+          newErrors.royaltyReceiver = t('campaign.validation.receiverRequired');
         }
         break;
       
       case 2:
         if (!formData.documents.whitepaper?.length) {
-          newErrors.whitepaper = "Le whitepaper est requis";
+          newErrors.whitepaper = t('campaign.validation.whitepaperRequired');
         }
         break;
       
       case 3:
         if (!formData.teamMembers.some(member => member.name.trim())) {
-          newErrors.team = "Au moins un membre d'équipe avec un nom est requis";
+          newErrors.team = t('campaign.validation.teamMemberRequired');
         }
         break;
       
@@ -181,7 +184,7 @@ export default function CampaignModal({
       
       case 5:
         if (!formData.acceptTerms) {
-          newErrors.terms = "Vous devez accepter les conditions";
+          newErrors.terms = t('campaign.validation.termsRequired');
         }
         break;
     }

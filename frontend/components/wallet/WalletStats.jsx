@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   Wallet, 
   TrendingUp, 
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue, color = "lime" }) => {
+  const { t } = useTranslation();
   const colorClasses = {
     lime: "from-lime-500 to-green-600",
     blue: "from-blue-500 to-cyan-600", 
@@ -61,7 +63,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color = "lime" 
         </div>
         
         {/* Progress bar pour certaines stats */}
-        {title === "Nombre de NFT" && parseInt(value) > 0 && (
+        {title === t('wallet.stats.nftCount') && parseInt(value) > 0 && (
           <div className="w-full bg-gray-200 dark:bg-neutral-800 rounded-full h-1.5">
             <div 
               className={`h-1.5 rounded-full bg-gradient-to-r ${colorClasses[color]}`}
@@ -75,9 +77,11 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color = "lime" 
 };
 
 export default function WalletStats({ walletInfo, isLoading }) {
+  const { t } = useTranslation();
+  
   const stats = [
     {
-      title: "Nombre de NFT",
+      title: t('wallet.stats.nftCount'),
       value: isLoading ? "..." : walletInfo.totalNFTs.toString(),
       icon: Award,
       color: "lime",
@@ -85,7 +89,7 @@ export default function WalletStats({ walletInfo, isLoading }) {
       trendValue: walletInfo.totalNFTs > 0 ? "+12%" : null
     },
     {
-      title: "Valeur investie", 
+      title: t('wallet.stats.invested'), 
       value: isLoading ? "..." : `${walletInfo.totalInvested} ETH`,
       icon: Wallet,
       color: "blue",
@@ -93,7 +97,7 @@ export default function WalletStats({ walletInfo, isLoading }) {
       trendValue: parseFloat(walletInfo.totalInvested) > 0 ? "+8%" : null
     },
     {
-      title: "Projets soutenus",
+      title: t('wallet.stats.supportedProjects'),
       value: isLoading ? "..." : walletInfo.activeProjects.toString(),
       icon: TrendingUp,
       color: "purple",
@@ -101,7 +105,7 @@ export default function WalletStats({ walletInfo, isLoading }) {
       trendValue: walletInfo.activeProjects > 0 ? "+3" : null
     },
     {
-      title: "Dividendes perçus",
+      title: t('wallet.stats.dividends'),
       value: isLoading ? "..." : `${walletInfo.totalDividends} ETH`,
       icon: DollarSign,
       color: "orange",
@@ -116,15 +120,15 @@ export default function WalletStats({ walletInfo, isLoading }) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Statistiques du portefeuille
+            {t('wallet.stats.title')}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Aperçu de vos investissements et NFT
+            {t('wallet.stats.subtitle')}
           </p>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
           <Activity className="h-4 w-4" />
-          <span>Mis à jour il y a quelques instants</span>
+          <span>{t('wallet.stats.updated')}</span>
         </div>
       </div>
 
@@ -154,10 +158,10 @@ export default function WalletStats({ walletInfo, isLoading }) {
             </div>
             <div>
               <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                Commencez à investir !
+                {t('wallet.stats.startInvesting')}
               </h3>
               <p className="text-sm text-blue-700 dark:text-blue-200 mt-1">
-                Vous n'avez pas encore d'investissements. Découvrez les projets disponibles pour commencer.
+                {t('wallet.stats.noInvestmentsYet')}
               </p>
             </div>
           </div>

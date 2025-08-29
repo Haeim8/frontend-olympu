@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   FileText, 
   Upload, 
@@ -23,10 +24,10 @@ const DocumentType = {
   MEDIA: 'media'
 };
 
-const documentConfig = {
+const getDocumentConfig = (t) => ({
   [DocumentType.WHITEPAPER]: {
-    title: 'Whitepaper',
-    description: 'Document technique détaillé de votre projet',
+    title: t('campaignDocs.whitepaper'),
+    description: t('campaignDocs.whitepaperDesc'),
     accept: '.pdf,.doc,.docx',
     required: true,
     multiple: false,
@@ -34,8 +35,8 @@ const documentConfig = {
     color: 'text-blue-600'
   },
   [DocumentType.PITCH_DECK]: {
-    title: 'Pitch Deck',
-    description: 'Présentation de votre projet pour les investisseurs',
+    title: t('campaignDocs.pitchDeck'),
+    description: t('campaignDocs.pitchDeckDesc'),
     accept: '.pdf,.ppt,.pptx',
     required: false,
     multiple: false,
@@ -43,8 +44,8 @@ const documentConfig = {
     color: 'text-purple-600'
   },
   [DocumentType.LEGAL_DOCUMENTS]: {
-    title: 'Documents Légaux',
-    description: 'Statuts, contrats, certifications légales',
+    title: t('campaignDocs.legalDocs'),
+    description: t('campaignDocs.legalDocsDesc'),
     accept: '.pdf,.doc,.docx',
     required: false,
     multiple: true,
@@ -52,15 +53,15 @@ const documentConfig = {
     color: 'text-orange-600'
   },
   [DocumentType.MEDIA]: {
-    title: 'Médias',
-    description: 'Images, vidéos promotionnelles, logos',
+    title: t('campaignDocs.media'),
+    description: t('campaignDocs.mediaDesc'),
     accept: 'image/*,video/*',
     required: false,
     multiple: true,
     icon: FileImage,
     color: 'text-green-600'
   }
-};
+});
 
 const FileIcon = ({ file }) => {
   const isImage = file.type.startsWith('image/');
@@ -108,7 +109,8 @@ const FileItem = ({ file, index, onRemove, type }) => {
 };
 
 const DocumentUpload = ({ type, files, onFileChange, onRemoveFile, error }) => {
-  const config = documentConfig[type];
+  const { t } = useTranslation();
+  const config = getDocumentConfig(t)[type];
   const Icon = config.icon;
   
   return (
@@ -136,7 +138,7 @@ const DocumentUpload = ({ type, files, onFileChange, onRemoveFile, error }) => {
           <div className="flex items-center space-x-1 text-green-600">
             <CheckCircle className="h-4 w-4" />
             <span className="text-xs font-medium">
-              {files.length} fichier{files.length > 1 ? 's' : ''}
+              {t('campaignDocs.filesCount', { count: files.length, plural: files.length > 1 ? 's' : '' })}
             </span>
           </div>
         )}
@@ -158,11 +160,11 @@ const DocumentUpload = ({ type, files, onFileChange, onRemoveFile, error }) => {
         `}>
           <Upload className={`h-8 w-8 mx-auto mb-2 ${error ? 'text-red-500' : 'text-gray-400'}`} />
           <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-            Cliquez ou glissez vos fichiers ici
+            {t('campaignDocs.dragDrop')}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {config.accept.replace(/\./g, '').toUpperCase()} • Max 10MB par fichier
-            {config.multiple && ' • Plusieurs fichiers acceptés'}
+            {config.accept.replace(/\./g, '').toUpperCase()} • {t('campaignDocs.fileLimit')}
+            {config.multiple && ` • ${t('campaignDocs.multipleFiles')}`}
           </p>
         </div>
       </div>
@@ -179,7 +181,7 @@ const DocumentUpload = ({ type, files, onFileChange, onRemoveFile, error }) => {
       {files.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            Fichiers sélectionnés:
+            {t('campaignDocs.selectedFiles')}
           </h4>
           <div className="space-y-2 max-h-32 overflow-y-auto">
             {files.map((file, index) => (
@@ -204,6 +206,9 @@ export default function CampaignDocuments({
   onFileChange,
   onRemoveFile
 }) {
+  const { t } = useTranslation();
+  const documentConfig = getDocumentConfig(t);
+  
   const getCompletionPercentage = () => {
     const totalTypes = Object.keys(documentConfig).length;
     const completedTypes = Object.keys(documentConfig).filter(type => {
@@ -224,10 +229,10 @@ export default function CampaignDocuments({
           <FileText className="w-8 h-8 text-purple-600 dark:text-purple-400" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Documents et Médias
+          {t('campaignDocs.title')}
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Téléchargez les documents nécessaires pour présenter votre projet
+          {t('campaignDocs.subtitle')}
         </p>
       </div>
 
@@ -235,7 +240,7 @@ export default function CampaignDocuments({
       <div className="bg-gray-50 dark:bg-neutral-900 rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            Progression des documents
+            {t('campaignDocs.progress')}
           </span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {completion}%
@@ -247,12 +252,12 @@ export default function CampaignDocuments({
         />
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
           {completion < 25 
-            ? "Commencez par télécharger votre whitepaper" 
+            ? t('campaignDocs.progressStart')
             : completion < 50 
-            ? "Bon début ! Ajoutez plus de documents" 
+            ? t('campaignDocs.progressGood')
             : completion < 75 
-            ? "Presque terminé !" 
-            : "Excellent ! Vos documents sont complets"
+            ? t('campaignDocs.progressAlmost')
+            : t('campaignDocs.progressExcellent')
           }
         </p>
       </div>
@@ -275,13 +280,13 @@ export default function CampaignDocuments({
       {/* Conseils */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
         <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-          💡 Conseils pour vos documents
+          {t('campaignDocs.tipsTitle')}
         </h3>
         <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-          <li>• Le whitepaper doit être détaillé et professionnel</li>
-          <li>• Utilisez des formats standard (PDF recommandé)</li>
-          <li>• Les images doivent être en haute résolution</li>
-          <li>• Vérifiez que tous vos documents sont à jour</li>
+          <li>{t('campaignDocs.tip1')}</li>
+          <li>{t('campaignDocs.tip2')}</li>
+          <li>{t('campaignDocs.tip3')}</li>
+          <li>{t('campaignDocs.tip4')}</li>
         </ul>
       </div>
     </div>

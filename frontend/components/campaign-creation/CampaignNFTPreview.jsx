@@ -4,6 +4,7 @@ import React, { forwardRef } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   Palette, 
   Upload, 
@@ -53,6 +54,8 @@ const CampaignNFTPreview = forwardRef(({
   contractAddress,
   onCustomizationChange
 }, ref) => {
+  const { t } = useTranslation();
+  
   const handleColorChange = (field, value) => {
     onCustomizationChange({
       ...formData.nftCustomization,
@@ -80,12 +83,12 @@ const CampaignNFTPreview = forwardRef(({
   };
 
   const presets = [
-    { name: 'Classique', bg: '#ffffff', text: '#000000' },
-    { name: 'Sombre', bg: '#1f2937', text: '#ffffff' },
-    { name: 'Lime', bg: '#ecfdf5', text: '#064e3b' },
-    { name: 'Bleu', bg: '#eff6ff', text: '#1e3a8a' },
-    { name: 'Violet', bg: '#f3e8ff', text: '#581c87' },
-    { name: 'Orange', bg: '#fff7ed', text: '#9a3412' }
+    { name: t('campaignNFT.classic'), bg: '#ffffff', text: '#000000' },
+    { name: t('campaignNFT.dark'), bg: '#1f2937', text: '#ffffff' },
+    { name: t('campaignNFT.lime'), bg: '#ecfdf5', text: '#064e3b' },
+    { name: t('campaignNFT.blue'), bg: '#eff6ff', text: '#1e3a8a' },
+    { name: t('campaignNFT.purple'), bg: '#f3e8ff', text: '#581c87' },
+    { name: t('campaignNFT.orange'), bg: '#fff7ed', text: '#9a3412' }
   ];
 
   return (
@@ -96,10 +99,10 @@ const CampaignNFTPreview = forwardRef(({
           <Palette className="w-8 h-8 text-purple-600 dark:text-purple-400" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Prévisualisation NFT
+          {t('campaignNFT.title')}
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Personnalisez l'apparence de vos NFT de parts
+          {t('campaignNFT.subtitle')}
         </p>
       </div>
 
@@ -109,7 +112,7 @@ const CampaignNFTPreview = forwardRef(({
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium mb-4">
               <Eye className="h-4 w-4" />
-              Aperçu en temps réel
+              {t('campaignNFT.preview')}
             </div>
           </div>
 
@@ -142,7 +145,7 @@ const CampaignNFTPreview = forwardRef(({
               className="bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300"
             >
               <Camera className="h-4 w-4 mr-2" />
-              Capturer l'aperçu
+              {t('campaignNFT.capturePreview')}
             </Button>
           </div>
         </div>
@@ -152,14 +155,14 @@ const CampaignNFTPreview = forwardRef(({
           <div className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-xl p-6">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-lime-600" />
-              Personnalisation
+              {t('campaignNFT.customization')}
             </h3>
 
             <div className="space-y-6">
               {/* Logo */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Logo du projet
+                  {t('campaignNFT.logo')}
                 </Label>
                 <div className="flex items-center gap-3">
                   <Button
@@ -168,7 +171,7 @@ const CampaignNFTPreview = forwardRef(({
                     className="relative overflow-hidden"
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    Télécharger
+                    {t('campaignNFT.uploadLogo')}
                     <input
                       type="file"
                       accept="image/*"
@@ -178,36 +181,36 @@ const CampaignNFTPreview = forwardRef(({
                   </Button>
                   {formData.nftCustomization.logo && (
                     <span className="text-sm text-green-600 dark:text-green-400">
-                      Logo ajouté ✓
+                      {t('campaignNFT.logoAdded')}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Format recommandé: PNG/SVG, 200x200px maximum
+                  {t('campaignNFT.logoFormat')}
                 </p>
               </div>
 
               {/* Couleurs */}
               <div className="grid grid-cols-1 gap-4">
                 <ColorPicker
-                  label="Couleur de fond"
+                  label={t('campaignNFT.backgroundColor')}
                   value={formData.nftCustomization.backgroundColor}
                   onChange={(e) => handleColorChange('backgroundColor', e.target.value)}
-                  description="Arrière-plan principal du NFT"
+                  description={t('campaignNFT.backgroundDesc')}
                 />
                 
                 <ColorPicker
-                  label="Couleur du texte"
+                  label={t('campaignNFT.textColor')}
                   value={formData.nftCustomization.textColor}
                   onChange={(e) => handleColorChange('textColor', e.target.value)}
-                  description="Couleur des textes et icônes"
+                  description={t('campaignNFT.textDesc')}
                 />
               </div>
 
               {/* Presets de couleurs */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Thèmes prédéfinis
+                  {t('campaignNFT.presets')}
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
                   {presets.map((preset, index) => (
@@ -241,7 +244,7 @@ const CampaignNFTPreview = forwardRef(({
                   className="w-full text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Réinitialiser
+                  {t('campaignNFT.resetDefaults')}
                 </Button>
               </div>
             </div>
@@ -250,13 +253,13 @@ const CampaignNFTPreview = forwardRef(({
           {/* Info sur les NFT */}
           <div className="bg-gradient-to-br from-green-50 to-lime-50 dark:from-green-900/10 dark:to-lime-900/10 border border-green-200 dark:border-green-800 rounded-xl p-4">
             <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">
-              📝 À propos des NFT de parts
+              {t('campaignNFT.aboutNFT')}
             </h3>
             <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
-              <li>• Chaque investisseur recevra un NFT unique représentant ses parts</li>
-              <li>• Le design sera identique pour tous mais avec des données personnalisées</li>
-              <li>• Les NFT peuvent être échangés sur les marketplaces compatibles</li>
-              <li>• Ils donnent accès aux dividendes et aux droits de vote</li>
+              <li>{t('campaignNFT.info1')}</li>
+              <li>{t('campaignNFT.info2')}</li>
+              <li>{t('campaignNFT.info3')}</li>
+              <li>{t('campaignNFT.info4')}</li>
             </ul>
           </div>
         </div>

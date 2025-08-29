@@ -3,12 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Shield, Zap } from "lucide-react";
+import { useTranslation } from '@/hooks/useLanguage';
 
 export function LandingHero({
   darkMode,
   address,
   onAccessInterface,
 }) {
+  const { t } = useTranslation();
   return (
     <main id="accueil" className="flex-1 relative z-10 flex items-center justify-center min-h-[60vh]">
       <section className="w-full py-12 px-4">
@@ -32,7 +34,7 @@ export function LandingHero({
               transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
             >
               <Sparkles className="w-3 h-3 text-lime-400" />
-              <span className="text-xs font-medium text-lime-400">Financement Participatif DeFi</span>
+              <span className="text-xs font-medium text-lime-400">{t('crowdfundingDefi')}</span>
               <Sparkles className="w-3 h-3 text-lime-400" />
             </motion.div>
 
@@ -48,18 +50,18 @@ export function LandingHero({
                   ? "bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent" 
                   : "text-gray-900"
                 }`}>
-                  Soutenez
+                  {t('support')}
                 </span>
                 <br />
                 <span className="bg-gradient-to-r from-lime-400 via-green-500 to-lime-400 bg-clip-text text-transparent">
-                  l'avenir
+                  {t('future')}
                 </span>
                 <br />
                 <span className={`${darkMode 
                   ? "bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent" 
                   : "text-gray-900"
                 }`}>
-                  de l'écosystème
+                  {t('ecosystem')}
                 </span>
               </motion.h1>
 
@@ -71,9 +73,8 @@ export function LandingHero({
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.4 }}
               >
-                Contribuez au développement des technologies{" "}
-                <span className="font-semibold text-lime-500">Web3 de pointe</span> et 
-                faites partie de la révolution décentralisée qui façonne notre futur financier.
+                {t('contributeText')}{" "}
+                <span className="font-semibold text-lime-500">{t('web3Advanced')}</span> {t('andBePart')}
               </motion.p>
             </div>
 
@@ -96,18 +97,18 @@ export function LandingHero({
                       onClick={onAccessInterface}
                     >
                       <Zap className="w-4 h-4 mr-2" />
-                      Lancer l'App
+{t('launchApp', 'Lancer l\'App')}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </motion.div>
                 ) : (
                   <div className="text-center space-y-2">
-                    <p className="text-sm text-lime-400 font-medium">Veuillez connecter votre portefeuille</p>
+                    <p className="text-sm text-lime-400 font-medium">{t('connectWallet', 'Veuillez connecter votre portefeuille')}</p>
                     <div className={`flex items-center justify-center space-x-1 text-xs ${
                       darkMode ? "text-gray-400" : "text-gray-600"
                     }`}>
                       <Shield className="w-3 h-3" />
-                      <span>Connexion sécurisée requise</span>
+                      <span>{t('landing.hero.secureConnectionRequired')}</span>
                     </div>
                   </div>
                 )}
@@ -124,15 +125,15 @@ export function LandingHero({
               >
                 <div className="text-center">
                   <div className="text-xl font-bold text-lime-500">24/7</div>
-                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Support actif</div>
+                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.stats.activeSupport')}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-bold text-lime-500">GRATUIT</div>
-                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Inscription</div>
+                  <div className="text-xl font-bold text-lime-500">{t('landing.stats.free')}</div>
+                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.stats.registration')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xl font-bold text-lime-500">100%</div>
-                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Décentralisé</div>
+                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.stats.decentralized')}</div>
                 </div>
               </motion.div>
             </motion.div>

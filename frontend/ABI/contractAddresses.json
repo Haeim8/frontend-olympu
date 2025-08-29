@@ -1,0 +1,32 @@
+{
+  "sepoliaBase": {
+    "chainId": 84532,
+    "network": "Base Sepolia",
+    "contracts": {
+      "DivarProxy": "0xaB0999Eae920849a41A55eA080d0a4a210156817",
+      "CampaignKeeper": "0xcCD7381A3bD40F992DADc82FAaC7491d738E6b4F",
+      "RecPromotionManager": "0x11Ec8942942489f5128b3E69156C02CC9170fA28",
+      "PriceConsumer": "0x0888C31a910c44a5291F9E4f6Eb440Df74f581Db",
+      "NFTRenderer": "0x291E1ac04617dCdA2676a50E9dc59EF45Ff812d7"
+    },
+    "version": "3.0.0",
+    "lastUpdate": "2025-08-27T20:00:00.000Z",
+    "features": {
+      "multiRoundRefunds": true,
+      "nftIntegration": true,
+      "promotionSystem": true
+    }
+  },
+  "hardhat": {
+    "chainId": 31337,
+    "network": "Hardhat Local",
+    "contracts": {
+      "DivarProxy": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "CampaignKeeper": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+    },
+    "version": "2.0.0-dev",
+    "features": {
+      "multiRoundRefunds": true
+    }
+  }
+}

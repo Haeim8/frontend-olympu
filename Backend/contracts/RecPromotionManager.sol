@@ -7,18 +7,20 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "./PriceConsumerV3.sol";
 
 interface IRecProxy {
-    function getCampaignRegistry(address _campaign) external view returns (
-        address campaignAddress,
-        address creator,
-        uint256 creationTime,
-        uint256 targetAmount,
-        string memory category,
-        bool isActive,
-        string memory name,
-        string memory metadata,
-        string memory logo,
-        address escrowAddress
-    );
+    struct CampaignInfo {
+        address campaignAddress;
+        address creator;
+        uint256 creationTime;
+        uint256 targetAmount;
+        string category;
+        bool isActive;
+        string name;
+        string metadata;
+        string logo;
+        address escrowAddress;
+    }
+    
+    function getCampaignRegistry(address _campaign) external view returns (CampaignInfo memory);
 }
 
 interface IRecCampaign {
@@ -42,6 +44,11 @@ interface IRecCampaign {
  */
 contract RecPromotionManager is Ownable, ReentrancyGuard {
     using Address for address payable;
+
+    modifier validAddress(address _addr) {
+        require(_addr != address(0), "Invalid address");
+        _;
+    }
 
     // ========== CONSTANTS ==========
     
@@ -121,11 +128,7 @@ contract RecPromotionManager is Ownable, ReentrancyGuard {
         address _recProxy,
         address _priceConsumer,
         address _treasury
-    ) {
-        require(_recProxy != address(0), "Invalid RecProxy address");
-        require(_priceConsumer != address(0), "Invalid PriceConsumer address");
-        require(_treasury != address(0), "Invalid treasury address");
-        
+    ) validAddress(_recProxy) validAddress(_priceConsumer) validAddress(_treasury) {
         recProxy = _recProxy;
         priceConsumer = _priceConsumer;
         treasury = _treasury;
@@ -141,14 +144,13 @@ contract RecPromotionManager is Ownable, ReentrancyGuard {
     function promoteCampaign(
         address campaignAddress,
         BoostType boostType
-    ) external payable nonReentrant {
+    ) external payable nonReentrant validAddress(campaignAddress) {
         // Validation de base
-        require(campaignAddress != address(0), "Invalid campaign address");
         
         // Vérifier que la campagne existe dans RecProxy
-        (address regCampaignAddress, address creator,,,,,,,,) = IRecProxy(recProxy).getCampaignRegistry(campaignAddress);
-        require(regCampaignAddress != address(0), "Campaign not registered");
-        require(creator == msg.sender, "Only campaign creator can promote");
+        IRecProxy.CampaignInfo memory campaignInfo = IRecProxy(recProxy).getCampaignRegistry(campaignAddress);
+        require(campaignInfo.campaignAddress != address(0), "Campaign not registered");
+        require(campaignInfo.creator == msg.sender, "Only campaign creator can promote");
         
         // Récupérer le round actuel
         uint256 currentRound = IRecCampaign(campaignAddress).currentRound();
@@ -285,27 +287,15 @@ contract RecPromotionManager is Ownable, ReentrancyGuard {
      * @dev Calculer le prix d'un boost en ETH via PriceConsumer
      */
     function _getBoostPriceInETH(BoostType boostType) internal view returns (uint256) {
-        uint256 priceInCents;
-        
         if (boostType == BoostType.FEATURED) {
-            priceInCents = FEATURED_PRICE_USD_CENTS;
+            return PriceConsumerV3(priceConsumer).getETHPriceWithTestFallback(FEATURED_PRICE_USD_CENTS, 0.01 ether);
         } else if (boostType == BoostType.TRENDING) {
-            priceInCents = TRENDING_PRICE_USD_CENTS;
+            return PriceConsumerV3(priceConsumer).getETHPriceWithTestFallback(TRENDING_PRICE_USD_CENTS, 0.03 ether);
         } else if (boostType == BoostType.SPOTLIGHT) {
-            priceInCents = SPOTLIGHT_PRICE_USD_CENTS;
+            return PriceConsumerV3(priceConsumer).getETHPriceWithTestFallback(SPOTLIGHT_PRICE_USD_CENTS, 0.08 ether);
         } else {
             revert("Invalid boost type");
         }
-        
-        // Pour test local - pas de Chainlink
-        if (block.chainid == 31337) {
-            // Prix fixe pour les tests locaux
-            if (boostType == BoostType.FEATURED) return 0.01 ether;
-            if (boostType == BoostType.TRENDING) return 0.03 ether;
-            if (boostType == BoostType.SPOTLIGHT) return 0.08 ether;
-        }
-        
-        return PriceConsumerV3(priceConsumer).convertUSDToETH(priceInCents);
     }
     
     /**
@@ -347,8 +337,7 @@ contract RecPromotionManager is Ownable, ReentrancyGuard {
     /**
      * @dev Mettre à jour l'adresse du treasury
      */
-    function updateTreasury(address _newTreasury) external onlyOwner {
-        require(_newTreasury != address(0), "Invalid treasury address");
+    function updateTreasury(address _newTreasury) external onlyOwner validAddress(_newTreasury) {
         address oldTreasury = treasury;
         treasury = _newTreasury;
         emit TreasuryUpdated(oldTreasury, _newTreasury);
@@ -357,8 +346,7 @@ contract RecPromotionManager is Ownable, ReentrancyGuard {
     /**
      * @dev Mettre à jour l'adresse du PriceConsumer
      */
-    function updatePriceConsumer(address _newPriceConsumer) external onlyOwner {
-        require(_newPriceConsumer != address(0), "Invalid price consumer address");
+    function updatePriceConsumer(address _newPriceConsumer) external onlyOwner validAddress(_newPriceConsumer) {
         address oldPriceConsumer = priceConsumer;
         priceConsumer = _newPriceConsumer;
         emit PriceConsumerUpdated(oldPriceConsumer, _newPriceConsumer);
@@ -367,8 +355,7 @@ contract RecPromotionManager is Ownable, ReentrancyGuard {
     /**
      * @dev Mettre à jour l'adresse du RecProxy
      */
-    function updateRecProxy(address _newRecProxy) external onlyOwner {
-        require(_newRecProxy != address(0), "Invalid RecProxy address");
+    function updateRecProxy(address _newRecProxy) external onlyOwner validAddress(_newRecProxy) {
         address oldRecProxy = recProxy;
         recProxy = _newRecProxy;
         emit RecProxyUpdated(oldRecProxy, _newRecProxy);

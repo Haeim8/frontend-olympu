@@ -20,8 +20,11 @@ import {
   Trophy,
   TrendingUp
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useLanguage';
 
 const DocumentLink = ({ title, url, type = 'document' }) => {
+  const { t } = useTranslation();
+  
   const getIcon = () => {
     switch (type) {
       case 'image':
@@ -44,7 +47,7 @@ const DocumentLink = ({ title, url, type = 'document' }) => {
             {title}
           </span>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {type === 'image' ? 'Image' : type === 'video' ? 'Vidéo' : 'Document'}
+            {type === 'image' ? t('projectDetailsTab.image') : type === 'video' ? t('projectDetailsTab.video') : t('projectDetailsTab.document')}
           </p>
         </div>
       </div>
@@ -56,7 +59,7 @@ const DocumentLink = ({ title, url, type = 'document' }) => {
           className="h-8 px-3"
         >
           <Eye className="h-3 w-3 mr-1" />
-          Aperçu
+          {t('projectDetailsTab.preview')}
         </Button>
         <Button 
           variant="outline" 
@@ -65,7 +68,7 @@ const DocumentLink = ({ title, url, type = 'document' }) => {
           className="h-8 px-3 border-lime-200 dark:border-lime-800 hover:bg-lime-50 dark:hover:bg-lime-900/20"
         >
           <ExternalLink className="h-3 w-3 mr-1" />
-          Ouvrir
+          {t('projectDetailsTab.open')}
         </Button>
       </div>
     </div>
@@ -73,13 +76,14 @@ const DocumentLink = ({ title, url, type = 'document' }) => {
 };
 
 const MediaGallery = ({ media = [] }) => {
+  const { t } = useTranslation();
   const [selectedMedia, setSelectedMedia] = useState(null);
 
   if (!media || media.length === 0) {
     return (
       <div className="text-center py-12">
         <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 dark:text-gray-400">Aucun média disponible</p>
+        <p className="text-gray-500 dark:text-gray-400">{t('projectDetailsTab.noMedia')}</p>
       </div>
     );
   }
@@ -90,7 +94,7 @@ const MediaGallery = ({ media = [] }) => {
         {media.map((mediaItem, index) => {
           // Gérer les deux formats : objet {url, name, etc.} ou simple string
           const mediaUrl = typeof mediaItem === 'string' ? mediaItem : mediaItem?.url;
-          const mediaName = typeof mediaItem === 'object' ? mediaItem?.name : `Media ${index + 1}`;
+          const mediaName = typeof mediaItem === 'object' ? mediaItem?.name : t('projectDetailsTab.media', { index: index + 1 });
           
           if (!mediaUrl) return null;
           
@@ -127,7 +131,7 @@ const MediaGallery = ({ media = [] }) => {
           <div className="relative max-w-4xl max-h-full">
             <img 
               src={selectedMedia}
-              alt="Media sélectionné"
+              alt={t('projectDetailsTab.selectedMedia')}
               className="max-w-full max-h-full object-contain rounded-lg"
             />
             <Button
@@ -139,7 +143,7 @@ const MediaGallery = ({ media = [] }) => {
               }}
               className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30"
             >
-              Fermer
+              {t('projectDetailsTab.close')}
             </Button>
           </div>
         </div>
@@ -149,6 +153,7 @@ const MediaGallery = ({ media = [] }) => {
 };
 
 const InvestmentReturns = ({ investmentReturns = {} }) => {
+  const { t } = useTranslation();
   const enabledReturns = Object.entries(investmentReturns)
     .filter(([key, value]) => value.enabled);
 
@@ -157,7 +162,7 @@ const InvestmentReturns = ({ investmentReturns = {} }) => {
       <div className="text-center py-8">
         <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-gray-400">
-          Aucun retour sur investissement configuré
+          {t('projectDetailsTab.noInvestmentReturns')}
         </p>
       </div>
     );
@@ -193,7 +198,7 @@ const InvestmentReturns = ({ investmentReturns = {} }) => {
                   {type.replace(/([A-Z])/g, ' $1').toLowerCase()}
                 </h4>
                 <Badge variant="outline" className="mt-1">
-                  Actif
+                  {t('projectDetailsTab.active')}
                 </Badge>
               </div>
             </div>
@@ -220,12 +225,14 @@ const InvestmentReturns = ({ investmentReturns = {} }) => {
 };
 
 export default function ProjectDetailsTab({ projectData }) {
+  const { t } = useTranslation();
+  
   if (!projectData) {
     return (
       <div className="text-center py-12">
         <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-gray-400">
-          Chargement des détails du projet...
+          {t('projectDetailsTab.loading')}
         </p>
       </div>
     );
@@ -253,12 +260,12 @@ export default function ProjectDetailsTab({ projectData }) {
                 <FileText className="h-5 w-5 text-lime-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Description du projet
+                {t('projectDetailsTab.projectDescription')}
               </h3>
             </div>
             <div className="prose dark:prose-invert max-w-none">
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
-                {ipfs?.description || firebase?.description || projectData.description || "Aucune description disponible pour ce projet."}
+                {ipfs?.description || firebase?.description || projectData.description || t('projectDetailsTab.noDescription')}
               </p>
             </div>
           </div>
@@ -273,15 +280,17 @@ export default function ProjectDetailsTab({ projectData }) {
                   <Folder className="h-5 w-5 text-blue-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Documents officiels
+                  {t('projectDetailsTab.officialDocuments')}
                 </h3>
               </div>
               <Badge className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
-                {[
-                  ipfs?.documents?.whitepaper || firebase?.documents?.whitepaper,
-                  ipfs?.documents?.pitchDeck || firebase?.documents?.pitchDeck,
-                  ...(Array.isArray(ipfs?.documents?.legalDocuments || firebase?.documents?.legalDocuments) ? (ipfs?.documents?.legalDocuments || firebase?.documents?.legalDocuments) : [])
-                ].filter(Boolean).length} document(s)
+                {t('projectDetailsTab.documentsCount', { 
+                  count: [
+                    ipfs?.documents?.whitepaper || firebase?.documents?.whitepaper,
+                    ipfs?.documents?.pitchDeck || firebase?.documents?.pitchDeck,
+                    ...(Array.isArray(ipfs?.documents?.legalDocuments || firebase?.documents?.legalDocuments) ? (ipfs?.documents?.legalDocuments || firebase?.documents?.legalDocuments) : [])
+                  ].filter(Boolean).length 
+                })}
               </Badge>
             </div>
 
@@ -290,7 +299,7 @@ export default function ProjectDetailsTab({ projectData }) {
               {ipfs?.documents?.whitepaper?.map((doc, index) => (
                 <DocumentLink
                   key={`whitepaper-${index}`}
-                  title={doc.name || "Whitepaper"}
+                  title={doc.name || t('projectDetailsTab.whitepaper')}
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
                   fileName={doc.fileName}
@@ -302,7 +311,7 @@ export default function ProjectDetailsTab({ projectData }) {
               {ipfs?.documents?.pitchDeck?.map((doc, index) => (
                 <DocumentLink
                   key={`pitchDeck-${index}`}
-                  title={doc.name || "Pitch Deck"}
+                  title={doc.name || t('projectDetailsTab.pitchDeck')}
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
                   fileName={doc.fileName}
@@ -314,7 +323,7 @@ export default function ProjectDetailsTab({ projectData }) {
               {ipfs?.documents?.legalDocuments?.map((doc, index) => (
                 <DocumentLink
                   key={`legal-${index}`}
-                  title={doc.name || `Document légal ${index + 1}`}
+                  title={doc.name || t('projectDetailsTab.legalDocument', { index: index + 1 })}
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
                   fileName={doc.fileName}
@@ -325,7 +334,7 @@ export default function ProjectDetailsTab({ projectData }) {
               {/* Fallback pour ancienne structure */}
               {firebase?.documents?.whitepaper && (
                 <DocumentLink
-                  title="Whitepaper"
+                  title={t('projectDetailsTab.whitepaper')}
                   url={firebase.documents.whitepaper}
                   type="document"
                 />
@@ -333,7 +342,7 @@ export default function ProjectDetailsTab({ projectData }) {
               
               {firebase?.documents?.pitchDeck && (
                 <DocumentLink
-                  title="Pitch Deck"
+                  title={t('projectDetailsTab.pitchDeck')}
                   url={firebase.documents.pitchDeck}
                   type="document"
                 />
@@ -348,7 +357,7 @@ export default function ProjectDetailsTab({ projectData }) {
                 <div className="text-center py-8">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">
-                    Aucun document disponible pour ce projet
+                    {t('projectDetailsTab.noDocuments')}
                   </p>
                 </div>
               )}
@@ -365,11 +374,11 @@ export default function ProjectDetailsTab({ projectData }) {
                   <Image className="h-5 w-5 text-purple-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Galerie média
+                  {t('projectDetailsTab.mediaGallery')}
                 </h3>
               </div>
               <Badge className="bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
-                {(ipfs?.documents?.media || firebase?.documents?.media)?.length || 0} média(s)
+                {t('projectDetailsTab.mediaCount', { count: (ipfs?.documents?.media || firebase?.documents?.media)?.length || 0 })}
               </Badge>
             </div>
 
@@ -379,7 +388,7 @@ export default function ProjectDetailsTab({ projectData }) {
             {ipfs?.documents?.media?.map((media, index) => (
               <DocumentLink
                 key={`media-${index}`}
-                title={media.name || `Média ${index + 1}`}
+                title={media.name || t('projectDetailsTab.media', { index: index + 1 })}
                 url={media.url}
                 type={media.type?.startsWith('image') ? 'image' : media.type?.startsWith('video') ? 'video' : 'document'}
                 fileName={media.fileName}
@@ -399,7 +408,7 @@ export default function ProjectDetailsTab({ projectData }) {
                   <TrendingUp className="h-5 w-5 text-green-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Retours sur investissement
+                  {t('projectDetailsTab.investmentReturns')}
                 </h3>
               </div>
 
@@ -416,7 +425,7 @@ export default function ProjectDetailsTab({ projectData }) {
                 <Building className="h-5 w-5 text-orange-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                Informations complémentaires
+                {t('projectDetailsTab.additionalInfo')}
               </h3>
             </div>
           </div>
@@ -425,7 +434,7 @@ export default function ProjectDetailsTab({ projectData }) {
             <div className="flex items-center gap-3 p-3 bg-white dark:bg-neutral-800 rounded-lg">
               <Calendar className="h-4 w-4 text-gray-500" />
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Dernière mise à jour</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('projectDetailsTab.lastUpdate')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {new Date().toLocaleDateString('fr-FR')}
                 </p>
@@ -435,9 +444,9 @@ export default function ProjectDetailsTab({ projectData }) {
             <div className="flex items-center gap-3 p-3 bg-white dark:bg-neutral-800 rounded-lg">
               <Users className="h-4 w-4 text-gray-500" />
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Type de projet</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('projectDetailsTab.projectType')}</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  Financement participatif
+                  {t('projectDetailsTab.participatoryCrowdfunding')}
                 </p>
               </div>
             </div>

@@ -11,6 +11,29 @@ import "./Campaign.sol";
 import "./CampaignKeeper.sol";
 import "./PriceConsumerV3.sol";
 
+struct CampaignParams {
+    address startup;
+    string name;
+    string symbol;
+    uint256 targetAmount;
+    uint256 sharePrice;
+    uint256 endTime;
+    address treasury;
+    uint96 royaltyFee;
+    address royaltyReceiver;
+    string metadata;
+    address divarProxy;
+    address campaignKeeper;
+}
+
+struct NFTParams {
+    address nftRenderer;
+    string nftBackgroundColor;
+    string nftTextColor;
+    string nftLogoUrl;
+    string nftSector;
+}
+
 interface ICampaignKeeper {
     function registerCampaign(address campaign) external;
     function isCampaignRegistered(address campaign) external view returns (bool);
@@ -28,6 +51,11 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
     // Factory bytecode de Campaign
     bytes public campaignBytecode;
     address public campaignKeeper;
+    
+    modifier validAddress(address _addr) {
+        require(_addr != address(0), "Invalid address");
+        _;
+    }
     
     
 
@@ -51,13 +79,11 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
     function initialize(
     address _treasury,
     address _campaignKeeper,
-    address _priceConsumer
-) public initializer {
-    require(_treasury != address(0), "DIVAR: Invalid treasury");
-    require(_campaignKeeper != address(0), "DIVAR: Invalid keeper");
-    require(_priceConsumer != address(0), "DIVAR: Invalid price consumer");
+    address _priceConsumer,
+    address _nftRenderer
+) public initializer validAddress(_treasury) validAddress(_campaignKeeper) validAddress(_priceConsumer) validAddress(_nftRenderer) {
     
-    _initializeStorage(_treasury, _priceConsumer);
+    _initializeStorage(_treasury, _priceConsumer, _nftRenderer);
     __Ownable_init();
     _transferOwnership(_treasury);
     __UUPSUpgradeable_init();
@@ -71,30 +97,23 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
         campaignBytecode = _bytecode;
     }
 
-    function setCampaignKeeper(address _keeper) external onlyOwner {
-     require(_keeper != address(0), "Invalid keeper address");
+    function setCampaignKeeper(address _keeper) external onlyOwner validAddress(_keeper) {
      campaignKeeper = _keeper;
     }
     
-    function updateCampaignKeeper(address _newKeeper) external onlyOwner {
-     require(_newKeeper != address(0), "Invalid keeper address");
-     campaignKeeper = _newKeeper;
+    function setNFTRenderer(address _nftRenderer) external onlyOwner validAddress(_nftRenderer) {
+        nftRenderer = _nftRenderer;
     }
+    
     
     
 
     // Fonction pour calculer les frais en temps réel (85 USD en ETH)
     function getCampaignCreationFeeETH() public view returns (uint256) {
-        uint256 feeInUSDCents = 8500; // 85 USD = 8500 cents
-        // Pour test local - pas de Chainlink
-        if (block.chainid == 31337) {
-            return 0.001 ether; // Fee fixe pour hardhat local
-        }
-        return PriceConsumerV3(priceConsumer).convertUSDToETH(feeInUSDCents);
+        return PriceConsumerV3(priceConsumer).getETHPriceWithTestFallback(8500, 0.001 ether);
     }
     
-    function updatePriceConsumer(address _newPriceConsumer) external onlyOwner {
-        require(_newPriceConsumer != address(0), "Invalid price consumer address");
+    function updatePriceConsumer(address _newPriceConsumer) external onlyOwner validAddress(_newPriceConsumer) {
         priceConsumer = _newPriceConsumer;
         emit PriceConsumerUpdated(_newPriceConsumer);
     }
@@ -113,7 +132,11 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
     string memory _category,
     string memory _metadata,
     uint96 _royaltyFee,
-    string memory _logo
+    string memory _logo,
+    string memory _nftBackgroundColor,
+    string memory _nftTextColor,
+    string memory _nftLogoUrl,
+    string memory _nftSector
 ) external payable whenNotPaused {
     require(bytes(_name).length > 0, "DIVAR: Name required");
     require(_targetAmount > 0, "DIVAR: Invalid target");
@@ -125,20 +148,31 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
 
     payable(treasury).sendValue(msg.value);
 
-   bytes memory constructorArgs = abi.encode(
-    msg.sender,      // _startup
-    _name,           // _name
-    _symbol,         // _symbol
-    _targetAmount,   // _targetAmount
-    _sharePrice,     // _sharePrice
-    _endTime,        // _endTime
-    treasury,        // _treasury
-    _royaltyFee,     // _royaltyFee
-    treasury,        // _royaltyReceiver
-    _metadata,       // _metadata
-    address(this),   // _divarProxy
-    campaignKeeper   // _campaignKeeper
-);
+    // Créer les structs pour éviter "stack too deep"
+    CampaignParams memory params = CampaignParams({
+        startup: msg.sender,
+        name: _name,
+        symbol: _symbol,
+        targetAmount: _targetAmount,
+        sharePrice: _sharePrice,
+        endTime: _endTime,
+        treasury: treasury,
+        royaltyFee: _royaltyFee,
+        royaltyReceiver: msg.sender,
+        metadata: _metadata,
+        divarProxy: address(this),
+        campaignKeeper: campaignKeeper
+    });
+    
+    Campaign.NFTParams memory nftParams = Campaign.NFTParams({
+        nftRenderer: nftRenderer,
+        nftBackgroundColor: _nftBackgroundColor,
+        nftTextColor: _nftTextColor,
+        nftLogoUrl: _nftLogoUrl,
+        nftSector: _nftSector
+    });
+
+   bytes memory constructorArgs = abi.encode(params, nftParams);
 
     bytes memory bytecode = abi.encodePacked(
         campaignBytecode,
@@ -214,8 +248,7 @@ contract DivarProxy is DivarStorage, DivarEvents, OwnableUpgradeable, UUPSUpgrad
     }
 
     // Admin functions
-    function updateTreasury(address _newTreasury) external onlyOwner {
-        require(_newTreasury != address(0), "DIVAR: Invalid treasury address");
+    function updateTreasury(address _newTreasury) external onlyOwner validAddress(_newTreasury) {
         address oldTreasury = treasury;
         treasury = _newTreasury;
         emit TreasuryUpdated(oldTreasury, _newTreasury);

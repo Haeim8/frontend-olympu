@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   Filter,
   Search,
@@ -21,6 +22,7 @@ export default function CampaignFilters({
   totalCount = 0,
   activeCount = 0
 }) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState(filters.search || '');
   const [selectedSectors, setSelectedSectors] = useState(filters.sectors || []);
@@ -30,15 +32,15 @@ export default function CampaignFilters({
   const [showOnlyHot, setShowOnlyHot] = useState(filters.hot || false);
 
   const sectors = [
-    'DeFi', 'NFT', 'Gaming', 'Infrastructure', 'DAO', 'Metaverse', 'AI', 'IoT'
+    'Tech', 'Finance', 'DeFi', 'Gaming', 'NFT', 'Blockchain', 'Infrastructure', 'Industrie'
   ];
 
   const sortOptions = [
-    { value: 'newest', label: 'Plus récent', icon: Clock },
-    { value: 'oldest', label: 'Plus ancien', icon: Clock },
-    { value: 'mostFunded', label: 'Plus financé', icon: DollarSign },
-    { value: 'mostPopular', label: 'Plus populaire', icon: TrendingUp },
-    { value: 'alphabetical', label: 'Alphabétique', icon: Star }
+    { value: 'newest', label: t('filters.sort.newest'), icon: Clock },
+    { value: 'oldest', label: t('filters.sort.oldest'), icon: Clock },
+    { value: 'mostFunded', label: t('filters.sort.mostFunded'), icon: DollarSign },
+    { value: 'mostPopular', label: t('filters.sort.mostPopular'), icon: TrendingUp },
+    { value: 'alphabetical', label: t('filters.sort.alphabetical'), icon: Star }
   ];
 
   const handleSectorToggle = (sector) => {

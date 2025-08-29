@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,6 +12,7 @@ import { Users, Search, ExternalLink, Crown, Trophy, Award } from 'lucide-react'
 import { apiManager } from '@/lib/services/api-manager';
 
 export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
+  const { t } = useTranslation();
   const [investors, setInvestors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,16 +34,17 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
       
     } catch (err) {
       console.error('Erreur chargement investors:', err);
-      setError('Impossible de charger la liste des investisseurs');
+      setError(t('campaignInvestors.loadError'));
     } finally {
       setIsLoading(false);
     }
   };
 
   const filteredInvestors = () => {
-    if (!searchTerm) return investors;
+    const investorArray = Array.isArray(investors) ? investors : [];
+    if (!searchTerm) return investorArray;
     
-    return investors.filter(investor => 
+    return investorArray.filter(investor => 
       investor.address.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
@@ -53,11 +56,12 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
   };
 
   const getInvestorStats = () => {
-    const totalInvestors = investors.length;
-    const totalNFTs = investors.reduce((sum, inv) => sum + parseInt(inv.nftCount || 0), 0);
+    const investorArray = Array.isArray(investors) ? investors : [];
+    const totalInvestors = investorArray.length;
+    const totalNFTs = investorArray.reduce((sum, inv) => sum + parseInt(inv.nftCount || 0), 0);
     const avgNFTsPerInvestor = totalInvestors > 0 ? (totalNFTs / totalInvestors).toFixed(2) : 0;
-    const topInvestor = investors.length > 0 ? 
-      Math.max(...investors.map(inv => parseInt(inv.nftCount || 0))) : 0;
+    const topInvestor = investorArray.length > 0 ? 
+      Math.max(...investorArray.map(inv => parseInt(inv.nftCount || 0))) : 0;
 
     return { totalInvestors, totalNFTs, avgNFTsPerInvestor, topInvestor };
   };
@@ -83,7 +87,7 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
           <div className="text-center">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <Button onClick={loadInvestors} variant="outline">
-              Réessayer
+              {t('campaignInvestors.retry')}
             </Button>
           </div>
         </CardContent>
@@ -97,10 +101,10 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
         <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-green-500" />
-            Liste des Investisseurs
+            {t('campaignInvestors.title')}
           </div>
           <Badge variant="outline" className="text-sm">
-            {stats.totalInvestors} investisseurs
+            {stats.totalInvestors} {t('campaignInvestors.investors')}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -111,25 +115,25 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               {stats.totalInvestors}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Investisseurs</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignInvestors.investorsLabel')}</p>
           </div>
           <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {stats.totalNFTs}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">NFTs Total</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignInvestors.totalNFTs')}</p>
           </div>
           <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
               {stats.avgNFTsPerInvestor}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Moyenne/Investisseur</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignInvestors.averagePerInvestor')}</p>
           </div>
           <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
             <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               {stats.topInvestor}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Max détenu</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignInvestors.maxHeld')}</p>
           </div>
         </div>
 
@@ -137,7 +141,7 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Rechercher par adresse..."
+            placeholder={t('campaignInvestors.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-gray-50 dark:bg-neutral-900"
@@ -149,12 +153,12 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
           <Table>
             <TableHeader className="sticky top-0 bg-gray-50 dark:bg-neutral-900">
               <TableRow>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Rang</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Investisseur</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">NFTs détenus</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Tier</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Part</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Action</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.rank')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.investor')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.nftsHeld')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.tier')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.share')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -172,7 +176,7 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
               ) : sortedInvestors().length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-gray-500 dark:text-gray-400 py-8">
-                    {searchTerm ? 'Aucun investisseur trouvé avec ce terme de recherche' : 'Aucun investisseur'}
+                    {searchTerm ? t('campaignInvestors.noInvestorsFound') : t('campaignInvestors.noInvestors')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -231,24 +235,24 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
         {/* Légende des tiers */}
         <div className="mt-4 p-4 bg-gray-50 dark:bg-neutral-900 rounded-lg">
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Tiers d'investisseurs:
+            {t('campaignInvestors.investorTiers')}:
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
             <div className="flex items-center gap-1">
               <Crown className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-              <span className="text-purple-600 dark:text-purple-400">Diamond: 100+ NFTs</span>
+              <span className="text-purple-600 dark:text-purple-400">{t('campaignInvestors.diamondTier')}</span>
             </div>
             <div className="flex items-center gap-1">
               <Trophy className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
-              <span className="text-yellow-600 dark:text-yellow-400">Gold: 50+ NFTs</span>
+              <span className="text-yellow-600 dark:text-yellow-400">{t('campaignInvestors.goldTier')}</span>
             </div>
             <div className="flex items-center gap-1">
               <Award className="h-3 w-3 text-gray-600 dark:text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-400">Silver: 20+ NFTs</span>
+              <span className="text-gray-600 dark:text-gray-400">{t('campaignInvestors.silverTier')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="h-3 w-3 rounded-full bg-orange-600 dark:bg-orange-400"></div>
-              <span className="text-orange-600 dark:text-orange-400">Bronze: &lt;20 NFTs</span>
+              <span className="text-orange-600 dark:text-orange-400">{t('campaignInvestors.bronzeTier')}</span>
             </div>
           </div>
         </div>
@@ -260,7 +264,7 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
               onClick={loadInvestors}
               className="text-gray-600 dark:text-gray-400"
             >
-              Actualiser les données
+              {t('campaignInvestors.refreshData')}
             </Button>
           </div>
         )}

@@ -2,30 +2,33 @@
 
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from '@/hooks/useLanguage';
 
 export function LandingInfoSection({ darkMode }) {
+  const { t } = useTranslation();
+  
   const features = [
     {
-      title: "Financement Décentralisé",
-      description: "Accédez à un financement sans intermédiaires grâce à notre plateforme DeFi innovante.",
+      title: t('landing.features.decentralizedFunding.title'),
+      description: t('landing.features.decentralizedFunding.description'),
       icon: "💸",
       gradient: "from-blue-500 to-cyan-500",
     },
     {
-      title: "Gouvernance Communautaire", 
-      description: "Participez aux décisions importantes et votez sur l'avenir des projets financés.",
+      title: t('landing.features.communityGovernance.title'),
+      description: t('landing.features.communityGovernance.description'),
       icon: "🏛️",
       gradient: "from-purple-500 to-pink-500",
     },
     {
-      title: "Récompenses Transparentes",
-      description: "Recevez des récompenses proportionnelles à votre contribution, le tout enregistré sur la blockchain.",
+      title: t('landing.features.transparentRewards.title'),
+      description: t('landing.features.transparentRewards.description'),
       icon: "🏆",
       gradient: "from-yellow-500 to-orange-500",
     },
     {
-      title: "Sécurité Maximale",
-      description: "Vos fonds sont sécurisés par des contrats intelligents audités et des protocoles de sécurité avancés.",
+      title: t('landing.features.maxSecurity.title'),
+      description: t('landing.features.maxSecurity.description'),
       icon: "🔒",
       gradient: "from-green-500 to-emerald-500",
     },
@@ -43,13 +46,12 @@ export function LandingInfoSection({ darkMode }) {
           viewport={{ once: true }}
         >
           <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
-            Pourquoi choisir notre plateforme?
+            {t('landing.features.title')}
           </h2>
           <p className={`text-sm max-w-2xl mx-auto leading-relaxed ${
             darkMode ? "text-gray-300" : "text-gray-700"
           }`}>
-            Notre plateforme de financement participatif décentralisée offre des avantages uniques 
-            pour les créateurs et les investisseurs dans l'écosystème Web3.
+            {t('landing.features.subtitle')}
           </p>
         </motion.div>
 
@@ -103,24 +105,23 @@ export function LandingInfoSection({ darkMode }) {
             <CardContent className="p-8 text-center">
               <div className="max-w-3xl mx-auto">
                 <h3 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
-                  Prêt à rejoindre la révolution DeFi?
+                  {t('landing.cta.title')}
                 </h3>
                 <p className={`text-base ${darkMode ? "text-gray-300" : "text-gray-700"} mb-6 leading-relaxed`}>
-                  Connectez votre portefeuille, créez votre profil et commencez à participer à des projets 
-                  innovants qui façonnent l'avenir de la finance décentralisée.
+                  {t('landing.cta.description')}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
                   <div className="space-y-1">
                     <div className="text-2xl font-bold text-lime-500">+10K</div>
-                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Utilisateurs actifs</div>
+                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.cta.activeUsers')}</div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-2xl font-bold text-lime-500">€2.5M</div>
-                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Fonds levés</div>
+                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.cta.fundsRaised')}</div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-2xl font-bold text-lime-500">150+</div>
-                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Projets financés</div>
+                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.cta.projectsFunded')}</div>
                   </div>
                 </div>
               </div>

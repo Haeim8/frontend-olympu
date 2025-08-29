@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiManager } from '@/lib/services/api-manager';
+import { useTranslation } from '@/hooks/useLanguage';
 
 // Import des composants modulaires
 import HomeHeader from '@/components/home/HomeHeader';
@@ -14,6 +15,7 @@ import CampaignModal from './CampaignModal';
 import ProjectDetails from './ProjectDetails';
 
 export default function Home() {
+  const { t } = useTranslation();
   // États principaux
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
@@ -41,11 +43,12 @@ export default function Home() {
 
   // Fonction pour calculer les statistiques
   const calculateStats = useCallback((campaigns) => {
+    const campaignsArray = Array.isArray(campaigns) ? campaigns : [];
     const stats = {
-      total: campaigns.length,
-      active: campaigns.filter(c => c.isActive && !c.isFinalized).length,
-      finalized: campaigns.filter(c => c.isFinalized).length,
-      totalRaised: campaigns.reduce((total, c) => total + parseFloat(c.raised || 0), 0)
+      total: campaignsArray.length,
+      active: campaignsArray.filter(c => c.isActive && !c.isFinalized).length,
+      finalized: campaignsArray.filter(c => c.isFinalized).length,
+      totalRaised: campaignsArray.reduce((total, c) => total + parseFloat(c.raised || 0), 0)
     };
     setCampaignStats(stats);
     return stats;
@@ -53,7 +56,8 @@ export default function Home() {
 
   // Fonction pour appliquer les filtres
   const applyFilters = useCallback((campaigns, currentFilters, showFinalized) => {
-    let filtered = campaigns.filter(project => 
+    const campaignsArray = Array.isArray(campaigns) ? campaigns : [];
+    let filtered = campaignsArray.filter(project => 
       showFinalized ? project.isFinalized : (!project.isFinalized && project.isActive)
     );
 
@@ -147,7 +151,7 @@ export default function Home() {
     }
   }, []);
 
-  // Fonction pour charger toutes les campagnes avec cache intelligent
+  // Fonction pour charger toutes les campagnes avec cache intelligent et préchargement
   const fetchAllCampaigns = useCallback(async () => {
     if (!campaignAddresses || campaignAddresses.length === 0) {
       setIsLoading(false);
@@ -158,23 +162,45 @@ export default function Home() {
     setError(null);
 
     try {
-      // Récupérer les campagnes une par une avec délai pour éviter rate limiting
+      console.log('🚀 Démarrage warmup cache pour', campaignAddresses.length, 'campagnes');
+      
+      // 1. Lancement du préchargement en arrière-plan
+      apiManager.warmupCache(campaignAddresses).catch(err => 
+        console.warn('Erreur warmup cache:', err.message)
+      );
+      
+      // 2. Récupération rapide des campagnes (avec cache si disponible)
       const validCampaigns = [];
-      for (let i = 0; i < campaignAddresses.length; i++) {
-        const address = campaignAddresses[i];
+      const batchSize = 3; // Traiter par batch de 3 pour accélérer
+      
+      for (let i = 0; i < campaignAddresses.length; i += batchSize) {
+        const batch = campaignAddresses.slice(i, i + batchSize);
         
-        try {
-          const campaignData = await apiManager.getCampaignData(address, false); // Pas de cache pour forcer le rechargement
-          if (campaignData) {
-            validCampaigns.push(campaignData);
+        // Traitement en parallèle du batch
+        const batchPromises = batch.map(async (address) => {
+          try {
+            const campaignData = await apiManager.getCampaignData(address, true); // Utiliser le cache
+            if (campaignData) {
+              // Enrichir avec les données de promotion en cache
+              const promotionData = await apiManager.isCampaignBoosted(address, campaignData.currentRound, true);
+              return {
+                ...campaignData,
+                isPromoted: promotionData.isBoosted,
+                promotionType: promotionData.boostType
+              };
+            }
+          } catch (error) {
+            console.warn(`Erreur chargement campagne ${address}:`, error.message);
           }
-        } catch (error) {
-          console.warn(`Erreur chargement campagne ${address}:`, error.message);
-        }
+          return null;
+        });
         
-        // Délai de 500ms entre chaque requête pour éviter le rate limiting
-        if (i < campaignAddresses.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+        const batchResults = await Promise.all(batchPromises);
+        validCampaigns.push(...batchResults.filter(Boolean));
+        
+        // Petit délai entre les batches (réduit de 500ms à 200ms)
+        if (i + batchSize < campaignAddresses.length) {
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       }
       

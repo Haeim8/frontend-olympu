@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { useTranslation } from '@/hooks/useLanguage';
+import { apiManager } from '@/lib/services/api-manager';
 import { 
   Eye, 
   ArrowRight, 
@@ -15,7 +16,8 @@ import {
   DollarSign,
   Zap,
   Star,
-  CheckCircle
+  CheckCircle,
+  Diamond
 } from 'lucide-react';
 
 export default function CampaignCard({ 
@@ -23,22 +25,66 @@ export default function CampaignCard({
   onViewDetails, 
   onPreloadHover 
 }) {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
+  const [promotion, setPromotion] = useState(null);
+
+  // Charger les données de promotion
+  useEffect(() => {
+    const checkPromotion = async () => {
+      if (!project.address) return;
+      
+      try {
+        const promotionData = await apiManager.isCampaignBoosted(
+          project.address, 
+          project.currentRound || 1
+        );
+        
+        if (promotionData.isBoosted || promotionData.isBosted) { // typo dans le service
+          setPromotion(promotionData);
+        }
+      } catch (error) {
+        console.warn(t('campaign.card.promotionError'), error);
+      }
+    };
+
+    checkPromotion();
+  }, [project.address, project.currentRound]);
 
   const progressPercentage = ((parseFloat(project.raised) / parseFloat(project.goal)) * 100) || 0;
   const isNearCompletion = progressPercentage >= 80;
   const isHotProject = progressPercentage > 50 && project.isActive;
 
+  const getPromotionBadge = () => {
+    if (!promotion) return null;
+
+    const badges = {
+      0: { icon: Zap, label: 'FEATURED', color: 'bg-gradient-to-r from-blue-500 to-blue-600', emoji: '🔥' },
+      1: { icon: Star, label: 'TRENDING', color: 'bg-gradient-to-r from-yellow-500 to-orange-500', emoji: '⭐' },
+      2: { icon: Diamond, label: 'SPOTLIGHT', color: 'bg-gradient-to-r from-purple-500 to-pink-500', emoji: '💎' }
+    };
+
+    const badge = badges[promotion.boostType] || badges[0];
+    const PromotionIcon = badge.icon;
+
+    return (
+      <div className={`absolute -top-2 -right-2 z-10 flex items-center space-x-1 px-2 py-1 rounded-full ${badge.color} text-white text-xs animate-pulse shadow-lg`}>
+        <PromotionIcon className="w-3 h-3" />
+        <span>{badge.label}</span>
+      </div>
+    );
+  };
+
   const formatTimeRemaining = () => {
-    if (!project.isActive) return 'Terminé';
+    if (!project.isActive) return t('campaign.status.ended');
     
     // Debug pour comprendre le problème
-    console.log('🕐 Debug time:', {
-      isActive: project.isActive,
-      endDate: project.endDate,
-      now: new Date().toISOString(),
-      endDateParsed: new Date(project.endDate).toISOString()
-    });
+    // console.log('🕐 Debug time:', {
+    //   isActive: project.isActive,
+    //   endDate: project.endDate,
+    //   now: new Date().toISOString(),
+    //   endDateParsed: new Date(project.endDate).toISOString()
+    // });
     
     // Simuler le temps restant basé sur la date de fin
     const now = new Date();
@@ -47,10 +93,10 @@ export default function CampaignCard({
     
     // Si la campagne est active selon le smart contract, forcer "En cours"
     if (project.isActive && timeRemaining <= 0) {
-      return 'En cours'; // Force "En cours" si le smart contract dit que c'est actif
+      return t('campaign.status.ongoing'); // Force "En cours" si le smart contract dit que c'est actif
     }
     
-    if (timeRemaining <= 0) return 'Terminé';
+    if (timeRemaining <= 0) return t('campaign.status.ended');
     
     const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
     if (days > 0) return `${days}j restants`;
@@ -88,8 +134,11 @@ export default function CampaignCard({
         <div className="absolute inset-0 bg-gradient-to-br from-lime-400 via-blue-500 to-purple-600"></div>
       </div>
 
+      {/* Promotion Badge */}
+      {getPromotionBadge()}
+
       {/* Hot Project Badge */}
-      {isHotProject && (
+      {isHotProject && !promotion && (
         <div className="absolute top-3 left-3 z-10">
           <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 px-2 py-1 text-xs animate-pulse">
             <Zap className="h-3 w-3 mr-1" />
@@ -125,11 +174,11 @@ export default function CampaignCard({
                 </Badge>
                 {project.isActive ? (
                   <Badge className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                    En cours
+                    {t('campaign.status.ongoing')}
                   </Badge>
                 ) : (
                   <Badge className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    Finalisé
+                    {t('campaign.status.finalized')}
                   </Badge>
                 )}
               </div>
@@ -145,7 +194,7 @@ export default function CampaignCard({
                   {parseFloat(project.sharePrice).toFixed(3)}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Prix unitaire</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaign.card.unitPrice')}</p>
             </div>
             
             <div className="text-center">
@@ -155,7 +204,7 @@ export default function CampaignCard({
                   {project.investors || 0}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Investisseurs</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaign.card.investors')}</p>
             </div>
             
             <div className="text-center">
@@ -165,7 +214,7 @@ export default function CampaignCard({
                   {progressPercentage.toFixed(0)}%
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Progression</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaign.card.progress')}</p>
             </div>
           </div>
         </div>
@@ -218,7 +267,7 @@ export default function CampaignCard({
                 <div className="flex items-center gap-1">
                   <Shield className="h-4 w-4 text-blue-500" />
                   <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                    Certifié
+                    {t('campaign.card.certified')}
                   </span>
                 </div>
               )}
@@ -226,7 +275,7 @@ export default function CampaignCard({
                 <div className="flex items-center gap-1">
                   <Star className="h-4 w-4 text-orange-500 fill-current" />
                   <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                    Populaire
+                    {t('campaign.card.popular')}
                   </span>
                 </div>
               )}
@@ -239,7 +288,7 @@ export default function CampaignCard({
             >
               <span className="relative z-10 flex items-center gap-2 font-medium">
                 <Eye className="h-4 w-4 transition-transform duration-300 group-hover/btn:scale-110" />
-                Voir détails
+                {t('campaign.viewDetails')}
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
               </span>
               

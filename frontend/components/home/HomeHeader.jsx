@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   ChevronDown, 
   Plus, 
@@ -20,6 +21,7 @@ export default function HomeHeader({
   onCreateCampaign,
   campaignStats = { total: 0, active: 0, finalized: 0, totalRaised: 0 }
 }) {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleMenuToggle = () => {
@@ -58,21 +60,20 @@ export default function HomeHeader({
                   <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping opacity-75"></div>
                 </div>
                 <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-3 py-1">
-                  Live
+                  {t('header.live_badge', 'Live')}
                 </Badge>
               </div>
 
               <div className="space-y-4">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-gray-100 dark:via-gray-200 dark:to-gray-300 bg-clip-text text-transparent leading-tight">
-                  Projets en cours de
+                  {t('header.title_part1', 'Projets en cours de')}
                   <span className="block bg-gradient-to-r from-lime-500 to-blue-600 bg-clip-text text-transparent">
-                    financement
+                    {t('header.title_part2', 'financement')}
                   </span>
                 </h1>
                 
                 <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed">
-                  Découvrez et investissez dans les projets les plus innovants de l'écosystème blockchain. 
-                  Chaque investissement est sécurisé et transparent.
+                  {t('header.description', 'Découvrez et investissez dans les projets les plus innovants de l\'écosystème blockchain. Chaque investissement est sécurisé et transparent.')}
                 </p>
               </div>
 
@@ -87,7 +88,7 @@ export default function HomeHeader({
                       <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {campaignStats.total}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Projets</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('header.stats.projects', 'Projets')}</p>
                     </div>
                   </div>
                 </div>
@@ -101,7 +102,7 @@ export default function HomeHeader({
                       <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {campaignStats.active}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Actifs</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('header.stats.active', 'Actifs')}</p>
                     </div>
                   </div>
                 </div>
@@ -115,7 +116,7 @@ export default function HomeHeader({
                       <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {campaignStats.finalized}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Finalisés</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('header.stats.finalized', 'Finalisés')}</p>
                     </div>
                   </div>
                 </div>
@@ -129,7 +130,7 @@ export default function HomeHeader({
                       <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {campaignStats.totalRaised.toFixed(1)}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">ETH levés</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('header.stats.eth_raised', 'ETH levés')}</p>
                     </div>
                   </div>
                 </div>
@@ -148,7 +149,7 @@ export default function HomeHeader({
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
                     <span className="font-medium">
-                      {showFinalized ? 'Campagnes finalisées' : 'Campagnes en cours'}
+                      {showFinalized ? t('header.filter.finalized', 'Campagnes finalisées') : t('header.filter.ongoing', 'Campagnes en cours')}
                     </span>
                   </div>
                   <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${menuOpen ? 'transform rotate-180' : ''}`} />
@@ -175,8 +176,8 @@ export default function HomeHeader({
                         >
                           <div className={`w-2 h-2 rounded-full ${!showFinalized ? 'bg-lime-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
                           <div>
-                            <p className="font-medium">Campagnes en cours</p>
-                            <p className="text-sm opacity-70">Projets actuellement ouverts aux investissements</p>
+                            <p className="font-medium">{t('header.filter.ongoing', 'Campagnes en cours')}</p>
+                            <p className="text-sm opacity-70">{t('header.filter.ongoing_desc', 'Projets actuellement ouverts aux investissements')}</p>
                           </div>
                         </button>
                         
@@ -190,8 +191,8 @@ export default function HomeHeader({
                         >
                           <div className={`w-2 h-2 rounded-full ${showFinalized ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
                           <div>
-                            <p className="font-medium">Campagnes finalisées</p>
-                            <p className="text-sm opacity-70">Projets ayant atteint leurs objectifs</p>
+                            <p className="font-medium">{t('header.filter.finalized', 'Campagnes finalisées')}</p>
+                            <p className="text-sm opacity-70">{t('header.filter.finalized_desc', 'Projets ayant atteint leurs objectifs')}</p>
                           </div>
                         </button>
                       </div>
@@ -206,7 +207,7 @@ export default function HomeHeader({
                 className="bg-gradient-to-r from-lime-500 to-lime-600 hover:from-lime-600 hover:to-lime-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold px-8 py-6 text-lg rounded-xl group"
               >
                 <Plus className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
-                <span>Créer campagne</span>
+                <span>{t('header.create_campaign', 'Créer campagne')}</span>
                 <Sparkles className="h-4 w-4 ml-2 animate-pulse" />
               </Button>
             </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   Plus, 
   Sparkles, 
@@ -16,22 +17,23 @@ export default function CreateCampaignCTA({
   onClick,
   campaignStats = { total: 0, success: 0, totalRaised: 0 }
 }) {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
   const benefits = [
     {
       icon: Shield,
-      text: "Sécurité blockchain",
+      text: t('cta.benefits.security', 'Sécurité blockchain'),
       color: "text-blue-500"
     },
     {
       icon: Users, 
-      text: "Communauté active",
+      text: t('cta.benefits.community', 'Communauté active'),
       color: "text-purple-500"
     },
     {
       icon: TrendingUp,
-      text: "Croissance rapide", 
+      text: t('cta.benefits.growth', 'Croissance rapide'), 
       color: "text-green-500"
     }
   ];
@@ -64,19 +66,19 @@ export default function CreateCampaignCTA({
                   <Zap className="h-5 w-5 text-lime-600 dark:text-lime-400" />
                 </div>
                 <span className="text-sm font-semibold text-lime-700 dark:text-lime-300 tracking-wide uppercase">
-                  Lancez votre projet
+                  {t('cta.launch_project', 'Lancez votre projet')}
                 </span>
               </div>
               
               <div>
                 <h3 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                  Créez votre campagne
+                  {t('cta.title_part1', 'Créez votre campagne')}
                   <span className="block bg-gradient-to-r from-lime-500 to-blue-600 bg-clip-text text-transparent">
-                    de financement
+                    {t('cta.title_part2', 'de financement')}
                   </span>
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-                  Transformez votre idée en réalité avec notre plateforme sécurisée
+                  {t('cta.description', 'Transformez votre idée en réalité avec notre plateforme sécurisée')}
                 </p>
               </div>
             </div>
@@ -89,7 +91,7 @@ export default function CreateCampaignCTA({
                     {campaignStats.total}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    projets
+                    {t('cta.stats.projects', 'projets')}
                   </div>
                 </div>
                 {/* Pulsing ring */}
@@ -129,7 +131,7 @@ export default function CreateCampaignCTA({
               {/* Content */}
               <span className="relative flex items-center justify-center gap-3">
                 <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
-                <span>Créer ma campagne</span>
+                <span>{t('cta.create_button', 'Créer ma campagne')}</span>
                 <ArrowRight className={`h-4 w-4 transition-transform duration-300 ${
                   isHovered ? 'translate-x-1' : ''
                 }`} />
@@ -144,11 +146,11 @@ export default function CreateCampaignCTA({
             <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Configuration en 5 minutes</span>
+                <span>{t('cta.quick_setup', 'Configuration en 5 minutes')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse delay-200"></div>
-                <span>Support 24/7</span>
+                <span>{t('cta.support', 'Support 24/7')}</span>
               </div>
             </div>
           </div>
@@ -160,7 +162,7 @@ export default function CreateCampaignCTA({
                 {campaignStats.totalRaised.toFixed(1)}M€
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Total levé
+                {t('cta.stats.total_raised', 'Total levé')}
               </div>
             </div>
             <div className="text-center">
@@ -168,7 +170,7 @@ export default function CreateCampaignCTA({
                 {Math.round((campaignStats.success / Math.max(campaignStats.total, 1)) * 100)}%
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Taux de succès
+                {t('cta.stats.success_rate', 'Taux de succès')}
               </div>
             </div>
             <div className="text-center">
@@ -176,7 +178,7 @@ export default function CreateCampaignCTA({
                 2-4
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Sem. moyennes
+                {t('cta.stats.avg_weeks', 'Sem. moyennes')}
               </div>
             </div>
           </div>

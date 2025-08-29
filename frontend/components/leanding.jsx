@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAddress } from "@thirdweb-dev/react";
+import { useAccount } from "wagmi";
 
 // Composants réutilisables - Version ShadCN
 import { LandingHeader } from "./landing/LandingHeader";
@@ -15,7 +15,7 @@ import { LandingBackground } from "./landing/LandingBackground";
 
 export default function Home({ onAccessInterface }) {
   const [darkMode, setDarkMode] = useState(false);
-  const address = useAddress();
+  const { address } = useAccount();
 
   useEffect(() => {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;

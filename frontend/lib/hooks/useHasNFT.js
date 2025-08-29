@@ -1,4 +1,4 @@
-import { useContractRead } from 'thirdweb';
+import { useReadContract } from 'wagmi';
 import FundRaisingPlatformABI from '../../abis/FundRaisingPlatformABI.json';
 import CampaignABI from 'ABI/CampaignABI.json'; // Si nécessaire
 import { useEffect } from 'react';
@@ -7,7 +7,7 @@ const FUNDRAISING_PLATFORM_ADDRESS = '0x89Eba0c82c1f16433473A9A06690BfaAC2c7a1b4
 const CAMPAIGN_ADDRESS = '0xYourCampaignContractAddress'; // Adresse déployée
 
 const useHasNFT = (address, campaignId) => {
-  const { data, isError, isLoading } = useContractRead({
+  const { data, isError, isLoading } = useReadContract({
     address: FUNDRAISING_PLATFORM_ADDRESS,
     abi: FundRaisingPlatformABI,
     functionName: 'balanceOf', // Vérifiez si cette fonction existe dans le contrat FundRaisingPlatform

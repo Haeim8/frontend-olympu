@@ -69,5 +69,4 @@ contract SharesEvents {
         uint256 timestamp
     );
 
-    // Événement commission governance supprimé - commission désormais fixe
 }

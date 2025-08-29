@@ -1,0 +1,17 @@
+{
+  "name": "Livar",
+  "description": "Plateforme de financement participatif décentralisée pour les projets crypto avec NFTs et gouvernance communautaire",
+  "iconUrl": "https://livarhub.xyz/icon.png",
+  "url": "https://livarhub.xyz",
+  "splashImageUrl": "https://livarhub.xyz/splash.png",
+  "frame": {
+    "name": "Livar Campaign",
+    "iconUrl": "https://livarhub.xyz/frame-icon.png",
+    "splashImageUrl": "https://livarhub.xyz/frame-splash.png",
+    "homeUrl": "https://livarhub.xyz/api/frame",
+    "webhookUrl": "https://livarhub.xyz/api/frame/webhook"
+  },
+  "baseBuilder": {
+    "allowedAddresses": ["0x545e29a829d928366d577d25fddd40e3bbe7e10d"]
+  }
+}

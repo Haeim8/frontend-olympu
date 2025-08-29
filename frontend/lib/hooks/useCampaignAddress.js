@@ -1,48 +1,63 @@
 // lib/hooks/useCampaignAddress.js
 
 import { useState, useEffect } from 'react';
-import { useContract } from '@thirdweb-dev/react';
-import { ethers } from 'ethers';
+import { useReadContract } from 'wagmi';
+import { formatEther } from 'viem';
+import CampaignABI from '@/ABI/CampaignABI.json';
 
 function useCampaignAddress(campaignId) {
   const [campaignData, setCampaignData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { contract } = useContract(campaignId);
+  // Lecture des données de la campagne
+  const { 
+    data: currentRoundData, 
+    isLoading: roundLoading, 
+    error: roundError 
+  } = useReadContract({
+    address: campaignId,
+    abi: CampaignABI,
+    functionName: 'getCurrentRound',
+  });
+
+  // Lecture du créateur de la campagne
+  const { 
+    data: creatorAddress, 
+    isLoading: creatorLoading, 
+    error: creatorError 
+  } = useReadContract({
+    address: campaignId,
+    abi: CampaignABI,
+    functionName: 'startup',
+  });
+
+  const loading = roundLoading || creatorLoading;
 
   useEffect(() => {
-    async function fetchCampaignData() {
-      if (!campaignId || !contract) {
-        setLoading(false);
-        return;
-      }
-
+    if (currentRoundData && creatorAddress) {
       try {
-        setLoading(true);
-        const data = await contract.call("getCurrentRound");
-        
         setCampaignData({
-          roundNumber: data.roundNumber.toNumber(),
-          sharePrice: ethers.utils.formatEther(data.sharePrice),
-          targetAmount: ethers.utils.formatEther(data.targetAmount),
-          fundsRaised: ethers.utils.formatEther(data.fundsRaised),
-          sharesSold: data.sharesSold.toNumber(),
-          endTime: new Date(data.endTime.toNumber() * 1000),
-          isActive: data.isActive,
-          isFinalized: data.isFinalized,
-          creatorAddress: await contract.call("startup")
+          roundNumber: Number(currentRoundData[0]),
+          sharePrice: formatEther(currentRoundData[1]),
+          targetAmount: formatEther(currentRoundData[2]),
+          fundsRaised: formatEther(currentRoundData[3]),
+          sharesSold: Number(currentRoundData[4]),
+          endTime: new Date(Number(currentRoundData[5]) * 1000),
+          isActive: currentRoundData[6],
+          isFinalized: currentRoundData[7],
+          creatorAddress: creatorAddress
         });
+        setError(null);
       } catch (err) {
-        console.error("Erreur lors de la récupération des données:", err);
+        console.error("Erreur lors du formatage des données:", err);
         setError(err.message);
-      } finally {
-        setLoading(false);
       }
     }
 
-    fetchCampaignData();
-  }, [campaignId, contract]);
+    if (roundError || creatorError) {
+      setError(roundError?.message || creatorError?.message);
+    }
+  }, [currentRoundData, creatorAddress, roundError, creatorError]);
 
   return { campaignData, loading, error };
 }

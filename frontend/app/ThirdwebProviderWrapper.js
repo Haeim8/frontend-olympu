@@ -1,52 +1,126 @@
 "use client";
-import { ThirdwebProvider } from '@thirdweb-dev/react';
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { Base, BaseSepoliaTestnet } from "@thirdweb-dev/chains";
 
-// Chain Base Sepolia avec QuickNode RPC
-const BaseSepoliaConfig = {
-  chainId: 84532,
-  name: "Base Sepolia",
-  network: "base-sepolia",
-  slug: "base-sepolia-testnet",
-  nativeCurrency: {
-    name: "ETH", 
-    symbol: "ETH",
-    decimals: 18,
-  },
-  rpc: [
-    process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL || "https://sepolia.base.org",
-    "https://sepolia.base.org" // Fallback
-  ],
-  blockExplorer: {
-    name: "BaseScan",
-    url: "https://sepolia.basescan.org",
-  },
-  testnet: true,
-  // Ajout des paramètres pour wallet_addEthereumChain
-  iconUrls: ["https://bridge.base.org/icons/base.svg"],
+import React from 'react';
+import { useEnvironment } from '@/hooks/useEnvironment';
+import { useTheme } from 'next-themes';
+
+// Import des providers
+import { WagmiProvider } from 'wagmi';
+import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { base, baseSepolia } from 'wagmi/chains';
+import { 
+  RainbowKitProvider,
+  getDefaultConfig,
+  darkTheme,
+  lightTheme
+} from '@rainbow-me/rainbowkit';
+
+// Configuration RainbowKit v2 avec Singleton renforcé pour éviter multiples initialisations
+let wagmiConfigInstance = null;
+let queryClientInstance = null;
+
+// Singleton sécurisé pour la config Wagmi
+const getWagmiConfig = () => {
+  if (!wagmiConfigInstance) {
+    wagmiConfigInstance = getDefaultConfig({
+      appName: 'Livar',
+      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+      chains: [baseSepolia, base],
+      ssr: true, // Crucial pour Next.js et éviter hydratation mismatch
+    });
+  }
+  return wagmiConfigInstance;
 };
 
-const queryClient = new QueryClient();
+// Singleton sécurisé pour QueryClient
+const getQueryClient = () => {
+  if (!queryClientInstance) {
+    queryClientInstance = new QueryClient({
+      defaultOptions: {
+        queries: {
+          // Éviter re-fetch automatique qui peut causer des réinitialisations
+          refetchOnWindowFocus: false,
+          refetchOnMount: false,
+          refetchOnReconnect: false,
+          staleTime: 5 * 60 * 1000, // 5 minutes
+        },
+      },
+    });
+  }
+  return queryClientInstance;
+};
 
-const ThirdwebProviderWrapper = ({ children }) => {
+// Provider Web App (Wagmi + RainbowKit)
+const WebAppProvider = ({ children }) => {
+  const { theme } = useTheme();
+  
+  const rainbowTheme = theme === 'dark' 
+    ? darkTheme({
+        accentColor: '#84cc16', // lime-500
+        accentColorForeground: 'white',
+        borderRadius: 'medium',
+        fontStack: 'system',
+        overlayBlur: 'small',
+      })
+    : lightTheme({
+        accentColor: '#84cc16', // lime-500
+        accentColorForeground: 'white', 
+        borderRadius: 'medium',
+        fontStack: 'system',
+        overlayBlur: 'small',
+      });
+
   return (
-    <ThirdwebProvider
-      clientId={process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID}
-      activeChain={BaseSepoliaConfig}
-      autoSwitch={true}
-      dAppMeta={{
-        name: "Livar",
-        description: "Plateforme de financement participatif",
-        logoUrl: "https://votre-logo.com",
-        url: "https://votre-site.com",
-      }}
-    >
-      <QueryClientProvider client={queryClient}>
-        {children}
+    <WagmiProvider config={getWagmiConfig()}>
+      <QueryClientProvider client={getQueryClient()}>
+        <RainbowKitProvider 
+          theme={rainbowTheme}
+          locale="en"
+        >
+          {children}
+        </RainbowKitProvider>
       </QueryClientProvider>
-    </ThirdwebProvider>
+    </WagmiProvider>
   );
+};
+
+// Provider Mini App (OnchainKit + MiniKit)
+const MiniAppProvider = ({ children }) => (
+  <OnchainKitProvider
+    chain={baseSepolia}
+    rpcUrl={process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL || 'https://sepolia.base.org'}
+    config={{
+      appearance: {
+        mode: 'dark',
+        theme: 'base',
+      },
+      // FORCER désactivation télémétrie pour éviter erreurs 401 (pas de KYC requis)
+      telemetry: false,
+      analytics: false
+    }}
+  >
+    <QueryClientProvider client={getQueryClient()}>
+      {children}
+    </QueryClientProvider>
+  </OnchainKitProvider>
+);
+
+// Provider conditionnel principal
+const ThirdwebProviderWrapper = ({ children }) => {
+  const { isMiniApp, isLoading } = useEnvironment();
+
+  // Pendant le chargement, on affiche le provider Web App par défaut
+  if (isLoading) {
+    return <WebAppProvider>{children}</WebAppProvider>;
+  }
+
+  // Choix du provider basé sur l'environnement
+  if (isMiniApp) {
+    return <MiniAppProvider>{children}</MiniAppProvider>;
+  }
+
+  return <WebAppProvider>{children}</WebAppProvider>;
 };
 
 export default ThirdwebProviderWrapper;

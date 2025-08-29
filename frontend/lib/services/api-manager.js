@@ -4,50 +4,82 @@
 
 import blockchainCache from './cache-manager.js';
 
+// Supabase pour les promotions
+let supabase;
+const initSupabase = async () => {
+  if (!supabase) {
+    const { supabase: sb } = await import('../supabase/client.js');
+    supabase = sb;
+  }
+  return supabase;
+};
+
 class ApiManager {
   constructor() {
     this.cache = blockchainCache;
     
-    // Adresses des contrats déployés sur Base Sepolia
+    // Adresses des contrats déployés sur Base Sepolia - MISE À JOUR 28/08/2025
     this.contractAddresses = {
-      PriceConsumerV3: "0xa5050E4FC5F7115378Bbf8bAa17517298962bebE",
-      DivarProxy: "0x89Eba0c82c1f16433473A9A06690BfaAC2c7a1b4",
-      CampaignKeeper: "0x7BA165d19De799DA8070D3c1C061933551726D1E"
+      PriceConsumerV3: "0x0888C31a910c44a5291F9E4f6Eb440Df74f581Db",
+      DivarProxy: "0xaB0999Eae920849a41A55eA080d0a4a210156817",
+      CampaignKeeper: "0xcCD7381A3bD40F992DADc82FAaC7491d738E6b4F"
     };
 
     // Cache des ABIs
     this.abis = {};
     this.contracts = {};
     this.provider = null;
+
+    // Circuit breaker pour éviter les appels répétés qui échouent
+    this.circuitBreaker = {
+      failures: new Map(),
+      isOpen: (key) => {
+        const failures = this.circuitBreaker.failures.get(key);
+        if (!failures) return false;
+        return failures.count >= 5 && (Date.now() - failures.lastAttempt) < 60000; // 1 minute
+      },
+      recordFailure: (key) => {
+        const current = this.circuitBreaker.failures.get(key) || { count: 0, lastAttempt: 0 };
+        this.circuitBreaker.failures.set(key, {
+          count: current.count + 1,
+          lastAttempt: Date.now()
+        });
+      },
+      recordSuccess: (key) => {
+        this.circuitBreaker.failures.delete(key);
+      }
+    };
   }
 
   async initializeWeb3() {
     const { ethers } = await import('ethers');
     
-    // Priorité au RPC public pour éviter les limites de rate
-    const fallbackUrl = "https://sepolia.base.org";
-    const quicknodeUrl = process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL;
-    
-    // Utiliser RPC public en priorité pour éviter 429 errors
-    console.log('🌐 Utilisation du RPC public Base Sepolia');
-    this.provider = new ethers.providers.JsonRpcProvider(fallbackUrl);
-    return true;
-    
-    /* QuickNode désactivé temporairement - rate limit atteint
-    if (quicknodeUrl) {
-      console.log('🚀 Utilisation de QuickNode RPC');
-      this.provider = new ethers.providers.JsonRpcProvider(quicknodeUrl);
-      return true;
-    } else if (typeof window !== 'undefined' && window.ethereum) {
-      console.log('🦊 Utilisation du wallet MetaMask');
-      this.provider = new ethers.providers.Web3Provider(window.ethereum);
-      return true;
-    } else {
-      console.log('🌐 Utilisation du RPC public Base Sepolia');
-      this.provider = new ethers.providers.JsonRpcProvider(fallbackUrl);
-      return true;
+    // Liste de fallback RPC avec retry
+    const rpcUrls = [
+      "https://sepolia.base.org",
+      "https://base-sepolia.blockpi.network/v1/rpc/public",
+      "https://base-sepolia.g.alchemy.com/v2/demo",
+      process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL
+    ].filter(Boolean);
+
+    for (const url of rpcUrls) {
+      try {
+        const provider = new ethers.providers.JsonRpcProvider(url);
+        
+        // Test de connexion avec timeout
+        await Promise.race([
+          provider.getNetwork(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+        ]);
+        
+        this.provider = provider;
+        return true;
+      } catch (error) {
+        console.warn(`❌ RPC ${url} échoué:`, error.message);
+      }
     }
-    */
+    
+    throw new Error('Aucun RPC disponible');
   }
 
   async loadABIs() {
@@ -59,12 +91,24 @@ class ApiManager {
       const campaignAbi = await import('../../ABI/CampaignABI.json');
       const keeperAbi = await import('../../ABI/CampaignKeeperABI.json');
       const priceAbi = await import('../../ABI/PriceConsumerV3ABI.json');
+   
+
+      // Fonction utilitaire pour extraire l'ABI selon le format
+      const extractABI = (importedAbi) => {
+        const abi = importedAbi.default || importedAbi;
+        // Si c'est un objet Hardhat avec propriété .abi
+        if (abi && typeof abi === 'object' && abi.abi) {
+          return abi.abi;
+        }
+        // Sinon c'est déjà un tableau ABI
+        return abi;
+      };
 
       this.abis = {
-        DivarProxy: divarAbi.default,
-        Campaign: campaignAbi.default,
-        CampaignKeeper: keeperAbi.default,
-        PriceConsumerV3: priceAbi.default
+        DivarProxy: extractABI(divarAbi),
+        Campaign: extractABI(campaignAbi),
+        CampaignKeeper: extractABI(keeperAbi),
+        PriceConsumerV3: extractABI(priceAbi),
       };
     } catch (error) {
       console.error('Erreur chargement ABIs:', error);
@@ -109,25 +153,6 @@ class ApiManager {
     return this.contracts[contractKey];
   }
 
-  // === MÉTHODES POUR L'AUTHENTIFICATION ===
-
-  async checkUserProfile(address) {
-    try {
-      const { db } = await import('@/lib/firebase/firebase');
-      const { doc, getDoc } = await import('firebase/firestore');
-      
-      const docRef = doc(db, "users", address);
-      const docSnap = await getDoc(docRef);
-      
-      return {
-        exists: docSnap.exists(),
-        data: docSnap.exists() ? docSnap.data() : null
-      };
-    } catch (error) {
-      console.error('Erreur lors de la vérification du profil Firebase:', error);
-      return { exists: false, data: null };
-    }
-  }
 
   async checkUserRegistration(address) {
     // Plus besoin de vérifier l'inscription - toujours true maintenant
@@ -158,54 +183,49 @@ class ApiManager {
 
   async getCampaignData(campaignAddress, useCache = true) {
     const cacheKey = this.cache.generateKey('campaign', campaignAddress);
+    const circuitKey = `rpc_campaign_${campaignAddress}`;
     
     if (useCache) {
       const cached = this.cache.get(cacheKey);
       if (cached) return cached;
     }
 
+    // Circuit breaker check
+    if (this.circuitBreaker.isOpen(circuitKey)) {
+      return null;
+    }
+
     try {
+      // Rate limiting - attendre entre chaque campagne pour éviter 429
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
       const campaign = await this.getContract('Campaign', campaignAddress);
       const divarProxy = await this.getContract('DivarProxy');
       
-      const [
-        name,
-        symbol,
-        currentRound,
-        totalShares
-      ] = await Promise.all([
-        campaign.name(),
-        campaign.symbol(),
-        campaign.getCurrentRound(),
-        campaign.totalSupply()
-      ]);
+      // Réduire la charge en chargeant séquentiellement au lieu de Promise.all
+      const name = await campaign.name();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      const symbol = await campaign.symbol();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      const currentRound = await campaign.getCurrentRound();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      const totalShares = await campaign.totalSupply();
 
       // Récupération du registry avec la VRAIE fonction getCampaignRegistry
+      await new Promise(resolve => setTimeout(resolve, 50));
       const registry = await divarProxy.getCampaignRegistry(campaignAddress);
 
       // Récupérer les données du round actuel avec gestion d'erreur  
       const currentRoundNumber = typeof currentRound === 'object' && currentRound.toNumber ? currentRound.toNumber() : parseInt(currentRound.toString());
+      await new Promise(resolve => setTimeout(resolve, 50));
       const roundData = await campaign.rounds(currentRoundNumber);
 
       // Validation que roundData est un array avec les bonnes propriétés
-      if (!Array.isArray(roundData) || roundData.length < 9) {
+      if (!Array.isArray(roundData) || roundData.length < 8) {
         throw new Error(`Invalid roundData structure: ${JSON.stringify(roundData)}`);
       }
 
-      // Le struct Round retourne un array : [roundNumber, sharePrice, targetAmount, fundsRaised, sharesSold, startTime, endTime, isActive, isFinalized]
-      console.log('🔍 Debug roundData COMPLET:', {
-        0: roundData[0]?.toString(),
-        1: roundData[1]?.toString(),
-        2: roundData[2]?.toString(),  
-        3: roundData[3]?.toString(),
-        4: roundData[4]?.toString(),
-        5: `${roundData[5]?.toString()} (${new Date(parseInt(roundData[5]) * 1000).toLocaleString()})`, // startTime
-        6: `${roundData[6]?.toString()} (${new Date(parseInt(roundData[6]) * 1000).toLocaleString()})`, // endTime
-        7: roundData[7],  // isActive
-        8: roundData[8],  // isFinalized
-        currentTime: `${Math.floor(Date.now()/1000)} (${new Date().toLocaleString()})`,
-        length: roundData.length
-      });
+      // Le struct Round retourne un array : [roundNumber, sharePrice, targetAmount, fundsRaised, sharesSold, endTime, isActive, isFinalized] - 8 valeurs
       
       const campaignData = {
         // Propriétés principales
@@ -216,16 +236,16 @@ class ApiManager {
         currentRound: currentRound.toString(),
         totalShares: totalShares.toString(),
         
-        // Données du round (en utilisant les index corrects)
+        // Données du round (en utilisant les index corrects - 8 valeurs selon ABI)
         roundNumber: roundData[0].toString(),
         sharePrice: this.formatEthValue(roundData[1]),
         targetAmount: this.formatEthValue(roundData[2]),
         fundsRaised: this.formatEthValue(roundData[3]),
         sharesSold: roundData[4].toString(),
-        startTime: roundData[5].toString(),
-        endTime: roundData[6].toString(),
-        isActive: roundData[7],
-        isFinalized: roundData[8],
+        startTime: "0", // Plus de startTime dans la nouvelle structure
+        endTime: roundData[5].toString(), // endTime est à la position 5
+        isActive: roundData[6],
+        isFinalized: roundData[7],
         
         // Données du registry
         creator: registry.creator,
@@ -240,7 +260,7 @@ class ApiManager {
         goal: this.formatEthValue(roundData[2]), // targetAmount formaté
         raised: this.formatEthValue(roundData[3]), // fundsRaised formaté
         sector: registry.category, // catégorie
-        endDate: new Date(parseInt(roundData[6]) * 1000).toISOString(), // endTime converti en date
+        endDate: new Date(parseInt(roundData[5]) * 1000).toISOString(), // endTime converti en date
         
         // Propriétés calculées
         progressPercentage: roundData[2].toString() !== '0' ? 
@@ -249,9 +269,11 @@ class ApiManager {
         isCertified: false // À implémenter plus tard
       };
 
+      this.circuitBreaker.recordSuccess(circuitKey);
       this.cache.set(cacheKey, campaignData, this.cache.defaultTTL);
       return campaignData;
     } catch (error) {
+      this.circuitBreaker.recordFailure(circuitKey);
       console.error('Erreur getCampaignData:', error);
       return null;
     }
@@ -312,7 +334,22 @@ class ApiManager {
     try {
       const campaign = await this.getContract('Campaign', campaignAddress);
       const filter = campaign.filters.SharesPurchased();
-      const events = await campaign.queryFilter(filter);
+      
+      // Tentative avec timeout et fallback
+      let events;
+      try {
+        events = await Promise.race([
+          campaign.queryFilter(filter),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout RPC')), 5000))
+        ]);
+      } catch (rpcError) {
+        console.warn('RPC principal échoué, tentative fallback:', rpcError.message);
+        
+        // Fallback : retourner un tableau vide en cache temporaire pour éviter les requêtes répétées
+        const emptyResult = [];
+        this.cache.set(cacheKey, emptyResult, 30000); // Cache court de 30s
+        return emptyResult;
+      }
       
       const transactions = events.map(event => ({
         hash: event.transactionHash,
@@ -326,8 +363,12 @@ class ApiManager {
       this.cache.set(cacheKey, transactions, this.cache.defaultTTL);
       return transactions;
     } catch (error) {
-      console.error('Erreur getCampaignTransactions:', error);
-      return [];
+      console.warn('Erreur getCampaignTransactions:', error.message);
+      
+      // Retourner un tableau vide et le cacher temporairement pour éviter les requêtes répétées
+      const emptyResult = [];
+      this.cache.set(cacheKey, emptyResult, 30000); // Cache court de 30s
+      return emptyResult;
     }
   }
 
@@ -368,14 +409,7 @@ class ApiManager {
       const divarProxy = await this.getContract('DivarProxy');
       const registry = await divarProxy.getCampaignRegistry(campaignAddress);
       
-      console.log('🔍 Registry data:', {
-        address: registry.campaignAddress,
-        name: registry.name,
-        metadata: registry.metadata
-      });
-      
       if (!registry.metadata || !registry.metadata.startsWith('ipfs://')) {
-        console.log('❌ Metadata invalide:', registry.metadata);
         return null;
       }
       
@@ -409,7 +443,6 @@ class ApiManager {
       
       // 2. Si pas de documents dans le JSON, essayer de les détecter automatiquement
       if (!campaignData.documents) {
-        console.log('🔍 Pas de documents dans JSON, détection automatique...');
         campaignData.documents = await this.detectIPFSDocuments(ipfsHash);
       }
       
@@ -423,7 +456,6 @@ class ApiManager {
   // Nouvelle fonction pour détecter automatiquement les fichiers IPFS
   async detectIPFSDocuments(ipfsHash) {
     try {
-      console.log('🔍 Détection automatique des fichiers pour CID:', ipfsHash);
       
       // Patterns de fichiers à détecter
       const documentPatterns = {
@@ -469,16 +501,14 @@ class ApiManager {
                   url: testUrl,
                   size: testResponse.headers.get('content-length') || 'Unknown'
                 });
-                console.log(`✅ Fichier détecté: ${fileName}`);
               }
             } catch (error) {
-              console.warn(`❌ Fichier non accessible: ${fileName}`, error.message);
+              // Fichier non accessible, continuer silencieusement
             }
           }
         }
       }
       
-      console.log('🎉 Documents détectés:', detectedDocuments);
       return detectedDocuments;
       
     } catch (error) {
@@ -608,16 +638,13 @@ class ApiManager {
         { value: fee }
       );
       
-      console.log('✅ Transaction de création envoyée:', tx.hash);
       const receipt = await tx.wait();
-      console.log('✅ Transaction confirmée, gas utilisé:', receipt.gasUsed?.toString());
       
       // Extraire l'adresse de la nouvelle campagne depuis les events
       const campaignCreatedEvent = receipt.events?.find(e => e.event === 'CampaignCreated');
       
       if (campaignCreatedEvent) {
         const campaignAddress = campaignCreatedEvent.args?.campaignAddress;
-        console.log('✅ Nouvelle campagne créée:', campaignAddress);
         
         // Invalider le cache pour forcer le rechargement
         this.invalidateCache('campaigns');
@@ -657,6 +684,58 @@ class ApiManager {
     return this.cache.getCacheStats();
   }
 
+  // === NOUVELLES MÉTHODES REMBOURSEMENT ===
+
+  async canRefundToken(campaignAddress, tokenId) {
+    try {
+      const campaign = await this.getContract('Campaign', campaignAddress);
+      const result = await campaign.canRefundToken(tokenId);
+      return {
+        canRefund: result[0],
+        message: result[1]
+      };
+    } catch (error) {
+      console.error('Erreur canRefundToken:', error);
+      return { canRefund: false, message: 'Erreur lors de la vérification' };
+    }
+  }
+
+  async getRefundAmount(campaignAddress, tokenId) {
+    try {
+      const campaign = await this.getContract('Campaign', campaignAddress);
+      const refundAmount = await campaign.getRefundAmount(tokenId);
+      return this.formatEthValue(refundAmount);
+    } catch (error) {
+      console.error('Erreur getRefundAmount:', error);
+      return '0';
+    }
+  }
+
+  async getNFTRound(campaignAddress, tokenId) {
+    try {
+      const campaign = await this.getContract('Campaign', campaignAddress);
+      const round = await campaign.getNFTRound(tokenId);
+      return round.toString();
+    } catch (error) {
+      console.error('Erreur getNFTRound:', error);
+      return '0';
+    }
+  }
+
+  async refundShares(campaignAddress, tokenIds) {
+    try {
+      const campaign = await this.getContract('Campaign', campaignAddress, true);
+      const tx = await campaign.refundShares(tokenIds);
+      await tx.wait();
+      
+      this.invalidateCampaign(campaignAddress);
+      return { success: true, txHash: tx.hash };
+    } catch (error) {
+      console.error('Erreur refundShares:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // === MÉTHODES DE PRÉCHARGEMENT ===
 
   preloadCampaignOnHover(campaignAddress) {
@@ -665,6 +744,133 @@ class ApiManager {
 
   async warmupCache(campaignAddresses) {
     await this.cache.warmupCache(campaignAddresses);
+  }
+
+  // === MÉTHODES UTILITAIRES V2 ===
+
+  async getCampaignVersion(campaignAddress) {
+    try {
+      const campaign = await this.getContract('Campaign', campaignAddress);
+      // Test si nouvelles fonctions disponibles
+      await campaign.canRefundToken(1000001);
+      return 'v2'; // Nouvelles fonctionnalités
+    } catch {
+      return 'v1'; // Version classique
+    }
+  }
+
+
+  async getUserNFTs(campaignAddress, userAddress) {
+    try {
+      const campaign = await this.getContract('Campaign', campaignAddress);
+      const balance = await campaign.balanceOf(userAddress);
+      const nfts = [];
+      
+      for (let i = 0; i < balance.toNumber(); i++) {
+        const tokenId = await campaign.tokenOfOwnerByIndex(userAddress, i);
+        const round = await this.getNFTRound(campaignAddress, tokenId.toString());
+        const refundData = await this.canRefundToken(campaignAddress, tokenId.toString());
+        
+        nfts.push({
+          tokenId: tokenId.toString(),
+          round: round,
+          canRefund: refundData.canRefund,
+          refundMessage: refundData.message
+        });
+      }
+      
+      return nfts;
+    } catch (error) {
+      console.error('Erreur getUserNFTs:', error);
+      return [];
+    }
+  }
+
+  // === MÉTHODES DE PROMOTION AVEC CACHE ===
+
+  async isCampaignBoosted(campaignAddress, roundNumber, useCache = true) {
+    const cacheKey = this.cache.generateKey('promotion_boost', `${campaignAddress}_${roundNumber}`);
+    const circuitKey = `supabase_promotion_${campaignAddress}`;
+    
+    if (useCache) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    // Circuit breaker check
+    if (this.circuitBreaker.isOpen(circuitKey)) {
+      const result = { isBoosted: false };
+      this.cache.set(cacheKey, result, this.cache.criticalTTL);
+      return result;
+    }
+
+    try {
+      const supabaseClient = await initSupabase();
+      
+      // Validation du roundNumber
+      const validRoundNumber = parseInt(roundNumber) || 1;
+      
+      const currentTime = new Date().toISOString();
+      const { data, error } = await supabaseClient
+        .from('campaign_promotions')
+        .select('boost_type, end_timestamp')
+        .eq('campaign_address', campaignAddress)
+        .eq('round_number', validRoundNumber)
+        .eq('is_active', true)
+        .gte('end_timestamp', currentTime)
+        .limit(1)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        this.circuitBreaker.recordFailure(circuitKey);
+        const result = { isBoosted: false };
+        this.cache.set(cacheKey, result, this.cache.criticalTTL);
+        return result;
+      }
+      
+      this.circuitBreaker.recordSuccess(circuitKey);
+      const result = data ? {
+        isBoosted: true,
+        boostType: data.boost_type,
+        endTime: new Date(data.end_timestamp)
+      } : { isBoosted: false };
+
+      this.cache.set(cacheKey, result, this.cache.criticalTTL);
+      return result;
+    } catch (error) {
+      this.circuitBreaker.recordFailure(circuitKey);
+      const result = { isBoosted: false };
+      this.cache.set(cacheKey, result, this.cache.criticalTTL);
+      return result;
+    }
+  }
+
+  async getActivePromotions(useCache = true) {
+    const cacheKey = this.cache.generateKey('active_promotions', 'all');
+    
+    if (useCache) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      const supabaseClient = await initSupabase();
+      const { data, error } = await supabaseClient
+        .from('active_promotions')
+        .select('*')
+        .order('boost_type', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase active promotions error:', error);
+        return [];
+      }
+      
+      this.cache.set(cacheKey, data || [], this.cache.defaultTTL);
+      return data || [];
+    } catch (error) {
+      console.warn('Error fetching active promotions:', error);
+      return [];
+    }
   }
 }
 

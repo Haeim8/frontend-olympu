@@ -13,6 +13,8 @@
     "@ceramicnetwork/http-client": "^6.4.0",
     "@ceramicnetwork/stream-tile": "^6.4.0",
     "@chainlink/contracts": "^1.2.0",
+    "@coinbase/onchainkit": "^0.38.19",
+    "@farcaster/miniapp-sdk": "^0.1.9",
     "@pinata/sdk": "^2.1.0",
     "@radix-ui/react-avatar": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",
@@ -27,11 +29,10 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
+    "@rainbow-me/rainbowkit": "^2.2.8",
     "@storacha/client": "^1.7.6",
+    "@supabase/supabase-js": "^2.56.0",
     "@tanstack/react-query": "^5.52.2",
-    "@thirdweb-dev/chains": "^0.1.120",
-    "@thirdweb-dev/react": "^3.7.2",
-    "@thirdweb-dev/tsconfig": "^0.1.7",
     "axios": "^1.7.7",
     "cids": "^1.1.9",
     "class-variance-authority": "^0.7.0",
@@ -40,7 +41,6 @@
     "dotenv": "^16.4.5",
     "encoding": "^0.1.13",
     "ethers": "^5.7.2",
-    "firebase": "^10.14.1",
     "form-data": "^4.0.1",
     "framer-motion": "^11.11.1",
     "html2canvas": "^1.4.1",
@@ -54,6 +54,7 @@
     "next": "14.2.7",
     "next-themes": "^0.3.0",
     "nft.storage": "^7.2.0",
+    "node-fetch": "^3.3.2",
     "orbit-db": "^0.29.0",
     "pino-pretty": "^11.2.2",
     "qrcode": "^1.5.4",
@@ -62,8 +63,8 @@
     "react-toastify": "^10.0.6",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
-    "thirdweb": "^5.61.5",
-    "viem": "^1.0.2",
+    "viem": "^2.21.0",
+    "wagmi": "^2.16.8",
     "web3": "^4.14.0"
   },
   "devDependencies": {
@@ -76,5 +77,6 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4"
-  }
+  },
+  "packageManager": "yarn@4.9.4+sha512.7b1cb0b62abba6a537b3a2ce00811a843bea02bcf53138581a6ae5b1bf563f734872bd47de49ce32a9ca9dcaff995aa789577ffb16811da7c603dcf69e73750b"
 }

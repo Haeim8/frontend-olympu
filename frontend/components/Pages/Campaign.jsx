@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useLanguage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiManager } from '@/lib/services/api-manager';
 
@@ -12,7 +13,6 @@ import TransactionHistory from '@/components/campaign/finance/TransactionHistory
 import CampaignInvestors from '@/components/campaign/CampaignInvestors';
 import CampaignDocuments from '@/components/campaign/CampaignDocuments';
 import CampaignSocial from '@/components/campaign/CampaignSocial';
-import LiveScheduler from '@/components/campaign/LiveScheduler';
 
 // Import des dialogs
 import ReopenCampaignDialog from '@/components/campaign/dialogs/ReopenCampaignDialog';
@@ -20,6 +20,7 @@ import PromoteCampaignDialog from '@/components/campaign/dialogs/PromoteCampaign
 import CertifyCampaignDialog from '@/components/campaign/dialogs/CertifyCampaignDialog';
 
 export default function Campaign() {
+  const { t } = useTranslation();
   // Récupérer l'adresse du wallet (remplace useAddress de ThirdWeb)
   const [address, setAddress] = useState(null);
   
@@ -71,12 +72,12 @@ export default function Campaign() {
         if (userCampaigns.length > 0) {
           setCampaignAddress(userCampaigns[0]); // Première campagne trouvée
         } else {
-          setError("Aucune campagne trouvée pour cette adresse");
+          setError(t('campaign.noCampaignFound'));
         }
         
       } catch (err) {
         console.error('Erreur initialisation campagne:', err);
-        setError('Impossible de charger les données de campagne');
+        setError(t('campaign.loadError'));
       } finally {
         setIsLoading(false);
       }
@@ -111,12 +112,12 @@ export default function Campaign() {
           // Données chargées avec succès
           
         } else {
-          setError("Impossible de charger les données de campagne");
+          setError(t('campaign.loadDataError'));
         }
         
       } catch (err) {
         console.error('Erreur chargement campagne:', err);
-        setError('Erreur lors du chargement des données');
+        setError(t('campaign.dataLoadingError'));
       } finally {
         setIsLoading(false);
       }
@@ -181,27 +182,13 @@ export default function Campaign() {
     setCampaignData(prev => prev ? { ...prev, certificationPending: true } : null);
   }, []);
 
-  // Gestionnaires pour les sessions live
-  const handleScheduleLive = useCallback((sessionData) => {
-    console.log('Live session scheduled:', sessionData);
-    // Ici on appellerait le smart contract pour programmer la session
-    // et envoyer les notifications aux holders NFT
-  }, []);
-
-  const handleStartLive = useCallback(() => {
-    console.log('Starting live session');
-    // Rediriger vers la page live
-    if (typeof window !== 'undefined') {
-      window.open(`/campaign/${campaignAddress}/live`, '_blank');
-    }
-  }, [campaignAddress]);
 
   // Rendu conditionnel pour les états d'erreur
   if (!address) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-gray-600 dark:text-gray-400">
-          Veuillez connecter votre portefeuille pour accéder à la gestion de campagne.
+          {t('campaign.connectWalletMessage')}
         </p>
       </div>
     );
@@ -224,31 +211,25 @@ export default function Campaign() {
               value="finance" 
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
-              Finance
+              {t('campaign.finance')}
             </TabsTrigger>
             <TabsTrigger 
               value="investors" 
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
-              Investisseurs
+              {t('campaign.investors')}
             </TabsTrigger>
             <TabsTrigger 
               value="documents" 
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
-              Documents
+              {t('campaign.documents')}
             </TabsTrigger>
             <TabsTrigger 
               value="social" 
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
-              Social
-            </TabsTrigger>
-            <TabsTrigger 
-              value="live" 
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
-            >
-              Sessions Live
+              {t('campaign.social')}
             </TabsTrigger>
           </TabsList>
 
@@ -301,14 +282,6 @@ export default function Campaign() {
             />
           </TabsContent>
 
-          {/* Onglet Sessions Live */}
-          <TabsContent value="live">
-            <LiveScheduler
-              campaignData={campaignData}
-              onScheduleLive={handleScheduleLive}
-              onStartLive={handleStartLive}
-            />
-          </TabsContent>
         </Tabs>
       )}
 

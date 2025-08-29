@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   Award, 
   Search, 
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react';
 
 const NFTCard = ({ nft, onViewDetails }) => {
+  const { t } = useTranslation();
+  
   const formatDate = (timestamp) => {
     return new Date(timestamp * 1000).toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -50,7 +53,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
             variant="outline" 
             className="bg-lime-50 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border-lime-200 dark:border-lime-800"
           >
-            {nft.shares} parts
+            {nft.shares} {t('wallet.nft.shares')}
           </Badge>
         </div>
       </CardHeader>
@@ -59,7 +62,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
         {/* Investment details */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Investissement</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('wallet.nft.investment')}</p>
             <div className="flex items-center gap-1">
               <DollarSign className="h-3 w-3 text-blue-600" />
               <span className="font-semibold text-gray-900 dark:text-gray-100">
@@ -69,7 +72,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
           </div>
           
           <div className="space-y-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Dividendes</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('wallet.nft.dividends')}</p>
             <div className="flex items-center gap-1">
               <TrendingUp className="h-3 w-3 text-green-600" />
               <span className="font-semibold text-green-600 dark:text-green-400">
@@ -110,7 +113,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
               className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Eye className="h-3 w-3 mr-1" />
-              Détails
+              {t('wallet.nft.details')}
             </Button>
             <Button
               variant="ghost"
@@ -128,6 +131,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
 };
 
 export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [sortBy, setSortBy] = useState('date'); // 'date', 'amount', 'dividends'
@@ -164,13 +168,13 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
           <div className="space-y-1">
             <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Award className="h-5 w-5 text-lime-600" />
-              Vos NFTs
+              {t('wallet.nft.title')}
               <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300">
                 {nftHoldings.length}
               </Badge>
             </CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Valeur totale: {totalValue.toFixed(4)} ETH • Dividendes: {totalDividends.toFixed(4)} ETH
+              {t('wallet.nft.totalValue', { value: totalValue.toFixed(4), dividends: totalDividends.toFixed(4) })}
             </p>
           </div>
 
@@ -180,7 +184,7 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Rechercher..."
+                placeholder={t('wallet.nft.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent transition-colors"
@@ -193,9 +197,9 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
               onChange={(e) => setSortBy(e.target.value)}
               className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             >
-              <option value="date">Date</option>
-              <option value="amount">Montant</option>
-              <option value="dividends">Dividendes</option>
+              <option value="date">{t('wallet.nft.sortDate')}</option>
+              <option value="amount">{t('wallet.nft.sortAmount')}</option>
+              <option value="dividends">{t('wallet.nft.sortDividends')}</option>
             </select>
 
             {/* View mode toggle */}
@@ -232,12 +236,12 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
           <div className="text-center py-12">
             <Award className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              {searchTerm ? 'Aucun NFT trouvé' : 'Aucun NFT détenu'}
+              {searchTerm ? t('wallet.nft.noResults') : t('wallet.nft.noNFTs')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               {searchTerm 
-                ? 'Essayez de modifier votre recherche'
-                : 'Commencez par investir dans des projets pour obtenir vos premiers NFT'
+                ? t('wallet.nft.trySearch')
+                : t('wallet.nft.startInvesting')
               }
             </p>
           </div>
@@ -273,7 +277,7 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
                           Token #{nft.id.split('-').pop()}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {nft.campaign} • {nft.shares} parts
+                          {nft.campaign} • {nft.shares} {t('wallet.nft.shares')}
                         </p>
                       </div>
                     </div>

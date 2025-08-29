@@ -18,13 +18,20 @@ import {
   Eye,
   Clock
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useLanguage';
 
 const TransactionRow = ({ transaction, index }) => {
+  const { t } = useTranslation();
+  
   const getTransactionIcon = (type) => {
     switch (type) {
       case 'Achat':
+      case 'Purchase':
+      case 'Compra':
         return <ArrowUpRight className="h-4 w-4 text-green-600" />;
       case 'Remboursement':
+      case 'Refund':
+      case 'Reembolso':
         return <ArrowDownRight className="h-4 w-4 text-orange-600" />;
       default:
         return <History className="h-4 w-4 text-gray-600" />;
@@ -34,8 +41,12 @@ const TransactionRow = ({ transaction, index }) => {
   const getTransactionColor = (type) => {
     switch (type) {
       case 'Achat':
+      case 'Purchase':
+      case 'Compra':
         return 'text-green-600 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
       case 'Remboursement':
+      case 'Refund':
+      case 'Reembolso':
         return 'text-orange-600 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800';
       default:
         return 'text-gray-600 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800';
@@ -63,7 +74,9 @@ const TransactionRow = ({ transaction, index }) => {
           <div>
             <div className="flex items-center gap-2">
               <p className="font-semibold text-gray-900 dark:text-gray-100">
-                {transaction.type}
+                {transaction.type === 'Achat' ? t('projectTransactions.purchase') : 
+                 transaction.type === 'Remboursement' ? t('projectTransactions.refund') : 
+                 transaction.type}
               </p>
               <Badge 
                 variant="outline" 
@@ -73,7 +86,7 @@ const TransactionRow = ({ transaction, index }) => {
               </Badge>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Block {transaction.id}
+              {t('projectTransactions.block')} {transaction.id}
             </p>
           </div>
         </div>
@@ -93,7 +106,7 @@ const TransactionRow = ({ transaction, index }) => {
             className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={() => navigator.clipboard.writeText(transaction.investor)}
           >
-            Copier adresse
+            {t('projectTransactions.copyAddress')}
           </Button>
         </div>
       </td>
@@ -127,7 +140,7 @@ const TransactionRow = ({ transaction, index }) => {
             onClick={() => window.open(`https://sepolia.basescan.org/tx/${transaction.id}`, '_blank')}
           >
             <ExternalLink className="h-3 w-3 mr-1" />
-            Basescan
+            {t('projectTransactions.basescan')}
           </Button>
         </div>
       </td>
@@ -136,6 +149,7 @@ const TransactionRow = ({ transaction, index }) => {
 };
 
 export default function ProjectTransactions({ transactions = [], isLoading }) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('block');
@@ -171,8 +185,8 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
 
   // Statistiques
   const stats = React.useMemo(() => {
-    const purchases = transactions.filter(tx => tx.type === 'Achat');
-    const refunds = transactions.filter(tx => tx.type === 'Remboursement');
+    const purchases = transactions.filter(tx => tx.type === 'Achat' || tx.type === 'Purchase' || tx.type === 'Compra');
+    const refunds = transactions.filter(tx => tx.type === 'Remboursement' || tx.type === 'Refund' || tx.type === 'Reembolso');
     
     return {
       totalTransactions: transactions.length,
@@ -184,7 +198,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
   }, [transactions]);
 
   const exportToCSV = () => {
-    const headers = ['Type', 'Investisseur', 'Shares', 'Valeur (ETH)', 'Block'];
+    const headers = [t('projectTransactions.type'), t('projectTransactions.investor'), t('projectTransactions.shares'), t('projectTransactions.value') + ' (ETH)', t('projectTransactions.block')];
     const csvContent = [
       headers.join(','),
       ...filteredAndSortedTransactions.map(tx => [
@@ -247,14 +261,14 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
                 <History className="h-5 w-5 text-purple-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Historique des transactions
+                {t('projectTransactions.title')}
               </h3>
               <Badge className="bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
                 {stats.totalTransactions}
               </Badge>
             </div>
             <p className="text-gray-600 dark:text-gray-400">
-              Toutes les transactions blockchain pour ce projet
+              {t('projectTransactions.subtitle')}
             </p>
           </div>
 
@@ -264,7 +278,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Rechercher..."
+                placeholder={t('projectTransactions.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-48"
@@ -277,9 +291,9 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
               onChange={(e) => setFilterType(e.target.value)}
               className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
-              <option value="all">Tous types</option>
-              <option value="Achat">Achats</option>
-              <option value="Remboursement">Remboursements</option>
+              <option value="all">{t('projectTransactions.allTypes')}</option>
+              <option value="Achat">{t('projectTransactions.purchases')}</option>
+              <option value="Remboursement">{t('projectTransactions.refunds')}</option>
             </select>
 
             {/* Sort */}
@@ -288,10 +302,10 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
               onChange={(e) => setSortBy(e.target.value)}
               className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
-              <option value="block">Block</option>
-              <option value="value">Valeur</option>
-              <option value="shares">Shares</option>
-              <option value="type">Type</option>
+              <option value="block">{t('projectTransactions.block')}</option>
+              <option value="value">{t('projectTransactions.value')}</option>
+              <option value="shares">{t('projectTransactions.shares')}</option>
+              <option value="type">{t('projectTransactions.type')}</option>
             </select>
 
             {/* Export */}
@@ -302,7 +316,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
               className="border-gray-300 dark:border-neutral-700"
             >
               <Download className="h-4 w-4 mr-2" />
-              Export
+              {t('projectTransactions.export')}
             </Button>
           </div>
         </div>
@@ -312,7 +326,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="h-4 w-4 text-blue-600" />
-              <span className="text-sm text-blue-600 font-medium">Achats</span>
+              <span className="text-sm text-blue-600 font-medium">{t('projectTransactions.purchases')}</span>
             </div>
             <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
               {stats.totalPurchases}
@@ -322,7 +336,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
           <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800">
             <div className="flex items-center gap-2 mb-1">
               <ArrowDownRight className="h-4 w-4 text-orange-600" />
-              <span className="text-sm text-orange-600 font-medium">Remboursements</span>
+              <span className="text-sm text-orange-600 font-medium">{t('projectTransactions.refunds')}</span>
             </div>
             <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
               {stats.totalRefunds}
@@ -332,7 +346,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl border border-green-200 dark:border-green-800">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-green-600 font-medium">Volume total</span>
+              <span className="text-sm text-green-600 font-medium">{t('projectTransactions.totalVolume')}</span>
             </div>
             <p className="text-xl font-bold text-green-700 dark:text-green-300">
               {stats.totalVolume.toFixed(4)} ETH
@@ -342,7 +356,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
             <div className="flex items-center gap-2 mb-1">
               <Users className="h-4 w-4 text-purple-600" />
-              <span className="text-sm text-purple-600 font-medium">Shares total</span>
+              <span className="text-sm text-purple-600 font-medium">{t('projectTransactions.totalShares')}</span>
             </div>
             <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
               {stats.totalShares}
@@ -357,12 +371,12 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
           <div className="text-center py-12">
             <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              {searchTerm || filterType !== 'all' ? 'Aucune transaction trouvée' : 'Aucune transaction'}
+              {searchTerm || filterType !== 'all' ? t('projectTransactions.noTransactionFound') : t('projectTransactions.noTransaction')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               {searchTerm || filterType !== 'all'
-                ? 'Essayez de modifier vos filtres de recherche'
-                : 'Les transactions d\'investissement apparaîtront ici'
+                ? t('projectTransactions.modifyFilters')
+                : t('projectTransactions.transactionsWillAppear')
               }
             </p>
           </div>
@@ -372,19 +386,19 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
               <thead className="bg-gray-50 dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
                 <tr>
                   <th className="text-left py-4 pl-6 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Type & Block
+                    {t('projectTransactions.typeBlock')}
                   </th>
                   <th className="text-left py-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Investisseur
+                    {t('projectTransactions.investor')}
                   </th>
                   <th className="text-center py-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Shares
+                    {t('projectTransactions.shares')}
                   </th>
                   <th className="text-right py-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Valeur
+                    {t('projectTransactions.value')}
                   </th>
                   <th className="text-center py-4 pr-6 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Actions
+                    {t('projectTransactions.actions')}
                   </th>
                 </tr>
               </thead>

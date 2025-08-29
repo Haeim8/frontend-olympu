@@ -1,11 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Twitter, MessageCircle, Zap } from "lucide-react";
-import { ConnectWallet } from "@thirdweb-dev/react";
+import LanguageSelector from "@/components/ui/LanguageSelector";
+import { useTranslation } from '@/hooks/useLanguage';
+import { Moon, Sun, Twitter, MessageCircle, Zap, Wallet } from "lucide-react";
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { motion } from "framer-motion";
 
 export function LandingHeader({ darkMode, toggleDarkMode }) {
+  const { t } = useTranslation();
+  
   return (
     <motion.header 
       className="px-6 lg:px-8 h-24 relative z-50 bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg border-b border-white/20 dark:border-gray-700/20"
@@ -32,16 +36,16 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
         <nav className="hidden lg:flex items-center justify-center flex-1">
           <div className="flex items-center space-x-8">
             <a href="#accueil" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
-              Accueil
+              {t('landing.nav.home')}
             </a>
             <a href="#fonctionnalites" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
-              Fonctionnalités
+              {t('landing.nav.features')}
             </a>
             <a href="#comment-ca-marche" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
-              Comment ça marche
+              {t('landing.nav.howItWorks')}
             </a>
             <a href="#projets" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
-              Projets
+              {t('landing.nav.projects')}
             </a>
           </div>
         </nav>
@@ -59,7 +63,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             whileTap={{ scale: 0.95 }}
           >
             <Twitter size={16} />
-            <span className="sr-only">Twitter</span>
+            <span className="sr-only">{t('social.twitter')}</span>
           </motion.a>
           <motion.a
             href="https://discord.com"
@@ -70,9 +74,14 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             whileTap={{ scale: 0.95 }}
           >
             <MessageCircle size={16} />
-            <span className="sr-only">Discord</span>
+            <span className="sr-only">{t('social.discord')}</span>
           </motion.a>
         </div>
+
+        {/* Language Selector */}
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <LanguageSelector />
+        </motion.div>
 
         {/* Theme toggle */}
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -83,7 +92,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 hover:bg-lime-500/10 border-0 transition-all duration-300"
           >
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-            <span className="sr-only">Basculer le mode sombre</span>
+            <span className="sr-only">{t('landing.header.toggleDarkMode')}</span>
           </Button>
         </motion.div>
 
@@ -92,8 +101,8 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="[&>div]:bg-gradient-to-r [&>div]:from-lime-500 [&>div]:to-green-500 [&>div]:border-0 [&>div]:shadow-lg [&>div]:hover:shadow-lime-500/25 [&>div]:transition-all [&>div]:duration-300">
-            <ConnectWallet />
+          <div className="[&>div>button]:bg-gradient-to-r [&>div>button]:from-lime-500 [&>div>button]:to-green-500 [&>div>button]:border-0 [&>div>button]:shadow-lg [&>div>button]:hover:shadow-lime-500/25 [&>div>button]:transition-all [&>div>button]:duration-300 [&>div>button]:hover:from-lime-600 [&>div>button]:hover:to-green-600">
+            <ConnectButton />
           </div>
         </motion.div>
         </div>

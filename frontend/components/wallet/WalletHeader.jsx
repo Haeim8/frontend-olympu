@@ -3,6 +3,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   Wallet, 
   RefreshCw, 
@@ -19,6 +20,8 @@ export default function WalletHeader({
   isLoading,
   walletInfo 
 }) {
+  const { t } = useTranslation();
+  
   const formatAddress = (addr) => {
     if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -31,10 +34,10 @@ export default function WalletHeader({
 
   const getWalletStatus = () => {
     const totalValue = parseFloat(walletInfo.totalInvested);
-    if (totalValue === 0) return { status: 'new', label: 'Nouveau', color: 'bg-blue-100 text-blue-800' };
-    if (totalValue < 1) return { status: 'beginner', label: 'Débutant', color: 'bg-green-100 text-green-800' };
-    if (totalValue < 10) return { status: 'active', label: 'Actif', color: 'bg-purple-100 text-purple-800' };
-    return { status: 'whale', label: 'Investisseur', color: 'bg-orange-100 text-orange-800' };
+    if (totalValue === 0) return { status: 'new', label: t('wallet.status.new'), color: 'bg-blue-100 text-blue-800' };
+    if (totalValue < 1) return { status: 'beginner', label: t('wallet.status.beginner'), color: 'bg-green-100 text-green-800' };
+    if (totalValue < 10) return { status: 'active', label: t('wallet.status.active'), color: 'bg-purple-100 text-purple-800' };
+    return { status: 'whale', label: t('wallet.status.investor'), color: 'bg-orange-100 text-orange-800' };
   };
 
   const walletStatus = getWalletStatus();
@@ -72,20 +75,20 @@ export default function WalletHeader({
                 </Badge>
                 <Badge className="bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 px-3 py-1">
                   <Activity className="h-3 w-3 mr-1" />
-                  En ligne
+                  {t('wallet.online')}
                 </Badge>
               </div>
 
               <div className="space-y-4">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-gray-100 dark:via-gray-200 dark:to-gray-300 bg-clip-text text-transparent leading-tight">
-                  Votre portefeuille
+                  {t('wallet.header.title')}
                   <span className="block bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-                    d'investissements
+                    {t('wallet.header.subtitle')}
                   </span>
                 </h1>
                 
                 <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed">
-                  Gérez vos NFT, suivez vos investissements et consultez vos dividendes en temps réel.
+                  {t('wallet.header.description')}
                 </p>
               </div>
 
@@ -97,7 +100,7 @@ export default function WalletHeader({
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-                      Adresse connectée
+                      {t('wallet.connectedAddress')}
                     </p>
                     <button
                       onClick={() => copyToClipboard(address)}
@@ -114,7 +117,7 @@ export default function WalletHeader({
                 <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-neutral-700/50">
                   <div className="flex items-center gap-2 mb-1">
                     <TrendingUp className="h-4 w-4 text-green-600" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Investissements</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{t('wallet.stats.investments')}</span>
                   </div>
                   <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
                     {walletInfo.totalInvested} ETH
@@ -156,7 +159,7 @@ export default function WalletHeader({
                 <RefreshCw className={`h-4 w-4 mr-2 transition-transform duration-500 ${
                   isLoading ? 'animate-spin' : 'group-hover:rotate-180'
                 }`} />
-                Actualiser
+                {t('wallet.refresh')}
               </Button>
 
               {/* Export Button */}
@@ -165,7 +168,7 @@ export default function WalletHeader({
                 className="bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border-gray-200/50 dark:border-neutral-700/50 hover:bg-white dark:hover:bg-neutral-800"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Exporter
+                {t('wallet.export')}
               </Button>
 
               {/* Settings Button */}
@@ -174,7 +177,7 @@ export default function WalletHeader({
                 className="bg-white/80 dark:bg-neutral-800/80 backdrop-blur-sm border-gray-200/50 dark:border-neutral-700/50 hover:bg-white dark:hover:bg-neutral-800"
               >
                 <Settings className="h-4 w-4 mr-2" />
-                Paramètres
+                {t('wallet.settings')}
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 
 export default function CampaignSocial({ campaignData, campaignAddress, onSocialUpdate }) {
+  const { t } = useTranslation();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [socialLinks, setSocialLinks] = useState({
     twitter: '',
@@ -58,18 +60,18 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
       }
       
       setShowEditDialog(false);
-      alert('Liens sociaux mis à jour avec succès !');
+      alert(t('campaignSocial.updateSuccess'));
       
     } catch (error) {
       console.error('Erreur mise à jour liens sociaux:', error);
-      alert('Erreur lors de la mise à jour');
+      alert(t('campaignSocial.updateError'));
     } finally {
       setIsUpdating(false);
     }
   };
 
   const shareOnPlatform = (platform) => {
-    const shareText = `Découvrez la campagne ${campaignData?.name || 'cette campagne'} sur Livar !`;
+    const shareText = `${t('campaignSocial.shareText')} ${campaignData?.name || t('campaignSocial.thisCampaign')} ${t('campaignSocial.onLivar')} !`;
     const shareUrl = window.location.href;
     
     const shareUrls = {
@@ -87,7 +89,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      alert('Lien copié dans le presse-papiers !');
+      alert(t('campaignSocial.linkCopied'));
     } catch (err) {
       console.error('Erreur copie:', err);
     }
@@ -172,19 +174,19 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
         <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-purple-500" />
-            Réseaux Sociaux et Communication
+            {t('campaignSocial.title')}
           </div>
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="text-gray-600 dark:text-gray-400">
                 <Edit className="h-4 w-4 mr-2" />
-                Modifier
+                {t('campaignSocial.edit')}
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-white dark:bg-neutral-950 max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-gray-900 dark:text-gray-100">
-                  Modifier les liens sociaux
+                  {t('campaignSocial.editSocialLinks')}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
@@ -196,7 +198,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                     id="twitter-link"
                     value={socialLinks.twitter}
                     onChange={(e) => handleSocialLinkChange('twitter', e.target.value)}
-                    placeholder="https://twitter.com/votre_compte"
+                    placeholder={t('campaignSocial.twitterPlaceholder')}
                     className="bg-gray-50 dark:bg-neutral-900 mt-1"
                   />
                 </div>
@@ -208,7 +210,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                     id="discord-link"
                     value={socialLinks.discord}
                     onChange={(e) => handleSocialLinkChange('discord', e.target.value)}
-                    placeholder="https://discord.gg/votre_serveur"
+                    placeholder={t('campaignSocial.discordPlaceholder')}
                     className="bg-gray-50 dark:bg-neutral-900 mt-1"
                   />
                 </div>
@@ -220,19 +222,19 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                     id="github-link"
                     value={socialLinks.github}
                     onChange={(e) => handleSocialLinkChange('github', e.target.value)}
-                    placeholder="https://github.com/votre_projet"
+                    placeholder={t('campaignSocial.githubPlaceholder')}
                     className="bg-gray-50 dark:bg-neutral-900 mt-1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="website-link" className="text-gray-700 dark:text-gray-300">
-                    Site Web
+                    {t('campaignSocial.website')}
                   </Label>
                   <Input
                     id="website-link"
                     value={socialLinks.website}
                     onChange={(e) => handleSocialLinkChange('website', e.target.value)}
-                    placeholder="https://votre-site.com"
+                    placeholder={t('campaignSocial.websitePlaceholder')}
                     className="bg-gray-50 dark:bg-neutral-900 mt-1"
                   />
                 </div>
@@ -242,7 +244,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                     onClick={() => setShowEditDialog(false)}
                     disabled={isUpdating}
                   >
-                    Annuler
+                    {t('campaignSocial.cancel')}
                   </Button>
                   <Button
                     onClick={handleUpdateSocialLinks}
@@ -252,10 +254,10 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                     {isUpdating ? (
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Mise à jour...
+                        {t('campaignSocial.updating')}
                       </div>
                     ) : (
-                      'Sauvegarder'
+                      t('campaignSocial.save')
                     )}
                   </Button>
                 </div>
@@ -274,7 +276,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                 {socialStats.followers}
               </p>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Followers</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignSocial.followers')}</p>
           </div>
           <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <div className="flex items-center justify-center gap-2 mb-1">
@@ -283,7 +285,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                 {socialStats.engagement}%
               </p>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Engagement</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignSocial.engagement')}</p>
           </div>
           <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="flex items-center justify-center gap-2 mb-1">
@@ -292,7 +294,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                 {socialStats.mentions}
               </p>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Mentions</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignSocial.mentions')}</p>
           </div>
           <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
             <div className="flex items-center justify-center gap-2 mb-1">
@@ -301,14 +303,14 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                 {socialStats.shares}
               </p>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Partages</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignSocial.shares')}</p>
           </div>
         </div>
 
         {/* Plateformes sociales */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Rejoindre la communauté
+            {t('campaignSocial.joinCommunity')}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {socialPlatforms.map((platform) => (
@@ -320,7 +322,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                   if (socialLinks[platform.id]) {
                     window.open(socialLinks[platform.id], '_blank');
                   } else {
-                    alert(`Lien ${platform.name} non configuré`);
+                    alert(t('campaignSocial.linkNotConfigured', { platform: platform.name }));
                   }
                 }}
               >
@@ -334,7 +336,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
         {/* Actions de partage */}
         <div className="mt-8">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Partager cette campagne
+            {t('campaignSocial.shareCampaign')}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Button
@@ -368,7 +370,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
               className="border-gray-300 dark:border-gray-600"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              Copier lien
+              {t('campaignSocial.copyLink')}
             </Button>
           </div>
         </div>
@@ -379,14 +381,14 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
             <Heart className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm">
               <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-                Conseils pour engager votre communauté
+                {t('campaignSocial.engagementTips.title')}
               </h4>
               <ul className="text-yellow-700 dark:text-yellow-300 space-y-1">
-                <li>• Partagez régulièrement les actualités de votre projet</li>
-                <li>• Répondez aux questions de vos investisseurs</li>
-                <li>• Montrez les progrès de développement</li>
-                <li>• Organisez des AMAs (Ask Me Anything) en live</li>
-                <li>• Remerciez votre communauté pour leur soutien</li>
+                <li>• {t('campaignSocial.engagementTips.tip1')}</li>
+                <li>• {t('campaignSocial.engagementTips.tip2')}</li>
+                <li>• {t('campaignSocial.engagementTips.tip3')}</li>
+                <li>• {t('campaignSocial.engagementTips.tip4')}</li>
+                <li>• {t('campaignSocial.engagementTips.tip5')}</li>
               </ul>
             </div>
           </div>

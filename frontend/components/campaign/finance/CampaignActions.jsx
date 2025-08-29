@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DollarSign, Share2, Repeat, Megaphone, ShieldCheck } from 'lucide-react';
@@ -14,6 +15,7 @@ export default function CampaignActions({
   onCertifyClick,
   onActionComplete 
 }) {
+  const { t } = useTranslation();
   const [isReleasingEscrow, setIsReleasingEscrow] = useState(false);
   const [escrowError, setEscrowError] = useState(null);
 
@@ -28,11 +30,11 @@ export default function CampaignActions({
         onActionComplete('escrow_released');
       }
       
-      alert("Escrow libéré avec succès !");
+      alert(t('campaignActions.escrowSuccess'));
       
     } catch (error) {
       console.error("Erreur lors de la libération de l'escrow:", error);
-      setEscrowError(error.message || "Erreur lors de la libération de l'escrow");
+      setEscrowError(error.message || t('campaignActions.escrowError'));
       alert(error.message);
     } finally {
       setIsReleasingEscrow(false);
@@ -42,13 +44,13 @@ export default function CampaignActions({
   const handleShareCampaign = () => {
     if (navigator.share) {
       navigator.share({
-        title: `Campagne ${campaignData.name}`,
-        text: `Découvrez cette campagne de financement participatif`,
+        title: t('campaignActions.shareTitle', { name: campaignData.name }),
+        text: t('campaignActions.shareText'),
         url: window.location.href,
       }).catch(console.error);
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert("Lien copié dans le presse-papiers !");
+      alert(t('campaignActions.linkCopied'));
     }
   };
 
@@ -70,7 +72,7 @@ export default function CampaignActions({
       <CardHeader>
         <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <Repeat className="h-5 w-5 text-blue-500" />
-          Actions de Campagne
+          {t('campaignActions.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -87,9 +89,9 @@ export default function CampaignActions({
             disabled={!canReopenCampaign()}
           >
             <Repeat className="mr-2 h-4 w-4" />
-            Rouvrir la Campagne
+            {t('campaignActions.reopen')}
             {!canReopenCampaign() && (
-              <span className="ml-2 text-xs opacity-60">(Campagne active)</span>
+              <span className="ml-2 text-xs opacity-60">({t('campaignActions.activeStatus')})</span>
             )}
           </Button>
           
@@ -98,7 +100,7 @@ export default function CampaignActions({
             onClick={handleShareCampaign}
           >
             <Share2 className="mr-2 h-4 w-4" />
-            Partager la Campagne
+            {t('campaignActions.share')}
           </Button>
           
           <Button 
@@ -110,14 +112,14 @@ export default function CampaignActions({
             {isReleasingEscrow ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Libération en cours...
+                {t('campaignActions.releasing')}
               </div>
             ) : (
               <>
-                Libérer l'Escrow
+                {t('campaignActions.releaseEscrow')}
                 {!canReleaseEscrow() && (
                   <span className="ml-2 text-xs opacity-80">
-                    (Objectif non atteint)
+                    ({t('campaignActions.goalNotReached')})
                   </span>
                 )}
               </>
@@ -129,7 +131,7 @@ export default function CampaignActions({
             onClick={onPromoteClick}
           >
             <Megaphone className="mr-2 h-4 w-4" />
-            Promouvoir la Campagne
+{t('campaignActions.promote')}
           </Button>
           
           {needsCertification() && (
@@ -138,19 +140,19 @@ export default function CampaignActions({
               onClick={onCertifyClick}
             >
               <ShieldCheck className="mr-2 h-4 w-4" />
-              Certifier la Campagne
+{t('campaignActions.certify')}
               <span className="ml-2 px-2 py-1 bg-blue-500 text-xs rounded-full">
-                Recommandé
+                {t('campaignActions.recommended')}
               </span>
             </Button>
           )}
 
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-              <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Informations:</h4>
-              <p>• <strong>Libérer l'Escrow:</strong> Disponible uniquement si l'objectif est atteint</p>
-              <p>• <strong>Rouvrir:</strong> Lance un nouveau round de financement</p>
-              <p>• <strong>Certifier:</strong> Validation par un avocat partenaire</p>
+              <h4 className="font-medium text-gray-700 dark:text-gray-300 mb-2">{t('campaignActions.information')}:</h4>
+              <p>• <strong>{t('campaignActions.releaseEscrow')}:</strong> {t('campaignActions.info1')}</p>
+              <p>• <strong>{t('campaignActions.reopen')}:</strong> {t('campaignActions.info2')}</p>
+              <p>• <strong>{t('campaignActions.certify')}:</strong> {t('campaignActions.info3')}</p>
             </div>
           </div>
         </div>

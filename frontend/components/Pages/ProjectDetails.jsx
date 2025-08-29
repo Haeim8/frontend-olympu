@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiManager } from '@/lib/services/api-manager';
+import { useTranslation } from '@/hooks/useLanguage';
 
 // Import des composants modulaires
 import ProjectHeader from '@/components/project/ProjectHeader';
@@ -22,6 +23,7 @@ const DEFAULT_PROJECT = {
 };
 
 export default function ProjectDetails({ selectedProject, onClose }) {
+  const { t } = useTranslation();
   const project = { ...DEFAULT_PROJECT, ...selectedProject };
   const [showProjectDetails, setShowProjectDetails] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -95,7 +97,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
   const handleBuyShares = useCallback(async (nftCount) => {
     if (!userAddress) {
-      setError("Veuillez vous connecter à votre portefeuille.");
+      setError(t('projectDetails.connectWallet'));
       return;
     }
 
@@ -111,7 +113,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       });
 
       if (receipt?.transactionHash) {
-        console.log("Transaction confirmée:", receipt.transactionHash);
+        console.log(t('projectDetails.transactionConfirmed'), receipt.transactionHash);
         
         // Invalider le cache pour recharger les données mises à jour
         apiManager.invalidateCache(`campaign_${project.id}`);
@@ -123,8 +125,8 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         setError(null);
       }
     } catch (err) {
-      console.error("Erreur lors de l'achat:", err);
-      setError(err.message || 'Erreur lors de la transaction');
+      console.error(t('projectDetails.purchaseError'), err);
+      setError(err.message || t('projectDetails.transactionError'));
     }
   }, [userAddress, project.sharePrice, project.id, loadProjectData]);
 
@@ -162,20 +164,20 @@ export default function ProjectDetails({ selectedProject, onClose }) {
             <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">⚠️</span>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Erreur de chargement</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('projectDetails.error.title')}</h3>
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={handleRefresh}
                 className="px-4 py-2 bg-lime-500 hover:bg-lime-600 text-white rounded-lg transition-colors"
               >
-                Réessayer
+                {t('projectDetails.error.retry')}
               </button>
               <button
                 onClick={() => { setShowProjectDetails(false); onClose(); }}
                 className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors"
               >
-                Fermer
+                {t('projectDetails.error.close')}
               </button>
             </div>
           </div>
@@ -212,13 +214,13 @@ export default function ProjectDetails({ selectedProject, onClose }) {
             <Tabs defaultValue="overview" className="w-full mt-8">
               <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-neutral-800">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-lime-500 data-[state=active]:text-white">
-                  Vue d'ensemble
+                  {t('projectDetails.tabs.overview')}
                 </TabsTrigger>
                 <TabsTrigger value="details" className="data-[state=active]:bg-lime-500 data-[state=active]:text-white">
-                  Détails
+                  {t('projectDetails.tabs.details')}
                 </TabsTrigger>
                 <TabsTrigger value="transactions" className="data-[state=active]:bg-lime-500 data-[state=active]:text-white">
-                  Transactions
+                  {t('projectDetails.tabs.transactions')}
                 </TabsTrigger>
               </TabsList>
 

@@ -1,0 +1,14 @@
+{
+  "network": "Base Sepolia",
+  "chainId": 84532,
+  "deploymentTime": "2025-08-26T08:02:28.489Z",
+  "deployer": "0x8dfE7918F36ddabF0DcfaB01B2762c6c0a4b9dfC",
+  "contracts": {
+    "priceConsumer": "0x0888C31a910c44a5291F9E4f6Eb440Df74f581Db",
+    "divarProxy": "0xaB0999Eae920849a41A55eA080d0a4a210156817",
+    "campaignKeeper": "0xcCD7381A3bD40F992DADc82FAaC7491d738E6b4F",
+    "nftRenderer": "0x291E1ac04617dCdA2676a50E9dc59EF45Ff812d7",
+    "recPromotionManager": "0x11Ec8942942489f5128b3E69156C02CC9170fA28"
+  },
+  "explorer": "https://sepolia-explorer.base.org"
+}

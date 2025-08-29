@@ -1,8 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import CampaignCard from './CampaignCard';
+import { PromotionService } from '@/lib/services/promotion-service';
+import { useTranslation } from '@/hooks/useLanguage';
 import { RefreshCw, TrendingUp, Search, Grid3X3 } from 'lucide-react';
 
 export default function CampaignGrid({ 
@@ -14,10 +16,50 @@ export default function CampaignGrid({
   onRefresh,
   onPreloadHover
 }) {
-  
-  const filteredProjects = projects.filter(project => 
+  const { t } = useTranslation();
+  const [promotions, setPromotions] = useState([]);
+
+  // Charger les promotions actives
+  useEffect(() => {
+    const loadPromotions = async () => {
+      try {
+        const activePromotions = await PromotionService.getActivePromotions();
+        setPromotions(activePromotions);
+      } catch (error) {
+        console.warn('Erreur chargement promotions:', error);
+      }
+    };
+
+    loadPromotions();
+  }, []);
+
+  const projectsArray = Array.isArray(projects) ? projects : [];
+  const filteredProjects = projectsArray.filter(project => 
     showFinalized ? project.isFinalized : (!project.isFinalized && project.isActive)
   );
+
+  // Trier les projets avec les campagnes boostées en premier
+  const promotionsArray = Array.isArray(promotions) ? promotions : [];
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    const promotionA = promotionsArray.find(p => 
+      p.campaign_address?.toLowerCase() === a.address?.toLowerCase()
+    );
+    const promotionB = promotionsArray.find(p => 
+      p.campaign_address?.toLowerCase() === b.address?.toLowerCase()
+    );
+
+    // Les campagnes boostées d'abord
+    if (promotionA && !promotionB) return -1;
+    if (!promotionA && promotionB) return 1;
+    
+    // Si les deux sont boostées, trier par type de boost (SPOTLIGHT > TRENDING > FEATURED)
+    if (promotionA && promotionB) {
+      return (promotionB.boost_type || 0) - (promotionA.boost_type || 0);
+    }
+
+    // Sinon trier par statut actif
+    return b.isActive - a.isActive;
+  });
 
   // États de chargement avec skeleton
   if (isLoading) {
@@ -81,7 +123,7 @@ export default function CampaignGrid({
             <Search className="w-8 h-8 text-red-500 dark:text-red-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Erreur de chargement
+            {t('campaigns.error.title', 'Erreur de chargement')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
             {error}
@@ -91,7 +133,7 @@ export default function CampaignGrid({
             className="bg-red-500 hover:bg-red-600 text-white"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Réessayer
+            {t('campaigns.error.retry', 'Réessayer')}
           </Button>
         </div>
       </div>
@@ -108,10 +150,10 @@ export default function CampaignGrid({
           </div>
           <div className="space-y-2">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Aucune campagne disponible
+              {t('campaigns.empty.title', 'Aucune campagne disponible')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Il n'y a pas encore de campagnes de financement. Soyez le premier à lancer votre projet !
+              {t('campaigns.empty.description', 'Il n\'y a pas encore de campagnes de financement. Soyez le premier à lancer votre projet !')}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -121,7 +163,7 @@ export default function CampaignGrid({
               className="border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-900"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
-              Actualiser
+              {t('campaigns.refresh', 'Actualiser')}
             </Button>
           </div>
         </div>
@@ -140,7 +182,7 @@ export default function CampaignGrid({
               <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {showFinalized ? 'Campagnes finalisées' : 'Campagnes en cours'}
+              {showFinalized ? t('campaigns.finalized_title', 'Campagnes finalisées') : t('campaigns.ongoing_title', 'Campagnes en cours')}
             </h2>
             <span className="px-3 py-1 bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-400 rounded-full text-sm font-medium">
               {filteredProjects.length}
@@ -152,7 +194,7 @@ export default function CampaignGrid({
             className="border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-900"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Actualiser
+            {t('campaigns.refresh', 'Actualiser')}
           </Button>
         </div>
 
@@ -163,12 +205,14 @@ export default function CampaignGrid({
               <Search className="w-8 h-8 text-gray-400 dark:text-gray-600" />
             </div>
             <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">
-              Aucune campagne {showFinalized ? 'finalisée' : 'en cours'}
+              {showFinalized 
+                ? t('campaigns.no_finalized', 'Aucune campagne finalisée') 
+                : t('campaigns.no_ongoing', 'Aucune campagne en cours')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               {showFinalized 
-                ? 'Aucune campagne n\'a encore été finalisée.' 
-                : 'Aucune campagne n\'est actuellement active.'}
+                ? t('campaigns.no_finalized_desc', 'Aucune campagne n\'a encore été finalisée.') 
+                : t('campaigns.no_ongoing_desc', 'Aucune campagne n\'est actuellement active.')}
             </p>
           </div>
         </div>
@@ -186,7 +230,7 @@ export default function CampaignGrid({
             <TrendingUp className="w-5 h-5 text-lime-600 dark:text-lime-400" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {showFinalized ? 'Campagnes finalisées' : 'Campagnes en cours'}
+            {showFinalized ? t('campaigns.finalized_title', 'Campagnes finalisées') : t('campaigns.ongoing_title', 'Campagnes en cours')}
           </h2>
           <span className="px-3 py-1 bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 rounded-full text-sm font-semibold">
             {filteredProjects.length}
@@ -198,13 +242,13 @@ export default function CampaignGrid({
           className="border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-900 group"
         >
           <RefreshCw className="w-4 h-4 mr-2 group-hover:rotate-180 transition-transform duration-500" />
-          Actualiser
+          {t('campaigns.refresh', 'Actualiser')}
         </Button>
       </div>
 
       {/* Grid des campagnes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredProjects.map((project, index) => (
+        {sortedProjects.map((project, index) => (
           <div
             key={project.id}
             className="animate-in fade-in slide-in-from-bottom-4"
@@ -227,8 +271,12 @@ export default function CampaignGrid({
       {filteredProjects.length > 0 && (
         <div className="text-center pt-8">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {filteredProjects.length} campagne{filteredProjects.length > 1 ? 's' : ''} {showFinalized ? 'finalisée' : 'active'}{filteredProjects.length > 1 ? 's' : ''} • 
-            Mis à jour il y a quelques instants
+            {t('campaigns.footer_info', '{count} campagne{plural} {status}{pluralStatus} • Mis à jour il y a quelques instants', {
+              count: filteredProjects.length,
+              plural: filteredProjects.length > 1 ? 's' : '',
+              status: showFinalized ? 'finalisée' : 'active',
+              pluralStatus: filteredProjects.length > 1 ? 's' : ''
+            })}
           </p>
         </div>
       )}

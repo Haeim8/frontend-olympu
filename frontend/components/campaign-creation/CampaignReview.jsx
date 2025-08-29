@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -55,6 +56,8 @@ const ReviewSection = ({ icon: Icon, title, children, status = 'complete' }) => 
 };
 
 const InfoRow = ({ label, value, type = 'text' }) => {
+  const { t } = useTranslation();
+  
   const formatValue = () => {
     switch (type) {
       case 'eth':
@@ -72,7 +75,7 @@ const InfoRow = ({ label, value, type = 'text' }) => {
       case 'array':
         return Array.isArray(value) ? value.join(', ') : value;
       default:
-        return value || 'Non renseigné';
+        return value || t('campaignReview.notProvided');
     }
   };
 
@@ -89,6 +92,7 @@ const InfoRow = ({ label, value, type = 'text' }) => {
 };
 
 const EstimatedCosts = ({ sharePrice, numberOfShares, royaltyFee }) => {
+  const { t } = useTranslation();
   const targetAmount = parseFloat(sharePrice || 0) * parseFloat(numberOfShares || 0);
   const platformFee = 0.05; // 5% de frais de plateforme estimés
   const gasFees = 0.01; // Frais de gas estimés
@@ -97,24 +101,24 @@ const EstimatedCosts = ({ sharePrice, numberOfShares, royaltyFee }) => {
     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
       <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
         <DollarSign className="h-4 w-4" />
-        Estimation des coûts
+        {t('campaignReview.costEstimation')}
       </h4>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
-          <span className="text-blue-800 dark:text-blue-200">Objectif de financement:</span>
+          <span className="text-blue-800 dark:text-blue-200">{t('campaignReview.fundingGoal')}:</span>
           <span className="font-semibold text-blue-900 dark:text-blue-100">{targetAmount.toFixed(6)} ETH</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-blue-800 dark:text-blue-200">Frais de création (estimation):</span>
+          <span className="text-blue-800 dark:text-blue-200">{t('campaignReview.creationFees')}:</span>
           <span className="font-semibold text-blue-900 dark:text-blue-100">{platformFee.toFixed(3)} ETH</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-blue-800 dark:text-blue-200">Frais de gas (estimation):</span>
+          <span className="text-blue-800 dark:text-blue-200">{t('campaignReview.gasFees')}:</span>
           <span className="font-semibold text-blue-900 dark:text-blue-100">{gasFees.toFixed(3)} ETH</span>
         </div>
         <div className="border-t border-blue-200 dark:border-blue-700 pt-2 mt-2">
           <div className="flex justify-between">
-            <span className="text-blue-800 dark:text-blue-200 font-semibold">Total estimé:</span>
+            <span className="text-blue-800 dark:text-blue-200 font-semibold">{t('campaignReview.estimatedTotal')}:</span>
             <span className="font-bold text-blue-900 dark:text-blue-100">
               {(platformFee + gasFees).toFixed(3)} ETH
             </span>
@@ -132,6 +136,8 @@ export default function CampaignReview({
   onAcceptTerms,
   onSubmit
 }) {
+  const { t } = useTranslation();
+  
   const getDocumentCount = () => {
     return Object.values(formData.documents).reduce((count, docs) => {
       return count + (Array.isArray(docs) ? docs.length : 0);
@@ -146,15 +152,15 @@ export default function CampaignReview({
     const warnings = [];
     
     if (!formData.documents.whitepaper?.length) {
-      warnings.push("Aucun whitepaper téléchargé");
+      warnings.push(t('campaignReview.noWhitepaper'));
     }
     
     if (formData.teamMembers.length < 2) {
-      warnings.push("Équipe réduite (moins de 2 membres)");
+      warnings.push(t('campaignReview.smallTeam'));
     }
     
     if (getSocialLinksCount() < 2) {
-      warnings.push("Peu de liens sociaux (moins de 2)");
+      warnings.push(t('campaignReview.fewSocialLinks'));
     }
 
     return warnings;
@@ -170,10 +176,10 @@ export default function CampaignReview({
           <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Vérification Finale
+          {t('campaignReview.title')}
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Vérifiez attentivement toutes les informations avant de créer votre campagne
+          {t('campaignReview.subtitle')}
         </p>
       </div>
 
@@ -182,7 +188,7 @@ export default function CampaignReview({
         <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800 dark:text-orange-200">
-            <strong>Points d'attention:</strong>
+            <strong>{t('campaignReview.warnings')}:</strong>
             <ul className="list-disc list-inside mt-2 space-y-1">
               {warnings.map((warning, index) => (
                 <li key={index}>{warning}</li>
@@ -194,47 +200,50 @@ export default function CampaignReview({
 
       <div className="grid gap-6">
         {/* Informations de base */}
-        <ReviewSection icon={Info} title="Informations de Base">
+        <ReviewSection icon={Info} title={t('campaignReview.basicInfo')}>
           <div className="space-y-1">
-            <InfoRow label="Nom du projet" value={formData.name} />
-            <InfoRow label="Symbole" value={formData.symbol} />
-            <InfoRow label="Secteur" value={formData.sector === 'Autre' ? formData.otherSector : formData.sector} />
-            <InfoRow label="Prix par part" value={formData.sharePrice} type="eth" />
-            <InfoRow label="Nombre de parts" value={formData.numberOfShares} />
-            <InfoRow label="Objectif" value={(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)} type="eth" />
-            <InfoRow label="Date de fin" value={formData.endDate} type="date" />
-            <InfoRow label="Royalties" value={formData.royaltyFee} type="percentage" />
+            <InfoRow label={t('campaignReview.projectName')} value={formData.name} />
+            <InfoRow label={t('campaignReview.symbol')} value={formData.symbol} />
+            <InfoRow label={t('campaignReview.sector')} value={formData.sector === 'Autre' ? formData.otherSector : formData.sector} />
+            <InfoRow label={t('campaignReview.pricePerShare')} value={formData.sharePrice} type="eth" />
+            <InfoRow label={t('campaignReview.numberOfShares')} value={formData.numberOfShares} />
+            <InfoRow label={t('campaignReview.goal')} value={(parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0)).toFixed(6)} type="eth" />
+            <InfoRow label={t('campaignReview.endDate')} value={formData.endDate} type="date" />
+            <InfoRow label={t('campaignReview.royalties')} value={formData.royaltyFee} type="percentage" />
           </div>
         </ReviewSection>
 
         {/* Documents */}
         <ReviewSection 
           icon={FileText} 
-          title="Documents" 
+          title={t('campaignReview.documents')} 
           status={getDocumentCount() === 0 ? 'warning' : 'complete'}
         >
           <div className="space-y-1">
-            <InfoRow label="Whitepaper" value={formData.documents.whitepaper?.length || 0} />
-            <InfoRow label="Pitch Deck" value={formData.documents.pitchDeck?.length || 0} />
-            <InfoRow label="Documents légaux" value={formData.documents.legalDocuments?.length || 0} />
-            <InfoRow label="Médias" value={formData.documents.media?.length || 0} />
+            <InfoRow label={t('campaignReview.whitepaper')} value={formData.documents.whitepaper?.length || 0} />
+            <InfoRow label={t('campaignReview.pitchDeck')} value={formData.documents.pitchDeck?.length || 0} />
+            <InfoRow label={t('campaignReview.legalDocuments')} value={formData.documents.legalDocuments?.length || 0} />
+            <InfoRow label={t('campaignReview.media')} value={formData.documents.media?.length || 0} />
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            Total: {getDocumentCount()} document{getDocumentCount() > 1 ? 's' : ''} téléchargé{getDocumentCount() > 1 ? 's' : ''}
+            {t('campaignReview.totalDocuments', { 
+              count: getDocumentCount(), 
+              plural: getDocumentCount() > 1 ? 's' : '' 
+            })}
           </div>
         </ReviewSection>
 
         {/* Équipe */}
         <ReviewSection 
           icon={Users} 
-          title="Équipe" 
+          title={t('campaignReview.team')} 
           status={formData.teamMembers.length === 0 ? 'warning' : 'complete'}
         >
           <div className="space-y-2">
             {formData.teamMembers.map((member, index) => (
               <div key={index} className="flex items-center justify-between py-1">
                 <span className="text-sm text-gray-900 dark:text-gray-100">
-                  {member.name || `Membre ${index + 1}`}
+                  {member.name || t('campaignReview.member', { number: index + 1 })}
                 </span>
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   {member.role}
@@ -244,7 +253,7 @@ export default function CampaignReview({
           </div>
           {formData.teamMembers.length === 0 && (
             <p className="text-sm text-orange-600 dark:text-orange-400">
-              Aucun membre d'équipe ajouté
+              {t('campaignReview.noTeamMembers')}
             </p>
           )}
         </ReviewSection>
@@ -252,7 +261,7 @@ export default function CampaignReview({
         {/* Réseaux sociaux */}
         <ReviewSection 
           icon={Globe} 
-          title="Réseaux Sociaux" 
+          title={t('campaignReview.socialNetworks')} 
           status={getSocialLinksCount() === 0 ? 'warning' : 'complete'}
         >
           <div className="space-y-1">
@@ -274,7 +283,7 @@ export default function CampaignReview({
           </div>
           {getSocialLinksCount() === 0 && (
             <p className="text-sm text-orange-600 dark:text-orange-400">
-              Aucun lien social ajouté
+              {t('campaignReview.noSocialLinks')}
             </p>
           )}
         </ReviewSection>
@@ -301,12 +310,11 @@ export default function CampaignReview({
               htmlFor="acceptTerms" 
               className="text-sm text-gray-900 dark:text-gray-100 cursor-pointer leading-relaxed"
             >
-              J'accepte les{' '}
+              {t('campaignReview.acceptTerms')}{' '}
               <a href="#" className="text-lime-600 hover:text-lime-700 underline">
-                conditions générales d'utilisation
+                {t('campaignReview.termsOfService')}
               </a>{' '}
-              et je confirme que toutes les informations fournies sont exactes et véridiques.
-              Je comprends que la création de cette campagne engagera des frais sur la blockchain.
+              {t('campaignReview.termsText')}
             </Label>
           </div>
         </div>
@@ -328,12 +336,12 @@ export default function CampaignReview({
           {isLoading ? (
             <div className="flex items-center space-x-2">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              <span>Création en cours...</span>
+              <span>{t('campaignReview.creatingInProgress')}</span>
             </div>
           ) : (
             <div className="flex items-center space-x-2">
               <Sparkles className="h-5 w-5" />
-              <span>Créer ma campagne</span>
+              <span>{t('campaignReview.createCampaign')}</span>
             </div>
           )}
         </Button>
@@ -344,7 +352,7 @@ export default function CampaignReview({
         <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800 dark:text-red-200">
-            <strong>Erreur:</strong> {error.general}
+            <strong>{t('campaignReview.errorGeneral')}</strong> {error.general}
           </AlertDescription>
         </Alert>
       )}
@@ -353,13 +361,13 @@ export default function CampaignReview({
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
         <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
           <Shield className="h-4 w-4" />
-          Informations importantes
+          {t('campaignReview.importantInfo')}
         </h3>
         <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-          <li>• Une fois créée, la campagne ne pourra plus être modifiée</li>
-          <li>• Les fonds collectés seront bloqués jusqu'à la fin de la campagne</li>
-          <li>• Vous recevrez un email de confirmation après la création</li>
-          <li>• La campagne sera visible publiquement sur la plateforme</li>
+          <li>• {t('campaignReview.info1')}</li>
+          <li>• {t('campaignReview.info2')}</li>
+          <li>• {t('campaignReview.info3')}</li>
+          <li>• {t('campaignReview.info4')}</li>
         </ul>
       </div>
     </div>

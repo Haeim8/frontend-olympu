@@ -7,6 +7,6 @@
       "outDir": "dist",
       "resolveJsonModule": true
     },
-    "include": ["./scripts", "./test", "divartest.js", "divar-test.js"],
+    "include": ["./scripts", "./test", "divartest.js", "divar-test.js", "covrage.js"],
     "files": ["./hardhat.config.js"]
   }

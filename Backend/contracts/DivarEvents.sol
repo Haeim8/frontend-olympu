@@ -46,6 +46,7 @@ contract DivarEvents {
         bool success
     );
 
-    // Événement commission supprimé - commission désormais fixe
-     
+    event NFTRendererUpdated(
+        address indexed newNFTRenderer
+    );
 }

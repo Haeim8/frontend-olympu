@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +13,7 @@ import { BarChart, Search, Filter, ExternalLink, TrendingUp, TrendingDown } from
 import { apiManager } from '@/lib/services/api-manager';
 
 export default function TransactionHistory({ campaignAddress, onPreloadHover }) {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,7 +44,8 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
   };
 
   const filteredAndSortedTransactions = () => {
-    let filtered = transactions;
+    // Vérifier que transactions est bien un array
+    let filtered = Array.isArray(transactions) ? transactions : [];
 
     if (filter !== 'all') {
       filtered = filtered.filter(tx => 
@@ -93,10 +96,13 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
   };
 
   const getTransactionStats = () => {
-    const totalTransactions = transactions.length;
-    const purchases = transactions.filter(tx => tx.type === 'Achat').length;
-    const refunds = transactions.filter(tx => tx.type === 'Remboursement').length;
-    const totalVolume = transactions.reduce((sum, tx) => sum + parseFloat(tx.value || 0), 0);
+    // Vérifier que transactions est bien un array
+    const txArray = Array.isArray(transactions) ? transactions : [];
+    
+    const totalTransactions = txArray.length;
+    const purchases = txArray.filter(tx => tx.type === 'Achat').length;
+    const refunds = txArray.filter(tx => tx.type === 'Remboursement').length;
+    const totalVolume = txArray.reduce((sum, tx) => sum + parseFloat(tx.value || 0), 0);
 
     return { totalTransactions, purchases, refunds, totalVolume };
   };
@@ -150,7 +156,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
           </div>
           <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              {new Set(transactions.map(tx => tx.investor)).size}
+              {Array.isArray(transactions) ? new Set(transactions.map(tx => tx.investor)).size : 0}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Investisseurs uniques</p>
           </div>
@@ -196,12 +202,12 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
           <Table>
             <TableHeader className="sticky top-0 bg-gray-50 dark:bg-neutral-900">
               <TableRow>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Type</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Investisseur</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">NFTs</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Montant</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Block</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">Action</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.type')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.investor')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.nfts')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.amount')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.block')}</TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -219,7 +225,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
               ) : filteredAndSortedTransactions().length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-gray-500 dark:text-gray-400 py-8">
-                    {searchTerm || filter !== 'all' ? 'Aucune transaction trouvée avec ces filtres' : 'Aucune transaction'}
+                    {searchTerm || filter !== 'all' ? t('transactionHistory.noTransactionsFiltered') : t('transactionHistory.noTransactions')}
                   </TableCell>
                 </TableRow>
               ) : (

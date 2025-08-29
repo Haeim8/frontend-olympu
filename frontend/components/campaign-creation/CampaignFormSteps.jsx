@@ -2,14 +2,17 @@
 
 import React from 'react';
 import { CheckCircle, Circle, ArrowRight } from 'lucide-react';
+import { useTranslation } from '@/hooks/useLanguage';
 
 const StepIndicator = ({ currentStep, totalSteps }) => {
+  const { t } = useTranslation();
+  
   const steps = [
-    { number: 1, title: 'Informations', description: 'Détails du projet' },
-    { number: 2, title: 'Documents', description: 'Fichiers requis' },
-    { number: 3, title: 'Équipe', description: 'Membres & réseaux' },
-    { number: 4, title: 'NFT', description: 'Design & aperçu' },
-    { number: 5, title: 'Vérification', description: 'Validation finale' }
+    { number: 1, title: t('campaignSteps.information'), description: t('campaignSteps.informationDesc') },
+    { number: 2, title: t('campaignSteps.documents'), description: t('campaignSteps.documentsDesc') },
+    { number: 3, title: t('campaignSteps.team'), description: t('campaignSteps.teamDesc') },
+    { number: 4, title: t('campaignSteps.nft'), description: t('campaignSteps.nftDesc') },
+    { number: 5, title: t('campaignSteps.verification'), description: t('campaignSteps.verificationDesc') }
   ];
 
   return (

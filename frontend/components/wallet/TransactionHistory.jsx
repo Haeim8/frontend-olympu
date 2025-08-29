@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   History,
   Search,
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react';
 
 const TransactionRow = ({ transaction, index }) => {
+  const { t } = useTranslation();
+  
   const getTransactionIcon = (type) => {
     switch (type) {
       case 'Investment':
@@ -76,7 +79,7 @@ const TransactionRow = ({ transaction, index }) => {
             {transaction.project}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Campagne
+            {t('wallet.transaction.campaign')}
           </p>
         </div>
       </td>
@@ -87,7 +90,7 @@ const TransactionRow = ({ transaction, index }) => {
             {transaction.amount}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {transaction.type === 'Investment' ? 'Investi' : 'Reçu'}
+            {transaction.type === t('wallet.investment') ? t('wallet.transaction.invested') : t('wallet.transaction.received')}
           </p>
         </div>
       </td>
@@ -108,7 +111,7 @@ const TransactionRow = ({ transaction, index }) => {
             onClick={() => window.open(`https://sepolia.basescan.org/address/${transaction.txHash}`, '_blank')}
           >
             <ExternalLink className="h-3 w-3 mr-1" />
-            Voir
+            {t('wallet.transaction.view')}
           </Button>
         </div>
       </td>
@@ -117,6 +120,7 @@ const TransactionRow = ({ transaction, index }) => {
 };
 
 export default function TransactionHistory({ transactions, isLoading }) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('date');
@@ -191,7 +195,7 @@ export default function TransactionHistory({ transactions, isLoading }) {
           <div className="space-y-1">
             <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <History className="h-5 w-5 text-purple-600" />
-              Historique des transactions
+              {t('wallet.transaction.title')}
               <Badge className="bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
                 {transactions.length}
               </Badge>

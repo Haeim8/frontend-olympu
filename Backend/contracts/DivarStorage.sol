@@ -4,8 +4,6 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract DivarStorage is Initializable {
-    // Platform settings - commission fixe de 12%
-    uint256 public constant PLATFORM_COMMISSION_PERCENT = 12;
 
 
 
@@ -30,14 +28,19 @@ contract DivarStorage is Initializable {
     mapping(string => address[]) public campaignsByCategory;
     
     address[] public allCampaigns;
+    
+    // ⚠️  NOUVELLES VARIABLES - TOUJOURS A LA FIN POUR UPGRADES !
+    address public nftRenderer;
    
-    function _initializeStorage(address _treasury, address _priceConsumer) internal onlyInitializing {
+    function _initializeStorage(address _treasury, address _priceConsumer, address _nftRenderer) internal onlyInitializing {
         require(_treasury != address(0), "DIVAR: Invalid treasury");
         require(_priceConsumer != address(0), "DIVAR: Invalid price consumer");
+        require(_nftRenderer != address(0), "DIVAR: Invalid nft renderer");
         treasury = _treasury;
         priceConsumer = _priceConsumer;
+        nftRenderer = _nftRenderer;
     }
     
-    uint256[48] private __gap;
+    uint256[47] private __gap; // Réduit car nftRenderer ajoute 1 slot
 
 }

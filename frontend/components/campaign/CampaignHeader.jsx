@@ -1,10 +1,13 @@
 "use client";
 
 import React from 'react';
+import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 export default function CampaignHeader({ campaignData, isLoading, error }) {
+  const { t } = useTranslation();
+  
   if (isLoading) {
     return (
       <div className="animate-pulse">
@@ -33,7 +36,7 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
   if (error) {
     return (
       <div className="p-4 bg-red-50 dark:bg-red-900 rounded-lg">
-        <p className="text-red-600 dark:text-red-200">Erreur : {error}</p>
+        <p className="text-red-600 dark:text-red-200">{t('campaignHeader.error')}: {error}</p>
       </div>
     );
   }
@@ -41,7 +44,7 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
   if (!campaignData) {
     return (
       <div className="p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
-        <p className="text-yellow-600 dark:text-yellow-200">Aucune donnée de campagne disponible.</p>
+        <p className="text-yellow-600 dark:text-yellow-200">{t('campaignHeader.noData')}</p>
       </div>
     );
   }
@@ -49,24 +52,28 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
   const progressPercentage = ((parseFloat(campaignData.raised) / parseFloat(campaignData.goal)) * 100) || 0;
   
   const formatTimeRemaining = (timeRemaining) => {
-    if (timeRemaining <= 0) return "Campagne terminée";
+    if (timeRemaining <= 0) return t('campaignHeader.ended');
     const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
     const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     
     if (days > 0) {
-      return `${days} jour${days > 1 ? 's' : ''} restant${days > 1 ? 's' : ''}`;
+      return t('campaignHeader.daysLeft', { count: days, plural: days > 1 ? 's' : '' });
     } else if (hours > 0) {
-      return `${hours} heure${hours > 1 ? 's' : ''} restante${hours > 1 ? 's' : ''}`;
+      return t('campaignHeader.hoursLeft', { count: hours, plural: hours > 1 ? 's' : '' });
     } else {
-      return "Moins d'une heure";
+      return t('campaignHeader.lessThanHour');
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "En cours":
+      case "Ongoing":
+      case "En progreso":
         return "text-green-600 dark:text-green-400";
       case "Finalisée":
+      case "Finalized":
+      case "Finalizada":
         return "text-blue-600 dark:text-blue-400";
       default:
         return "text-gray-600 dark:text-gray-400";
@@ -76,7 +83,7 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-        Gestion de la Campagne
+        {t('campaignHeader.title')}
       </h1>
 
       <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -95,33 +102,33 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="text-center md:text-left">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Statut</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('campaignHeader.status')}</p>
               <p className={`text-lg font-semibold ${getStatusColor(campaignData.status)}`}>
                 {campaignData.status}
               </p>
             </div>
             <div className="text-center md:text-left">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Montant Levé</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('campaignHeader.raised')}</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {parseFloat(campaignData.raised).toFixed(4)} ETH
               </p>
               <p className="text-xs text-gray-400">
-                {progressPercentage.toFixed(1)}% de l'objectif
+                {t('campaignHeader.ofGoal', { percent: progressPercentage.toFixed(1) })}
               </p>
             </div>
             <div className="text-center md:text-left">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Objectif</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('campaignHeader.goal')}</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {parseFloat(campaignData.goal).toFixed(4)} ETH
               </p>
             </div>
             <div className="text-center md:text-left">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Investisseurs</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('campaignHeader.investors')}</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {campaignData.investors}
               </p>
               <p className="text-xs text-gray-400">
-                {campaignData.nftTotal} NFTs max
+                {t('campaignHeader.nftsMax', { count: campaignData.nftTotal })}
               </p>
             </div>
           </div>
@@ -129,7 +136,7 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Progression
+                {t('campaignHeader.progress')}
               </span>
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 {progressPercentage.toFixed(1)}%
@@ -140,9 +147,9 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
               className="h-3 bg-gray-200 dark:bg-gray-700" 
             />
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-              {campaignData.status === "En cours" 
+              {campaignData.status === "En cours" || campaignData.status === "Ongoing" || campaignData.status === "En progreso"
                 ? formatTimeRemaining(campaignData.timeRemaining)
-                : "Campagne terminée"}
+                : t('campaignHeader.ended')}
             </p>
           </div>
 
@@ -156,7 +163,7 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    Campagne certifiée par un avocat
+                    {t('campaignHeader.lawyerCertified')}
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-300">
                     Vérifiée par {campaignData.lawyer}

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from '@/hooks/useLanguage';
 import { Megaphone, Target, Calendar, DollarSign, Users, TrendingUp, Zap } from 'lucide-react';
 
 export default function PromoteCampaignDialog({ 
@@ -18,6 +19,7 @@ export default function PromoteCampaignDialog({
   campaignAddress, 
   onSuccess 
 }) {
+  const { t } = useTranslation();
   const [promotionForm, setPromotionForm] = useState({
     type: 'boost',
     budget: '',

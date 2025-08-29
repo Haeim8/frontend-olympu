@@ -40,13 +40,13 @@ module.exports = {
       }
     },
     sepoliaBase: {
-      url: process.env.SEPOLIA_BASE_URL || "https://sepolia.base.org",
+      url: process.env.SEPOLIA_BASE_URL || "https://sepolia.base.org", 
       chainId: 84532,
-      gasPrice: 35000000000, // 35 gwei - fix pour REPLACEMENT_UNDERPRICED
+      gasPrice: "auto", // Auto-détection du gas price réseau au lieu de 35 Gwei forcé
       accounts: [
         PRIVATE_KEY,
         PRIVATE_KEY_2,
-        PRIVATE_KEY_3,
+        PRIVATE_KEY_3,  
         PRIVATE_KEY_4
       ].filter(key => key !== "0000000000000000000000000000000000000000000000000000000000000000")
     }

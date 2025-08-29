@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useAddress } from '@thirdweb-dev/react';
+import { useAccount } from 'wagmi';
 import { apiManager } from '@/lib/services/api-manager';
+import { useTranslation } from '@/hooks/useLanguage';
 
 // Import des composants modulaires
 import WalletHeader from '@/components/wallet/WalletHeader';
@@ -17,7 +18,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 
 export default function Wallet() {
-  const address = useAddress();
+  const { address } = useAccount();
+  const { t } = useTranslation();
   
   // États principaux
   const [nftHoldings, setNftHoldings] = useState([]);
@@ -46,9 +48,11 @@ export default function Wallet() {
       // Transformer les données pour le format attendu
       const nftData = [];
       const transactionData = [];
+      const investmentsArray = Array.isArray(investments) ? investments : [];
       
-      investments.forEach(investment => {
-        investment.investments.forEach((inv, index) => {
+      investmentsArray.forEach(investment => {
+        const investmentArray = Array.isArray(investment.investments) ? investment.investments : [];
+        investmentArray.forEach((inv, index) => {
           const nftItem = {
             id: `${investment.campaignAddress}-${inv.tokenIds?.[0]?.toString() || index}`,
             amount: apiManager.formatEthValue(inv.amount),
@@ -64,7 +68,7 @@ export default function Wallet() {
           // Créer une transaction correspondante
           transactionData.push({
             id: `${investment.campaignAddress}-${index}`,
-            type: 'Investment',
+            type: t('wallet.investment'),
             project: investment.campaignName,
             amount: `${apiManager.formatEthValue(inv.amount)} ETH`,
             date: new Date((inv.timestamp?.toNumber() || Date.now() / 1000) * 1000).toLocaleDateString('fr-FR'),
@@ -77,24 +81,26 @@ export default function Wallet() {
       setTransactions(transactionData);
       
       // Calculer les statistiques du portefeuille
+      const nftDataArray = Array.isArray(nftData) ? nftData : [];
       const stats = {
-        totalNFTs: nftData.reduce((acc, nft) => acc + parseInt(nft.shares), 0),
-        totalInvested: nftData.reduce((acc, nft) => acc + parseFloat(nft.amount), 0).toFixed(4),
-        activeProjects: new Set(nftData.map(nft => nft.campaign)).size,
-        totalDividends: nftData.reduce((acc, nft) => acc + parseFloat(nft.dividends || 0), 0).toFixed(4)
+        totalNFTs: nftDataArray.reduce((acc, nft) => acc + parseInt(nft.shares), 0),
+        totalInvested: nftDataArray.reduce((acc, nft) => acc + parseFloat(nft.amount), 0).toFixed(4),
+        activeProjects: new Set(nftDataArray.map(nft => nft.campaign)).size,
+        totalDividends: nftDataArray.reduce((acc, nft) => acc + parseFloat(nft.dividends || 0), 0).toFixed(4)
       };
       
       setWalletInfo(stats);
 
       // Précharger les données des campagnes dans lesquelles l'utilisateur a investi
-      const uniqueCampaigns = [...new Set(investments.map(inv => inv.campaignAddress))];
-      uniqueCampaigns.forEach(campaignAddress => {
+      const uniqueCampaigns = [...new Set(investmentsArray.map(inv => inv.campaignAddress))];
+      const uniqueCampaignsArray = Array.isArray(uniqueCampaigns) ? uniqueCampaigns : [];
+      uniqueCampaignsArray.forEach(campaignAddress => {
         apiManager.preloadCampaignDetails(campaignAddress);
       });
 
     } catch (error) {
       console.error('Erreur lors du chargement du portefeuille:', error);
-      setError(error.message || 'Impossible de charger les données du portefeuille');
+      setError(error.message || t('wallet.error.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -144,16 +150,16 @@ export default function Wallet() {
           </div>
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Portefeuille non connecté
+              {t('wallet.notConnected.title')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Veuillez connecter votre portefeuille pour accéder à vos investissements et NFT.
+              {t('wallet.notConnected.description')}
             </p>
           </div>
           <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
             <Wifi className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800 dark:text-blue-200">
-              Utilisez le bouton "Connecter" en haut à droite pour vous connecter.
+              {t('wallet.notConnected.instruction')}
             </AlertDescription>
           </Alert>
         </div>
@@ -178,14 +184,14 @@ export default function Wallet() {
           <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800 dark:text-red-200">
-              <strong>Erreur:</strong> {error}
+              <strong>{t('error')}:</strong> {error}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleRefresh}
                 className="ml-2 text-red-600 hover:text-red-700"
               >
-                Réessayer
+                {t('wallet.error.retry')}
               </Button>
             </AlertDescription>
           </Alert>
@@ -216,31 +222,31 @@ export default function Wallet() {
             <DialogContent className="sm:max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
-                  Détails du NFT #{selectedNFT.id.split('-').pop()}
+                  {t('wallet.nftDetails.title', { id: selectedNFT.id.split('-').pop() })}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Campagne</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wallet.nftDetails.campaign')}</p>
                     <p className="font-semibold text-gray-900 dark:text-gray-100">
                       {selectedNFT.campaign}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Parts détenues</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wallet.nftDetails.shares')}</p>
                     <p className="font-semibold text-gray-900 dark:text-gray-100">
                       {selectedNFT.shares}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Montant investi</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wallet.nftDetails.invested')}</p>
                     <p className="font-semibold text-gray-900 dark:text-gray-100">
                       {parseFloat(selectedNFT.amount).toFixed(4)} ETH
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Dividendes reçus</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wallet.nftDetails.dividends')}</p>
                     <p className="font-semibold text-green-600 dark:text-green-400">
                       {selectedNFT.dividends} ETH
                     </p>
@@ -251,10 +257,10 @@ export default function Wallet() {
                     variant="outline"
                     onClick={() => window.open(`https://sepolia.basescan.org/address/${selectedNFT.txHash}`, '_blank')}
                   >
-                    Voir sur Basescan
+                    {t('wallet.nftDetails.viewOnBasescan')}
                   </Button>
                   <Button onClick={handleCloseNFTDetails}>
-                    Fermer
+                    {t('close')}
                   </Button>
                 </div>
               </div>

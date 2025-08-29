@@ -2,28 +2,24 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import Header from './layout/Header';
 import Sidebar from './layout/Sidebar';
 import Home from './Pages/Home';
 import Wallet from './Pages/Wallet';
-import Discussions from './Pages/Discussions';
-import News from './Pages/News';
 import Favorites from './Pages/Favorites';
 import Campaign from './Pages/Campaign';
-import CampaignLive from './Pages/CampaignLive';
-import LiveDashboard from './Pages/LiveDashboard';
-import { useDisconnect, useAddress } from '@thirdweb-dev/react';
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/firebase";
+import { useDisconnect, useAccount } from 'wagmi';
+// Firebase supprimé - utilisation localStorage à la place
 import { apiManager } from '@/lib/services/api-manager';
 
 export default function AppInterface() {
+  const { theme, setTheme } = useTheme();
+  
   // États principaux
   const [hasCampaign, setHasCampaign] = useState(false);
   const [activePage, setActivePage] = useState('home');
-  const [darkMode, setDarkMode] = useState(true);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [username, setUsername] = useState("Utilisateur");
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   
   // États de chargement et données
@@ -33,8 +29,8 @@ export default function AppInterface() {
   const [error, setError] = useState(null);
   
   // Hooks
-  const disconnect = useDisconnect();
-  const address = useAddress();
+  const { disconnect } = useDisconnect();
+  const { address } = useAccount();
   const router = useRouter(); 
  
   // Redirection si pas d'adresse
@@ -44,29 +40,6 @@ export default function AppInterface() {
     }
   }, [address, router]);
 
-  // Chargement des données utilisateur avec optimisation
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!address) return;
-      
-      try {
-        const userDoc = await getDoc(doc(db, "users", address));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUsername(userData.username || "Utilisateur");
-          
-          // Charger les favoris de l'utilisateur
-          if (userData.favorites) {
-            setFavorites(userData.favorites);
-          }
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des données utilisateur:', error);
-      }
-    };
-
-    fetchUserData();
-  }, [address]);
   // Chargement intelligent des campagnes avec API Manager
   const loadCampaignsData = useCallback(async () => {
     if (!address) return;
@@ -83,6 +56,8 @@ export default function AppInterface() {
       for (const address of allCampaigns) {
         const campaignData = await apiManager.getCampaignData(address);
         if (campaignData) {
+          // Ajouter l'id qui correspond à l'adresse pour les favoris
+          campaignData.id = address;
           campaignsData.push(campaignData);
         }
       }
@@ -126,31 +101,11 @@ export default function AppInterface() {
   }, [disconnect, router]);
 
   const toggleDarkMode = useCallback(() => {
-    setDarkMode(prev => {
-      const newMode = !prev;
-      if (newMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      
-      // Sauvegarder la préférence dans localStorage
-      localStorage.setItem('darkMode', newMode.toString());
-      return newMode;
-    });
-  }, []);
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setTheme]);
   
-  // Initialiser le mode sombre depuis localStorage
+  // Initialiser les favoris depuis localStorage
   useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode !== null) {
-      const isDark = savedDarkMode === 'true';
-      setDarkMode(isDark);
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      }
-    }
-    
     // Charger les favoris depuis localStorage
     const savedFavorites = localStorage.getItem('favorites');
     if (savedFavorites) {
@@ -176,7 +131,7 @@ export default function AppInterface() {
   }, []);
   
   // Gestionnaire de sélection de projet
-  const handleSelectProject = useCallback((project) => {
+  const handleSelectProject = useCallback(() => {
     // Pas de préchargement pour le moment (API simplifiée)
   }, []);
   
@@ -197,31 +152,23 @@ export default function AppInterface() {
         return <Home {...commonProps} />;
       case 'wallet':
         return <Wallet userAddress={address} />;
-      case 'discussions':
-        return <Discussions username={username} />;
-      case 'news':
-        return <News />;
       case 'favorites':
         return <Favorites {...commonProps} />;
       case 'campaign':
         return hasCampaign ? <Campaign /> : <Home {...commonProps} />;
-      case 'live':
-        return <LiveDashboard setActivePage={setActivePage} />;
-      case 'live-session':
-        return <CampaignLive setActivePage={setActivePage} />;
       default:
         return <Home {...commonProps} />;
     }
-  }, [activePage, projects, favorites, toggleFavorite, handleSelectProject, isLoadingCampaigns, error, loadCampaignsData, address, username, hasCampaign]);
+  }, [activePage, projects, favorites, toggleFavorite, handleSelectProject, isLoadingCampaigns, error, loadCampaignsData, address, hasCampaign]);
 
   return (
-    <div className={`flex flex-col h-screen ${darkMode ? 'dark' : ''}`}>
+    <div className={`flex flex-col h-screen ${theme === 'dark' ? 'dark' : ''}`}>
       <Header
-        darkMode={darkMode}
+        darkMode={theme === 'dark'}
         toggleDarkMode={toggleDarkMode}
         showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
-        username={username}
+        username="Utilisateur"
         disconnect={handleDisconnect}
       />
       <div className="flex flex-1 overflow-hidden">

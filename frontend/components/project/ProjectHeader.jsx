@@ -5,6 +5,7 @@ import { DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/di
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Share2, Star, TrendingUp, Users, Calendar, ExternalLink, Globe, Twitter, Github } from 'lucide-react';
+import { useTranslation } from '@/hooks/useLanguage';
 
 export default function ProjectHeader({ 
   project, 
@@ -13,15 +14,17 @@ export default function ProjectHeader({
   onFavorite, 
   onShare 
 }) {
+  const { t } = useTranslation();
+  
   const getProjectStatus = () => {
     const endDate = new Date(project.endDate);
     const now = new Date();
     const progress = (parseFloat(project.raised) / parseFloat(project.goal)) * 100;
     
-    if (endDate < now) return { status: 'expired', label: 'Terminé', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' };
-    if (progress >= 100) return { status: 'success', label: 'Objectif atteint', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' };
-    if (progress >= 80) return { status: 'near', label: 'Bientôt complet', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300' };
-    return { status: 'active', label: 'En cours', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' };
+    if (endDate < now) return { status: 'expired', label: t('projectHeader.projectStatus.expired'), color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' };
+    if (progress >= 100) return { status: 'success', label: t('projectHeader.projectStatus.success'), color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' };
+    if (progress >= 80) return { status: 'near', label: t('projectHeader.projectStatus.near'), color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300' };
+    return { status: 'active', label: t('projectHeader.projectStatus.active'), color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' };
   };
 
   const projectStatus = getProjectStatus();
@@ -45,19 +48,19 @@ export default function ProjectHeader({
               </Badge>
               <Badge className="bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 px-3 py-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                {progress.toFixed(1)}% financé
+                {t('projectHeader.fundedPercent', { percent: progress.toFixed(1) })}
               </Badge>
             </div>
 
             <DialogTitle className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700 dark:from-gray-100 dark:via-gray-200 dark:to-gray-300 bg-clip-text text-transparent leading-tight">
               {project.name}
               <span className="block text-xl md:text-2xl bg-gradient-to-r from-lime-500 to-emerald-600 bg-clip-text text-transparent mt-2">
-                Projet d'investissement
+                {t('projectHeader.investmentProject')}
               </span>
             </DialogTitle>
             
             <DialogDescription className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl leading-relaxed">
-              Consultez les détails complets du projet et investissez en achetant des shares pour participer au financement.
+              {t('projectHeader.consultDetails')}
             </DialogDescription>
           </DialogHeader>
 
@@ -90,7 +93,7 @@ export default function ProjectHeader({
           <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-neutral-700/50">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="h-4 w-4 text-lime-600" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Levé</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('projectHeader.raised')}</span>
             </div>
             <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {project.raised} ETH
@@ -100,7 +103,7 @@ export default function ProjectHeader({
           <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-neutral-700/50">
             <div className="flex items-center gap-2 mb-1">
               <Users className="h-4 w-4 text-blue-600" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Objectif</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('projectHeader.goal')}</span>
             </div>
             <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {project.goal} ETH
@@ -110,7 +113,7 @@ export default function ProjectHeader({
           <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-neutral-700/50">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="h-4 w-4 text-purple-600" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Prix</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('projectHeader.price')}</span>
             </div>
             <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {project.sharePrice} ETH
@@ -120,7 +123,7 @@ export default function ProjectHeader({
           <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-neutral-700/50">
             <div className="flex items-center gap-2 mb-1">
               <Calendar className="h-4 w-4 text-orange-600" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">Fin</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">{t('projectHeader.end')}</span>
             </div>
             <p className="text-sm font-bold text-gray-900 dark:text-gray-100">
               {project.endDate}
@@ -131,7 +134,7 @@ export default function ProjectHeader({
         {/* Progress bar */}
         <div className="bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50 dark:border-neutral-700/50">
           <div className="flex mb-2 items-center justify-between">
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Progression du financement</span>
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('projectHeader.fundingProgress')}</span>
             <span className="text-sm font-semibold text-lime-600 dark:text-lime-400">
               {progress.toFixed(2)}%
             </span>
@@ -143,8 +146,8 @@ export default function ProjectHeader({
             />
           </div>
           <div className="flex justify-between items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
-            <span>{project.raised} ETH levés</span>
-            <span>{project.goal} ETH objectif</span>
+            <span>{t('projectHeader.ethRaised', { amount: project.raised })}</span>
+            <span>{t('projectHeader.ethGoal', { amount: project.goal })}</span>
           </div>
         </div>
 
@@ -154,10 +157,10 @@ export default function ProjectHeader({
             <div className="flex items-center gap-3 mb-4">
               <Users className="h-5 w-5 text-indigo-600" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Équipe du projet
+                {t('projectHeader.teamMembers')}
               </h3>
               <Badge className="bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300">
-                {projectData.ipfs.teamMembers.length} membre(s)
+                {t('projectHeader.teamMembersCount', { count: projectData.ipfs.teamMembers.length })}
               </Badge>
             </div>
             
@@ -170,10 +173,10 @@ export default function ProjectHeader({
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 dark:text-white text-sm truncate">
-                        {member.name || 'Nom non spécifié'}
+                        {member.name || t('projectHeader.memberNameNotSpecified')}
                       </h4>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {member.role || 'Rôle non spécifié'}
+                        {member.role || t('projectHeader.memberRoleNotSpecified')}
                       </p>
                     </div>
                   </div>
@@ -214,7 +217,7 @@ export default function ProjectHeader({
             <div className="flex items-center gap-3 mb-4">
               <ExternalLink className="h-5 w-5 text-green-600" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Liens et réseaux sociaux
+                {t('projectHeader.socialLinks')}
               </h3>
             </div>
             
@@ -227,7 +230,7 @@ export default function ProjectHeader({
                   className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-blue-200/50 dark:border-blue-800/50 hover:shadow-md hover:scale-105 transition-all group"
                 >
                   <ExternalLink className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Site web</span>
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{t('projectHeader.website')}</span>
                 </a>
               )}
               
@@ -239,7 +242,7 @@ export default function ProjectHeader({
                   className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-sky-200/50 dark:border-sky-800/50 hover:shadow-md hover:scale-105 transition-all group"
                 >
                   <ExternalLink className="h-4 w-4 text-sky-600 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-sky-600 dark:text-sky-400">Twitter</span>
+                  <span className="text-sm font-medium text-sky-600 dark:text-sky-400">{t('projectHeader.twitter')}</span>
                 </a>
               )}
               
@@ -251,7 +254,7 @@ export default function ProjectHeader({
                   className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-gray-200/50 dark:border-gray-800/50 hover:shadow-md hover:scale-105 transition-all group"
                 >
                   <ExternalLink className="h-4 w-4 text-gray-600 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">GitHub</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('projectHeader.github')}</span>
                 </a>
               )}
               
@@ -263,7 +266,7 @@ export default function ProjectHeader({
                   className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50 hover:shadow-md hover:scale-105 transition-all group"
                 >
                   <ExternalLink className="h-4 w-4 text-indigo-600 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Discord</span>
+                  <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">{t('projectHeader.discord')}</span>
                 </a>
               )}
               
@@ -275,7 +278,7 @@ export default function ProjectHeader({
                   className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-blue-200/50 dark:border-blue-800/50 hover:shadow-md hover:scale-105 transition-all group"
                 >
                   <ExternalLink className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Telegram</span>
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{t('projectHeader.telegram')}</span>
                 </a>
               )}
               
@@ -287,7 +290,7 @@ export default function ProjectHeader({
                   className="flex items-center gap-2 p-3 bg-white/70 dark:bg-neutral-900/70 rounded-lg border border-green-200/50 dark:border-green-800/50 hover:shadow-md hover:scale-105 transition-all group"
                 >
                   <ExternalLink className="h-4 w-4 text-green-600 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-medium text-green-600 dark:text-green-400">Medium</span>
+                  <span className="text-sm font-medium text-green-600 dark:text-green-400">{t('projectHeader.medium')}</span>
                 </a>
               )}
             </div>

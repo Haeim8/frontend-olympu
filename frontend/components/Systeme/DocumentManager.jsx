@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileText, Loader, Trash } from 'lucide-react';
 import { pinataService } from '@/lib/services/storage';
-import { useContract } from '@thirdweb-dev/react';
+import { useReadContract, useWriteContract } from 'wagmi';
 import CampaignABI from '@/ABI/CampaignABI.json';
 
 const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
@@ -19,29 +19,29 @@ export default function DocumentManager({ campaignData, onUpdate }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Obtenir l'instance du contrat en utilisant le hook thirdweb
-  const { contract: campaignContract } = useContract(
-    campaignData?.address,
-    CampaignABI
-  );
+  // Lire les métadonnées du contrat avec Wagmi
+  const { data: metadata } = useReadContract({
+    address: campaignData?.address,
+    abi: CampaignABI,
+    functionName: 'metadata',
+    enabled: !!campaignData?.address
+  });
 
   useEffect(() => {
-    if (campaignData?.ipfsHash && campaignContract) {
+    if (campaignData?.ipfsHash && metadata) {
       loadDocuments();
     }
-  }, [campaignData, campaignContract]);
+  }, [campaignData, metadata]);
 
   const loadDocuments = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      if (!campaignContract) {
-        throw new Error("Contrat non initialisé");
+      if (!metadata) {
+        throw new Error("Métadonnées non disponibles");
       }
 
-      // Récupérer les métadonnées du contrat
-      const metadata = await campaignContract.call("metadata");
       console.log("Métadonnées brutes:", metadata);
 
       // Extraire le CID

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   ShieldCheck, 
   User, 
@@ -30,6 +31,7 @@ export default function CertifyCampaignDialog({
   campaignAddress, 
   onSuccess 
 }) {
+  const { t } = useTranslation();
   const [certificationForm, setCertificationForm] = useState({
     lawyerType: '',
     urgency: 'standard',

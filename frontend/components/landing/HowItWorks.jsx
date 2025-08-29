@@ -2,34 +2,37 @@
 
 import { motion } from "framer-motion";
 import { Wallet, UserPlus, Rocket, Trophy, ArrowRight } from "lucide-react";
+import { useTranslation } from '@/hooks/useLanguage';
 
 export function HowItWorks({ darkMode }) {
+  const { t } = useTranslation();
+  
   const steps = [
     {
       icon: Wallet,
-      title: "Connectez votre wallet",
-      description: "Utilisez MetaMask, WalletConnect ou tout autre wallet compatible Ethereum",
+      title: t('landing.howItWorks.step1.title'),
+      description: t('landing.howItWorks.step1.description'),
       color: "from-blue-400 to-blue-600",
       delay: 0
     },
     {
       icon: UserPlus,
-      title: "Créez votre profil",
-      description: "Inscrivez-vous sur la plateforme avec 0.05 ETH pour sécuriser votre compte",
+      title: t('landing.howItWorks.step2.title'),
+      description: t('landing.howItWorks.step2.description'),
       color: "from-purple-400 to-purple-600",
       delay: 0.1
     },
     {
       icon: Rocket,
-      title: "Explorez les projets",
-      description: "Découvrez et financez des projets Web3 innovants qui vous passionnent",
+      title: t('landing.howItWorks.step3.title'),
+      description: t('landing.howItWorks.step3.description'),
       color: "from-lime-400 to-green-600",
       delay: 0.2
     },
     {
       icon: Trophy,
-      title: "Récoltez les rewards",
-      description: "Gagnez des tokens et participez à la gouvernance des projets soutenus",
+      title: t('landing.howItWorks.step4.title'),
+      description: t('landing.howItWorks.step4.description'),
       color: "from-yellow-400 to-orange-600",
       delay: 0.3
     }
@@ -47,11 +50,10 @@ export function HowItWorks({ darkMode }) {
           viewport={{ once: true }}
         >
           <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
-            Comment ça marche ?
+            {t('landing.howItWorks.title')}
           </h2>
           <p className={`text-sm max-w-2xl mx-auto ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-            Rejoindre la révolution DeFi n'a jamais été aussi simple. 
-            Suivez ces 4 étapes pour commencer votre aventure Web3.
+            {t('landing.howItWorks.subtitle')}
           </p>
         </motion.div>
 
@@ -116,7 +118,7 @@ export function HowItWorks({ darkMode }) {
           <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full ${darkMode ? "bg-lime-500/10 border border-lime-500/20" : "bg-lime-500/20 border border-lime-500/30"} backdrop-blur-sm`}>
             <div className="w-2 h-2 bg-lime-500 rounded-full animate-pulse"></div>
             <span className={`text-sm font-medium ${darkMode ? "text-lime-400" : "text-lime-600"}`}>
-              Prêt en moins de 2 minutes
+              {t('landing.howItWorks.readyInMinutes')}
             </span>
           </div>
         </motion.div>

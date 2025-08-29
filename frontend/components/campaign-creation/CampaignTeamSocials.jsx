@@ -4,6 +4,7 @@ import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from '@/hooks/useLanguage';
 import { 
   Plus, 
   Trash2, 
@@ -65,6 +66,8 @@ const SocialInput = ({ platform, value, onChange, placeholder }) => {
 };
 
 const TeamMemberCard = ({ member, index, onChange, onRemove, canRemove }) => {
+  const { t } = useTranslation();
+  
   return (
     <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-6 space-y-4 group hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start">
@@ -74,10 +77,10 @@ const TeamMemberCard = ({ member, index, onChange, onRemove, canRemove }) => {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-              Membre {index + 1}
+              {t('campaignTeam.member', { number: index + 1 })}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Informations du membre de l'équipe
+              {t('campaignTeam.memberInfo')}
             </p>
           </div>
         </div>
@@ -96,10 +99,10 @@ const TeamMemberCard = ({ member, index, onChange, onRemove, canRemove }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 block">
-            Nom complet *
+            {t('campaignTeam.fullName')} *
           </Label>
           <Input
-            placeholder="John Doe"
+            placeholder={t('campaignTeam.fullNamePlaceholder')}
             value={member.name}
             onChange={(e) => onChange(index, 'name', e.target.value)}
             className="transition-all duration-200 focus:ring-2 focus:ring-lime-500 focus:border-transparent"
@@ -107,10 +110,10 @@ const TeamMemberCard = ({ member, index, onChange, onRemove, canRemove }) => {
         </div>
         <div>
           <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 block">
-            Rôle / Poste *
+            {t('campaignTeam.role')} *
           </Label>
           <Input
-            placeholder="CEO, Développeur, Designer..."
+            placeholder={t('campaignTeam.rolePlaceholder')}
             value={member.role}
             onChange={(e) => onChange(index, 'role', e.target.value)}
             className="transition-all duration-200 focus:ring-2 focus:ring-lime-500 focus:border-transparent"
@@ -120,29 +123,29 @@ const TeamMemberCard = ({ member, index, onChange, onRemove, canRemove }) => {
 
       <div className="space-y-3">
         <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-          Réseaux sociaux
+          {t('campaignTeam.socials')}
         </Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <Label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
-              Twitter
+              {t('campaignTeam.twitter')}
             </Label>
             <SocialInput
               platform="twitter"
               value={member.socials.twitter}
               onChange={(e) => onChange(index, 'socials', e.target.value, 'twitter')}
-              placeholder="@username"
+              placeholder={t('campaignTeam.twitterPlaceholder')}
             />
           </div>
           <div>
             <Label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
-              LinkedIn
+              {t('campaignTeam.linkedin')}
             </Label>
             <SocialInput
               platform="website"
               value={member.socials.linkedin}
               onChange={(e) => onChange(index, 'socials', e.target.value, 'linkedin')}
-              placeholder="linkedin.com/in/username"
+              placeholder={t('campaignTeam.linkedinPlaceholder')}
             />
           </div>
         </div>
@@ -158,6 +161,8 @@ export default function CampaignTeamSocials({
   onAddTeamMember,
   onRemoveTeamMember
 }) {
+  const { t } = useTranslation();
+  
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -166,10 +171,10 @@ export default function CampaignTeamSocials({
           <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Équipe et Réseaux Sociaux
+          {t('campaignTeam.title')}
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Présentez votre équipe et connectez vos réseaux sociaux
+          {t('campaignTeam.subtitle')}
         </p>
       </div>
 
@@ -181,10 +186,10 @@ export default function CampaignTeamSocials({
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-              Réseaux Sociaux du Projet
+              {t('campaignTeam.projectSocials')}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Liens vers vos plateformes officielles
+              {t('campaignTeam.socialDesc')}
             </p>
           </div>
         </div>
@@ -192,18 +197,18 @@ export default function CampaignTeamSocials({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 block">
-              Site Web
+              {t('campaignTeam.website')}
             </Label>
             <SocialInput
               platform="website"
               value={formData.socials.website}
               onChange={(e) => onInputChange(e, 'socials')}
-              placeholder="https://votre-projet.com"
+              placeholder={t('campaignTeam.websitePlaceholder')}
             />
           </div>
           <div>
             <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 block">
-              Twitter
+              {t('campaignTeam.twitter')}
             </Label>
             <SocialInput
               platform="twitter"
@@ -214,46 +219,46 @@ export default function CampaignTeamSocials({
           </div>
           <div>
             <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 block">
-              GitHub
+              {t('campaignTeam.github')}
             </Label>
             <SocialInput
               platform="github"
               value={formData.socials.github}
               onChange={(e) => onInputChange(e, 'socials')}
-              placeholder="username/repository"
+              placeholder={t('campaignTeam.githubPlaceholder')}
             />
           </div>
           <div>
             <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 block">
-              Discord
+              {t('campaignTeam.discord')}
             </Label>
             <SocialInput
               platform="discord"
               value={formData.socials.discord}
               onChange={(e) => onInputChange(e, 'socials')}
-              placeholder="invite-link"
+              placeholder={t('campaignTeam.discordPlaceholder')}
             />
           </div>
           <div>
             <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 block">
-              Telegram
+              {t('campaignTeam.telegram')}
             </Label>
             <SocialInput
               platform="telegram"
               value={formData.socials.telegram}
               onChange={(e) => onInputChange(e, 'socials')}
-              placeholder="votre_channel"
+              placeholder={t('campaignTeam.telegramPlaceholder')}
             />
           </div>
           <div>
             <Label className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 block">
-              Medium
+              {t('campaignTeam.medium')}
             </Label>
             <SocialInput
               platform="medium"
               value={formData.socials.medium}
               onChange={(e) => onInputChange(e, 'socials')}
-              placeholder="@votre_publication"
+              placeholder={t('campaignTeam.mediumPlaceholder')}
             />
           </div>
         </div>
@@ -264,10 +269,10 @@ export default function CampaignTeamSocials({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Membres de l'équipe
+              {t('campaignTeam.teamMembers')}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Présentez les personnes clés de votre projet
+              {t('campaignTeam.teamMembersDesc')}
             </p>
           </div>
           <Button
@@ -275,7 +280,7 @@ export default function CampaignTeamSocials({
             className="bg-lime-500 hover:bg-lime-600 text-white"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Ajouter un membre
+            {t('campaignTeam.addMember')}
           </Button>
         </div>
 
@@ -296,17 +301,17 @@ export default function CampaignTeamSocials({
           <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              Aucun membre d'équipe
+              {t('campaignTeam.noTeamMembers')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Commencez par ajouter le premier membre de votre équipe
+              {t('campaignTeam.addFirstMember')}
             </p>
             <Button
               onClick={onAddTeamMember}
               className="bg-lime-500 hover:bg-lime-600 text-white"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Ajouter le premier membre
+              {t('campaignTeam.addFirstMember')}
             </Button>
           </div>
         )}
@@ -315,13 +320,12 @@ export default function CampaignTeamSocials({
       {/* Conseils */}
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
         <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-          🎯 Conseils pour présenter votre équipe
+          {t('campaignTeam.socialTips')}
         </h3>
         <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
-          <li>• Mettez en avant l'expérience et les compétences de chaque membre</li>
-          <li>• Ajoutez les liens vers les profils professionnels</li>
-          <li>• Une équipe diversifiée et expérimentée inspire confiance</li>
-          <li>• N'oubliez pas de mentionner les conseillers et partenaires clés</li>
+          <li>{t('campaignTeam.socialTip1')}</li>
+          <li>{t('campaignTeam.socialTip2')}</li>
+          <li>{t('campaignTeam.socialTip3')}</li>
         </ul>
       </div>
     </div>

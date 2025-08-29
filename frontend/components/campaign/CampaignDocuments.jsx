@@ -23,8 +23,10 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
+import { useTranslation } from '@/hooks/useLanguage';
 
 export default function CampaignDocuments({ campaignAddress, campaignData, onDocumentUpdate }) {
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -49,12 +51,12 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
       setIsLoading(true);
       setError(null);
       
-      const documentData = await apiManager.getDocuments(campaignAddress);
+      const documentData = await apiManager.getCampaignDocuments(campaignAddress);
       setDocuments(documentData || []);
       
     } catch (err) {
       console.error('Erreur chargement documents:', err);
-      setError('Impossible de charger les documents');
+      setError(t('campaignDocuments.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +66,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
     const file = event.target.files[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB max
-        setError('Le fichier ne peut pas dépasser 10MB');
+        setError(t('campaignDocuments.fileSizeError'));
         return;
       }
       
@@ -79,7 +81,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
 
   const handleUpload = async () => {
     if (!uploadForm.file || !uploadForm.name.trim()) {
-      setError('Veuillez sélectionner un fichier et entrer un nom');
+      setError(t('campaignDocuments.fileAndNameRequired'));
       return;
     }
 
@@ -112,11 +114,11 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
         onDocumentUpdate();
       }
 
-      alert('Document ajouté avec succès !');
+      alert(t('campaignDocuments.uploadSuccess'));
       
     } catch (error) {
       console.error('Erreur upload document:', error);
-      setError('Erreur lors de l\'ajout du document');
+      setError(t('campaignDocuments.uploadError'));
     } finally {
       setIsUploading(false);
     }
@@ -140,11 +142,11 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
 
   const getCategoryBadge = (category) => {
     const categories = {
-      legal: { label: 'Légal', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-      financial: { label: 'Financier', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-      technical: { label: 'Technique', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
-      marketing: { label: 'Marketing', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
-      other: { label: 'Autre', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' }
+      legal: { label: t('campaignDocuments.categories.legal'), color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+      financial: { label: t('campaignDocuments.categories.financial'), color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
+      technical: { label: t('campaignDocuments.categories.technical'), color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
+      marketing: { label: t('campaignDocuments.categories.marketing'), color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
+      other: { label: t('campaignDocuments.categories.other'), color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' }
     };
     
     const cat = categories[category] || categories.other;
@@ -187,7 +189,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <Button onClick={loadDocuments} variant="outline">
-              Réessayer
+              {t('campaignDocuments.retry')}
             </Button>
           </div>
         </CardContent>
@@ -200,9 +202,9 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <FileText className="h-5 w-5 text-blue-500" />
-          Documents Légaux
+          {t('campaignDocuments.title')}
           <Badge variant="outline" className="text-sm ml-2">
-            {stats.totalDocs} documents
+            {stats.totalDocs} {t('campaignDocuments.documents')}
           </Badge>
         </CardTitle>
         
@@ -210,13 +212,13 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
           <DialogTrigger asChild>
             <Button className="bg-blue-600 hover:bg-blue-700 text-white">
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter
+              {t('campaignDocuments.add')}
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-white dark:bg-neutral-950 max-w-md">
             <DialogHeader>
               <DialogTitle className="text-gray-900 dark:text-gray-100">
-                Ajouter un document
+                {t('campaignDocuments.addDocument')}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
@@ -228,7 +230,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
 
               <div>
                 <Label htmlFor="file-upload" className="text-gray-700 dark:text-gray-300">
-                  Fichier *
+                  {t('campaignDocuments.file')} *
                 </Label>
                 <Input
                   id="file-upload"
@@ -239,19 +241,19 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                   disabled={isUploading}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Formats acceptés: PDF, DOC, DOCX, XLS, XLSX, TXT (max 10MB)
+                  {t('campaignDocuments.acceptedFormats')}
                 </p>
               </div>
 
               <div>
                 <Label htmlFor="doc-name" className="text-gray-700 dark:text-gray-300">
-                  Nom du document *
+                  {t('campaignDocuments.documentName')} *
                 </Label>
                 <Input
                   id="doc-name"
                   value={uploadForm.name}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="ex: Contrat de partenariat"
+                  placeholder={t('campaignDocuments.namePlaceholder')}
                   className="bg-gray-50 dark:bg-neutral-900 mt-1"
                   disabled={isUploading}
                 />
@@ -259,13 +261,13 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
 
               <div>
                 <Label htmlFor="doc-description" className="text-gray-700 dark:text-gray-300">
-                  Description
+                  {t('campaignDocuments.description')}
                 </Label>
                 <Textarea
                   id="doc-description"
                   value={uploadForm.description}
                   onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Description du document..."
+                  placeholder={t('campaignDocuments.descriptionPlaceholder')}
                   className="bg-gray-50 dark:bg-neutral-900 mt-1 h-20"
                   disabled={isUploading}
                 />
@@ -273,7 +275,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
 
               <div>
                 <Label htmlFor="doc-category" className="text-gray-700 dark:text-gray-300">
-                  Catégorie
+                  {t('campaignDocuments.category')}
                 </Label>
                 <Select 
                   value={uploadForm.category} 
@@ -284,11 +286,11 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="legal">Légal</SelectItem>
-                    <SelectItem value="financial">Financier</SelectItem>
-                    <SelectItem value="technical">Technique</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                    <SelectItem value="other">Autre</SelectItem>
+                    <SelectItem value="legal">{t('campaignDocuments.categories.legal')}</SelectItem>
+                    <SelectItem value="financial">{t('campaignDocuments.categories.financial')}</SelectItem>
+                    <SelectItem value="technical">{t('campaignDocuments.categories.technical')}</SelectItem>
+                    <SelectItem value="marketing">{t('campaignDocuments.categories.marketing')}</SelectItem>
+                    <SelectItem value="other">{t('campaignDocuments.categories.other')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -299,7 +301,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                   onClick={() => setShowUploadDialog(false)}
                   disabled={isUploading}
                 >
-                  Annuler
+                  {t('campaignDocuments.cancel')}
                 </Button>
                 <Button
                   onClick={handleUpload}
@@ -309,12 +311,12 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                   {isUploading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Upload...
+                      {t('campaignDocuments.uploading')}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Upload className="h-4 w-4" />
-                      Ajouter
+                      {t('campaignDocuments.add')}
                     </div>
                   )}
                 </Button>
@@ -330,11 +332,11 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {Object.entries(stats.categories).map(([category, count]) => {
               const categoryInfo = {
-                legal: { label: 'Légaux', color: 'text-blue-600 dark:text-blue-400' },
-                financial: { label: 'Financiers', color: 'text-green-600 dark:text-green-400' },
-                technical: { label: 'Techniques', color: 'text-purple-600 dark:text-purple-400' },
-                marketing: { label: 'Marketing', color: 'text-orange-600 dark:text-orange-400' },
-                other: { label: 'Autres', color: 'text-gray-600 dark:text-gray-400' }
+                legal: { label: t('campaignDocuments.categoriesPlural.legal'), color: 'text-blue-600 dark:text-blue-400' },
+                financial: { label: t('campaignDocuments.categoriesPlural.financial'), color: 'text-green-600 dark:text-green-400' },
+                technical: { label: t('campaignDocuments.categoriesPlural.technical'), color: 'text-purple-600 dark:text-purple-400' },
+                marketing: { label: t('campaignDocuments.categoriesPlural.marketing'), color: 'text-orange-600 dark:text-orange-400' },
+                other: { label: t('campaignDocuments.categoriesPlural.other'), color: 'text-gray-600 dark:text-gray-400' }
               };
               
               const info = categoryInfo[category] || categoryInfo.other;
@@ -370,17 +372,17 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
             <div className="text-center py-12">
               <FileText className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Aucun document
+                {t('campaignDocuments.noDocuments')}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Ajoutez des documents légaux pour renforcer la confiance des investisseurs
+                {t('campaignDocuments.noDocumentsDescription')}
               </p>
               <Button 
                 onClick={() => setShowUploadDialog(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter le premier document
+                {t('campaignDocuments.addFirstDocument')}
               </Button>
             </div>
           ) : (
@@ -399,7 +401,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                         </h4>
                         {getCategoryBadge(doc.category)}
                         {doc.isVerified && (
-                          <CheckCircle className="h-4 w-4 text-green-500" title="Vérifié" />
+                          <CheckCircle className="h-4 w-4 text-green-500" title={t('campaignDocuments.verified')} />
                         )}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
@@ -409,7 +411,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          Créateur
+                          {t('campaignDocuments.creator')}
                         </div>
                         {doc.size && (
                           <span>{formatFileSize(doc.size)}</span>
@@ -453,13 +455,13 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
             <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm">
               <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-1">
-                Importance des documents légaux
+                {t('campaignDocuments.importance.title')}
               </h4>
               <ul className="text-blue-700 dark:text-blue-300 space-y-1">
-                <li>• Renforcent la confiance des investisseurs</li>
-                <li>• Démontrent la transparence de votre projet</li>
-                <li>• Peuvent être vérifiés par nos avocats partenaires</li>
-                <li>• Stockés de manière décentralisée sur IPFS</li>
+                <li>• {t('campaignDocuments.importance.point1')}</li>
+                <li>• {t('campaignDocuments.importance.point2')}</li>
+                <li>• {t('campaignDocuments.importance.point3')}</li>
+                <li>• {t('campaignDocuments.importance.point4')}</li>
               </ul>
             </div>
           </div>
