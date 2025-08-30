@@ -119,10 +119,10 @@ export default function Header({
         </svg>
       </div>
 
-      <div className="relative px-4 md:px-6 py-3 md:py-4">
+      <div className="relative px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
         <div className="flex justify-between items-center">
           {/* Left section - Logo and mobile menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <Button
               variant="ghost"
               size="icon"
@@ -133,7 +133,7 @@ export default function Header({
               <Menu className="h-5 w-5" />
             </Button>
             
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="relative">
                 <div className="w-8 h-8 bg-gradient-to-br from-lime-400 to-emerald-500 rounded-xl flex items-center justify-center">
                   <Sparkles className="h-4 w-4 text-white" />
@@ -141,7 +141,7 @@ export default function Header({
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-lime-400 to-emerald-500 rounded-full animate-pulse"></div>
               </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-lime-500 to-emerald-600 bg-clip-text text-transparent">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-lime-500 to-emerald-600 bg-clip-text text-transparent">
                   Livar
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 hidden md:block">
@@ -152,7 +152,7 @@ export default function Header({
           </div>
 
           {/* Right section - Actions and user menu */}
-          <div className="flex items-center space-x-2 md:space-x-3">
+          <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
             {/* Language Selector */}
             <LanguageSelector 
               compact={true}
@@ -176,7 +176,7 @@ export default function Header({
               </Button>
               
               {isNotificationsOpen && (
-                <div className="notifications-menu absolute right-0 mt-2 w-80 bg-white dark:bg-neutral-950 rounded-xl shadow-xl border border-gray-200 dark:border-neutral-800 z-50">
+                <div className="notifications-menu absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-neutral-950 rounded-xl shadow-xl border border-gray-200 dark:border-neutral-800 z-50 max-w-[calc(100vw-1rem)]">
                   <div className="p-4 border-b border-gray-200 dark:border-neutral-800">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -240,7 +240,9 @@ export default function Header({
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
-            <ConnectButton />
+            <div className="[&>div>button]:text-sm [&>div>button]:px-2 [&>div>button]:py-1 sm:[&>div>button]:px-4 sm:[&>div>button]:py-2 [&>div>button]:truncate [&>div>button]:max-w-[120px] sm:[&>div>button]:max-w-none">
+              <ConnectButton />
+            </div>
           </div>
         </div>
       </div>

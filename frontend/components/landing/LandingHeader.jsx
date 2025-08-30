@@ -3,12 +3,13 @@
 import { Button } from "@/components/ui/button";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useTranslation } from '@/hooks/useLanguage';
-import { Moon, Sun, Twitter, MessageCircle, Zap, Wallet } from "lucide-react";
+import { Moon, Sun, Twitter, MessageCircle, Zap, Wallet, Menu, X } from "lucide-react";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { motion } from "framer-motion";
 
 export function LandingHeader({ darkMode, toggleDarkMode }) {
   const { t } = useTranslation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   
   return (
     <motion.header 
@@ -32,7 +33,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
           </span>
         </motion.div>
 
-        {/* Navigation principale - centrée */}
+        {/* Navigation principale - centrée (desktop) */}
         <nav className="hidden lg:flex items-center justify-center flex-1">
           <div className="flex items-center space-x-8">
             <a href="#accueil" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
@@ -50,8 +51,20 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
           </div>
         </nav>
 
+        {/* Mobile menu button */}
+        <div className="lg:hidden flex-1 flex justify-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 hover:bg-lime-500/10"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </Button>
+        </div>
+
         {/* Actions et social */}
-        <div className="flex items-center space-x-4 flex-shrink-0">
+        <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
         {/* Social links */}
         <div className="hidden md:flex items-center space-x-3">
           <motion.a
@@ -101,12 +114,74 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="[&>div>button]:bg-gradient-to-r [&>div>button]:from-lime-500 [&>div>button]:to-green-500 [&>div>button]:border-0 [&>div>button]:shadow-lg [&>div>button]:hover:shadow-lime-500/25 [&>div>button]:transition-all [&>div>button]:duration-300 [&>div>button]:hover:from-lime-600 [&>div>button]:hover:to-green-600">
+          <div className="[&>div>button]:bg-gradient-to-r [&>div>button]:from-lime-500 [&>div>button]:to-green-500 [&>div>button]:border-0 [&>div>button]:shadow-lg [&>div>button]:hover:shadow-lime-500/25 [&>div>button]:transition-all [&>div>button]:duration-300 [&>div>button]:hover:from-lime-600 [&>div>button]:hover:to-green-600 [&>div>button]:text-xs [&>div>button]:px-2 [&>div>button]:py-1 sm:[&>div>button]:text-sm sm:[&>div>button]:px-4 sm:[&>div>button]:py-2 [&>div>button]:truncate [&>div>button]:max-w-[100px] sm:[&>div>button]:max-w-none">
             <ConnectButton />
           </div>
         </motion.div>
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {isMobileMenuOpen && (
+        <motion.div
+          className="lg:hidden absolute top-full left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-b border-white/20 dark:border-gray-700/20 z-40"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.2 }}
+        >
+          <nav className="px-6 py-4 space-y-4">
+            <a 
+              href="#accueil" 
+              className="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {t('landing.nav.home')}
+            </a>
+            <a 
+              href="#fonctionnalites" 
+              className="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {t('landing.nav.features')}
+            </a>
+            <a 
+              href="#comment-ca-marche" 
+              className="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {t('landing.nav.howItWorks')}
+            </a>
+            <a 
+              href="#projets" 
+              className="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {t('landing.nav.projects')}
+            </a>
+
+            {/* Mobile Social Links */}
+            <div className="flex items-center space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <a
+                href="https://x.com/FinibusApp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400"
+              >
+                <Twitter size={16} />
+              </a>
+              <a
+                href="https://discord.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400"
+              >
+                <MessageCircle size={16} />
+              </a>
+            </div>
+          </nav>
+        </motion.div>
+      )}
     </motion.header>
   );
 }

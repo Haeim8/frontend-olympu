@@ -17,7 +17,9 @@ import {
 export default function Sidebar({ 
   activePage, 
   setActivePage, 
-  hasCampaign = false 
+  hasCampaign = false,
+  showMobileMenu = false,
+  setShowMobileMenu
 }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -32,13 +34,29 @@ export default function Sidebar({
   const bottomItems = [];
 
   return (
-    <div 
-      className={`${
-        isExpanded ? 'w-64' : 'w-16'
-      } h-screen bg-white dark:bg-neutral-950 border-r border-gray-200 dark:border-neutral-800 transition-all duration-300 flex flex-col`}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
-    >
+    <>
+      {/* Mobile Overlay */}
+      {showMobileMenu && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setShowMobileMenu(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div 
+        className={`
+          ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'} 
+          md:translate-x-0
+          ${isExpanded ? 'w-64' : 'w-16'} 
+          fixed md:static
+          h-screen bg-white dark:bg-neutral-950 
+          border-r border-gray-200 dark:border-neutral-800 
+          transition-all duration-300 flex flex-col z-50
+        `}
+        onMouseEnter={() => !showMobileMenu && setIsExpanded(true)}
+        onMouseLeave={() => !showMobileMenu && setIsExpanded(false)}
+      >
 
       {/* Menu Items */}
       <div className="flex-1 py-4">
@@ -65,5 +83,6 @@ export default function Sidebar({
 
 
     </div>
+    </>
   );
 }

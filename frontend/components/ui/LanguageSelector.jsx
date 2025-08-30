@@ -116,7 +116,7 @@ export default function LanguageSelector({
         </Button>
 
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-950 rounded-xl shadow-lg border border-gray-200 dark:border-neutral-800 z-50">
+          <div className="absolute right-0 mt-2 w-64 sm:w-72 md:w-80 bg-white dark:bg-neutral-950 rounded-xl shadow-lg border border-gray-200 dark:border-neutral-800 z-50 max-w-[calc(100vw-2rem)] mx-2 sm:mx-0">
             <div className="p-3 border-b border-gray-200 dark:border-neutral-800">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <Globe className="h-4 w-4 text-lime-600" />
@@ -178,7 +178,7 @@ export default function LanguageSelector({
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-950 rounded-xl shadow-lg border border-gray-200 dark:border-neutral-800 z-50">
+        <div className="absolute right-0 mt-2 w-64 sm:w-72 md:w-80 bg-white dark:bg-neutral-950 rounded-xl shadow-lg border border-gray-200 dark:border-neutral-800 z-50 max-w-[calc(100vw-2rem)] mx-2 sm:mx-0">
           <div className="p-4 border-b border-gray-200 dark:border-neutral-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Globe className="h-5 w-5 text-lime-600" />
