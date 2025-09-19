@@ -1,22 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useTranslation } from "@/hooks/useLanguage";
-import { 
-  Bell, 
-  Sun, 
-  Moon, 
-  ChevronDown, 
-  Menu, 
+import {
+  Bell,
+  Sun,
+  Moon,
+  ChevronDown,
+  Menu,
   Settings,
   User,
   LogOut,
   Wallet,
-  Activity,
-  Sparkles
+  Activity
 } from 'lucide-react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -35,23 +35,23 @@ export default function Header({
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      title: "Nouveau projet disponible",
-      message: "Un projet d'énergie renouvelable vient d'être publié",
-      time: "Il y a 2 min",
+      title: "New project available",
+      message: "A renewable energy deal just launched on Livar",
+      time: "2 minutes ago",
       unread: true
     },
     {
       id: 2,
-      title: "Transaction confirmée",
-      message: "Votre investissement de 0.5 ETH a été confirmé",
-      time: "Il y a 1h",
+      title: "Investment confirmed",
+      message: "Your 0.5 ETH contribution has been confirmed",
+      time: "1 hour ago",
       unread: true
     },
     {
       id: 3,
-      title: "Dividendes reçus",
-      message: "Vous avez reçu 0.025 ETH de dividendes",
-      time: "Il y a 2h",
+      title: "Rewards received",
+      message: "You received 0.025 ETH in campaign rewards",
+      time: "2 hours ago",
       unread: false
     }
   ]);
@@ -128,24 +128,28 @@ export default function Header({
               size="icon"
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200"
-              aria-label={showMobileMenu ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-label={showMobileMenu ? "Close navigation" : "Open navigation"}
             >
               <Menu className="h-5 w-5" />
             </Button>
-            
+
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="relative">
-                <div className="w-8 h-8 bg-gradient-to-br from-lime-400 to-emerald-500 rounded-xl flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-lime-400 to-emerald-500 rounded-full animate-pulse"></div>
+              <div className="relative w-10 h-10">
+                <Image
+                  src="/assets/miniapp-icon.png"
+                  alt="Livar logo"
+                  fill
+                  sizes="40px"
+                  className="rounded-xl shadow-md"
+                  priority
+                />
               </div>
               <div>
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-lime-500 to-emerald-600 bg-clip-text text-transparent">
                   Livar
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 hidden md:block">
-                  {t('investmentPlatform', 'Plateforme d\'investissement')}
+                  {t('investmentPlatform', 'Investment platform for onchain communities')}
                 </p>
               </div>
             </div>
@@ -185,7 +189,7 @@ export default function Header({
                       </h3>
                       {unreadCount > 0 && (
                         <Badge className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300">
-                          {unreadCount} nouveau(x)
+                          {unreadCount} new
                         </Badge>
                       )}
                     </div>
@@ -194,7 +198,7 @@ export default function Header({
                     {notifications.length === 0 ? (
                       <div className="p-6 text-center">
                         <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 dark:text-gray-400">Aucune notification</p>
+                        <p className="text-gray-500 dark:text-gray-400">No notifications</p>
                       </div>
                     ) : (
                       notifications.map((notification) => (
@@ -235,7 +239,7 @@ export default function Header({
               size="icon"
               onClick={toggleDarkMode}
               className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200"
-              aria-label={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
+              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
