@@ -14,7 +14,7 @@
     "iconUrl": "https://www.livarhub.xyz/assets/miniapp-icon.png",
     "homeUrl": "https://www.livarhub.xyz/app",
     "imageUrl": "https://www.livarhub.xyz/assets/miniapp-embed.png",
-    "buttonTitle": "Launch Livar",
+    "buttonTitle": "Open Livar",
     "splashImageUrl": "https://www.livarhub.xyz/assets/miniapp-splash.png",
     "splashBackgroundColor": "#0f172a",
     "primaryCategory": "finance",
@@ -24,15 +24,15 @@
       "nft",
       "community"
     ],
-    "subtitle": "Onchain crowdfunding for founders and their communities",
+    "subtitle": "Onchain raises for founders",
     "description": "Livar helps founders raise funds from their community with tokenized shares, automated revenue sharing, and transparent growth analytics hosted on Base.",
-    "tagline": "Launch community-owned ventures in minutes",
+    "tagline": "Launch community ventures",
     "heroImageUrl": "https://www.livarhub.xyz/assets/miniapp-embed.png",
     "screenshotUrls": [
       "https://www.livarhub.xyz/assets/miniapp-embed.png"
     ],
-    "ogTitle": "Livar – Community-Powered Fundraising on Base",
-    "ogDescription": "Discover and support tokenized fundraising campaigns, track onchain performance, and grow alongside the projects you back.",
+    "ogTitle": "Livar: Onchain Raises",
+    "ogDescription": "Back tokenized campaigns and track growth with transparent Base analytics.",
     "ogImageUrl": "https://www.livarhub.xyz/assets/miniapp-embed.png",
     "castShareUrl": "https://www.livarhub.xyz/app",
     "webhookUrl": "https://www.livarhub.xyz/api/frame/webhook",
