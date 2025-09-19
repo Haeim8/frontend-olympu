@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import Header from './layout/Header';
@@ -12,6 +12,7 @@ import Campaign from './Pages/Campaign';
 import { useDisconnect, useAccount } from 'wagmi';
 // Firebase supprimé - utilisation localStorage à la place
 import { apiManager } from '@/lib/services/api-manager';
+import { useEnvironment } from '@/hooks/useEnvironment';
 
 export default function AppInterface() {
   const { theme, setTheme } = useTheme();
@@ -32,13 +33,43 @@ export default function AppInterface() {
   const { disconnect } = useDisconnect();
   const { address } = useAccount();
   const router = useRouter(); 
- 
+  const { isMiniApp, isLoading: envLoading } = useEnvironment();
+
+  // Informer Farcaster/Base que l'UI est prête afin de retirer le splash screen
+  const miniAppReadyRef = useRef(false);
+
+  const signalMiniAppReady = useCallback(async () => {
+    if (miniAppReadyRef.current) return;
+
+    try {
+      const { sdk } = await import('@farcaster/miniapp-sdk');
+      await sdk?.actions?.ready?.();
+      miniAppReadyRef.current = true;
+    } catch (error) {
+      console.warn('Unable to notify miniapp host that the UI is ready:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || miniAppReadyRef.current) {
+      return undefined;
+    }
+
+    if (!envLoading && isMiniApp) {
+      signalMiniAppReady();
+      return undefined;
+    }
+
+    const fallbackTimer = window.setTimeout(signalMiniAppReady, 1500);
+    return () => window.clearTimeout(fallbackTimer);
+  }, [envLoading, isMiniApp, signalMiniAppReady]);
+
   // Redirection si pas d'adresse
   useEffect(() => {
-    if (!address) {
+    if (!address && !envLoading && !isMiniApp) {
       router.push('/');
     }
-  }, [address, router]);
+  }, [address, envLoading, isMiniApp, router]);
 
   // Chargement intelligent des campagnes avec API Manager
   const loadCampaignsData = useCallback(async () => {
