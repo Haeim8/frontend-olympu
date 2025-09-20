@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Button } from "@/components/ui/button";
 import { 
@@ -13,6 +13,7 @@ import {
   HelpCircle,
   ChevronRight,
 } from "lucide-react";
+import { useEnvironment } from '@/hooks/useEnvironment';
 
 export default function Sidebar({ 
   activePage, 
@@ -22,7 +23,12 @@ export default function Sidebar({
   setShowMobileMenu
 }) {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isMiniApp } = useEnvironment();
+  const [isExpanded, setIsExpanded] = useState(!isMiniApp);
+
+  useEffect(() => {
+    setIsExpanded(!isMiniApp);
+  }, [isMiniApp]);
 
   const menuItems = [
     { icon: Home, title: t('home'), id: 'home' },
@@ -32,6 +38,7 @@ export default function Sidebar({
   ];
 
   const bottomItems = [];
+  const sidebarWidthClass = isMiniApp ? (isExpanded ? "w-64" : "w-16") : "w-64";
 
   return (
     <>
@@ -48,14 +55,14 @@ export default function Sidebar({
         className={`
           ${showMobileMenu ? 'translate-x-0' : '-translate-x-full'} 
           md:translate-x-0
-          ${isExpanded ? 'w-64' : 'w-16'} 
+          ${sidebarWidthClass} 
           fixed md:static
           h-screen bg-white dark:bg-neutral-950 
           border-r border-gray-200 dark:border-neutral-800 
           transition-all duration-300 flex flex-col z-50
         `}
-        onMouseEnter={() => !showMobileMenu && setIsExpanded(true)}
-        onMouseLeave={() => !showMobileMenu && setIsExpanded(false)}
+        onMouseEnter={() => !showMobileMenu && isMiniApp && setIsExpanded(true)}
+        onMouseLeave={() => !showMobileMenu && isMiniApp && setIsExpanded(false)}
       >
 
       {/* Menu Items */}

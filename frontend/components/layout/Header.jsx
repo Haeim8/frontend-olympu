@@ -21,6 +21,7 @@ import {
 import { useAccount, useDisconnect } from 'wagmi';
 import { ConnectWallet, ConnectWalletText } from '@coinbase/onchainkit/wallet';
 import { useRouter } from 'next/navigation';
+import { useEnvironment } from '@/hooks/useEnvironment';
 
 export default function Header({ 
   darkMode, 
@@ -61,6 +62,7 @@ export default function Header({
   // TODO: Implémenter useBalance avec wagmi si nécessaire
   const balance = null;
   const router = useRouter();
+  const { isMiniApp } = useEnvironment();
   
   
   const handleNotificationsToggle = () => {
@@ -244,12 +246,20 @@ export default function Header({
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
-            <ConnectWallet
-              className="bg-gradient-to-r from-lime-500 to-green-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-lime-500/25 transition-all duration-300 hover:from-lime-600 hover:to-green-600"
-              text="Connect"
-            >
-              <ConnectWalletText>Connecter</ConnectWalletText>
-            </ConnectWallet>
+            {isMiniApp ? (
+              <ConnectWallet
+                className="bg-gradient-to-r from-lime-500 to-green-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-lime-500/25 transition-all duration-300 hover:from-lime-600 hover:to-green-600"
+                text="Connect"
+              >
+                <ConnectWalletText>Connecter</ConnectWalletText>
+              </ConnectWallet>
+            ) : (
+              <div className="[&>button]:bg-gradient-to-r [&>button]:from-lime-500 [&>button]:to-green-500 [&>button]:border-0 [&>button]:shadow-lg [&>button]:hover:shadow-lime-500/25 [&>button]:transition-all [&>button]:duration-300 [&>button]:hover:from-lime-600 [&>button]:hover:to-green-600 [&>button]:text-xs [&>button]:px-2 [&>button]:py-1 sm:[&>button]:text-sm sm:[&>button]:px-4 sm:[&>button]:py-2 [&>button]:truncate [&>button]:max-w-[120px] sm:[&>button]:max-w-none">
+                <ConnectWallet className="w-full" text="Connect">
+                  <ConnectWalletText>Connecter</ConnectWalletText>
+                </ConnectWallet>
+              </div>
+            )}
          </div>
        </div>
      </div>

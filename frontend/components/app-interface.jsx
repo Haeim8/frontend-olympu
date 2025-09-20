@@ -77,17 +77,21 @@ export default function AppInterface() {
     try {
       // Charger toutes les campagnes via API Manager (version simplifiée)
       const allCampaigns = await apiManager.getAllCampaigns();
-      const campaignsData = [];
-      
-      // Récupérer les données une par une
-      for (const address of allCampaigns) {
-        const campaignData = await apiManager.getCampaignData(address);
-        if (campaignData) {
-          // Ajouter l'id qui correspond à l'adresse pour les favoris
-          campaignData.id = address;
-          campaignsData.push(campaignData);
-        }
-      }
+
+      // Récupérer les données en parallèle avec gestion des erreurs
+      const campaignResults = await Promise.allSettled(
+        allCampaigns.map((campaignAddr) => apiManager.getCampaignData(campaignAddr))
+      );
+
+      const campaignsData = campaignResults
+        .map((result, index) => {
+          if (result.status === 'fulfilled' && result.value) {
+            return { ...result.value, id: allCampaigns[index] };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
       
       // Filtrer les campagnes de l'utilisateur
       const userOwnedCampaigns = campaignsData.filter(
