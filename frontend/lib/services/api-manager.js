@@ -14,6 +14,251 @@ const initSupabase = async () => {
   return supabase;
 };
 
+const toStringSafe = (value, fallback = '0') => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'bigint') return value.toString();
+  if (typeof value === 'object' && typeof value.toString === 'function') {
+    try {
+      return value.toString();
+    } catch (error) {
+      return fallback;
+    }
+  }
+  return fallback;
+};
+
+const parseBool = (value, fallback) => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'bigint') return value !== 0n;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n', 'off', ''].includes(normalized)) return false;
+  }
+  return fallback !== undefined ? fallback : Boolean(value);
+};
+
+const normalizeCampaignSummary = (summary) => {
+  if (!summary) return null;
+
+  const sharePrice = toStringSafe(summary.sharePrice ?? summary.share_price ?? '0');
+  const goal = toStringSafe(summary.goal ?? '0');
+  const raised = toStringSafe(summary.raised ?? '0');
+  const sharesSold = toStringSafe(summary.sharesSold ?? summary.shares_sold ?? '0');
+  const totalShares = toStringSafe(summary.totalShares ?? summary.total_shares ?? '0');
+  const status = summary.status ?? null;
+  const isActive = parseBool(summary.isActive, status ? status === 'active' : undefined);
+  const isFinalized = parseBool(summary.isFinalized, status ? status === 'finalized' : undefined);
+  const endDate = summary.endDate ?? summary.end_date ?? null;
+  const endTimestamp = endDate ? new Date(endDate).getTime() : null;
+  const goalNumber = parseFloat(goal) || 0;
+  const raisedNumber = parseFloat(raised) || 0;
+  const sharePriceNumber = parseFloat(sharePrice) || 0;
+  const investors = Number.parseInt(sharesSold, 10);
+  const progress = goalNumber > 0 ? (raisedNumber / goalNumber) * 100 : 0;
+
+  return {
+    ...summary,
+    address: summary.address,
+    id: summary.address,
+    name: summary.name,
+    symbol: summary.symbol,
+    goal,
+    raised,
+    sharePrice,
+    share_price: sharePrice,
+    sharesSold,
+    totalShares,
+    targetAmount: goal,
+    fundsRaised: raised,
+    status,
+    isActive: isActive ?? false,
+    isFinalized: isFinalized ?? false,
+    endDate,
+    metadataUri: summary.metadataUri ?? summary.metadata_uri ?? null,
+    category: summary.category,
+    sector: summary.sector ?? summary.category ?? 'General',
+    logo: summary.logo,
+    currentRound: summary.currentRound ?? summary.roundNumber ?? 0,
+    roundNumber: summary.roundNumber ?? summary.currentRound ?? 0,
+    nftPrice: sharePrice,
+    nftTotal: sharePriceNumber > 0 ? Math.floor(goalNumber / sharePriceNumber) : 0,
+    timeRemaining: endTimestamp ? Math.max(0, endTimestamp - Date.now()) : 0,
+    investors: Number.isFinite(investors) ? investors : 0,
+    progressPercentage: progress,
+    isPromoted: summary.isPromoted ?? false,
+    promotionType: summary.promotionType ?? null,
+  };
+};
+
+const toUnixSeconds = (value) => {
+  if (!value) {
+    return Math.floor(Date.now() / 1000);
+  }
+
+  if (typeof value === 'number') {
+    return value > 1e12 ? Math.floor(value / 1000) : Math.floor(value);
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return Math.floor(Date.now() / 1000);
+  }
+
+  return Math.floor(date.getTime() / 1000);
+};
+
+const ensureNumber = (value, fallback = 0) => {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  const asString = value.toString?.() ?? '';
+  const parsed = Number.parseInt(asString, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toBigIntSafe = (value) => {
+  if (value === null || value === undefined) return 0n;
+  if (typeof value === 'bigint') return value;
+
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return 0n;
+    return BigInt(Math.trunc(value));
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed === '') return 0n;
+    try {
+      if (trimmed.startsWith('0x') || trimmed.startsWith('-0x')) {
+        return BigInt(trimmed);
+      }
+      return BigInt(trimmed);
+    } catch (error) {
+      return 0n;
+    }
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    if (typeof value.toString === 'function') {
+      return toBigIntSafe(value.toString());
+    }
+    if (value._isBigNumber && typeof value.toHexString === 'function') {
+      return toBigIntSafe(value.toHexString());
+    }
+  }
+
+  return 0n;
+};
+
+const normalizeInvestmentStruct = (raw) => {
+  if (!raw) return null;
+
+  try {
+    const shares = toBigIntSafe(raw.shares).toString();
+    const amount = toBigIntSafe(raw.amount).toString();
+    const timestampValue = raw.timestamp?.toString?.() ?? raw.timestamp;
+    const timestamp = ensureNumber(timestampValue, Math.floor(Date.now() / 1000));
+    const roundNumber = raw.roundNumber?.toString?.() ?? raw.roundNumber ?? '0';
+    const tokenIds = Array.isArray(raw.tokenIds)
+      ? raw.tokenIds.map((tokenId) => tokenId?.toString?.() ?? `${tokenId}`)
+      : [];
+
+    return {
+      shares,
+      amount,
+      timestamp,
+      roundNumber,
+      tokenIds,
+    };
+  } catch (error) {
+    console.warn('Failed to normalize investment struct:', error);
+    return null;
+  }
+};
+
+const normalizeDocumentRow = (row = {}) => {
+  if (!row) return null;
+
+  const hash = row.ipfs_hash || row.hash || row.cid || null;
+  const name = row.name || row.document_name || row.title || 'Document';
+  const category = row.category || row.type || 'other';
+  const description = row.description || row.details || '';
+  const url = row.url || row.download_url || (hash ? `https://ipfs.io/ipfs/${hash}` : null);
+  const isVerified = Boolean(row.is_verified ?? row.verified ?? false);
+  const isPublic = Boolean(row.is_public ?? row.public ?? true);
+  const uploadedBy = row.uploaded_by || row.owner || row.creator || null;
+  const size = row.size ?? row.file_size ?? row.size_bytes ?? row.bytes ?? null;
+  const rawTimestamp = row.timestamp || row.created_at || row.createdAt || row.updated_at || row.updatedAt;
+  const timestamp = toUnixSeconds(rawTimestamp);
+
+  const identifier = row.id
+    || row.document_id
+    || row.uuid
+    || (row.campaign_address && hash ? `${row.campaign_address}_${hash}` : null)
+    || (hash ? `doc_${hash}` : `doc_${Date.now()}`);
+
+  return {
+    id: identifier,
+    campaignAddress: row.campaign_address || row.address || null,
+    name,
+    description,
+    category,
+    hash,
+    url,
+    isVerified,
+    isPublic,
+    uploadedBy,
+    size,
+    timestamp,
+    metadata: row.metadata || row.extra || null,
+  };
+};
+
+const getDocumentStorageKey = (address) => `livar_campaign_documents_${address}`;
+
+const readLocalDocuments = (address) => {
+  if (typeof window === 'undefined' || !address) {
+    return [];
+  }
+
+  try {
+    const stored = window.localStorage?.getItem(getDocumentStorageKey(address));
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(normalizeDocumentRow)
+      .filter(Boolean);
+  } catch (error) {
+    console.warn('Error reading cached documents from localStorage:', error);
+    return [];
+  }
+};
+
+const writeLocalDocuments = (address, documents) => {
+  if (typeof window === 'undefined' || !address) {
+    return;
+  }
+
+  try {
+    window.localStorage?.setItem(
+      getDocumentStorageKey(address),
+      JSON.stringify(documents ?? [])
+    );
+  } catch (error) {
+    console.warn('Error writing cached documents to localStorage:', error);
+  }
+};
+
 class ApiManager {
   constructor() {
     this.cache = blockchainCache;
@@ -29,6 +274,8 @@ class ApiManager {
     this.abis = {};
     this.contracts = {};
     this.provider = null;
+    this.documentStore = new Map();
+    this.investmentStore = new Map();
 
     // Circuit breaker pour éviter les appels répétés qui échouent
     this.circuitBreaker = {
@@ -49,6 +296,106 @@ class ApiManager {
         this.circuitBreaker.failures.delete(key);
       }
     };
+  }
+
+
+  async fetchJsonFromApi(path, options = {}) {
+    const { method = 'GET', headers, ...rest } = options;
+    const init = {
+      method,
+      ...rest,
+    };
+
+    if (headers) {
+      init.headers = headers;
+    }
+
+    const response = await fetch(path, init);
+    if (!response.ok) {
+      const message = await response.text().catch(() => response.statusText);
+      throw new Error(`[API] ${path} failed (${response.status}): ${message}`);
+    }
+
+    return response.json();
+  }
+
+  formatEthValue(value, precision = 4, decimals = 18) {
+    const bigValue = toBigIntSafe(value);
+    const divisor = 10n ** BigInt(decimals);
+    const isNegative = bigValue < 0n;
+    const absValue = isNegative ? -bigValue : bigValue;
+
+    if (precision < 0) {
+      precision = 0;
+    }
+
+    const integerPart = absValue / divisor;
+    const remainder = absValue % divisor;
+
+    if (precision === 0 || remainder === 0n) {
+      const intStr = integerPart.toString();
+      return isNegative ? `-${intStr}` : intStr;
+    }
+
+    const scaledRemainder = (remainder * (10n ** BigInt(precision))) / divisor;
+    let fraction = scaledRemainder.toString().padStart(precision, '0');
+    fraction = fraction.replace(/0+$/, '');
+
+    const result = fraction.length > 0
+      ? `${integerPart.toString()}.${fraction}`
+      : integerPart.toString();
+
+    return isNegative ? `-${result}` : result;
+  }
+
+  parseEthValue(value, decimals = 18) {
+    if (value === null || value === undefined) {
+      return '0';
+    }
+
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) {
+        return '0';
+      }
+      value = value.toString();
+    }
+
+    if (typeof value !== 'string') {
+      value = value.toString?.() ?? '';
+    }
+
+    const trimmed = value.trim();
+    if (trimmed === '') {
+      return '0';
+    }
+
+    if (trimmed.startsWith('0x') || trimmed.startsWith('-0x')) {
+      try {
+        return BigInt(trimmed).toString();
+      } catch (error) {
+        return '0';
+      }
+    }
+
+    const negative = trimmed.startsWith('-');
+    const unsigned = negative ? trimmed.slice(1) : trimmed;
+    const [integerPartRaw, fractionRaw = ''] = unsigned.split('.');
+
+    const safeInteger = integerPartRaw.replace(/[^0-9]/g, '') || '0';
+    const safeFraction = fractionRaw.replace(/[^0-9]/g, '');
+
+    if (safeFraction.length === 0) {
+      const normalized = safeInteger.replace(/^0+/, '') || '0';
+      return negative ? `-${normalized}` : normalized;
+    }
+
+    const paddedFraction = (safeFraction + '0'.repeat(decimals)).slice(0, decimals);
+    const combined = (safeInteger + paddedFraction).replace(/^0+/, '') || '0';
+    return negative ? `-${combined}` : combined;
   }
 
   async initializeWeb3() {
@@ -166,19 +513,89 @@ class ApiManager {
   }
 
   // === MÉTHODES POUR LES CAMPAGNES ===
-  
-  async getAllCampaigns(useCache = true) {
-    const cacheKey = this.cache.generateKey('all_campaigns', 'main');
-    
+
+  async listCampaigns(params = {}, { useCache = true } = {}) {
+    const searchParams = new URLSearchParams();
+
+    if (params.creator) {
+      searchParams.set('creator', params.creator.toLowerCase());
+    }
+
+    if (params.status) {
+      searchParams.set('status', params.status);
+    }
+
+    const query = searchParams.toString();
+    const cacheKey = this.cache.generateKey('api_campaign_list', query || 'all');
+
     if (useCache) {
       const cached = this.cache.get(cacheKey);
       if (cached) return cached;
     }
 
     try {
+      const url = query ? `/api/campaigns?${query}` : '/api/campaigns';
+      const payload = await this.fetchJsonFromApi(url);
+      const campaigns = Array.isArray(payload?.campaigns) ? payload.campaigns : [];
+
+      if (useCache) {
+        this.cache.set(cacheKey, campaigns, this.cache.defaultTTL);
+      }
+
+      return campaigns;
+    } catch (error) {
+      console.warn('Erreur listCampaigns:', error);
+      return [];
+    }
+  }
+
+  async getCampaignSummary(address, { useCache = true } = {}) {
+    if (!address) return null;
+    const lower = address.toLowerCase();
+    const cacheKey = this.cache.generateKey('api_campaign_summary', lower);
+
+    if (useCache) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      const payload = await this.fetchJsonFromApi(`/api/campaigns/${lower}`);
+      const campaign = payload?.campaign || null;
+
+      if (campaign && useCache) {
+        this.cache.set(cacheKey, campaign, this.cache.defaultTTL);
+      }
+
+      return campaign;
+    } catch (error) {
+      console.warn('Erreur getCampaignSummary:', error);
+      return null;
+    }
+  }
+
+  async getAllCampaigns(useCache = true) {
+    const cacheKey = this.cache.generateKey('all_campaigns', 'main');
+
+    if (useCache) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    const apiCampaigns = await this.listCampaigns({}, { useCache: false });
+    if (apiCampaigns.length > 0) {
+      const addresses = apiCampaigns
+        .map((campaign) => campaign.address?.toLowerCase?.() || campaign.address)
+        .filter(Boolean);
+      if (addresses.length > 0) {
+        this.cache.set(cacheKey, addresses, this.cache.defaultTTL);
+        return addresses;
+      }
+    }
+
+    try {
       const divarProxy = await this.getContract('DivarProxy');
       const campaignAddresses = await divarProxy.getAllCampaigns();
-      
       this.cache.set(cacheKey, campaignAddresses, this.cache.defaultTTL);
       return campaignAddresses;
     } catch (error) {
@@ -190,13 +607,22 @@ class ApiManager {
   async getCampaignData(campaignAddress, useCache = true) {
     const cacheKey = this.cache.generateKey('campaign', campaignAddress);
     const circuitKey = `rpc_campaign_${campaignAddress}`;
-    
+
     if (useCache) {
       const cached = this.cache.get(cacheKey);
       if (cached) return cached;
     }
 
-    // Circuit breaker check
+    const summary = await this.getCampaignSummary(campaignAddress, { useCache });
+    if (summary) {
+      const normalized = normalizeCampaignSummary(summary);
+      if (normalized) {
+        this.cache.set(cacheKey, normalized, this.cache.defaultTTL);
+        return normalized;
+      }
+    }
+
+    // Circuit breaker check pour les appels on-chain
     if (this.circuitBreaker.isOpen(circuitKey)) {
       return null;
     }
@@ -204,10 +630,10 @@ class ApiManager {
     try {
       // Rate limiting - attendre entre chaque campagne pour éviter 429
       await new Promise(resolve => setTimeout(resolve, 150));
-      
+
       const campaign = await this.getContract('Campaign', campaignAddress);
       const divarProxy = await this.getContract('DivarProxy');
-      
+
       // Réduire la charge en chargeant séquentiellement au lieu de Promise.all
       const name = await campaign.name();
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -285,6 +711,97 @@ class ApiManager {
     }
   }
 
+  async getUserInvestments(userAddress, { useCache = true } = {}) {
+    if (!userAddress) {
+      return [];
+    }
+
+    const lower = userAddress.toLowerCase();
+    const cacheKey = this.cache.generateKey('user_investments', lower);
+
+    if (useCache) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    let campaignAddresses = [];
+    try {
+      campaignAddresses = await this.getAllCampaigns();
+    } catch (error) {
+      console.warn('Error fetching campaigns for user investments:', error?.message || error);
+    }
+
+    if (!Array.isArray(campaignAddresses) || campaignAddresses.length === 0) {
+      const fallback = this.investmentStore.get(lower) || [];
+      return fallback;
+    }
+
+    const investmentsByCampaign = [];
+
+    for (const campaignAddress of campaignAddresses) {
+      if (!campaignAddress) continue;
+
+      try {
+        const campaign = await this.getContract('Campaign', campaignAddress);
+        if (!campaign || typeof campaign.getInvestments !== 'function') {
+          continue;
+        }
+
+        let investmentsRaw;
+        try {
+          investmentsRaw = await Promise.race([
+            campaign.getInvestments(lower),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout getInvestments')), 6000)),
+          ]);
+        } catch (error) {
+          console.warn(`Error calling getInvestments for ${campaignAddress}:`, error?.message || error);
+          continue;
+        }
+
+        const normalizedInvestments = (investmentsRaw || [])
+          .map(normalizeInvestmentStruct)
+          .filter(Boolean);
+
+        if (normalizedInvestments.length === 0) {
+          continue;
+        }
+
+        const campaignData = await this.getCampaignData(campaignAddress);
+
+        const totalShares = normalizedInvestments.reduce(
+          (acc, investment) => acc + toBigIntSafe(investment.shares),
+          0n,
+        );
+        const totalInvested = normalizedInvestments.reduce(
+          (acc, investment) => acc + toBigIntSafe(investment.amount),
+          0n,
+        );
+
+        investmentsByCampaign.push({
+          campaignAddress,
+          campaignName: campaignData?.name || campaignData?.symbol || campaignAddress,
+          campaignSymbol: campaignData?.symbol || null,
+          totalShares: totalShares.toString(),
+          totalInvested: totalInvested.toString(),
+          investments: normalizedInvestments,
+          updatedAt: Math.floor(Date.now() / 1000),
+        });
+      } catch (error) {
+        console.warn(`Error processing user investments for ${campaignAddress}:`, error?.message || error);
+      }
+    }
+
+    if (investmentsByCampaign.length === 0) {
+      const fallback = this.investmentStore.get(lower) || [];
+      return fallback;
+    }
+
+    this.cache.set(cacheKey, investmentsByCampaign, this.cache.defaultTTL);
+    this.investmentStore.set(lower, investmentsByCampaign);
+
+    return investmentsByCampaign;
+  }
+
   async getCampaignInvestors(campaignAddress, useCache = true) {
     const cacheKey = this.cache.generateKey('campaign_investors', campaignAddress);
     
@@ -329,19 +846,53 @@ class ApiManager {
     }
   }
 
-  async getCampaignTransactions(campaignAddress, useCache = true) {
-    const cacheKey = this.cache.generateKey('campaign_transactions', campaignAddress);
-    
+  async getCampaignTransactions(campaignAddress, options = {}) {
+    if (!campaignAddress) return [];
+
+    if (typeof options === 'boolean') {
+      options = { useCache: options };
+    }
+
+    const { useCache = true, limit } = options || {};
+    const lower = campaignAddress.toLowerCase();
+    const cacheKey = this.cache.generateKey(
+      'campaign_transactions',
+      limit ? `${lower}_limit_${limit}` : lower,
+    );
+
     if (useCache) {
       const cached = this.cache.get(cacheKey);
       if (cached) return cached;
     }
 
+    const searchParams = new URLSearchParams();
+    if (limit) {
+      const parsed = Number.parseInt(limit, 10);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        searchParams.set('limit', String(parsed));
+      }
+    }
+
+    try {
+      const url = searchParams.size > 0
+        ? `/api/campaigns/${lower}/transactions?${searchParams.toString()}`
+        : `/api/campaigns/${lower}/transactions`;
+
+      const payload = await this.fetchJsonFromApi(url);
+      const transactions = Array.isArray(payload?.transactions) ? payload.transactions : [];
+
+      if (useCache) {
+        this.cache.set(cacheKey, transactions, this.cache.defaultTTL);
+      }
+      return transactions;
+    } catch (apiError) {
+      console.warn('Erreur API getCampaignTransactions:', apiError.message || apiError);
+    }
+
     try {
       const campaign = await this.getContract('Campaign', campaignAddress);
       const filter = campaign.filters.SharesPurchased();
-      
-      // Tentative avec timeout et fallback
+
       let events;
       try {
         events = await Promise.race([
@@ -350,329 +901,32 @@ class ApiManager {
         ]);
       } catch (rpcError) {
         console.warn('RPC principal échoué, tentative fallback:', rpcError.message);
-        
-        // Fallback : retourner un tableau vide en cache temporaire pour éviter les requêtes répétées
         const emptyResult = [];
-        this.cache.set(cacheKey, emptyResult, 30000); // Cache court de 30s
+        this.cache.set(cacheKey, emptyResult, 30000);
         return emptyResult;
       }
-      
+
       const transactions = events.map(event => ({
         hash: event.transactionHash,
         blockNumber: event.blockNumber,
         investor: event.args.investor,
         amount: event.args.amount.toString(),
         shares: event.args.shares.toString(),
-        timestamp: event.args.timestamp.toString()
+        timestamp: event.args.timestamp.toString(),
       }));
 
-      this.cache.set(cacheKey, transactions, this.cache.defaultTTL);
+      if (useCache) {
+        this.cache.set(cacheKey, transactions, this.cache.defaultTTL);
+      }
       return transactions;
     } catch (error) {
-      console.warn('Erreur getCampaignTransactions:', error.message);
-      
-      // Retourner un tableau vide et le cacher temporairement pour éviter les requêtes répétées
+      console.warn('Erreur fallback getCampaignTransactions:', error.message || error);
       const emptyResult = [];
-      this.cache.set(cacheKey, emptyResult, 30000); // Cache court de 30s
+      this.cache.set(cacheKey, emptyResult, 30000);
       return emptyResult;
     }
   }
 
-  async getUserInvestments(userAddress) {
-    const cacheKey = this.cache.generateKey('user_investments', userAddress);
-    const cached = this.cache.get(cacheKey);
-    if (cached) return cached;
-
-    try {
-      const campaigns = await this.getAllCampaigns();
-      const investments = [];
-
-      for (const campaignAddress of campaigns) {
-        const campaign = await this.getContract('Campaign', campaignAddress);
-        const balance = await campaign.balanceOf(userAddress);
-        
-        if (balance.gt(0)) {
-          const campaignData = await this.getCampaignData(campaignAddress);
-          investments.push({
-            ...campaignData,
-            userShares: balance.toString()
-          });
-        }
-      }
-
-      this.cache.set(cacheKey, investments, this.cache.defaultTTL);
-      return investments;
-    } catch (error) {
-      console.error('Erreur getUserInvestments:', error);
-      return [];
-    }
-  }
-
-  // === RÉCUPÉRATION IPFS ===
-  
-  async getCampaignDocuments(campaignAddress) {
-    try {
-      const divarProxy = await this.getContract('DivarProxy');
-      const registry = await divarProxy.getCampaignRegistry(campaignAddress);
-      
-      if (!registry.metadata || !registry.metadata.startsWith('ipfs://')) {
-        return null;
-      }
-      
-      const ipfsHash = registry.metadata.replace('ipfs://', '');
-      
-      // 1. Récupérer le JSON principal
-      const gateways = [
-        `https://${ipfsHash}.ipfs.w3s.link/campaign-data.json`,
-        `https://ipfs.io/ipfs/${ipfsHash}/campaign-data.json`,
-        `https://gateway.pinata.cloud/ipfs/${ipfsHash}/campaign-data.json`
-      ];
-      
-      let response;
-      let lastError;
-      
-      for (const gateway of gateways) {
-        try {
-          response = await fetch(gateway);
-          if (response.ok) break;
-        } catch (error) {
-          lastError = error;
-          console.warn(`Gateway ${gateway} failed:`, error.message);
-        }
-      }
-      
-      if (!response || !response.ok) {
-        throw new Error(`Tous les gateways IPFS ont échoué. Dernier erreur: ${lastError?.message}`);
-      }
-      
-      const campaignData = await response.json();
-      
-      // 2. Si pas de documents dans le JSON, essayer de les détecter automatiquement
-      if (!campaignData.documents) {
-        campaignData.documents = await this.detectIPFSDocuments(ipfsHash);
-      }
-      
-      return campaignData;
-    } catch (error) {
-      console.error('Erreur récupération documents IPFS:', error);
-      return null;
-    }
-  }
-  
-  // Nouvelle fonction pour détecter automatiquement les fichiers IPFS
-  async detectIPFSDocuments(ipfsHash) {
-    try {
-      
-      // Patterns de fichiers à détecter
-      const documentPatterns = {
-        whitepaper: /^whitepaper_(.+)$/,
-        pitchDeck: /^pitchDeck_(.+)$/,
-        legalDocuments: /^legalDocuments_(.+)$/,
-        media: /^media_(.+)$/
-      };
-      
-      const detectedDocuments = {
-        whitepaper: [],
-        pitchDeck: [],
-        legalDocuments: [],
-        media: []
-      };
-      
-      // Liste connue des fichiers (depuis ta campagne)
-      const knownFiles = [
-        'whitepaper_mockup.png',
-        'pitchDeck_mockup.png', 
-        'legalDocuments_mockup.png',
-        'media_mockup.png'
-      ];
-      
-      // Vérifier chaque fichier connu
-      for (const fileName of knownFiles) {
-        for (const [docType, pattern] of Object.entries(documentPatterns)) {
-          const match = fileName.match(pattern);
-          if (match) {
-            const originalName = match[1];
-            const fileExtension = originalName.split('.').pop();
-            const fileType = this.getFileType(fileExtension);
-            
-            // Tester la disponibilité du fichier
-            const testUrl = `https://${ipfsHash}.ipfs.w3s.link/${fileName}`;
-            try {
-              const testResponse = await fetch(testUrl, { method: 'HEAD' });
-              if (testResponse.ok) {
-                detectedDocuments[docType].push({
-                  name: originalName,
-                  fileName: fileName,
-                  type: fileType,
-                  url: testUrl,
-                  size: testResponse.headers.get('content-length') || 'Unknown'
-                });
-              }
-            } catch (error) {
-              // Fichier non accessible, continuer silencieusement
-            }
-          }
-        }
-      }
-      
-      return detectedDocuments;
-      
-    } catch (error) {
-      console.error('Erreur détection documents IPFS:', error);
-      return {};
-    }
-  }
-  
-  // Fonction utilitaire pour déterminer le type de fichier
-  getFileType(extension) {
-    const types = {
-      'pdf': 'application/pdf',
-      'png': 'image/png',
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'gif': 'image/gif',
-      'mp4': 'video/mp4',
-      'doc': 'application/msword',
-      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    };
-    return types[extension.toLowerCase()] || 'application/octet-stream';
-  }
-
-  // === UTILITAIRES ===
-  
-  formatEthValue(value) {
-    if (!value) return "0";
-    
-    try {
-      // PROTECTION: Si c'est un array, on ne traite pas
-      if (Array.isArray(value)) {
-        console.warn('formatEthValue reçoit un array, valeur ignorée:', value);
-        return "0";
-      }
-
-      let numericValue;
-      
-      // Si c'est un objet BigNumber avec _hex ou hex
-      if (typeof value === 'object' && (value._hex || value.hex)) {
-        numericValue = parseInt(value._hex || value.hex, 16);
-      } 
-      // Si c'est déjà une string hex
-      else if (typeof value === 'string' && value.startsWith('0x')) {
-        numericValue = parseInt(value, 16);
-      }
-      // Si c'est un BigNumber objet avec toString()
-      else if (typeof value === 'object' && typeof value.toString === 'function') {
-        const strValue = value.toString();
-        numericValue = parseFloat(strValue);
-      }
-      // Si c'est un nombre ou string normale
-      else {
-        numericValue = parseFloat(value.toString());
-      }
-      
-      if (numericValue === 0 || isNaN(numericValue)) return "0";
-      
-      // Conversion de Wei vers Ether (diviser par 10^18)
-      const ethValue = numericValue / Math.pow(10, 18);
-      
-      // Si la valeur est très petite, utiliser plus de décimales
-      if (ethValue < 0.000001) {
-        return ethValue.toFixed(9);
-      }
-      return ethValue.toFixed(6);
-    } catch (error) {
-      console.error('Erreur formatEthValue:', error, 'value:', value);
-      return "0";
-    }
-  }
-
-  async getEthPrice() {
-    const cacheKey = this.cache.generateKey('eth_price', 'current');
-    const cached = this.cache.get(cacheKey);
-    if (cached) return cached;
-
-    try {
-      const priceConsumer = await this.getContract('PriceConsumerV3');
-      const price = await priceConsumer.getLatestPrice();
-      const priceInUsd = (price / 1e8).toFixed(2);
-      
-      this.cache.set(cacheKey, priceInUsd, this.cache.criticalTTL);
-      return priceInUsd;
-    } catch (error) {
-      console.error('Erreur getEthPrice:', error);
-      return "0";
-    }
-  }
-
-  async getCampaignCreationFee() {
-    const cacheKey = this.cache.generateKey('creation_fee', 'current');
-    const cached = this.cache.get(cacheKey);
-    if (cached) return cached;
-
-    try {
-      const divarProxy = await this.getContract('DivarProxy');
-      const fee = await divarProxy.getCampaignCreationFeeETH();
-      const feeFormatted = this.formatEthValue(fee);
-      
-      this.cache.set(cacheKey, { raw: fee.toString(), formatted: feeFormatted }, this.cache.criticalTTL);
-      return { raw: fee.toString(), formatted: feeFormatted };
-    } catch (error) {
-      console.error('Erreur getCampaignCreationFee:', error);
-      return { raw: "0", formatted: "0" };
-    }
-  }
-
-  // === CRÉATION DE CAMPAGNE ===
-  
-  async createCampaign(campaignData) {
-    try {
-      const divarProxy = await this.getContract('DivarProxy', null, true); // needsSigner = true
-      
-      // Récupération des frais de création
-      const fee = await divarProxy.getCampaignCreationFeeETH();
-      
-      const tx = await divarProxy.createCampaign(
-        campaignData.name,
-        campaignData.symbol,
-        campaignData.targetAmount,
-        campaignData.sharePrice,
-        campaignData.endTime,
-        campaignData.category,
-        campaignData.metadata,
-        campaignData.royaltyFee,
-        campaignData.logo,
-        { value: fee }
-      );
-      
-      const receipt = await tx.wait();
-      
-      // Extraire l'adresse de la nouvelle campagne depuis les events
-      const campaignCreatedEvent = receipt.events?.find(e => e.event === 'CampaignCreated');
-      
-      if (campaignCreatedEvent) {
-        const campaignAddress = campaignCreatedEvent.args?.campaignAddress;
-        
-        // Invalider le cache pour forcer le rechargement
-        this.invalidateCache('campaigns');
-        
-        return {
-          success: true,
-          campaignAddress,
-          txHash: tx.hash,
-          receipt
-        };
-      } else {
-        throw new Error('Événement CampaignCreated non trouvé');
-      }
-      
-    } catch (error) {
-      console.error('Erreur createCampaign:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
 
   clearCache() {
     this.cache.clear();
@@ -684,85 +938,15 @@ class ApiManager {
 
   invalidateCampaign(campaignAddress) {
     this.cache.invalidateCampaign(campaignAddress);
+    if (!campaignAddress) return;
+    const lower = campaignAddress.toLowerCase();
+    this.cache.invalidate(`api_campaign_summary_${lower}`);
+    this.cache.invalidate(`campaign_transactions_${lower}`);
   }
 
-  getCacheStats() {
-    return this.cache.getCacheStats();
-  }
-
-  // === NOUVELLES MÉTHODES REMBOURSEMENT ===
-
-  async canRefundToken(campaignAddress, tokenId) {
-    try {
-      const campaign = await this.getContract('Campaign', campaignAddress);
-      const result = await campaign.canRefundToken(tokenId);
-      return {
-        canRefund: result[0],
-        message: result[1]
-      };
-    } catch (error) {
-      console.error('Erreur canRefundToken:', error);
-      return { canRefund: false, message: 'Erreur lors de la vérification' };
-    }
-  }
-
-  async getRefundAmount(campaignAddress, tokenId) {
-    try {
-      const campaign = await this.getContract('Campaign', campaignAddress);
-      const refundAmount = await campaign.getRefundAmount(tokenId);
-      return this.formatEthValue(refundAmount);
-    } catch (error) {
-      console.error('Erreur getRefundAmount:', error);
-      return '0';
-    }
-  }
-
-  async getNFTRound(campaignAddress, tokenId) {
-    try {
-      const campaign = await this.getContract('Campaign', campaignAddress);
-      const round = await campaign.getNFTRound(tokenId);
-      return round.toString();
-    } catch (error) {
-      console.error('Erreur getNFTRound:', error);
-      return '0';
-    }
-  }
-
-  async refundShares(campaignAddress, tokenIds) {
-    try {
-      const campaign = await this.getContract('Campaign', campaignAddress, true);
-      const tx = await campaign.refundShares(tokenIds);
-      await tx.wait();
-      
-      this.invalidateCampaign(campaignAddress);
-      return { success: true, txHash: tx.hash };
-    } catch (error) {
-      console.error('Erreur refundShares:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // === MÉTHODES DE PRÉCHARGEMENT ===
-
-  preloadCampaignOnHover(campaignAddress) {
+  preloadCampaignDetails(campaignAddress) {
+    if (!campaignAddress) return;
     this.cache.preloadOnHover(campaignAddress);
-  }
-
-  async warmupCache(campaignAddresses) {
-    await this.cache.warmupCache(campaignAddresses);
-  }
-
-  // === MÉTHODES UTILITAIRES V2 ===
-
-  async getCampaignVersion(campaignAddress) {
-    try {
-      const campaign = await this.getContract('Campaign', campaignAddress);
-      // Test si nouvelles fonctions disponibles
-      await campaign.canRefundToken(1000001);
-      return 'v2'; // Nouvelles fonctionnalités
-    } catch {
-      return 'v1'; // Version classique
-    }
   }
 
 
@@ -877,6 +1061,168 @@ class ApiManager {
       console.warn('Error fetching active promotions:', error);
       return [];
     }
+  }
+
+  async getCampaignDocuments(campaignAddress, { useCache = true } = {}) {
+    if (!campaignAddress) {
+      return [];
+    }
+
+    const lower = campaignAddress.toLowerCase();
+    const cacheKey = this.cache.generateKey('campaign_documents', lower);
+
+    if (useCache) {
+      const cached = this.cache.get(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      const supabaseClient = await initSupabase();
+      const { data, error } = await supabaseClient
+        .from('campaign_documents')
+        .select('*')
+        .eq('campaign_address', lower)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      const documents = (data || [])
+        .map(normalizeDocumentRow)
+        .filter(Boolean);
+
+      this.cache.set(cacheKey, documents, this.cache.defaultTTL);
+      this.documentStore.set(lower, documents);
+      writeLocalDocuments(lower, documents);
+
+      return documents;
+    } catch (error) {
+      console.warn('Error fetching campaign documents:', error);
+
+      const fallbackDocs = this.documentStore.get(lower)
+        || readLocalDocuments(lower);
+
+      if (fallbackDocs && fallbackDocs.length > 0) {
+        this.cache.set(cacheKey, fallbackDocs, this.cache.defaultTTL);
+        this.documentStore.set(lower, fallbackDocs);
+        return fallbackDocs;
+      }
+
+      return [];
+    }
+  }
+
+  async addDocument(campaignAddress, ipfsHash, name, options = {}) {
+    if (!campaignAddress) {
+      throw new Error('campaignAddress is required');
+    }
+
+    if (!ipfsHash) {
+      throw new Error('ipfsHash is required');
+    }
+
+    if (!name) {
+      throw new Error('name is required');
+    }
+
+    const lower = campaignAddress.toLowerCase();
+    const nowSeconds = Math.floor(Date.now() / 1000);
+
+    const baseDocument = normalizeDocumentRow({
+      id: options.id,
+      campaign_address: lower,
+      name,
+      document_name: options.documentName,
+      description: options.description,
+      category: options.category || options.type,
+      ipfs_hash: ipfsHash,
+      hash: ipfsHash,
+      url: options.url,
+      download_url: options.downloadUrl,
+      is_verified: options.isVerified,
+      is_public: options.isPublic,
+      uploaded_by: options.uploadedBy,
+      file_size: options.size ?? options.fileSize,
+      timestamp: nowSeconds,
+      metadata: options.metadata,
+    });
+
+    let savedDocument = baseDocument;
+
+    try {
+      const supabaseClient = await initSupabase();
+
+      const insertPayload = {
+        campaign_address: lower,
+        name: baseDocument.name,
+        description: baseDocument.description,
+        category: baseDocument.category,
+        ipfs_hash: baseDocument.hash,
+        is_public: baseDocument.isPublic,
+        is_verified: baseDocument.isVerified,
+        file_size: baseDocument.size,
+        url: baseDocument.url,
+        uploaded_by: baseDocument.uploadedBy,
+        metadata: baseDocument.metadata,
+      };
+
+      Object.keys(insertPayload).forEach((key) => {
+        if (insertPayload[key] === undefined) {
+          delete insertPayload[key];
+        }
+      });
+
+      const { data, error } = await supabaseClient
+        .from('campaign_documents')
+        .insert([insertPayload])
+        .select()
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        const normalized = normalizeDocumentRow(data);
+        if (normalized) {
+          savedDocument = normalized;
+        }
+      }
+    } catch (error) {
+      console.warn('Error adding campaign document:', error);
+    }
+
+    const cacheKey = this.cache.generateKey('campaign_documents', lower);
+    const existing = this.cache.get(cacheKey)
+      || this.documentStore.get(lower)
+      || readLocalDocuments(lower)
+      || [];
+
+    const updatedDocuments = [
+      savedDocument,
+      ...existing.filter((doc) => doc && doc.id !== savedDocument.id && doc.hash !== savedDocument.hash),
+    ];
+
+    this.cache.set(cacheKey, updatedDocuments, this.cache.defaultTTL);
+    this.documentStore.set(lower, updatedDocuments);
+    writeLocalDocuments(lower, updatedDocuments);
+
+    return savedDocument;
+  }
+
+  getCacheStats() {
+    if (!this.cache || typeof this.cache.getCacheStats !== 'function') {
+      return {
+        totalEntries: 0,
+        totalHits: 0,
+        typeStats: {},
+        isPreloading: false,
+        queueSize: 0
+      };
+    }
+
+    return this.cache.getCacheStats();
   }
 }
 

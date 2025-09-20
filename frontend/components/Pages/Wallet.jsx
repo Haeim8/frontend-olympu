@@ -44,6 +44,27 @@ export default function Wallet() {
 
       // Utiliser api-manager pour récupérer les investissements avec cache
       const investments = await apiManager.getUserInvestments(address);
+
+      const toTimestampSeconds = (value) => {
+        if (!value && value !== 0) {
+          return Math.floor(Date.now() / 1000);
+        }
+
+        if (typeof value === 'object' && typeof value.toNumber === 'function') {
+          try {
+            return value.toNumber();
+          } catch (error) {
+            console.warn('Impossible de convertir le timestamp en utilisant toNumber:', error);
+          }
+        }
+
+        const asNumber = Number(value);
+        if (Number.isFinite(asNumber) && asNumber > 0) {
+          return Math.floor(asNumber);
+        }
+
+        return Math.floor(Date.now() / 1000);
+      };
       
       // Transformer les données pour le format attendu
       const nftData = [];
@@ -53,12 +74,14 @@ export default function Wallet() {
       investmentsArray.forEach(investment => {
         const investmentArray = Array.isArray(investment.investments) ? investment.investments : [];
         investmentArray.forEach((inv, index) => {
+          const timestampSeconds = toTimestampSeconds(inv.timestamp);
+
           const nftItem = {
             id: `${investment.campaignAddress}-${inv.tokenIds?.[0]?.toString() || index}`,
             amount: apiManager.formatEthValue(inv.amount),
             shares: inv.shares?.toString() || '0',
             campaign: investment.campaignName,
-            timestamp: inv.timestamp?.toNumber() || Date.now() / 1000,
+            timestamp: timestampSeconds,
             txHash: investment.campaignAddress,
             dividends: '0.0000' // TODO: Récupérer les vraies données de dividendes
           };
@@ -71,7 +94,7 @@ export default function Wallet() {
             type: t('wallet.investment'),
             project: investment.campaignName,
             amount: `${apiManager.formatEthValue(inv.amount)} ETH`,
-            date: new Date((inv.timestamp?.toNumber() || Date.now() / 1000) * 1000).toLocaleDateString('fr-FR'),
+            date: new Date(timestampSeconds * 1000).toLocaleDateString('fr-FR'),
             txHash: investment.campaignAddress
           });
         });

@@ -4,265 +4,185 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { apiManager } from '@/lib/services/api-manager';
 import { useTranslation } from '@/hooks/useLanguage';
 
-// Import des composants modulaires
 import HomeHeader from '@/components/home/HomeHeader';
 import CampaignFilters from '@/components/home/CampaignFilters';
 import CampaignGrid from '@/components/home/CampaignGrid';
 import CreateCampaignCTA from '@/components/home/CreateCampaignCTA';
-
-// Import des modals
 import CampaignModal from './CampaignModal';
 import ProjectDetails from './ProjectDetails';
 
+const normalizeCampaign = (campaign) => {
+  if (!campaign) return null;
+
+  const sharePriceValue = parseFloat(campaign.sharePrice ?? campaign.share_price ?? '0');
+  const goalValue = parseFloat(campaign.goal ?? '0');
+  const raisedValue = parseFloat(campaign.raised ?? '0');
+  const status = campaign.status ?? null;
+  const isActive = campaign.isActive ?? (status ? status === 'active' : false);
+  const isFinalized = campaign.isFinalized ?? (status ? status === 'finalized' : false);
+  const endDate = campaign.endDate ?? campaign.end_date ?? null;
+  const endTimestamp = endDate ? new Date(endDate).getTime() : null;
+  const sharesSoldValue = parseInt(campaign.sharesSold ?? campaign.shares_sold ?? '0', 10) || 0;
+  const updatedAt = campaign.updatedAt ?? campaign.updated_at ?? null;
+  const creationTime = updatedAt ? new Date(updatedAt).getTime() : Date.now();
+  const progress = goalValue > 0 ? (raisedValue / goalValue) * 100 : 0;
+
+  return {
+    ...campaign,
+    id: campaign.id ?? campaign.address,
+    address: campaign.address,
+    name: campaign.name,
+    sector: campaign.sector ?? campaign.category ?? 'General',
+    sharePrice: (campaign.sharePrice ?? campaign.share_price ?? '0').toString(),
+    goal: (campaign.goal ?? '0').toString(),
+    raised: (campaign.raised ?? '0').toString(),
+    status: status ?? (isActive ? 'active' : isFinalized ? 'finalized' : 'pending'),
+    isActive,
+    isFinalized,
+    endDate,
+    metadataUri: campaign.metadataUri ?? campaign.metadata_uri ?? null,
+    sharesSold: sharesSoldValue.toString(),
+    totalShares: (campaign.totalShares ?? campaign.total_shares ?? '0').toString(),
+    investors: campaign.investors ?? sharesSoldValue,
+    creationTime,
+    progressPercentage: progress,
+    isNearCompletion: progress >= 80,
+    isHotProject: progress > 50 && isActive,
+    nftPrice: (campaign.sharePrice ?? campaign.share_price ?? '0').toString(),
+    nftTotal: sharePriceValue > 0 ? Math.floor(goalValue / sharePriceValue) : 0,
+    timeRemaining: endTimestamp ? Math.max(0, endTimestamp - Date.now()) : 0,
+  };
+};
+
 export default function Home() {
   const { t } = useTranslation();
-  // États principaux
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // États d'interface
+
   const [showFinalized, setShowFinalized] = useState(false);
   const [filters, setFilters] = useState({});
   const [selectedProject, setSelectedProject] = useState(null);
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
-  
-  // États des statistiques
+
   const [campaignStats, setCampaignStats] = useState({
     total: 0,
     active: 0,
     finalized: 0,
-    totalRaised: 0
+    totalRaised: 0,
   });
 
-  // États pour les adresses de campagnes (remplace ThirdWeb)
-  const [campaignAddresses, setCampaignAddresses] = useState([]);
-  const [addressesLoading, setAddressesLoading] = useState(true);
-  const [contractError, setContractError] = useState(null);
-
-  // Fonction pour calculer les statistiques
   const calculateStats = useCallback((campaigns) => {
-    const campaignsArray = Array.isArray(campaigns) ? campaigns : [];
+    const list = Array.isArray(campaigns) ? campaigns : [];
+    const totalRaised = list.reduce((acc, campaign) => acc + parseFloat(campaign.raised || 0), 0);
     const stats = {
-      total: campaignsArray.length,
-      active: campaignsArray.filter(c => c.isActive && !c.isFinalized).length,
-      finalized: campaignsArray.filter(c => c.isFinalized).length,
-      totalRaised: campaignsArray.reduce((total, c) => total + parseFloat(c.raised || 0), 0)
+      total: list.length,
+      active: list.filter((campaign) => campaign.isActive && !campaign.isFinalized).length,
+      finalized: list.filter((campaign) => campaign.isFinalized).length,
+      totalRaised,
     };
     setCampaignStats(stats);
     return stats;
   }, []);
 
-  // Fonction pour appliquer les filtres
-  const applyFilters = useCallback((campaigns, currentFilters, showFinalized) => {
-    const campaignsArray = Array.isArray(campaigns) ? campaigns : [];
-    let filtered = campaignsArray.filter(project => 
-      showFinalized ? project.isFinalized : (!project.isFinalized && project.isActive)
+  const applyFilters = useCallback((campaigns, currentFilters, includeFinalized) => {
+    const list = Array.isArray(campaigns) ? campaigns : [];
+    let filtered = list.filter((project) =>
+      includeFinalized ? project.isFinalized : (!project.isFinalized && project.isActive)
     );
 
-    // Filtre de recherche
     if (currentFilters.search) {
       const searchTerm = currentFilters.search.toLowerCase();
-      filtered = filtered.filter(project =>
+      filtered = filtered.filter((project) =>
         project.name.toLowerCase().includes(searchTerm) ||
         project.sector.toLowerCase().includes(searchTerm)
       );
     }
 
-    // Filtre par secteurs
     if (currentFilters.sectors && currentFilters.sectors.length > 0) {
-      filtered = filtered.filter(project =>
-        currentFilters.sectors.includes(project.sector)
-      );
+      filtered = filtered.filter((project) => currentFilters.sectors.includes(project.sector));
     }
 
-    // Filtre par prix
     if (currentFilters.priceRange) {
       const { min, max } = currentFilters.priceRange;
       if (min) {
-        filtered = filtered.filter(project =>
-          parseFloat(project.sharePrice) >= parseFloat(min)
-        );
+        filtered = filtered.filter((project) => parseFloat(project.sharePrice) >= parseFloat(min));
       }
       if (max) {
-        filtered = filtered.filter(project =>
-          parseFloat(project.sharePrice) <= parseFloat(max)
-        );
+        filtered = filtered.filter((project) => parseFloat(project.sharePrice) <= parseFloat(max));
       }
     }
 
-    // Filtre certifiés
     if (currentFilters.verified) {
-      filtered = filtered.filter(project => project.isCertified);
+      filtered = filtered.filter((project) => project.isCertified);
     }
 
-    // Filtre populaires (Hot projects)
     if (currentFilters.hot) {
-      filtered = filtered.filter(project => {
-        const progress = (parseFloat(project.raised) / parseFloat(project.goal)) * 100;
-        return progress > 50 && project.isActive;
-      });
+      filtered = filtered.filter((project) => project.isHotProject);
     }
 
-    // Tri
     const sortBy = currentFilters.sortBy || 'newest';
-    switch (sortBy) {
-      case 'newest':
-        filtered.sort((a, b) => b.creationTime - a.creationTime);
-        break;
-      case 'oldest':
-        filtered.sort((a, b) => a.creationTime - b.creationTime);
-        break;
-      case 'mostFunded':
-        filtered.sort((a, b) => parseFloat(b.raised) - parseFloat(a.raised));
-        break;
-      case 'mostPopular':
-        filtered.sort((a, b) => {
-          const progressA = (parseFloat(a.raised) / parseFloat(a.goal)) * 100;
-          const progressB = (parseFloat(b.raised) / parseFloat(b.goal)) * 100;
-          return progressB - progressA;
-        });
-        break;
-      case 'alphabetical':
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-        break;
-    }
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return a.creationTime - b.creationTime;
+        case 'mostFunded':
+          return parseFloat(b.raised) - parseFloat(a.raised);
+        case 'mostPopular':
+          return (parseFloat(b.raised) / parseFloat(b.goal || 1)) - (parseFloat(a.raised) / parseFloat(a.goal || 1));
+        case 'alphabetical':
+          return a.name.localeCompare(b.name);
+        case 'newest':
+        default:
+          return b.creationTime - a.creationTime;
+      }
+    });
 
     return filtered;
   }, []);
 
-  // Fonction pour charger les adresses des campagnes
-  const fetchCampaignAddresses = useCallback(async () => {
-    setAddressesLoading(true);
-    setContractError(null);
-    
-    try {
-      const addresses = await apiManager.getAllCampaigns(false); // Pas de cache pour forcer le rechargement
-      setCampaignAddresses(addresses);
-    } catch (error) {
-      console.error("Error fetching campaign addresses:", error);
-      setContractError(error.message);
-      setCampaignAddresses([]);
-    } finally {
-      setAddressesLoading(false);
-    }
-  }, []);
-
-  // Fonction pour charger toutes les campagnes avec cache intelligent et préchargement
-  const fetchAllCampaigns = useCallback(async () => {
-    if (!campaignAddresses || campaignAddresses.length === 0) {
-      setIsLoading(false);
-      return;
-    }
-
+  const loadCampaigns = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log('🚀 Démarrage warmup cache pour', campaignAddresses.length, 'campagnes');
-      
-      // 1. Lancement du préchargement en arrière-plan
-      apiManager.warmupCache(campaignAddresses).catch(err => 
-        console.warn('Erreur warmup cache:', err.message)
-      );
-      
-      // 2. Récupération rapide des campagnes (avec cache si disponible)
-      const validCampaigns = [];
-      const batchSize = 3; // Traiter par batch de 3 pour accélérer
-      
-      for (let i = 0; i < campaignAddresses.length; i += batchSize) {
-        const batch = campaignAddresses.slice(i, i + batchSize);
-        
-        // Traitement en parallèle du batch
-        const batchPromises = batch.map(async (address) => {
-          try {
-            const campaignData = await apiManager.getCampaignData(address, true); // Utiliser le cache
-            if (campaignData) {
-              // Enrichir avec les données de promotion en cache
-              const promotionData = await apiManager.isCampaignBoosted(address, campaignData.currentRound, true);
-              return {
-                ...campaignData,
-                isPromoted: promotionData.isBoosted,
-                promotionType: promotionData.boostType
-              };
-            }
-          } catch (error) {
-            console.warn(`Erreur chargement campagne ${address}:`, error.message);
-          }
-          return null;
-        });
-        
-        const batchResults = await Promise.all(batchPromises);
-        validCampaigns.push(...batchResults.filter(Boolean));
-        
-        // Petit délai entre les batches (réduit de 500ms à 200ms)
-        if (i + batchSize < campaignAddresses.length) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-      
-      // Enrichir les données avec des informations supplémentaires
-      const enrichedCampaigns = validCampaigns.map(campaign => ({
-        ...campaign,
-        // Ajouter des propriétés calculées
-        progressPercentage: ((parseFloat(campaign.raised) / parseFloat(campaign.goal)) * 100) || 0,
-        isNearCompletion: ((parseFloat(campaign.raised) / parseFloat(campaign.goal)) * 100) >= 80,
-        isHotProject: ((parseFloat(campaign.raised) / parseFloat(campaign.goal)) * 100) > 50 && campaign.isActive,
-        // Simuler certaines propriétés pour le moment
-        isCertified: Math.random() > 0.7,
-        investors: Math.floor(Math.random() * 50) + 10
-      }));
-
-      setProjects(enrichedCampaigns);
-      calculateStats(enrichedCampaigns);
-      
-      // Pas de préchargement pour le moment (API simplifié)
-      
-    } catch (error) {
-      console.error("Error fetching campaigns:", error);
-      setError("Impossible de charger les campagnes. Veuillez réessayer plus tard.");
+      const campaigns = await apiManager.listCampaigns({}, { useCache: true });
+      const normalized = campaigns.map(normalizeCampaign).filter(Boolean);
+      setProjects(normalized);
+      calculateStats(normalized);
+    } catch (err) {
+      console.error('Error fetching campaigns:', err);
+      setProjects([]);
+      calculateStats([]);
+      setError(t('campaigns.error.generic', 'Impossible de charger les campagnes. Veuillez réessayer plus tard.'));
     } finally {
       setIsLoading(false);
     }
-  }, [campaignAddresses, calculateStats]);
+  }, [calculateStats, t]);
 
-  // Effet pour charger les adresses des campagnes au démarrage
   useEffect(() => {
-    fetchCampaignAddresses();
-  }, [fetchCampaignAddresses]);
+    loadCampaigns();
+  }, [loadCampaigns]);
 
-  // Effet pour charger les campagnes une fois les adresses récupérées
-  useEffect(() => {
-    if (!addressesLoading && campaignAddresses.length > 0) {
-      fetchAllCampaigns();
-    }
-  }, [campaignAddresses, addressesLoading, fetchAllCampaigns]);
-
-  // Effet pour appliquer les filtres
   useEffect(() => {
     const filtered = applyFilters(projects, filters, showFinalized);
     setFilteredProjects(filtered);
   }, [projects, filters, showFinalized, applyFilters]);
 
-  // Gestionnaires d'événements
   const handleCreateCampaign = useCallback(() => {
     setShowCreateCampaign(true);
   }, []);
 
   const handleCampaignCreated = useCallback(() => {
     setShowCreateCampaign(false);
-    fetchCampaignAddresses();
-  }, [fetchCampaignAddresses]);
+    apiManager.invalidateCache('api_campaign');
+    apiManager.invalidateCache('campaign');
+    loadCampaigns();
+  }, [loadCampaigns]);
 
   const handleViewDetails = useCallback((project) => {
-    console.log('🔍 Project selected:', project);
-    console.log('🔍 isActive:', project.isActive);
-    console.log('🔍 endDate:', project.endDate);
     setSelectedProject(project);
-    // Pas de préchargement pour le moment (API simplifié)
   }, []);
 
   const handleCloseDetails = useCallback(() => {
@@ -274,30 +194,21 @@ export default function Home() {
   }, []);
 
   const handleRefresh = useCallback(() => {
-    // Vider le cache et recharger
-    apiManager.clearCache();
-    fetchCampaignAddresses();
-  }, [fetchCampaignAddresses]);
+    apiManager.invalidateCache('api_campaign');
+    apiManager.invalidateCache('campaign');
+    loadCampaigns();
+  }, [loadCampaigns]);
 
-  // Préchargement intelligent au survol (désactivé pour API simplifié)
   const handlePreloadHover = useCallback((campaignId) => {
-    // Pas de préchargement pour le moment
+    apiManager.preloadCampaignDetails(campaignId);
   }, []);
 
-  // Calcul des statistiques pour les filtres et header
-  const getFilterStats = () => {
-    const totalVisible = filteredProjects.length;
-    const activeVisible = filteredProjects.filter(p => p.isActive && !p.isFinalized).length;
-    return { totalVisible, activeVisible };
-  };
-
-  const { totalVisible, activeVisible } = getFilterStats();
+  const totalVisible = filteredProjects.length;
+  const activeVisible = filteredProjects.filter((project) => project.isActive && !project.isFinalized).length;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-        
-        {/* Header principal */}
         <HomeHeader
           showFinalized={showFinalized}
           setShowFinalized={setShowFinalized}
@@ -305,7 +216,6 @@ export default function Home() {
           campaignStats={campaignStats}
         />
 
-        {/* Section filtres */}
         <CampaignFilters
           filters={filters}
           onFiltersChange={handleFiltersChange}
@@ -313,7 +223,6 @@ export default function Home() {
           activeCount={totalVisible}
         />
 
-        {/* Grille des campagnes */}
         <CampaignGrid
           projects={filteredProjects}
           isLoading={isLoading}
@@ -324,19 +233,17 @@ export default function Home() {
           onPreloadHover={handlePreloadHover}
         />
 
-        {/* CTA pour créer une campagne (affiché seulement s'il n'y a pas d'erreur) */}
         {!error && !isLoading && (
           <CreateCampaignCTA
             onClick={handleCreateCampaign}
             campaignStats={{
               total: campaignStats.total,
               success: campaignStats.finalized,
-              totalRaised: campaignStats.totalRaised / 1000000 // Convertir en millions
+              totalRaised: campaignStats.totalRaised / 1000000,
             }}
           />
         )}
 
-        {/* Modals */}
         {selectedProject && (
           <ProjectDetails
             selectedProject={selectedProject}
@@ -350,7 +257,6 @@ export default function Home() {
           onCampaignCreated={handleCampaignCreated}
         />
 
-        {/* Debug info en développement */}
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-8 p-4 bg-gray-100 dark:bg-neutral-900 rounded-lg">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

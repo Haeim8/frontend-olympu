@@ -13,7 +13,6 @@ import ConnectPrompt from './app/ConnectPrompt';
 import { useDisconnect, useAccount } from 'wagmi';
 // Firebase supprimé - utilisation localStorage à la place
 import { apiManager } from '@/lib/services/api-manager';
-import { useEnvironment } from '@/hooks/useEnvironment';
 
 export default function AppInterface() {
   const { theme, setTheme } = useTheme();
@@ -34,64 +33,33 @@ export default function AppInterface() {
   const { disconnect } = useDisconnect();
   const { address } = useAccount();
   const router = useRouter(); 
-  const { isMiniApp, isLoading: envLoading } = useEnvironment();
-
-  // Informer Farcaster/Base que l'UI est prête afin de retirer le splash screen
-  const miniAppReadyRef = useRef(false);
-
-  const signalMiniAppReady = useCallback(async () => {
-    if (miniAppReadyRef.current) return;
-
-    try {
-      const { sdk } = await import('@farcaster/miniapp-sdk');
-      await sdk?.actions?.ready?.();
-      miniAppReadyRef.current = true;
-    } catch (error) {
-      console.warn('Unable to notify miniapp host that the UI is ready:', error);
-    }
-  }, []);
-
+ 
+  // Redirection si pas d'adresse
   useEffect(() => {
-    if (typeof window === 'undefined' || miniAppReadyRef.current) {
-      return undefined;
+    if (!address) {
+      router.push('/');
     }
-
-    if (!envLoading && isMiniApp) {
-      signalMiniAppReady();
-      return undefined;
-    }
-
-    const fallbackTimer = window.setTimeout(signalMiniAppReady, 1500);
-    return () => window.clearTimeout(fallbackTimer);
-  }, [envLoading, isMiniApp, signalMiniAppReady]);
-
-  const shouldShowConnectPrompt = !address && !envLoading;
+  }, [address, router]);
 
   // Chargement intelligent des campagnes avec API Manager
   const loadCampaignsData = useCallback(async () => {
-    if (!address) return;
-    
     setIsLoadingCampaigns(true);
     setError(null);
-    
+
     try {
       // Charger toutes les campagnes via API Manager (version simplifiée)
       const allCampaigns = await apiManager.getAllCampaigns();
-
-      // Récupérer les données en parallèle avec gestion des erreurs
-      const campaignResults = await Promise.allSettled(
-        allCampaigns.map((campaignAddr) => apiManager.getCampaignData(campaignAddr))
-      );
-
-      const campaignsData = campaignResults
-        .map((result, index) => {
-          if (result.status === 'fulfilled' && result.value) {
-            return { ...result.value, id: allCampaigns[index] };
-          }
-          return null;
-        })
-        .filter(Boolean);
-
+      const campaignsData = [];
+      
+      // Récupérer les données une par une
+      for (const address of allCampaigns) {
+        const campaignData = await apiManager.getCampaignData(address);
+        if (campaignData) {
+          // Ajouter l'id qui correspond à l'adresse pour les favoris
+          campaignData.id = address;
+          campaignsData.push(campaignData);
+        }
+      }
       
       // Filtrer les campagnes de l'utilisateur
       const userOwnedCampaigns = campaignsData.filter(
@@ -111,17 +79,17 @@ export default function AppInterface() {
       
     } catch (err) {
       console.error('Erreur lors du chargement des campagnes:', err);
+      setProjects([]);
+      setHasCampaign(false);
       setError('Impossible de charger les données. Veuillez réessayer plus tard.');
     } finally {
       setIsLoadingCampaigns(false);
     }
-  }, [address, activePage]);
-  
+  }, [address]);
+
   useEffect(() => {
-    if (address) {
-      loadCampaignsData();
-    }
-  }, [address, loadCampaignsData]);
+    loadCampaignsData();
+  }, [loadCampaignsData]);
 
   // Gestionnaires d'événements optimisés
   const handleDisconnect = useCallback(() => {

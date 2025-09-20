@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAccount } from 'wagmi';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiManager } from '@/lib/services/api-manager';
 
-// Import des composants modulaires
 import CampaignHeader from '@/components/campaign/CampaignHeader';
 import DividendDistribution from '@/components/campaign/finance/DividendDistribution';
 import CampaignActions from '@/components/campaign/finance/CampaignActions';
@@ -13,161 +13,158 @@ import TransactionHistory from '@/components/campaign/finance/TransactionHistory
 import CampaignInvestors from '@/components/campaign/CampaignInvestors';
 import CampaignDocuments from '@/components/campaign/CampaignDocuments';
 import CampaignSocial from '@/components/campaign/CampaignSocial';
-
-// Import des dialogs
 import ReopenCampaignDialog from '@/components/campaign/dialogs/ReopenCampaignDialog';
 import PromoteCampaignDialog from '@/components/campaign/dialogs/PromoteCampaignDialog';
 import CertifyCampaignDialog from '@/components/campaign/dialogs/CertifyCampaignDialog';
 
+const enrichCampaignData = (data) => {
+  if (!data) return null;
+
+  const goalValue = parseFloat(data.goal ?? '0');
+  const sharePriceValue = parseFloat(data.sharePrice ?? data.nftPrice ?? '0');
+  const raisedValue = parseFloat(data.raised ?? '0');
+  const endDate = data.endDate ?? null;
+  const endTimestamp = endDate ? new Date(endDate).getTime() : null;
+
+  return {
+    ...data,
+    nftPrice: data.nftPrice ?? data.sharePrice ?? '0',
+    nftTotal: data.nftTotal ?? (sharePriceValue > 0 ? Math.floor(goalValue / sharePriceValue) : 0),
+    timeRemaining: data.timeRemaining ?? (endTimestamp ? Math.max(0, endTimestamp - Date.now()) : 0),
+    progressPercentage: data.progressPercentage ?? (goalValue > 0 ? (raisedValue / goalValue) * 100 : 0),
+  };
+};
+
 export default function Campaign() {
   const { t } = useTranslation();
-  // Récupérer l'adresse du wallet (remplace useAddress de ThirdWeb)
-  const [address, setAddress] = useState(null);
-  
-  useEffect(() => {
-    // Récupérer l'adresse du wallet connecté
-    if (typeof window !== 'undefined' && window.ethereum) {
-      window.ethereum.request({ method: 'eth_accounts' })
-        .then(accounts => {
-          if (accounts.length > 0) {
-            setAddress(accounts[0]);
-          }
-        })
-        .catch(console.error);
-    }
-  }, []);
-  
-  // États principaux
+  const { address } = useAccount();
+
   const [campaignAddress, setCampaignAddress] = useState(null);
   const [campaignData, setCampaignData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // États des dialogs
+
   const [showReopenDialog, setShowReopenDialog] = useState(false);
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [showCertifyDialog, setShowCertifyDialog] = useState(false);
 
-  // Initialisation et récupération de l'adresse de campagne
   useEffect(() => {
-    async function initializeCampaign() {
-      if (!address) return;
-      
+    let cancelled = false;
+
+    const initializeCampaign = async () => {
+      if (!address) {
+        setCampaignAddress(null);
+        setCampaignData(null);
+        setError(null);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
-        
-        // Récupérer les campagnes de l'utilisateur via le cache intelligent
-        const campaigns = await apiManager.getAllCampaigns();
-        
-        // Filtrer les campagnes créées par cet utilisateur
-        const userCampaigns = [];
-        for (const campaignAddr of campaigns) {
-          const campaignInfo = await apiManager.getCampaignData(campaignAddr);
-          if (campaignInfo && campaignInfo.creator.toLowerCase() === address.toLowerCase()) {
-            userCampaigns.push(campaignAddr);
+
+        const campaigns = await apiManager.listCampaigns({ creator: address }, { useCache: false });
+        if (cancelled) return;
+
+        if (Array.isArray(campaigns) && campaigns.length > 0) {
+          const firstCampaign = campaigns[0];
+          setCampaignAddress(firstCampaign.address);
+          const summaryData = enrichCampaignData(firstCampaign);
+          if (summaryData) {
+            setCampaignData(summaryData);
           }
-        }
-        
-        if (userCampaigns.length > 0) {
-          setCampaignAddress(userCampaigns[0]); // Première campagne trouvée
         } else {
+          setCampaignAddress(null);
+          setCampaignData(null);
           setError(t('campaign.noCampaignFound'));
         }
-        
       } catch (err) {
+        if (cancelled) return;
         console.error('Erreur initialisation campagne:', err);
         setError(t('campaign.loadError'));
+        setCampaignAddress(null);
+        setCampaignData(null);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
-    }
+    };
 
     initializeCampaign();
-  }, [address, t]);
+  }, [address]);
 
-  // Chargement des données de campagne avec cache intelligent
   useEffect(() => {
-    async function loadCampaignData() {
-      if (!campaignAddress) return;
-      
+    if (!campaignAddress) return;
+    let cancelled = false;
+
+    const loadCampaignData = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        
-        // Utilisation du cache intelligent pour récupérer les données
+
         const data = await apiManager.getCampaignData(campaignAddress);
-        
+        if (cancelled) return;
+
         if (data) {
-          // Enrichir les données avec des calculs supplémentaires
-          const enrichedData = {
-            ...data,
-            nftTotal: Math.floor(parseFloat(data.goal) / parseFloat(data.sharePrice)),
-            timeRemaining: data.isActive ? 
-              Math.max(0, new Date(data.endDate).getTime() - Date.now()) : 0
-          };
-          
-          setCampaignData(enrichedData);
-          
-          // Données chargées avec succès
-          
+          setCampaignData(enrichCampaignData(data));
         } else {
           setError(t('campaign.loadDataError'));
         }
-        
       } catch (err) {
+        if (cancelled) return;
         console.error('Erreur chargement campagne:', err);
         setError(t('campaign.dataLoadingError'));
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
-    }
+    };
 
     loadCampaignData();
-  }, [campaignAddress, t]);
+  }, [campaignAddress]);
 
-  // Préchargement intelligent au survol
   const handlePreloadHover = useCallback((identifier) => {
     if (identifier && identifier !== campaignAddress) {
-      // Préchargement simple des données de base
       apiManager.getCampaignData(identifier);
     }
   }, [campaignAddress]);
 
-  // Gestionnaires d'événements pour les actions
   const handleDistributionComplete = useCallback(() => {
-    // Invalider le cache et recharger les données
+    if (!campaignAddress) return;
     apiManager.invalidateCampaign(campaignAddress);
-    // Recharger les données en force (sans cache)
-    apiManager.getCampaignData(campaignAddress, false).then(setCampaignData);
+    apiManager.getCampaignData(campaignAddress, false).then((data) => {
+      setCampaignData(enrichCampaignData(data));
+    });
   }, [campaignAddress]);
 
   const handleActionComplete = useCallback((actionType) => {
-    // Invalider le cache selon le type d'action
+    if (!campaignAddress) return;
+
     switch (actionType) {
       case 'escrow_released':
       case 'campaign_reopened':
         apiManager.invalidateCampaign(campaignAddress);
-        // Recharger toutes les données
-        apiManager.getCampaignData(campaignAddress, false).then(setCampaignData);
+        apiManager.getCampaignData(campaignAddress, false).then((data) => {
+          setCampaignData(enrichCampaignData(data));
+        });
         break;
       default:
-        // Invalidation partielle pour d'autres actions
         apiManager.invalidateCampaign(campaignAddress);
     }
   }, [campaignAddress]);
 
   const handleDocumentUpdate = useCallback(() => {
-    // Invalider seulement le cache des documents
+    if (!campaignAddress) return;
     apiManager.cache.invalidate(`campaign_documents_${campaignAddress}`);
   }, [campaignAddress]);
 
   const handleSocialUpdate = useCallback((socialData) => {
-    // Mettre à jour les données sociales localement
     console.log('Social links updated:', socialData);
   }, []);
 
-  // Gestionnaires des dialogs
   const handleReopenSuccess = useCallback(() => {
     handleActionComplete('campaign_reopened');
   }, [handleActionComplete]);
@@ -178,12 +175,9 @@ export default function Campaign() {
 
   const handleCertifySuccess = useCallback((certificationData) => {
     console.log('Campaign certification requested:', certificationData);
-    // Mettre à jour le statut de certification
-    setCampaignData(prev => prev ? { ...prev, certificationPending: true } : null);
+    setCampaignData((prev) => (prev ? { ...prev, certificationPending: true } : prev));
   }, []);
 
-
-  // Rendu conditionnel pour les états d'erreur
   if (!address) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -196,44 +190,41 @@ export default function Campaign() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4">
-      {/* Header de campagne */}
-      <CampaignHeader 
+      <CampaignHeader
         campaignData={campaignData}
         isLoading={isLoading}
         error={error}
       />
 
-      {/* Interface principale avec onglets */}
       {!isLoading && !error && campaignData && (
         <Tabs defaultValue="finance" className="space-y-6">
           <TabsList className="bg-gray-100 dark:bg-neutral-900 p-1 rounded-lg">
-            <TabsTrigger 
-              value="finance" 
+            <TabsTrigger
+              value="finance"
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
               {t('campaign.finance')}
             </TabsTrigger>
-            <TabsTrigger 
-              value="investors" 
+            <TabsTrigger
+              value="investors"
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
               {t('campaign.investors')}
             </TabsTrigger>
-            <TabsTrigger 
-              value="documents" 
+            <TabsTrigger
+              value="documents"
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
               {t('campaign.documents')}
             </TabsTrigger>
-            <TabsTrigger 
-              value="social" 
+            <TabsTrigger
+              value="social"
               className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
             >
               {t('campaign.social')}
             </TabsTrigger>
           </TabsList>
 
-          {/* Onglet Finance */}
           <TabsContent value="finance" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <DividendDistribution
@@ -256,7 +247,6 @@ export default function Campaign() {
             />
           </TabsContent>
 
-          {/* Onglet Investisseurs */}
           <TabsContent value="investors">
             <CampaignInvestors
               campaignAddress={campaignAddress}
@@ -264,7 +254,6 @@ export default function Campaign() {
             />
           </TabsContent>
 
-          {/* Onglet Documents */}
           <TabsContent value="documents">
             <CampaignDocuments
               campaignAddress={campaignAddress}
@@ -273,7 +262,6 @@ export default function Campaign() {
             />
           </TabsContent>
 
-          {/* Onglet Social */}
           <TabsContent value="social">
             <CampaignSocial
               campaignData={campaignData}
@@ -281,11 +269,9 @@ export default function Campaign() {
               onSocialUpdate={handleSocialUpdate}
             />
           </TabsContent>
-
         </Tabs>
       )}
 
-      {/* Dialogs modaux */}
       <ReopenCampaignDialog
         isOpen={showReopenDialog}
         onClose={() => setShowReopenDialog(false)}
@@ -310,7 +296,6 @@ export default function Campaign() {
         onSuccess={handleCertifySuccess}
       />
 
-      {/* Debug info en développement */}
       {process.env.NODE_ENV === 'development' && campaignData && (
         <div className="mt-8 p-4 bg-gray-100 dark:bg-neutral-900 rounded-lg">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
