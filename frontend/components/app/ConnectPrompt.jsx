@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectWallet, ConnectWalletText } from '@coinbase/onchainkit/wallet';
 
 export default function ConnectPrompt() {
   return (
@@ -25,10 +25,15 @@ export default function ConnectPrompt() {
       </div>
       <div className="bg-neutral-900/70 backdrop-blur rounded-2xl p-6 space-y-4 max-w-sm w-full border border-neutral-800">
         <p className="text-sm text-gray-200">
-          Connect with RainbowKit or the Base wallet to unlock premium campaigns, document storage, and analytics.
+          Connectez-vous avec l’expérience Coinbase pour débloquer les campagnes premium, le stockage de documents et les analytics.
         </p>
         <div className="flex justify-center">
-          <ConnectButton label="Connect wallet" />
+          <ConnectWallet
+            className="bg-lime-500 hover:bg-lime-600 text-white font-semibold px-4 py-2 rounded-lg shadow-lg transition-all duration-300"
+            text="Connect"
+          >
+            <ConnectWalletText>Connect wallet</ConnectWalletText>
+          </ConnectWallet>
         </div>
       </div>
     </div>

@@ -53,13 +53,19 @@ class ApiManager {
 
   async initializeWeb3() {
     const { ethers } = await import('ethers');
-    
-    // Liste de fallback RPC avec retry
+
+    const coinbaseRpcFromApiKey = process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY
+      ? `https://api.developer.coinbase.com/rpc/v1/base-sepolia/${process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY}`
+      : null;
+    const coinbaseRpcFromProject = process.env.NEXT_PUBLIC_CDP_PROJECT_ID
+      ? `https://api.developer.coinbase.com/rpc/v1/base-sepolia/${process.env.NEXT_PUBLIC_CDP_PROJECT_ID}`
+      : null;
+
+    // Liste de fallback RPC orientée Coinbase
     const rpcUrls = [
-      "https://sepolia.base.org",
-      "https://base-sepolia.blockpi.network/v1/rpc/public",
-      "https://base-sepolia.g.alchemy.com/v2/demo",
-      process.env.NEXT_PUBLIC_QUICKNODE_HTTP_URL
+      coinbaseRpcFromApiKey,
+      coinbaseRpcFromProject,
+      'https://sepolia.base.org'
     ].filter(Boolean);
 
     for (const url of rpcUrls) {
@@ -78,8 +84,8 @@ class ApiManager {
         console.warn(`❌ RPC ${url} échoué:`, error.message);
       }
     }
-    
-    throw new Error('Aucun RPC disponible');
+
+    throw new Error('Aucun RPC Coinbase disponible');
   }
 
   async loadABIs() {

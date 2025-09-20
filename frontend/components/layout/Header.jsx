@@ -19,7 +19,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useAccount, useDisconnect } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectWallet, ConnectWalletText } from '@coinbase/onchainkit/wallet';
 import { useRouter } from 'next/navigation';
 
 export default function Header({ 
@@ -244,12 +244,15 @@ export default function Header({
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
-            <div className="[&>div>button]:text-sm [&>div>button]:px-2 [&>div>button]:py-1 sm:[&>div>button]:px-4 sm:[&>div>button]:py-2 [&>div>button]:truncate [&>div>button]:max-w-[120px] sm:[&>div>button]:max-w-none">
-              <ConnectButton />
-            </div>
-          </div>
-        </div>
-      </div>
+            <ConnectWallet
+              className="bg-gradient-to-r from-lime-500 to-green-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-lime-500/25 transition-all duration-300 hover:from-lime-600 hover:to-green-600"
+              text="Connect"
+            >
+              <ConnectWalletText>Connecter</ConnectWalletText>
+            </ConnectWallet>
+         </div>
+       </div>
+     </div>
       
       {/* Decorative gradient line */}
       <div className="h-1 bg-gradient-to-r from-lime-400 via-emerald-500 to-lime-400"></div>

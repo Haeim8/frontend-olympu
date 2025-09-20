@@ -4,7 +4,7 @@ import { metadata as siteMetadata } from './metadata.js';
 import ClientProviders from './ClientProviders';
 import EnvironmentDebug from '@/components/debug/EnvironmentDebug';
 import "@/app/globals.css";
-import '@rainbow-me/rainbowkit/styles.css';
+import '@coinbase/onchainkit/styles.css';
 
 const fontSans = FontSans({
   subsets: ["latin"],

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script d'installation des dépendances wallet pour l'architecture duale
-echo "🚀 Installation des dépendances wallet (OnchainKit + Wagmi + RainbowKit)"
+echo "🚀 Installation des dépendances wallet (OnchainKit + Wagmi)"
 echo "=================================================================="
 
 # Vérifier que yarn est installé
@@ -10,22 +10,18 @@ if ! command -v yarn &> /dev/null; then
     exit 1
 fi
 
-# OnchainKit + MiniKit (pour Mini App)
-echo "📦 Installation OnchainKit + MiniKit..."
+# OnchainKit
+echo "📦 Installation OnchainKit..."
 yarn add @coinbase/onchainkit
 
 # Wagmi + Viem + TanStack Query (déjà installé mais on met à jour)
 echo "📦 Installation Wagmi + Viem..."
 yarn add wagmi viem@^2.21.0
 
-# RainbowKit (pour Web App)
-echo "📦 Installation RainbowKit..."
-yarn add @rainbow-me/rainbowkit
-
-# Migration Thirdweb → OnchainKit/Wagmi/RainbowKit terminée ✅
+# Migration Thirdweb → OnchainKit/Wagmi terminée ✅
 echo "✅ Migration Thirdweb terminée - Dépendances supprimées"
 echo "   - @thirdweb-dev/* packages supprimés"
-echo "   - Migration vers OnchainKit + Wagmi + RainbowKit complète"
+echo "   - Migration vers OnchainKit + Wagmi complète"
 
 # Mettre à jour TanStack Query si nécessaire  
 echo "📦 Mise à jour TanStack Query..."
@@ -33,7 +29,7 @@ yarn add @tanstack/react-query@^5.52.0
 
 # Vérifier les versions installées
 echo "✅ Vérification des versions installées:"
-yarn list --pattern "@coinbase/onchainkit|wagmi|viem|@rainbow-me/rainbowkit|@tanstack/react-query" --depth=0
+yarn list --pattern "@coinbase/onchainkit|wagmi|viem|@tanstack/react-query" --depth=0
 
 echo ""
 echo "🎉 Installation terminée !"

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useTranslation } from '@/hooks/useLanguage';
 import { Moon, Sun, Twitter, MessageCircle, Zap, Wallet, Menu, X } from "lucide-react";
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectWallet, ConnectWalletText } from '@coinbase/onchainkit/wallet';
 import { motion } from "framer-motion";
 
 export function LandingHeader({ darkMode, toggleDarkMode }) {
@@ -111,13 +111,13 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
         </motion.div>
 
         {/* Connect Wallet */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="[&>div>button]:bg-gradient-to-r [&>div>button]:from-lime-500 [&>div>button]:to-green-500 [&>div>button]:border-0 [&>div>button]:shadow-lg [&>div>button]:hover:shadow-lime-500/25 [&>div>button]:transition-all [&>div>button]:duration-300 [&>div>button]:hover:from-lime-600 [&>div>button]:hover:to-green-600 [&>div>button]:text-xs [&>div>button]:px-2 [&>div>button]:py-1 sm:[&>div>button]:text-sm sm:[&>div>button]:px-4 sm:[&>div>button]:py-2 [&>div>button]:truncate [&>div>button]:max-w-[100px] sm:[&>div>button]:max-w-none">
-            <ConnectButton />
-          </div>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <ConnectWallet
+            className="bg-gradient-to-r from-lime-500 to-green-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-lime-500/25 transition-all duration-300 hover:from-lime-600 hover:to-green-600"
+            text="Connect"
+          >
+            <ConnectWalletText>Connecter</ConnectWalletText>
+          </ConnectWallet>
         </motion.div>
         </div>
       </div>
