@@ -51,7 +51,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(t('admin.error.stats'), error);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (isAuthorized) {

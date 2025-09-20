@@ -1,4 +1,7 @@
+"use client";
+
 import React from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart2, Wallet, Hash, Calendar, Target } from 'lucide-react';
@@ -103,7 +106,16 @@ const CompanySharesNFTCard = ({
               }}
             >
               {previewUrl ? (
-                <img src={previewUrl} alt="Company Logo" className="w-full h-full rounded-full object-cover" />
+                <div className="relative w-full h-full">
+                  <Image
+                    src={previewUrl}
+                    alt="Company Logo"
+                    fill
+                    className="rounded-full object-cover"
+                    sizes="(max-width: 768px) 96px, 144px"
+                    unoptimized
+                  />
+                </div>
               ) : (
                 <BarChart2 className={isPreview ? 'w-8 h-8' : 'w-12 h-12'} style={{ color: backgroundColor }} />
               )}

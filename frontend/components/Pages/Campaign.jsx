@@ -84,7 +84,7 @@ export default function Campaign() {
     }
 
     initializeCampaign();
-  }, [address]);
+  }, [address, t]);
 
   // Chargement des données de campagne avec cache intelligent
   useEffect(() => {
@@ -124,7 +124,7 @@ export default function Campaign() {
     }
 
     loadCampaignData();
-  }, [campaignAddress]);
+  }, [campaignAddress, t]);
 
   // Préchargement intelligent au survol
   const handlePreloadHover = useCallback((identifier) => {

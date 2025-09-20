@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,11 +18,7 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    loadInvestors();
-  }, [campaignAddress]);
-
-  const loadInvestors = async () => {
+  const loadInvestors = useCallback(async () => {
     if (!campaignAddress) return;
     
     try {
@@ -38,7 +34,11 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [campaignAddress, t]);
+
+  useEffect(() => {
+    loadInvestors();
+  }, [loadInvestors]);
 
   const filteredInvestors = () => {
     const investorArray = Array.isArray(investors) ? investors : [];

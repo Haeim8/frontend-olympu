@@ -6,6 +6,10 @@ const nextConfig = {
   },
   webpack: (config) => {
     config.resolve.extensions = ['.js', '.jsx', '.ts', '.tsx', ...config.resolve.extensions];
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': require.resolve('./lib/shims/asyncStorage'),
+    };
     return config;
   },
 };

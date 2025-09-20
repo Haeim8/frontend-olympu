@@ -83,11 +83,11 @@ export function LandingSignupModal({
                     </Label>
                   </div>
 
-                  {/* Nom d'utilisateur */}
+                  {/* Nom d&apos;utilisateur */}
                   <div className="space-y-2">
                     <Label htmlFor="username" className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                       <User className="w-4 h-4 text-lime-500" />
-                      <span>Nom d'utilisateur</span>
+                      <span>Nom d&apos;utilisateur</span>
                       <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -96,7 +96,7 @@ export function LandingSignupModal({
                       value={formData.username}
                       onChange={handleInputChange}
                       required
-                      placeholder="Votre nom d'utilisateur unique"
+                      placeholder="Votre nom d&apos;utilisateur unique"
                       className="h-12 bg-white/5 dark:bg-gray-800/20 border border-white/20 dark:border-gray-700/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-lime-500 focus:ring-lime-500/20 transition-all duration-200"
                     />
                   </div>
@@ -141,7 +141,7 @@ export function LandingSignupModal({
                       </div>
                       <div className="text-sm">
                         <p className="font-medium text-lime-700 dark:text-lime-400 mb-1">
-                          Frais d'inscription : 0.05 ETH
+                          Frais d&apos;inscription : 0.05 ETH
                         </p>
                         <p className="text-lime-600 dark:text-lime-500 text-xs leading-relaxed">
                           Ces frais permettent de maintenir la sécurité du réseau et de lutter contre le spam. 

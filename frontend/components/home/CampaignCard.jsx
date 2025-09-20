@@ -49,7 +49,7 @@ export default function CampaignCard({
     };
 
     checkPromotion();
-  }, [project.address, project.currentRound]);
+  }, [project.address, project.currentRound, t]);
 
   const progressPercentage = ((parseFloat(project.raised) / parseFloat(project.goal)) * 100) || 0;
   const isNearCompletion = progressPercentage >= 80;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,11 +40,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
     isPublic: true
   });
 
-  useEffect(() => {
-    loadDocuments();
-  }, [campaignAddress]);
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     if (!campaignAddress) return;
     
     try {
@@ -60,7 +56,11 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [campaignAddress, t]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];

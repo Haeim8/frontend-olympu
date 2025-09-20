@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import CampaignABI from '@/ABI/CampaignABI.json';
 const PINATA_GATEWAY = "https://jade-hilarious-gecko-392.mypinata.cloud/ipfs";
 
 export default function DocumentManager({ campaignData, onUpdate }) {
+  const ipfsHash = campaignData?.ipfsHash;
   const [documents, setDocuments] = useState({
     whitepaper: [],
     pitchDeck: [], 
@@ -27,13 +28,7 @@ export default function DocumentManager({ campaignData, onUpdate }) {
     enabled: !!campaignData?.address
   });
 
-  useEffect(() => {
-    if (campaignData?.ipfsHash && metadata) {
-      loadDocuments();
-    }
-  }, [campaignData, metadata]);
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -91,7 +86,13 @@ export default function DocumentManager({ campaignData, onUpdate }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [metadata]);
+
+  useEffect(() => {
+    if (ipfsHash && metadata) {
+      loadDocuments();
+    }
+  }, [ipfsHash, metadata, loadDocuments]);
 
   const handleUpload = async (file, section) => {
     try {
@@ -99,7 +100,7 @@ export default function DocumentManager({ campaignData, onUpdate }) {
       setError(null);
   
       const result = await pinataService.updateDirectoryWithFile(
-        campaignData.ipfsHash, 
+        ipfsHash, 
         file,
         section
       );
@@ -126,7 +127,7 @@ export default function DocumentManager({ campaignData, onUpdate }) {
   const handleDelete = async (section, fileName) => {
     try {
       // 1. Télécharger le dossier actuel
-      const currentFiles = await pinataService.downloadDirectory(campaignData.ipfsHash);
+      const currentFiles = await pinataService.downloadDirectory(ipfsHash);
   
       // 2. Filtrer le fichier à supprimer
       const updatedFiles = currentFiles.filter(
@@ -134,7 +135,7 @@ export default function DocumentManager({ campaignData, onUpdate }) {
       );
   
       // 3. Mettre à jour IPFS
-      await pinataService.updateDirectory(campaignData.ipfsHash, updatedFiles);
+      await pinataService.updateDirectory(ipfsHash, updatedFiles);
   
       // 4. Mettre à jour l'UI
       const updatedDocs = {

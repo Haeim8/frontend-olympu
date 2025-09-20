@@ -104,7 +104,7 @@ export default function Wallet() {
     } finally {
       setIsLoading(false);
     }
-  }, [address]);
+  }, [address, t]);
 
   // Effet principal pour charger les données
   useEffect(() => {

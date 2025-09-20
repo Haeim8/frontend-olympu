@@ -308,7 +308,7 @@ export default function CertifyCampaignDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="urgency" className="text-gray-700 dark:text-gray-300 font-medium">
-                    Niveau d'urgence
+                    Niveau d&apos;urgence
                   </Label>
                   <Select
                     value={certificationForm.urgency}

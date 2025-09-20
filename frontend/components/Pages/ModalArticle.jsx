@@ -1,4 +1,7 @@
+"use client";
+
 import React from 'react';
+import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +35,16 @@ const ModalArticle = ({ article, isOpen, onClose }) => {
           <X className="h-4 w-4" />
         </Button>
         <div className="mt-4 space-y-4">
-          <img src={article.image} alt={article.titre} className="w-full h-64 object-cover rounded-md" />
+          <div className="relative w-full h-64">
+            <Image
+              src={article.image}
+              alt={article.titre || 'Article image'}
+              fill
+              className="object-cover rounded-md"
+              sizes="(max-width: 768px) 100vw, 700px"
+              priority={false}
+            />
+          </div>
           <div className="prose dark:prose-invert max-w-none">
             <div dangerouslySetInnerHTML={{ __html: article.contenu }} />
           </div>
@@ -65,4 +77,3 @@ const ModalArticle = ({ article, isOpen, onClose }) => {
 };
 
 export default ModalArticle;
-

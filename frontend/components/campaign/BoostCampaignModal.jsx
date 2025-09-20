@@ -145,7 +145,7 @@ export default function BoostCampaignModal({
             Booster votre campagne
           </DialogTitle>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Augmentez la visibilité de <strong>{campaignData.name}</strong> et attirez plus d'investisseurs
+            Augmentez la visibilité de <strong>{campaignData.name}</strong> et attirez plus d&apos;investisseurs
           </p>
         </DialogHeader>
 

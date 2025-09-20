@@ -331,7 +331,7 @@ export default function ReopenCampaignDialog({
             <p>• Les investisseurs actuels gardent leurs NFTs du round précédent</p>
             <p>• Un nouveau contrat sera créé pour ce round</p>
             <p>• Cette action est irréversible</p>
-            <p>• Les fonds de l'escrow précédent doivent être libérés avant</p>
+            <p>• Les fonds de l&apos;escrow précédent doivent être libérés avant</p>
           </div>
         </div>
       </DialogContent>

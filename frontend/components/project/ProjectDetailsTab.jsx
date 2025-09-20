@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import NextImage from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,7 +9,7 @@ import {
   FileText, 
   Download, 
   ExternalLink, 
-  Image, 
+  Image as ImageIcon, 
   Play,
   Eye,
   Folder,
@@ -28,7 +29,7 @@ const DocumentLink = ({ title, url, type = 'document' }) => {
   const getIcon = () => {
     switch (type) {
       case 'image':
-        return <Image className="h-5 w-5 text-blue-500" />;
+        return <ImageIcon className="h-5 w-5 text-blue-500" />;
       case 'video':
         return <Play className="h-5 w-5 text-red-500" />;
       default:
@@ -82,7 +83,7 @@ const MediaGallery = ({ media = [] }) => {
   if (!media || media.length === 0) {
     return (
       <div className="text-center py-12">
-        <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-gray-400">{t('projectDetailsTab.noMedia')}</p>
       </div>
     );
@@ -104,11 +105,13 @@ const MediaGallery = ({ media = [] }) => {
               className="relative group cursor-pointer bg-gray-100 dark:bg-neutral-800 rounded-xl overflow-hidden aspect-square"
               onClick={() => setSelectedMedia(mediaUrl)}
             >
-              <img 
+              <NextImage
                 src={mediaUrl}
-                alt={mediaName}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                loading="lazy"
+                alt={mediaName || 'Media'}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-110"
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                unoptimized
               />
             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
               <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -129,11 +132,16 @@ const MediaGallery = ({ media = [] }) => {
           onClick={() => setSelectedMedia(null)}
         >
           <div className="relative max-w-4xl max-h-full">
-            <img 
-              src={selectedMedia}
-              alt={t('projectDetailsTab.selectedMedia')}
-              className="max-w-full max-h-full object-contain rounded-lg"
-            />
+            <div className="relative w-[80vw] max-w-4xl h-[80vh] max-h-full">
+              <NextImage
+                src={selectedMedia}
+                alt={t('projectDetailsTab.selectedMedia')}
+                fill
+                className="object-contain rounded-lg"
+                sizes="80vw"
+                unoptimized
+              />
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -371,7 +379,7 @@ export default function ProjectDetailsTab({ projectData }) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                  <Image className="h-5 w-5 text-purple-600" />
+                  <ImageIcon className="h-5 w-5 text-purple-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {t('projectDetailsTab.mediaGallery')}

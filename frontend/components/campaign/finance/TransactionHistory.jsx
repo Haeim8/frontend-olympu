@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,11 +21,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('recent');
 
-  useEffect(() => {
-    loadTransactions();
-  }, [campaignAddress]);
-
-  const loadTransactions = async () => {
+  const loadTransactions = useCallback(async () => {
     if (!campaignAddress) return;
     
     try {
@@ -41,7 +37,11 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [campaignAddress]);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
 
   const filteredAndSortedTransactions = () => {
     // Vérifier que transactions est bien un array

@@ -357,7 +357,7 @@ export default function PromoteCampaignDialog({
               <li>• Votre campagne sera mise en avant selon le package choisi</li>
               <li>• Le paiement sera déduit automatiquement de votre portefeuille</li>
               <li>• Vous recevrez des analytics détaillés pendant la promotion</li>
-              <li>• Les résultats sont visibles dans les 24-48h suivant l'activation</li>
+              <li>• Les résultats sont visibles dans les 24-48h suivant l&apos;activation</li>
             </ul>
           </div>
         </div>

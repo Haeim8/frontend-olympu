@@ -191,7 +191,7 @@ export default function CampaignModal({
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]);
+  }, [formData, t]);
 
   // Gestionnaires d'événements
   const handleInputChange = useCallback((e, nestedField = null) => {
@@ -468,7 +468,7 @@ export default function CampaignModal({
           : error.message 
       });
     }
-  }, [formData, validateStep, status, uploadToIPFS, address, onCampaignCreated]);
+  }, [formData, validateStep, status, uploadToIPFS, onCampaignCreated]);
 
   // Rendu du contenu selon l'étape
   const renderStepContent = () => {
@@ -495,7 +495,7 @@ export default function CampaignModal({
               Campagne créée avec succès !
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Votre campagne "{formData.name}" est maintenant en ligne
+              Votre campagne &quot;{formData.name}&quot; est maintenant en ligne
             </p>
           </div>
           <div className="bg-gray-50 dark:bg-neutral-900 rounded-xl p-4">

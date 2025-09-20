@@ -128,7 +128,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       console.error(t('projectDetails.purchaseError'), err);
       setError(err.message || t('projectDetails.transactionError'));
     }
-  }, [userAddress, project.sharePrice, project.id, loadProjectData]);
+  }, [userAddress, project.sharePrice, project.id, loadProjectData, t]);
 
   const handleShare = useCallback(() => {
     if (navigator.share) {
