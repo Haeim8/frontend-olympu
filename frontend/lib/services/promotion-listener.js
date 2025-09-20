@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { supabase } from '../supabase/client';
+import { supabase, isSupabaseConfigured } from '../supabase/client';
 import RecPromotionManagerABI from '../../ABI/RecPromotionManagerABI.json';
 
 // Configuration des contrats
@@ -37,13 +37,18 @@ export class PromotionListener {
    */
   async initialize() {
     try {
-      if (!this.config) {
-        throw new Error(`Network ${this.network} not supported`);
-      }
+    if (!this.config) {
+      throw new Error(`Network ${this.network} not supported`);
+    }
 
-      if (!this.config.promotionManager) {
-        throw new Error(`RecPromotionManager address not configured for ${this.network}`);
-      }
+    if (!this.config.promotionManager) {
+      throw new Error(`RecPromotionManager address not configured for ${this.network}`);
+    }
+
+    if (!isSupabaseConfigured) {
+      console.warn('Supabase not configured. Promotion listener disabled.');
+      return false;
+    }
 
       // Créer le provider
       this.provider = new ethers.providers.JsonRpcProvider(this.config.rpcUrl);
@@ -150,6 +155,8 @@ export class PromotionListener {
       };
 
       // Insérer dans Supabase
+      if (!supabase) return;
+
       const { data, error } = await supabase
         .from('campaign_promotions')
         .insert([promotionData])
@@ -187,6 +194,8 @@ export class PromotionListener {
       });
 
       // Marquer comme expiré dans Supabase
+      if (!supabase) return;
+
       const { data, error } = await supabase
         .from('campaign_promotions')
         .update({ 

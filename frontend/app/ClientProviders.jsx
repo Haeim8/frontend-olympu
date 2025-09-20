@@ -5,10 +5,17 @@ import { ThemeProvider } from 'next-themes';
 import ThirdwebProviderWrapper from "./ThirdwebProviderWrapper";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { usePromotionListener } from "@/hooks/usePromotionListener";
+import { useEnvironment } from '@/hooks/useEnvironment';
+import { useAccount } from 'wagmi';
+import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 function PromotionListenerProvider({ children }) {
-  // Initialiser le listener de promotions
-  usePromotionListener('baseSepolia', true);
+  const { isMiniApp } = useEnvironment();
+  const { address } = useAccount();
+
+  const shouldStart = Boolean(!isMiniApp && address && isSupabaseConfigured);
+
+  usePromotionListener('baseSepolia', shouldStart);
   return children;
 }
 

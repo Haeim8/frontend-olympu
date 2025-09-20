@@ -9,6 +9,7 @@ import Home from './Pages/Home';
 import Wallet from './Pages/Wallet';
 import Favorites from './Pages/Favorites';
 import Campaign from './Pages/Campaign';
+import ConnectPrompt from './app/ConnectPrompt';
 import { useDisconnect, useAccount } from 'wagmi';
 // Firebase supprimé - utilisation localStorage à la place
 import { apiManager } from '@/lib/services/api-manager';
@@ -66,9 +67,13 @@ export default function AppInterface() {
 
   // Redirection si pas d'adresse
   useEffect(() => {
-    if (!address && !envLoading && !isMiniApp) {
-      router.push('/');
-    }
+  if (!address && !envLoading && !isMiniApp) {
+    router.push('/');
+  }
+
+  if (!address && !envLoading && isMiniApp) {
+    return <ConnectPrompt />;
+  }
   }, [address, envLoading, isMiniApp, router]);
 
   // Chargement intelligent des campagnes avec API Manager
