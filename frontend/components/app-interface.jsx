@@ -65,16 +65,7 @@ export default function AppInterface() {
     return () => window.clearTimeout(fallbackTimer);
   }, [envLoading, isMiniApp, signalMiniAppReady]);
 
-  // Redirection si pas d'adresse
-  useEffect(() => {
-  if (!address && !envLoading && !isMiniApp) {
-    router.push('/');
-  }
-
-  if (!address && !envLoading && isMiniApp) {
-    return <ConnectPrompt />;
-  }
-  }, [address, envLoading, isMiniApp, router]);
+  const shouldShowConnectPrompt = !address && !envLoading;
 
   // Chargement intelligent des campagnes avec API Manager
   const loadCampaignsData = useCallback(async () => {
@@ -171,8 +162,13 @@ export default function AppInterface() {
     // Pas de préchargement pour le moment (API simplifiée)
   }, []);
   
+  // Si aucun wallet n'est connecté, afficher simplement le prompt de connexion
+  if (shouldShowConnectPrompt) {
+    return <ConnectPrompt />;
+  }
+
   // Rendu optimisé des pages avec props intelligentes
-  const renderActivePage = useCallback(() => {
+  const renderActivePage = () => {
     const commonProps = {
       projects,
       favorites,
@@ -182,7 +178,7 @@ export default function AppInterface() {
       error,
       onRefresh: loadCampaignsData
     };
-    
+
     switch (activePage) {
       case 'home':
         return <Home {...commonProps} />;
@@ -195,7 +191,7 @@ export default function AppInterface() {
       default:
         return <Home {...commonProps} />;
     }
-  }, [activePage, projects, favorites, toggleFavorite, handleSelectProject, isLoadingCampaigns, error, loadCampaignsData, address, hasCampaign]);
+  };
 
   return (
     <div className={`flex flex-col h-screen ${theme === 'dark' ? 'dark' : ''}`}>
