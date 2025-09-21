@@ -3,14 +3,50 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Shield, Zap } from "lucide-react";
+import { useMemo } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
+
+const numberFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 0,
+});
+
+const raisedFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 1,
+});
 
 export function LandingHero({
   darkMode,
   address,
+  stats,
+  statsLoading,
   onAccessInterface,
 }) {
   const { t } = useTranslation();
+
+  const statItems = useMemo(() => {
+    const users = stats?.users ?? 0;
+    const campaigns = stats?.campaigns ?? 0;
+    const totalRaised = stats?.totalRaised ?? 0;
+
+    return [
+      {
+        label: t('landing.cta.activeUsers', 'Utilisateurs actifs'),
+        value: users,
+        formatter: (value) => numberFormatter.format(Math.max(0, value)),
+      },
+      {
+        label: t('landing.cta.fundsRaised', 'Fonds levés'),
+        value: totalRaised,
+        formatter: (value) => `${raisedFormatter.format(Math.max(0, value))} Ξ`,
+      },
+      {
+        label: t('landing.cta.projectsFunded', 'Projets financés'),
+        value: campaigns,
+        formatter: (value) => numberFormatter.format(Math.max(0, value)),
+      },
+    ];
+  }, [stats, t]);
+
   return (
     <main id="accueil" className="flex-1 relative z-10 flex items-center justify-center min-h-[60vh]">
       <section className="w-full py-12 px-4">
@@ -46,22 +82,8 @@ export function LandingHero({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1, delay: 0.2 }}
               >
-                <span className={`${darkMode 
-                  ? "bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent" 
-                  : "text-gray-900"
-                }`}>
-                  {t('support')}
-                </span>
-                <br />
                 <span className="bg-gradient-to-r from-lime-400 via-green-500 to-lime-400 bg-clip-text text-transparent">
-                  {t('future')}
-                </span>
-                <br />
-                <span className={`${darkMode 
-                  ? "bg-gradient-to-r from-gray-100 via-white to-gray-100 bg-clip-text text-transparent" 
-                  : "text-gray-900"
-                }`}>
-                  {t('ecosystem')}
+                  {t('landing.hero.headline', 'Prêt à rejoindre la révolution DeFi ?')}
                 </span>
               </motion.h1>
 
@@ -73,8 +95,10 @@ export function LandingHero({
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.4 }}
               >
-                {t('contributeText')}{" "}
-                <span className="font-semibold text-lime-500">{t('web3Advanced')}</span> {t('andBePart')}
+                {t(
+                  'landing.hero.subtitle',
+                  'Connectez votre portefeuille, explorez des campagnes vérifiées et suivez vos performances en temps réel.'
+                )}
               </motion.p>
             </div>
 
@@ -97,7 +121,7 @@ export function LandingHero({
                       onClick={onAccessInterface}
                     >
                       <Zap className="w-4 h-4 mr-2" />
-{t('launchApp', 'Lancer l\'App')}
+                      {t('accessInterface', 'Accéder à l\'interface')}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </motion.div>
@@ -116,25 +140,23 @@ export function LandingHero({
 
               {/* Stats en bas */}
               <motion.div
-                className={`grid grid-cols-3 gap-6 pt-8 border-t ${
+                className={`grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t ${
                   darkMode ? "border-gray-700/30" : "border-gray-300/30"
                 }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.8 }}
               >
-                <div className="text-center">
-                  <div className="text-xl font-bold text-lime-500">24/7</div>
-                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.stats.activeSupport')}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-lime-500">{t('landing.stats.free')}</div>
-                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.stats.registration')}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-lime-500">100%</div>
-                  <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.stats.decentralized')}</div>
-                </div>
+                {statItems.map((stat, index) => (
+                  <div key={stat.label} className="text-center space-y-1">
+                    <div className="text-2xl font-bold text-lime-500">
+                      {statsLoading ? '...' : stat.formatter(stat.value)}
+                    </div>
+                    <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                      {stat.label}
+                    </div>
+                  </div>
+                ))}
               </motion.div>
             </motion.div>
           </motion.div>

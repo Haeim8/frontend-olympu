@@ -1,10 +1,11 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useTranslation } from '@/hooks/useLanguage';
-import { Moon, Sun, Twitter, MessageCircle, Zap, Menu, X } from "lucide-react";
+import { Moon, Sun, Twitter, MessageCircle, Menu, X } from "lucide-react";
 import ConnectWalletButton from '@/components/shared/ConnectWalletButton';
 import { motion } from "framer-motion";
 
@@ -13,7 +14,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   return (
     <motion.header 
-      className="px-6 lg:px-8 h-24 relative z-50 bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg border-b border-white/20 dark:border-gray-700/20"
+      className="px-6 lg:px-8 h-24 relative z-50 bg-white/90 dark:bg-gray-900/10 backdrop-blur-lg border-b border-lime-500/10 dark:border-gray-700/20"
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
@@ -25,8 +26,14 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
           whileHover={{ scale: 1.05 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="w-10 h-10 bg-gradient-to-r from-lime-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
-            <Zap className="w-6 h-6 text-white" />
+          <div className="relative w-12 h-12">
+            <Image
+              src="/logo.png"
+              alt="Livar logo"
+              fill
+              priority
+              className="rounded-2xl object-cover shadow-lg"
+            />
           </div>
           <span className="text-2xl font-bold bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
             Livar
@@ -36,16 +43,16 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
         {/* Navigation principale - centrée (desktop) */}
         <nav className="hidden lg:flex items-center justify-center flex-1">
           <div className="flex items-center space-x-8">
-            <a href="#accueil" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
+            <a href="#accueil" className="text-sm font-semibold text-emerald-700 drop-shadow-sm dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 transition-colors">
               {t('landing.nav.home')}
             </a>
-            <a href="#fonctionnalites" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
+            <a href="#fonctionnalites" className="text-sm font-semibold text-emerald-700 drop-shadow-sm dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 transition-colors">
               {t('landing.nav.features')}
             </a>
-            <a href="#comment-ca-marche" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
+            <a href="#comment-ca-marche" className="text-sm font-semibold text-emerald-700 drop-shadow-sm dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 transition-colors">
               {t('landing.nav.howItWorks')}
             </a>
-            <a href="#projets" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors">
+            <a href="#projets" className="text-sm font-semibold text-emerald-700 drop-shadow-sm dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 transition-colors">
               {t('landing.nav.projects')}
             </a>
           </div>
@@ -57,7 +64,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 hover:bg-lime-500/10"
+            className="text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 hover:bg-lime-500/10"
           >
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </Button>
@@ -71,7 +78,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             href="https://x.com/FinibusApp"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 hover:bg-lime-500/10 transition-all duration-300"
+            className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 hover:bg-lime-500/10 transition-all duration-300"
             whileHover={{ scale: 1.1, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -82,7 +89,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             href="https://discord.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 hover:bg-lime-500/10 transition-all duration-300"
+            className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 hover:bg-lime-500/10 transition-all duration-300"
             whileHover={{ scale: 1.1, rotate: -5 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -102,7 +109,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             variant="ghost"
             size="icon"
             onClick={toggleDarkMode}
-            className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 hover:bg-lime-500/10 border-0 transition-all duration-300"
+            className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 hover:bg-lime-500/10 border-0 transition-all duration-300"
           >
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             <span className="sr-only">{t('landing.header.toggleDarkMode')}</span>
@@ -128,28 +135,28 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
           <nav className="px-6 py-4 space-y-4">
             <a 
               href="#accueil" 
-              className="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors py-2"
+              className="block text-lg font-semibold text-emerald-700 drop-shadow-sm dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 transition-colors py-2"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {t('landing.nav.home')}
             </a>
             <a 
               href="#fonctionnalites" 
-              className="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors py-2"
+              className="block text-lg font-semibold text-emerald-700 drop-shadow-sm dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 transition-colors py-2"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {t('landing.nav.features')}
             </a>
             <a 
               href="#comment-ca-marche" 
-              className="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors py-2"
+              className="block text-lg font-semibold text-emerald-700 drop-shadow-sm dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 transition-colors py-2"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {t('landing.nav.howItWorks')}
             </a>
             <a 
               href="#projets" 
-              className="block text-lg font-medium text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400 transition-colors py-2"
+              className="block text-lg font-semibold text-emerald-700 drop-shadow-sm dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 transition-colors py-2"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {t('landing.nav.projects')}
@@ -161,7 +168,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
                 href="https://x.com/FinibusApp"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400"
+                className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400"
               >
                 <Twitter size={16} />
               </a>
@@ -169,7 +176,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
                 href="https://discord.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-gray-700 dark:text-gray-300 hover:text-lime-500 dark:hover:text-lime-400"
+                className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400"
               >
                 <MessageCircle size={16} />
               </a>

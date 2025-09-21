@@ -1,67 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, Users, Target } from "lucide-react";
 import { useTranslation } from '@/hooks/useLanguage';
-import { apiManager } from '@/lib/services/api-manager';
 
-export function BlockchainStats({ darkMode }) {
+const numberFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 0,
+});
+
+const raisedFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 1,
+});
+
+export function BlockchainStats({ darkMode, stats, statsLoading }) {
   const { t } = useTranslation();
   const [animatedStats, setAnimatedStats] = useState({
     users: 0,
     campaigns: 0,
-    totalRaised: 0
+    totalRaised: 0,
   });
-  const [allCampaigns, setAllCampaigns] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  // Chargement des campagnes via API Manager
   useEffect(() => {
-    const loadCampaigns = async () => {
-      try {
-        setLoading(true);
-        const campaigns = await apiManager.getAllCampaigns();
-        setAllCampaigns(campaigns);
-      } catch (error) {
-        console.error('Erreur chargement campagnes:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (statsLoading) {
+      return;
+    }
 
-    loadCampaigns();
-  }, []);
+    const targetUsers = stats?.users ?? 0;
+    const targetCampaigns = stats?.campaigns ?? 0;
+    const targetRaised = stats?.totalRaised ?? 0;
 
-  // Calcul simulé du nombre d'utilisateurs (basé sur le nombre de campagnes * estimation)
-  const userCount = allCampaigns ? Math.max(allCampaigns.length * 12 + 147, 147) : 147;
-  
-  // Nombre de campagnes directement depuis getAllCampaigns
-  const campaignCount = allCampaigns ? allCampaigns.length : 0;
-  
-  // SIMULATION: Montant total collecté (sera remplacé par de vraies données plus tard)
-  const totalRaised = allCampaigns ? allCampaigns.length * 25.5 + 127.5 : 127.5;
-
-  // Animation des compteurs
-  useEffect(() => {
-    const targetUsers = userCount; // Valeur calculée
-    const targetCampaigns = campaignCount; // Nombre réel de campagnes
-    const targetRaised = totalRaised; // Valeur simulée en ETH
-
-    const duration = 2000; // 2 secondes d'animation
-    const steps = 60; // 60 FPS
+    const duration = 2000;
+    const steps = 60;
     const interval = duration / steps;
 
     let currentStep = 0;
     const timer = setInterval(() => {
-      currentStep++;
+      currentStep += 1;
       const progress = currentStep / steps;
-      const easedProgress = 1 - Math.pow(1 - progress, 3); // Easing out cubic
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
 
       setAnimatedStats({
         users: Math.floor(easedProgress * targetUsers),
         campaigns: Math.floor(easedProgress * targetCampaigns),
-        totalRaised: (easedProgress * targetRaised).toFixed(1)
+        totalRaised: easedProgress * targetRaised,
       });
 
       if (currentStep >= steps) {
@@ -69,36 +51,36 @@ export function BlockchainStats({ darkMode }) {
         setAnimatedStats({
           users: targetUsers,
           campaigns: targetCampaigns,
-          totalRaised: targetRaised.toFixed(1)
+          totalRaised: targetRaised,
         });
       }
     }, interval);
 
     return () => clearInterval(timer);
-  }, [allCampaigns, userCount, campaignCount, totalRaised]);
+  }, [stats, statsLoading]);
 
-  const stats = [
+  const statCards = [
     {
       icon: Users,
       value: animatedStats.users,
+      formatter: (value) => numberFormatter.format(Math.max(0, value)),
       label: t('landing.stats.registeredUsers'),
-      suffix: "",
-      color: "from-blue-400 to-blue-600"
+      color: "from-blue-400 to-blue-600",
     },
     {
       icon: Target,
       value: animatedStats.campaigns,
+      formatter: (value) => numberFormatter.format(Math.max(0, value)),
       label: t('landing.stats.activeCampaigns'),
-      suffix: "",
-      color: "from-purple-400 to-purple-600"
+      color: "from-purple-400 to-purple-600",
     },
     {
       icon: TrendingUp,
       value: animatedStats.totalRaised,
+      formatter: (value) => `${raisedFormatter.format(Math.max(0, value))} Ξ`,
       label: t('landing.stats.ethCollected'),
-      suffix: "Ξ",
-      color: "from-lime-400 to-green-600"
-    }
+      color: "from-lime-400 to-green-600",
+    },
   ];
 
   return (
@@ -120,7 +102,7 @@ export function BlockchainStats({ darkMode }) {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat, index) => (
+          {statCards.map((stat, index) => (
             <motion.div
               key={index}
               className={`p-6 rounded-2xl ${
@@ -140,8 +122,7 @@ export function BlockchainStats({ darkMode }) {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {typeof stat.value === 'number' && stat.value > 0 ? stat.value : '...'}
-                    <span className="text-lime-500 ml-1">{stat.suffix}</span>
+                    {statsLoading ? '...' : stat.formatter(stat.value)}
                   </div>
                   <div className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
                     {stat.label}

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Wallet, UserPlus, Rocket, Trophy, ArrowRight } from "lucide-react";
+import { Wallet, Trophy, Compass, ArrowRight } from "lucide-react";
 import { useTranslation } from '@/hooks/useLanguage';
 
 export function HowItWorks({ darkMode }) {
@@ -16,25 +16,18 @@ export function HowItWorks({ darkMode }) {
       delay: 0
     },
     {
-      icon: UserPlus,
+      icon: Compass,
       title: t('landing.howItWorks.step2.title'),
       description: t('landing.howItWorks.step2.description'),
       color: "from-purple-400 to-purple-600",
       delay: 0.1
     },
     {
-      icon: Rocket,
+      icon: Trophy,
       title: t('landing.howItWorks.step3.title'),
       description: t('landing.howItWorks.step3.description'),
       color: "from-lime-400 to-green-600",
       delay: 0.2
-    },
-    {
-      icon: Trophy,
-      title: t('landing.howItWorks.step4.title'),
-      description: t('landing.howItWorks.step4.description'),
-      color: "from-yellow-400 to-orange-600",
-      delay: 0.3
     }
   ];
 
@@ -64,7 +57,7 @@ export function HowItWorks({ darkMode }) {
             <div className={`h-0.5 ${darkMode ? "bg-gradient-to-r from-transparent via-lime-500/30 to-transparent" : "bg-gradient-to-r from-transparent via-lime-500/40 to-transparent"}`} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {steps.map((step, index) => (
               <motion.div
                 key={index}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
+import { useLandingStats } from '@/hooks/useLandingStats';
 
 // Composants réutilisables - Version ShadCN
 import { LandingHeader } from "./landing/LandingHeader";
@@ -16,6 +17,7 @@ import { LandingBackground } from "./landing/LandingBackground";
 export default function Home({ onAccessInterface }) {
   const [darkMode, setDarkMode] = useState(false);
   const { address } = useAccount();
+  const { stats, loading: statsLoading } = useLandingStats();
 
   useEffect(() => {
     const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -42,12 +44,22 @@ export default function Home({ onAccessInterface }) {
         <LandingHero
           darkMode={darkMode}
           address={address}
+          stats={stats}
+          statsLoading={statsLoading}
           onAccessInterface={onAccessInterface}
         />
-        
-        <LandingInfoSection darkMode={darkMode} />
-        
-        <BlockchainStats darkMode={darkMode} />
+
+        <LandingInfoSection
+          darkMode={darkMode}
+          stats={stats}
+          statsLoading={statsLoading}
+        />
+
+        <BlockchainStats
+          darkMode={darkMode}
+          stats={stats}
+          statsLoading={statsLoading}
+        />
         
         <HowItWorks darkMode={darkMode} />
         

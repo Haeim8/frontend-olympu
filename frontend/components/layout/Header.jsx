@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LanguageSelector from "@/components/ui/LanguageSelector";
@@ -9,8 +10,7 @@ import {
   Bell, 
   Sun, 
   Moon, 
-  Menu,
-  Sparkles
+  Menu
 } from 'lucide-react';
 import ConnectWalletButton from '@/components/shared/ConnectWalletButton';
 
@@ -75,7 +75,7 @@ export default function Header({
   }, []);
 
   return (
-    <header className="relative bg-gradient-to-r from-white via-gray-50 to-white dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 border-b border-gray-200 dark:border-neutral-800 shadow-sm">
+    <header className="relative bg-gradient-to-r from-lime-50 via-white to-lime-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 border-b border-gray-200/70 dark:border-neutral-800 shadow-sm">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5 dark:opacity-10">
         <svg className="w-full h-full" viewBox="0 0 100 20">
@@ -103,17 +103,20 @@ export default function Header({
             </Button>
             
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="relative">
-                <div className="w-8 h-8 bg-gradient-to-br from-lime-400 to-emerald-500 rounded-xl flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-lime-400 to-emerald-500 rounded-full animate-pulse"></div>
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12">
+                <Image
+                  src="/logo.png"
+                  alt="Livar logo"
+                  fill
+                  priority
+                  className="rounded-2xl object-cover shadow-md"
+                />
               </div>
               <div>
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-lime-500 to-emerald-600 bg-clip-text text-transparent">
                   Livar
                 </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 hidden md:block">
+                <p className="text-xs text-gray-600 dark:text-gray-400 hidden md:block">
                   {t('investmentPlatform', 'Plateforme d\'investissement')}
                 </p>
               </div>

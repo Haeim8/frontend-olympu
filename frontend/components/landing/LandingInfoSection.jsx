@@ -1,10 +1,19 @@
 "use client";
 
+import { useMemo } from 'react';
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from '@/hooks/useLanguage';
 
-export function LandingInfoSection({ darkMode }) {
+const numberFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 0,
+});
+
+const raisedFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 1,
+});
+
+export function LandingInfoSection({ darkMode, stats, statsLoading }) {
   const { t } = useTranslation();
   
   const features = [
@@ -15,10 +24,10 @@ export function LandingInfoSection({ darkMode }) {
       gradient: "from-blue-500 to-cyan-500",
     },
     {
-      title: t('landing.features.communityGovernance.title'),
-      description: t('landing.features.communityGovernance.description'),
-      icon: "🏛️",
-      gradient: "from-purple-500 to-pink-500",
+      title: t('landing.features.realTimeInsights.title'),
+      description: t('landing.features.realTimeInsights.description'),
+      icon: "📊",
+      gradient: "from-purple-500 to-indigo-500",
     },
     {
       title: t('landing.features.transparentRewards.title'),
@@ -33,6 +42,30 @@ export function LandingInfoSection({ darkMode }) {
       gradient: "from-green-500 to-emerald-500",
     },
   ];
+
+  const figures = useMemo(() => {
+    const users = stats?.users ?? 0;
+    const campaigns = stats?.campaigns ?? 0;
+    const totalRaised = stats?.totalRaised ?? 0;
+
+    return [
+      {
+        label: t('landing.cta.activeUsers', 'Utilisateurs actifs'),
+        value: users,
+        formatter: (value) => numberFormatter.format(Math.max(0, value)),
+      },
+      {
+        label: t('landing.cta.fundsRaised', 'Fonds levés'),
+        value: totalRaised,
+        formatter: (value) => `${raisedFormatter.format(Math.max(0, value))} Ξ`,
+      },
+      {
+        label: t('landing.cta.projectsFunded', 'Projets financés'),
+        value: campaigns,
+        formatter: (value) => numberFormatter.format(Math.max(0, value)),
+      },
+    ];
+  }, [stats, t]);
 
   return (
     <section id="fonctionnalites" className="relative z-10 py-16 px-4">
@@ -111,18 +144,16 @@ export function LandingInfoSection({ darkMode }) {
                   {t('landing.cta.description')}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold text-lime-500">+10K</div>
-                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.cta.activeUsers')}</div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold text-lime-500">€2.5M</div>
-                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.cta.fundsRaised')}</div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold text-lime-500">150+</div>
-                    <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>{t('landing.cta.projectsFunded')}</div>
-                  </div>
+                  {figures.map((figure) => (
+                    <div key={figure.label} className="space-y-1">
+                      <div className="text-2xl font-bold text-lime-500">
+                        {statsLoading ? '...' : figure.formatter(figure.value)}
+                      </div>
+                      <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
+                        {figure.label}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>

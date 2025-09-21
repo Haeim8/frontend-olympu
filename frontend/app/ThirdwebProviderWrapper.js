@@ -18,7 +18,7 @@ const wagmiConfig = getDefaultConfig({
   appName: 'Livar',
   projectId,
   chains: [baseSepolia, base],
-  ssr: true,
+  ssr: false,
 });
 
 export default function ThirdwebProviderWrapper({ children }) {

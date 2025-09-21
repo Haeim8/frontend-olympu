@@ -493,12 +493,16 @@ const translations = {
     // Autres textes landing manquants
     'landing.hero.connectWallet': 'Veuillez connecter votre portefeuille',
     'landing.hero.secureConnectionRequired': 'Connexion sécurisée requise',
+    switchNetwork: 'Changer de réseau',
+    'wallet.connectButton': 'Connecter le wallet',
+    'landing.hero.headline': 'Prêt à rejoindre la révolution DeFi ?',
+    'landing.hero.subtitle': 'Connectez votre portefeuille, explorez des campagnes vérifiées et suivez vos performances en temps réel.',
     'landing.features.title': 'Pourquoi choisir notre plateforme?',
     'landing.features.subtitle': 'Notre plateforme de financement participatif décentralisée offre des avantages uniques pour les créateurs et les investisseurs dans l\'écosystème Web3.',
     'landing.features.decentralizedFunding.title': 'Financement Décentralisé',
     'landing.features.decentralizedFunding.description': 'Accédez à un financement sans intermédiaires grâce à notre plateforme DeFi innovante.',
-    'landing.features.communityGovernance.title': 'Gouvernance Communautaire',
-    'landing.features.communityGovernance.description': 'Participez aux décisions importantes et votez sur l\'avenir des projets financés.',
+    'landing.features.realTimeInsights.title': 'Tableau de bord en temps réel',
+    'landing.features.realTimeInsights.description': 'Visualisez les performances de vos campagnes avec des indicateurs on-chain mis à jour automatiquement.',
     'landing.features.transparentRewards.title': 'Récompenses Transparentes',
     'landing.features.transparentRewards.description': 'Recevez des récompenses proportionnelles à votre contribution, le tout enregistré sur la blockchain.',
     'landing.features.maxSecurity.title': 'Sécurité Maximale',
@@ -514,15 +518,13 @@ const translations = {
     
     // How It Works
     'landing.howItWorks.title': 'Comment ça marche ?',
-    'landing.howItWorks.subtitle': 'Rejoindre la révolution DeFi n\'a jamais été aussi simple. Suivez ces 4 étapes pour commencer votre aventure Web3.',
+    'landing.howItWorks.subtitle': 'Rejoindre la révolution DeFi n\'a jamais été aussi simple. Suivez ces 3 étapes pour commencer votre aventure Web3.',
     'landing.howItWorks.step1.title': 'Connectez votre wallet',
     'landing.howItWorks.step1.description': 'Utilisez MetaMask, WalletConnect ou tout autre wallet compatible Ethereum',
-    'landing.howItWorks.step2.title': 'Créez votre profil',
-    'landing.howItWorks.step2.description': 'Inscrivez-vous sur la plateforme avec 0.05 ETH pour sécuriser votre compte',
-    'landing.howItWorks.step3.title': 'Explorez les projets',
-    'landing.howItWorks.step3.description': 'Découvrez et financez des projets Web3 innovants qui vous passionnent',
-    'landing.howItWorks.step4.title': 'Récoltez les rewards',
-    'landing.howItWorks.step4.description': 'Gagnez des tokens et participez à la gouvernance des projets soutenus',
+    'landing.howItWorks.step2.title': 'Choisissez une campagne',
+    'landing.howItWorks.step2.description': 'Parcourez les opportunités, comparez les KPI on-chain et sélectionnez celles qui vous inspirent.',
+    'landing.howItWorks.step3.title': 'Activez vos rewards',
+    'landing.howItWorks.step3.description': 'Recevez vos récompenses et suivez vos investissements directement depuis votre tableau de bord.',
     'landing.howItWorks.readyInMinutes': 'Prêt en moins de 2 minutes',
     
     // Projects Section
@@ -588,7 +590,7 @@ const translations = {
     
     // CTA Section
     'landing.cta.title': 'Prêt à rejoindre la révolution DeFi?',
-    'landing.cta.description': 'Connectez votre portefeuille, créez votre profil et commencez à participer à des projets innovants qui façonnent l\'avenir de la finance décentralisée.',
+    'landing.cta.description': 'Connectez votre portefeuille et financez des projets innovants qui façonnent l\'avenir de la finance décentralisée.',
     'landing.cta.activeUsers': 'Utilisateurs actifs',
     'landing.cta.fundsRaised': 'Fonds levés',
     'landing.cta.projectsFunded': 'Projets financés',
@@ -1387,12 +1389,16 @@ const translations = {
     // Other landing texts
     'landing.hero.connectWallet': 'Please connect your wallet',
     'landing.hero.secureConnectionRequired': 'Secure connection required',
+    switchNetwork: 'Switch network',
+    'wallet.connectButton': 'Connect wallet',
+    'landing.hero.headline': 'Ready to join the DeFi revolution?',
+    'landing.hero.subtitle': 'Connect your wallet, explore verified campaigns, and track your performance in real time.',
     'landing.features.title': 'Why choose our platform?',
     'landing.features.subtitle': 'Our decentralized crowdfunding platform offers unique advantages for creators and investors in the Web3 ecosystem.',
     'landing.features.decentralizedFunding.title': 'Decentralized Funding',
     'landing.features.decentralizedFunding.description': 'Access funding without intermediaries through our innovative DeFi platform.',
-    'landing.features.communityGovernance.title': 'Community Governance',
-    'landing.features.communityGovernance.description': 'Participate in important decisions and vote on the future of funded projects.',
+    'landing.features.realTimeInsights.title': 'Real-time analytics',
+    'landing.features.realTimeInsights.description': 'Monitor every campaign with on-chain metrics and instant performance updates.',
     'landing.features.transparentRewards.title': 'Transparent Rewards',
     'landing.features.transparentRewards.description': 'Receive rewards proportional to your contribution, all recorded on the blockchain.',
     'landing.features.maxSecurity.title': 'Maximum Security',
@@ -1408,15 +1414,13 @@ const translations = {
     
     // How It Works
     'landing.howItWorks.title': 'How does it work?',
-    'landing.howItWorks.subtitle': 'Joining the DeFi revolution has never been so simple. Follow these 4 steps to start your Web3 adventure.',
+    'landing.howItWorks.subtitle': 'Joining the DeFi revolution has never been easier. Follow these 3 steps to start your Web3 journey.',
     'landing.howItWorks.step1.title': 'Connect your wallet',
     'landing.howItWorks.step1.description': 'Use MetaMask, WalletConnect or any other Ethereum compatible wallet',
-    'landing.howItWorks.step2.title': 'Create your profile',
-    'landing.howItWorks.step2.description': 'Sign up on the platform with 0.05 ETH to secure your account',
-    'landing.howItWorks.step3.title': 'Explore projects',
-    'landing.howItWorks.step3.description': 'Discover and fund innovative Web3 projects that excite you',
-    'landing.howItWorks.step4.title': 'Harvest rewards',
-    'landing.howItWorks.step4.description': 'Earn tokens and participate in the governance of supported projects',
+    'landing.howItWorks.step2.title': 'Choose a campaign',
+    'landing.howItWorks.step2.description': 'Browse opportunities, compare on-chain KPIs, and pick the ones that inspire you.',
+    'landing.howItWorks.step3.title': 'Activate your rewards',
+    'landing.howItWorks.step3.description': 'Collect rewards and track your investments directly from your dashboard.',
     'landing.howItWorks.readyInMinutes': 'Ready in less than 2 minutes',
     
     // Projects Section
@@ -1480,7 +1484,7 @@ const translations = {
     
     // CTA Section
     'landing.cta.title': 'Ready to join the DeFi revolution?',
-    'landing.cta.description': 'Connect your wallet, create your profile and start participating in innovative projects that shape the future of decentralized finance.',
+    'landing.cta.description': 'Connect your wallet and back innovative projects that shape the future of decentralized finance.',
     'landing.cta.activeUsers': 'Active users',
     'landing.cta.fundsRaised': 'Funds raised',
     'landing.cta.projectsFunded': 'Projects funded',
@@ -2231,12 +2235,17 @@ const translations = {
     // Other landing texts
     'landing.hero.connectWallet': 'Por favor conecta tu cartera',
     'landing.hero.secureConnectionRequired': 'Conexión segura requerida',
+    launchApp: 'Lanzar la app',
+    switchNetwork: 'Cambiar de red',
+    'wallet.connectButton': 'Conectar wallet',
+    'landing.hero.headline': '¿Listo para unirte a la revolución DeFi?',
+    'landing.hero.subtitle': 'Conecta tu wallet, explora campañas verificadas y sigue tus resultados en tiempo real.',
     'landing.features.title': '¿Por qué elegir nuestra plataforma?',
     'landing.features.subtitle': 'Nuestra plataforma de crowdfunding descentralizada ofrece ventajas únicas para creadores e inversores en el ecosistema Web3.',
     'landing.features.decentralizedFunding.title': 'Financiamiento Descentralizado',
     'landing.features.decentralizedFunding.description': 'Accede a financiamiento sin intermediarios a través de nuestra innovadora plataforma DeFi.',
-    'landing.features.communityGovernance.title': 'Gobernanza Comunitaria',
-    'landing.features.communityGovernance.description': 'Participa en decisiones importantes y vota sobre el futuro de los proyectos financiados.',
+    'landing.features.realTimeInsights.title': 'Analítica en tiempo real',
+    'landing.features.realTimeInsights.description': 'Visualiza el rendimiento de tus campañas con métricas on-chain actualizadas automáticamente.',
     'landing.features.transparentRewards.title': 'Recompensas Transparentes',
     'landing.features.transparentRewards.description': 'Recibe recompensas proporcionales a tu contribución, todo registrado en la blockchain.',
     'landing.features.maxSecurity.title': 'Seguridad Máxima',
@@ -2252,15 +2261,13 @@ const translations = {
     
     // How It Works
     'landing.howItWorks.title': '¿Cómo funciona?',
-    'landing.howItWorks.subtitle': 'Unirse a la revolución DeFi nunca ha sido tan simple. Sigue estos 4 pasos para comenzar tu aventura Web3.',
+    'landing.howItWorks.subtitle': 'Unirse a la revolución DeFi nunca ha sido tan fácil. Sigue estos 3 pasos para comenzar tu aventura Web3.',
     'landing.howItWorks.step1.title': 'Conecta tu wallet',
     'landing.howItWorks.step1.description': 'Usa MetaMask, WalletConnect o cualquier otro wallet compatible con Ethereum',
-    'landing.howItWorks.step2.title': 'Crea tu perfil',
-    'landing.howItWorks.step2.description': 'Regístrate en la plataforma con 0.05 ETH para asegurar tu cuenta',
-    'landing.howItWorks.step3.title': 'Explora proyectos',
-    'landing.howItWorks.step3.description': 'Descubre y financia proyectos Web3 innovadores que te apasionen',
-    'landing.howItWorks.step4.title': 'Cosecha recompensas',
-    'landing.howItWorks.step4.description': 'Gana tokens y participa en la gobernanza de los proyectos respaldados',
+    'landing.howItWorks.step2.title': 'Elige una campaña',
+    'landing.howItWorks.step2.description': 'Explora las oportunidades, compara los KPI on-chain y selecciona las que te motiven.',
+    'landing.howItWorks.step3.title': 'Activa tus rewards',
+    'landing.howItWorks.step3.description': 'Recibe recompensas y sigue tus inversiones directamente desde tu panel.',
     'landing.howItWorks.readyInMinutes': 'Listo en menos de 2 minutos',
     
     // Projects Section
@@ -2324,7 +2331,7 @@ const translations = {
     
     // CTA Section
     'landing.cta.title': '¿Listo para unirte a la revolución DeFi?',
-    'landing.cta.description': 'Conecta tu wallet, crea tu perfil y comienza a participar en proyectos innovadores que dan forma al futuro de las finanzas descentralizadas.',
+    'landing.cta.description': 'Conecta tu wallet y financia proyectos innovadores que dan forma al futuro de las finanzas descentralizadas.',
     'landing.cta.activeUsers': 'Usuarios activos',
     'landing.cta.fundsRaised': 'Fondos recaudados',
     'landing.cta.projectsFunded': 'Proyectos financiados',
