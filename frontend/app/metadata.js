@@ -5,10 +5,14 @@ const ogImage = {
   alt: 'Livar mini app preview',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export const metadata = {
   title: 'Livar - Financement Participatif DeFi',
   description: 'Plateforme décentralisée de financement participatif pour les startups Web3',
-  viewport: 'width=device-width, initial-scale=1',
   icons: {
     icon: '/favicon.ico',
   },

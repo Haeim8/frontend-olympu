@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import { ConnectWallet, ConnectWalletText } from '@coinbase/onchainkit/wallet';
+import ConnectWalletButton from '@/components/shared/ConnectWalletButton';
 
 export default function ConnectPrompt() {
   return (
@@ -28,12 +28,7 @@ export default function ConnectPrompt() {
           Connectez-vous avec l’expérience Coinbase pour débloquer les campagnes premium, le stockage de documents et les analytics.
         </p>
         <div className="flex justify-center">
-          <ConnectWallet
-            className="bg-lime-500 hover:bg-lime-600 text-white font-semibold px-4 py-2 rounded-lg shadow-lg transition-all duration-300"
-            text="Connect"
-          >
-            <ConnectWalletText>Connect wallet</ConnectWalletText>
-          </ConnectWallet>
+          <ConnectWalletButton />
         </div>
       </div>
     </div>

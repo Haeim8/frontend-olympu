@@ -301,7 +301,7 @@ export default function Wallet() {
               <p>Wallet Address: {address}</p>
               <p>NFT Holdings: {nftHoldings.length}</p>
               <p>Transactions: {transactions.length}</p>
-              <p>Cache stats: {JSON.stringify(apiManager.getCacheStats(), null, 2)}</p>
+              <p>Cache stats: {JSON.stringify(apiManager.getCacheStats?.() ?? {}, null, 2)}</p>
             </div>
           </div>
         )}

@@ -1,56 +1,69 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { useEnvironment } from '@/hooks/useEnvironment';
+import { useMemo, useState } from 'react';
+import { WagmiProvider } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { base, baseSepolia } from 'wagmi/chains';
+import {
+  RainbowKitProvider,
+  darkTheme,
+  lightTheme,
+  getDefaultConfig,
+} from '@rainbow-me/rainbowkit';
 import { useTheme } from 'next-themes';
-import { OnchainKitProvider } from '@coinbase/onchainkit';
-import { baseSepolia } from 'wagmi/chains';
 
-const resolveMode = (theme) => (theme === 'dark' ? 'dark' : 'light');
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '00000000000000000000000000000000';
 
-const ThirdwebProviderWrapper = ({ children }) => {
-  const { isMiniApp } = useEnvironment();
+const wagmiConfig = getDefaultConfig({
+  appName: 'Livar',
+  projectId,
+  chains: [baseSepolia, base],
+  ssr: true,
+});
+
+export default function ThirdwebProviderWrapper({ children }) {
   const { theme } = useTheme();
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+            refetchOnMount: false,
+            refetchOnReconnect: false,
+            staleTime: 5 * 60 * 1000,
+          },
+        },
+      })
+  );
 
-  const appearanceMode = resolveMode(theme);
-
-  const onchainConfig = useMemo(() => ({
-    appearance: {
-      name: 'Livar',
-      logo: '/assets/miniapp-icon.png',
-      mode: appearanceMode,
-      theme: 'base',
-    },
-    wallet: {
-      display: 'modal',
-      preference: isMiniApp ? 'base' : 'smart',
-      supportedWallets: {
-        rabby: true,
-        trust: true,
-        frame: true,
-      },
-    },
-  }), [appearanceMode, isMiniApp]);
-
-  const chain = baseSepolia;
-  const apiKey = process.env.NEXT_PUBLIC_CDP_CLIENT_API_KEY;
-  const projectId = process.env.NEXT_PUBLIC_CDP_PROJECT_ID;
-  const rpcUrl = apiKey
-    ? `https://api.developer.coinbase.com/rpc/v1/base-sepolia/${apiKey}`
-    : 'https://sepolia.base.org';
+  const rainbowTheme = useMemo(
+    () =>
+      (theme === 'dark'
+        ? darkTheme({
+            accentColor: '#84cc16',
+            accentColorForeground: 'white',
+            borderRadius: 'medium',
+            fontStack: 'system',
+            overlayBlur: 'small',
+          })
+        : lightTheme({
+            accentColor: '#84cc16',
+            accentColorForeground: 'white',
+            borderRadius: 'medium',
+            fontStack: 'system',
+            overlayBlur: 'small',
+          })),
+    [theme]
+  );
 
   return (
-    <OnchainKitProvider
-      apiKey={apiKey ?? undefined}
-      projectId={projectId ?? undefined}
-      chain={chain}
-      rpcUrl={rpcUrl}
-      analytics={false}
-      config={onchainConfig}
-    >
-      {children}
-    </OnchainKitProvider>
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider theme={rainbowTheme} locale="fr">
+          {children}
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
-};
-
-export default ThirdwebProviderWrapper;
+}

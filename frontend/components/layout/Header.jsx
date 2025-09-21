@@ -1,83 +1,53 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useTranslation } from "@/hooks/useLanguage";
-import {
-  Bell,
-  Sun,
-  Moon,
-  ChevronDown,
+import { 
+  Bell, 
+  Sun, 
+  Moon, 
   Menu,
-  Settings,
-  User,
-  LogOut,
-  Wallet,
-  Activity
+  Sparkles
 } from 'lucide-react';
-import { useAccount, useDisconnect } from 'wagmi';
-import { ConnectWallet, ConnectWalletText } from '@coinbase/onchainkit/wallet';
-import { useRouter } from 'next/navigation';
-import { useEnvironment } from '@/hooks/useEnvironment';
+import ConnectWalletButton from '@/components/shared/ConnectWalletButton';
 
 export default function Header({ 
   darkMode, 
   toggleDarkMode, 
   showMobileMenu, 
-  setShowMobileMenu, 
-  username
+  setShowMobileMenu
 }) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { t } = useTranslation();
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      title: "New project available",
-      message: "A renewable energy deal just launched on Livar",
-      time: "2 minutes ago",
+      title: "Nouveau projet disponible",
+      message: "Un projet d'énergie renouvelable vient d'être publié",
+      time: "Il y a 2 min",
       unread: true
     },
     {
       id: 2,
-      title: "Investment confirmed",
-      message: "Your 0.5 ETH contribution has been confirmed",
-      time: "1 hour ago",
+      title: "Transaction confirmée",
+      message: "Votre investissement de 0.5 ETH a été confirmé",
+      time: "Il y a 1h",
       unread: true
     },
     {
       id: 3,
-      title: "Rewards received",
-      message: "You received 0.025 ETH in campaign rewards",
-      time: "2 hours ago",
+      title: "Dividendes reçus",
+      message: "Vous avez reçu 0.025 ETH de dividendes",
+      time: "Il y a 2h",
       unread: false
     }
   ]);
-  
-  const { address } = useAccount();
-  const { disconnect } = useDisconnect();
-  // TODO: Implémenter useBalance avec wagmi si nécessaire
-  const balance = null;
-  const router = useRouter();
-  const { isMiniApp } = useEnvironment();
-  
-  
+
   const handleNotificationsToggle = () => {
     setIsNotificationsOpen(!isNotificationsOpen);
-  };
-
-  const handleUserMenuToggle = () => {
-    setIsUserMenuOpen(!isUserMenuOpen);
-  };
-
-
-  const handleDisconnect = () => {
-    disconnect();
-    setIsUserMenuOpen(false);
-    router.push('/');
   };
 
   const markNotificationAsRead = (notificationId) => {
@@ -96,9 +66,6 @@ export default function Header({
   const handleClickOutside = (e) => {
     if (!e.target.closest('.notifications-menu') && !e.target.closest('.notifications-trigger')) {
       setIsNotificationsOpen(false);
-    }
-    if (!e.target.closest('.user-menu') && !e.target.closest('.user-trigger')) {
-      setIsUserMenuOpen(false);
     }
   };
 
@@ -130,28 +97,24 @@ export default function Header({
               size="icon"
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="md:hidden text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200"
-              aria-label={showMobileMenu ? "Close navigation" : "Open navigation"}
+              aria-label={showMobileMenu ? "Fermer le menu" : "Ouvrir le menu"}
             >
               <Menu className="h-5 w-5" />
             </Button>
-
+            
             <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="relative w-10 h-10">
-                <Image
-                  src="/assets/miniapp-icon.png"
-                  alt="Livar logo"
-                  fill
-                  sizes="40px"
-                  className="rounded-xl shadow-md"
-                  priority
-                />
+              <div className="relative">
+                <div className="w-8 h-8 bg-gradient-to-br from-lime-400 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-lime-400 to-emerald-500 rounded-full animate-pulse"></div>
               </div>
               <div>
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-lime-500 to-emerald-600 bg-clip-text text-transparent">
                   Livar
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 hidden md:block">
-                  {t('investmentPlatform', 'Investment platform for onchain communities')}
+                  {t('investmentPlatform', 'Plateforme d\'investissement')}
                 </p>
               </div>
             </div>
@@ -191,7 +154,7 @@ export default function Header({
                       </h3>
                       {unreadCount > 0 && (
                         <Badge className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300">
-                          {unreadCount} new
+                          {unreadCount} nouveau(x)
                         </Badge>
                       )}
                     </div>
@@ -200,7 +163,7 @@ export default function Header({
                     {notifications.length === 0 ? (
                       <div className="p-6 text-center">
                         <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 dark:text-gray-400">No notifications</p>
+                        <p className="text-gray-500 dark:text-gray-400">Aucune notification</p>
                       </div>
                     ) : (
                       notifications.map((notification) => (
@@ -241,28 +204,15 @@ export default function Header({
               size="icon"
               onClick={toggleDarkMode}
               className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200"
-              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
             >
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
-            {isMiniApp ? (
-              <ConnectWallet
-                className="bg-gradient-to-r from-lime-500 to-green-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-lime-500/25 transition-all duration-300 hover:from-lime-600 hover:to-green-600"
-                text="Connect"
-              >
-                <ConnectWalletText>Connecter</ConnectWalletText>
-              </ConnectWallet>
-            ) : (
-              <div className="[&>button]:bg-gradient-to-r [&>button]:from-lime-500 [&>button]:to-green-500 [&>button]:border-0 [&>button]:shadow-lg [&>button]:hover:shadow-lime-500/25 [&>button]:transition-all [&>button]:duration-300 [&>button]:hover:from-lime-600 [&>button]:hover:to-green-600 [&>button]:text-xs [&>button]:px-2 [&>button]:py-1 sm:[&>button]:text-sm sm:[&>button]:px-4 sm:[&>button]:py-2 [&>button]:truncate [&>button]:max-w-[120px] sm:[&>button]:max-w-none">
-                <ConnectWallet className="w-full" text="Connect">
-                  <ConnectWalletText>Connecter</ConnectWalletText>
-                </ConnectWallet>
-              </div>
-            )}
-         </div>
-       </div>
-     </div>
+            <ConnectWalletButton className="max-w-[140px] sm:max-w-none" />
+          </div>
+        </div>
+      </div>
       
       {/* Decorative gradient line */}
       <div className="h-1 bg-gradient-to-r from-lime-400 via-emerald-500 to-lime-400"></div>

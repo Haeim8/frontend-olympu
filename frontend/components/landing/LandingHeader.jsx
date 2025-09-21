@@ -4,16 +4,13 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useTranslation } from '@/hooks/useLanguage';
-import { Moon, Sun, Twitter, MessageCircle, Zap, Wallet, Menu, X } from "lucide-react";
-import { ConnectWallet, ConnectWalletText } from '@coinbase/onchainkit/wallet';
-import { useEnvironment } from '@/hooks/useEnvironment';
+import { Moon, Sun, Twitter, MessageCircle, Zap, Menu, X } from "lucide-react";
+import ConnectWalletButton from '@/components/shared/ConnectWalletButton';
 import { motion } from "framer-motion";
 
 export function LandingHeader({ darkMode, toggleDarkMode }) {
   const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  const { isMiniApp } = useEnvironment();
-  
   return (
     <motion.header 
       className="px-6 lg:px-8 h-24 relative z-50 bg-white/10 dark:bg-gray-900/10 backdrop-blur-lg border-b border-white/20 dark:border-gray-700/20"
@@ -114,20 +111,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
 
         {/* Connect Wallet */}
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          {isMiniApp ? (
-            <ConnectWallet
-              className="bg-gradient-to-r from-lime-500 to-green-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg shadow-lg hover:shadow-lime-500/25 transition-all duration-300 hover:from-lime-600 hover:to-green-600"
-              text="Connect"
-            >
-              <ConnectWalletText>Connecter</ConnectWalletText>
-            </ConnectWallet>
-          ) : (
-            <div className="[&>button]:bg-gradient-to-r [&>button]:from-lime-500 [&>button]:to-green-500 [&>button]:border-0 [&>button]:shadow-lg [&>button]:hover:shadow-lime-500/25 [&>button]:transition-all [&>button]:duration-300 [&>button]:hover:from-lime-600 [&>button]:hover:to-green-600 [&>button]:text-xs [&>button]:px-2 [&>button]:py-1 sm:[&>button]:text-sm sm:[&>button]:px-4 sm:[&>button]:py-2 [&>button]:truncate [&>button]:max-w-[100px] sm:[&>button]:max-w-none">
-              <ConnectWallet className="w-full" text="Connect">
-                <ConnectWalletText>Connecter</ConnectWalletText>
-              </ConnectWallet>
-            </div>
-          )}
+          <ConnectWalletButton className="max-w-[140px] sm:max-w-none" />
         </motion.div>
         </div>
       </div>

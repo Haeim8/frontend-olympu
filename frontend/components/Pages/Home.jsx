@@ -265,7 +265,7 @@ export default function Home() {
             <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
               <p>Total campaigns: {projects.length}</p>
               <p>Filtered campaigns: {filteredProjects.length}</p>
-              <p>Cache stats: {JSON.stringify(apiManager.getCacheStats(), null, 2)}</p>
+              <p>Cache stats: {JSON.stringify(apiManager.getCacheStats?.() ?? {}, null, 2)}</p>
               <p>Active filters: {JSON.stringify(filters, null, 2)}</p>
             </div>
           </div>

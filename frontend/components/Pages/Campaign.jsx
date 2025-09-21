@@ -303,7 +303,7 @@ export default function Campaign() {
           </h3>
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
             <p>Campaign Address: {campaignAddress}</p>
-            <p>Cache Stats: {JSON.stringify(apiManager.getCacheStats(), null, 2)}</p>
+            <p>Cache Stats: {JSON.stringify(apiManager.getCacheStats?.() ?? {}, null, 2)}</p>
           </div>
         </div>
       )}
