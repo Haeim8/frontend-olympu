@@ -3,16 +3,22 @@ import { createPublicClient, http, parseAbiItem, formatEther, keccak256, toHex }
 import path from 'path';
 import dotenv from 'dotenv';
 import { pathToFileURL } from 'url';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
 
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-const DivarProxyArtifact = require('../../ABI/DivarProxyABI.json');
-const CampaignArtifact = require('../../ABI/CampaignABI.json');
+// Import ABIs avec chemin absolu
+const DivarProxyArtifact = JSON.parse(
+  readFileSync(path.resolve(__dirname, '../../ABI/DivarProxyABI.json'), 'utf-8')
+);
+const CampaignArtifact = JSON.parse(
+  readFileSync(path.resolve(__dirname, '../../ABI/CampaignABI.json'), 'utf-8')
+);
 const { supabaseAdmin } = await import('../supabase/server.js');
 
 const DIVAR_PROXY_ADDRESS = (process.env.DIVAR_PROXY_ADDRESS || '0xaB0999Eae920849a41A55eA080d0a4a210156817').toLowerCase();
