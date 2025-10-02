@@ -488,24 +488,6 @@ export default function ProjectDetailsTab({ projectData }) {
           </Card>
         )}
 
-        {/* Retours sur investissement */}
-        {firebase?.investmentReturns && (
-          <Card className="border-2 border-green-200 dark:border-green-800 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {t('projectDetailsTab.investmentReturns')}
-                </h3>
-              </div>
-
-              <InvestmentReturns investmentReturns={firebase.investmentReturns} t={t} />
-            </CardContent>
-          </Card>
-        )}
-
         {/* Informations supplémentaires */}
         <Card className="border-2 border-gray-200 dark:border-neutral-800 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-800 dark:to-neutral-900">
           <CardContent className="p-6">

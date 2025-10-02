@@ -2,23 +2,14 @@ import { baseSepolia } from 'viem/chains';
 import { createPublicClient, http, parseAbiItem, formatEther, keccak256, toHex } from 'viem';
 import path from 'path';
 import dotenv from 'dotenv';
-import { pathToFileURL } from 'url';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Import direct des ABIs (fonctionne sur Vercel)
+import DivarProxyArtifact from '../../ABI/DivarProxyABI.json' assert { type: 'json' };
+import CampaignArtifact from '../../ABI/CampaignABI.json' assert { type: 'json' };
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-// Import ABIs avec chemin absolu
-const DivarProxyArtifact = JSON.parse(
-  readFileSync(path.resolve(__dirname, '../../ABI/DivarProxyABI.json'), 'utf-8')
-);
-const CampaignArtifact = JSON.parse(
-  readFileSync(path.resolve(__dirname, '../../ABI/CampaignABI.json'), 'utf-8')
-);
 const { supabaseAdmin } = await import('../supabase/server.js');
 
 const DIVAR_PROXY_ADDRESS = (process.env.DIVAR_PROXY_ADDRESS || '0xaB0999Eae920849a41A55eA080d0a4a210156817').toLowerCase();
