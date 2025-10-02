@@ -13,8 +13,8 @@ let supabaseAdmin = null;
 
 async function getSupabaseAdmin() {
   if (!supabaseAdmin) {
-    const module = await import('@/lib/supabase/server.js');
-    supabaseAdmin = module.supabaseAdmin;
+    const supabaseModule = await import('@/lib/supabase/server.js');
+    supabaseAdmin = supabaseModule.supabaseAdmin;
   }
   return supabaseAdmin;
 }

@@ -428,8 +428,13 @@ const translations = {
     'discussions.noCampaigns': 'Aucune campagne disponible pour le moment.',
     
     // Favorites
-    'favorites.title': 'Levées de fonds favorites',
-    'favorites.empty': 'Vous n\'avez pas encore de projets favoris.',
+    'favorites.title': 'Mes Projets Suivis',
+    'favorites.empty': 'Aucun projet suivi',
+    'favorites.emptyDescription': 'Ajoutez des projets en favoris ou investissez pour les suivre ici',
+    'favorites.invested': 'Investissements',
+    'favorites.favoriteOnly': 'Favoris uniquement',
+    'favorites.investedBadge': 'Investi',
+    'favorites.loading': 'Chargement de vos projets suivis...',
     
     // News
     'news.title': 'Actualités Livar',
@@ -1363,8 +1368,13 @@ const translations = {
     'discussions.noCampaigns': 'No campaigns available at the moment.',
     
     // Favorites
-    'favorites.title': 'Favorite Fundraisers',
-    'favorites.empty': 'You don\'t have any favorite projects yet.',
+    'favorites.title': 'My Tracked Projects',
+    'favorites.empty': 'No tracked projects',
+    'favorites.emptyDescription': 'Add projects to favorites or invest to track them here',
+    'favorites.invested': 'Investments',
+    'favorites.favoriteOnly': 'Favorites only',
+    'favorites.investedBadge': 'Invested',
+    'favorites.loading': 'Loading your tracked projects...',
     
     // News
     'news.title': 'Livar News',
@@ -2248,8 +2258,13 @@ const translations = {
     'discussions.noCampaigns': 'No hay campañas disponibles por el momento.',
     
     // Favorites
-    'favorites.title': 'Recaudaciones Favoritas',
-    'favorites.empty': 'Aún no tienes proyectos favoritos.',
+    'favorites.title': 'Mis Proyectos Seguidos',
+    'favorites.empty': 'No hay proyectos seguidos',
+    'favorites.emptyDescription': 'Agregue proyectos a favoritos o invierta para seguirlos aquí',
+    'favorites.invested': 'Inversiones',
+    'favorites.favoriteOnly': 'Solo favoritos',
+    'favorites.investedBadge': 'Invertido',
+    'favorites.loading': 'Cargando sus proyectos seguidos...',
     
     // News
     'news.title': 'Noticias Livar',

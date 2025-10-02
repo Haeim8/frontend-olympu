@@ -771,11 +771,11 @@ export default function CampaignModal({
     } catch (error) {
       console.error("Erreur:", error);
       setStatus('error');
-      setErrors({ 
+      setErrors({
         general: formatSubmissionError(error)
       });
     }
-  }, [formData, validateStep, status, uploadToIPFS, onCampaignCreated, address, connector, clearDraft, formatSubmissionError, t, resolveExternalProvider, ensureCorrectChain]);
+  }, [formData, validateStep, status, uploadToIPFS, onCampaignCreated, address, clearDraft, formatSubmissionError, t, resolveExternalProvider, ensureCorrectChain]);
 
   // Rendu du contenu selon l'étape
   const renderStepContent = () => {

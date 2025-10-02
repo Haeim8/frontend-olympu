@@ -12,25 +12,36 @@ import Campaign from './Pages/Campaign';
 import ConnectPrompt from './app/ConnectPrompt';
 import { useDisconnect, useAccount } from 'wagmi';
 import { apiManager } from '@/lib/services/api-manager';
+import { useFavoritesAndInvestments } from '@/hooks/useFavoritesAndInvestments';
 
 export default function AppInterface() {
   const { theme, setTheme } = useTheme();
-  
+
   // États principaux
   const [hasCampaign, setHasCampaign] = useState(false);
   const [activePage, setActivePage] = useState('home');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  
+
   // États de chargement et données
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true);
   const [projects, setProjects] = useState([]);
-  const [favorites, setFavorites] = useState([]);
   const [error, setError] = useState(null);
-  
+
   // Hooks
   const { disconnect } = useDisconnect();
   const { address } = useAccount();
   const router = useRouter();
+
+  // Hook personnalisé pour gérer favoris + investissements
+  const {
+    favorites,
+    investments,
+    isLoadingInvestments,
+    toggleFavorite,
+    isFavorite,
+    hasInvested,
+    getTrackedCampaigns,
+  } = useFavoritesAndInvestments();
 
   // Chargement intelligent des campagnes avec API Manager
   const loadCampaignsData = useCallback(async () => {
@@ -101,32 +112,6 @@ export default function AppInterface() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   }, [theme, setTheme]);
   
-  // Initialiser les favoris depuis localStorage
-  useEffect(() => {
-    // Charger les favoris depuis localStorage
-    const savedFavorites = localStorage.getItem('favorites');
-    if (savedFavorites) {
-      try {
-        setFavorites(JSON.parse(savedFavorites));
-      } catch (error) {
-        console.error('Erreur lors du chargement des favoris:', error);
-      }
-    }
-  }, []);
-
-  // Gestionnaire de favoris optimisé
-  const toggleFavorite = useCallback((projectId) => {
-    setFavorites(prev => {
-      const newFavorites = prev.includes(projectId)
-        ? prev.filter(id => id !== projectId)
-        : [...prev, projectId];
-      
-      // Sauvegarder dans localStorage et éventuellement Firebase
-      localStorage.setItem('favorites', JSON.stringify(newFavorites));
-      return newFavorites;
-    });
-  }, []);
-  
   // Gestionnaire de sélection de projet
   const handleSelectProject = useCallback(() => {
     // Pas de préchargement pour le moment (API simplifiée)
@@ -142,9 +127,12 @@ export default function AppInterface() {
     const commonProps = {
       projects,
       favorites,
+      investments,
       toggleFavorite,
+      isFavorite,
+      hasInvested,
       setSelectedProject: handleSelectProject,
-      isLoading: isLoadingCampaigns,
+      isLoading: isLoadingCampaigns || isLoadingInvestments,
       error,
       onRefresh: loadCampaignsData
     };

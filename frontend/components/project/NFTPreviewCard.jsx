@@ -80,7 +80,7 @@ export default function NFTPreviewCard({ projectData, project }) {
                 color: bgStyle
               }}
             >
-              Certificat NFT d'investissement
+              Certificat NFT d&apos;investissement
             </Badge>
           </div>
         </CardContent>

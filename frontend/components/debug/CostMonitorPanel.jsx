@@ -244,16 +244,16 @@ export default function CostMonitorPanel() {
         </Card>
       )}
 
-      {/* Guide d'utilisation */}
+      {/* Guide d&apos;utilisation */}
       <Card>
         <CardHeader>
-          <CardTitle>📋 Guide d'Utilisation Économique</CardTitle>
+          <CardTitle>📋 Guide d&apos;Utilisation Économique</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
             <div><strong>💰 Sync Économique:</strong> Interroge directement chaque contrat (2 appels RPC par campagne)</div>
             <div><strong>🔍 Vérifier Manquantes:</strong> Compare blockchain vs base de données (1 appel RPC)</div>
-            <div><strong>⚠️ Éviter:</strong> L'ancien système qui scanne toute la blockchain (1000+ appels RPC)</div>
+            <div><strong>⚠️ Éviter:</strong> L&apos;ancien système qui scanne toute la blockchain (1000+ appels RPC)</div>
             <div><strong>💡 Recommandation:</strong> Utiliser la sync économique 1-2 fois par jour maximum</div>
           </div>
         </CardContent>

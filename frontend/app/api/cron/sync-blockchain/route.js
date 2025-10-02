@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes max
+export const maxDuration = 60; // 60s max pour plan Hobby Vercel
 
 /**
  * API de synchronisation automatique INCRÉMENTALE pour les tâches cron

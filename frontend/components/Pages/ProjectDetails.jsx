@@ -206,7 +206,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       console.error('Erreur lors de l\'achat', err);
       setError(err.message || 'Erreur lors de la transaction');
     }
-  }, [userAddress, project.sharePrice, project.id, loadProjectData]);
+  }, [userAddress, project.sharePrice, project.id, loadProjectData, t]);
 
   const handleShare = useCallback(() => {
     // Copier directement le lien dans le presse-papier
