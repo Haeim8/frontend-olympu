@@ -47,14 +47,9 @@ export default function DocumentViewer({ document, isOpen, onClose }) {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             {t('documentViewer.loadError') || 'Impossible de charger le document'}
           </p>
-          <Button
-            onClick={() => window.open(fileUrl, '_blank')}
-            variant="outline"
-            className="gap-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            {t('documentViewer.openInNewTab') || 'Ouvrir dans un nouvel onglet'}
-          </Button>
+          <p className="text-sm text-gray-500 dark:text-gray-500">
+            {t('documentViewer.loadErrorHint') || 'Essayez de télécharger le document ou réessayez plus tard'}
+          </p>
         </div>
       );
     }
@@ -106,28 +101,18 @@ export default function DocumentViewer({ document, isOpen, onClose }) {
               {t('documentViewer.previewNotAvailable') || 'Aperçu non disponible pour ce type de fichier'}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">{fileName}</p>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => window.open(fileUrl, '_blank')}
-                variant="outline"
-                className="gap-2"
-              >
-                <ExternalLink className="h-4 w-4" />
-                {t('documentViewer.openInNewTab') || 'Ouvrir'}
-              </Button>
-              <Button
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = fileUrl;
-                  link.download = fileName;
-                  link.click();
-                }}
-                className="gap-2 bg-lime-600 hover:bg-lime-700"
-              >
-                <Download className="h-4 w-4" />
-                {t('documentViewer.download') || 'Télécharger'}
-              </Button>
-            </div>
+            <Button
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = fileUrl;
+                link.download = fileName;
+                link.click();
+              }}
+              className="gap-2 bg-lime-600 hover:bg-lime-700"
+            >
+              <Download className="h-4 w-4" />
+              {t('documentViewer.download') || 'Télécharger'}
+            </Button>
           </div>
         );
     }
