@@ -116,8 +116,42 @@ async function fetchFromIPFS(ipfsUri) {
 /**
  * Parse et normalise les métadonnées d'une campagne
  */
-function parseCampaignMetadata(metadata) {
+function parseCampaignMetadata(metadata, ipfsHash = '') {
   if (!metadata) return null;
+
+  // Fonction pour transformer les documents en ajoutant les URLs IPFS complètes
+  const transformDocuments = (docs) => {
+    if (!docs || typeof docs !== 'object') return {};
+
+    const transformed = {};
+
+    for (const [category, items] of Object.entries(docs)) {
+      if (Array.isArray(items)) {
+        transformed[category] = items.map(doc => {
+          // Si le document a déjà une URL complète, la garder
+          if (doc.url && (doc.url.startsWith('http://') || doc.url.startsWith('https://') || doc.url.startsWith('ipfs://'))) {
+            return doc;
+          }
+
+          // Sinon, construire l'URL IPFS complète avec le fileName
+          const fileName = doc.fileName || doc.name || '';
+          if (fileName && ipfsHash) {
+            // Construire l'URL: ipfs://hash/fileName
+            return {
+              ...doc,
+              url: `ipfs://${ipfsHash}/${fileName}`
+            };
+          }
+
+          return doc;
+        });
+      } else {
+        transformed[category] = items;
+      }
+    }
+
+    return transformed;
+  };
 
   return {
     // Informations de base
@@ -143,8 +177,8 @@ function parseCampaignMetadata(metadata) {
       linkedin: metadata.linkedin || metadata.socials?.linkedin || '',
     },
 
-    // Documents
-    documents: metadata.documents || {},
+    // Documents avec URLs IPFS complètes
+    documents: transformDocuments(metadata.documents),
 
     // Roadmap
     roadmap: Array.isArray(metadata.roadmap) ? metadata.roadmap : [],
@@ -194,8 +228,11 @@ export async function getCampaignMetadata(campaign) {
 
   if (isValidIPFS) {
     try {
+      // Extraire le hash IPFS pour construire les URLs des documents
+      const ipfsHash = metadataUri.replace('ipfs://', '').replace(/^\/+/, '');
+
       const ipfsData = await fetchFromIPFS(metadataUri);
-      result.ipfs = parseCampaignMetadata(ipfsData);
+      result.ipfs = parseCampaignMetadata(ipfsData, ipfsHash);
       console.log('[IPFS] ✅ Metadata loaded successfully');
     } catch (error) {
       console.warn('[IPFS] ⚠️ Failed to load metadata from IPFS:', error.message);
