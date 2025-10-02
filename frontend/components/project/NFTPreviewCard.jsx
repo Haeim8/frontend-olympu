@@ -4,8 +4,10 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
+import { useTranslation } from '@/hooks/useLanguage';
 
 export default function NFTPreviewCard({ projectData, project }) {
+  const { t } = useTranslation();
   const ipfs = projectData?.ipfs;
   const nftCustomization = ipfs?.nftCustomization || {};
 
@@ -90,17 +92,17 @@ export default function NFTPreviewCard({ projectData, project }) {
       <div className="bg-gradient-to-br from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-800 rounded-xl border border-gray-200 dark:border-neutral-800 p-4">
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-lime-600" />
-          Informations NFT
+          {t('nftPreview.title')}
         </h4>
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white dark:bg-neutral-800 rounded-lg p-3 border border-lime-200 dark:border-lime-800">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Prix unitaire</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nftPreview.unitPrice')}</div>
             <div className="text-sm font-bold text-lime-700 dark:text-lime-300">
               {project?.sharePrice} ETH
             </div>
           </div>
           <div className="bg-white dark:bg-neutral-800 rounded-lg p-3 border border-gray-200 dark:border-neutral-700">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Parts</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t('nftPreview.totalShares')}</div>
             <div className="text-sm font-bold text-gray-700 dark:text-gray-300">
               {project?.goal && project?.sharePrice ? Math.floor(parseFloat(project.goal) / parseFloat(project.sharePrice)) : 0}
             </div>

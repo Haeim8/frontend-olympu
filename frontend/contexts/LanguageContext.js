@@ -673,7 +673,19 @@ const translations = {
     'shareSelector.buy': 'Acheter',
     'shareSelector.purchasing': 'Achat...',
     'shareSelector.sharesRemaining': '({count} restantes)',
-    
+
+    // NFT Preview Card
+    'nftPreview.title': 'Informations NFT',
+    'nftPreview.unitPrice': 'Prix unitaire',
+    'nftPreview.totalShares': 'Total Parts',
+
+    // Document Viewer
+    'documentViewer.loadError': 'Impossible de charger le document',
+    'documentViewer.openInNewTab': 'Ouvrir dans un nouvel onglet',
+    'documentViewer.videoNotSupported': 'Votre navigateur ne supporte pas la vidéo.',
+    'documentViewer.previewNotAvailable': 'Aperçu non disponible pour ce type de fichier',
+    'documentViewer.download': 'Télécharger',
+
     // Project Details Tab
     'projectDetailsTab.loading': 'Chargement des détails du projet...',
     'projectDetailsTab.projectDescription': 'Description du projet',
@@ -1611,7 +1623,19 @@ const translations = {
     'shareSelector.buy': 'Buy',
     'shareSelector.purchasing': 'Purchasing...',
     'shareSelector.sharesRemaining': '({count} remaining)',
-    
+
+    // NFT Preview Card
+    'nftPreview.title': 'NFT Information',
+    'nftPreview.unitPrice': 'Unit Price',
+    'nftPreview.totalShares': 'Total Shares',
+
+    // Document Viewer
+    'documentViewer.loadError': 'Unable to load document',
+    'documentViewer.openInNewTab': 'Open in new tab',
+    'documentViewer.videoNotSupported': 'Your browser does not support video playback.',
+    'documentViewer.previewNotAvailable': 'Preview not available for this file type',
+    'documentViewer.download': 'Download',
+
     // Project Details Tab
     'projectDetailsTab.loading': 'Loading project details...',
     'projectDetailsTab.projectDescription': 'Project description',
@@ -2502,7 +2526,19 @@ const translations = {
     'shareSelector.buy': 'Comprar',
     'shareSelector.purchasing': 'Comprando...',
     'shareSelector.sharesRemaining': '({count} restantes)',
-    
+
+    // NFT Preview Card
+    'nftPreview.title': 'Información NFT',
+    'nftPreview.unitPrice': 'Precio Unitario',
+    'nftPreview.totalShares': 'Total de Acciones',
+
+    // Document Viewer
+    'documentViewer.loadError': 'No se puede cargar el documento',
+    'documentViewer.openInNewTab': 'Abrir en nueva pestaña',
+    'documentViewer.videoNotSupported': 'Su navegador no soporta la reproducción de video.',
+    'documentViewer.previewNotAvailable': 'Vista previa no disponible para este tipo de archivo',
+    'documentViewer.download': 'Descargar',
+
     // Project Details Tab
     'projectDetailsTab.loading': 'Cargando detalles del proyecto...',
     'projectDetailsTab.projectDescription': 'Descripción del proyecto',

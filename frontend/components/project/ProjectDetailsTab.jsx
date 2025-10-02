@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from '@/hooks/useLanguage';
+import DocumentViewer from './DocumentViewer';
 import {
   FileText,
   Download,
@@ -31,7 +32,7 @@ import {
   X
 } from 'lucide-react';
 
-const DocumentLink = ({ title, url, type = 'document', t }) => {
+const DocumentLink = ({ title, url, type = 'document', t, onPreview }) => {
   const getIcon = () => {
     switch (type) {
       case 'image':
@@ -70,7 +71,7 @@ const DocumentLink = ({ title, url, type = 'document', t }) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => window.open(url, '_blank')}
+          onClick={() => onPreview({ name: title, url, type })}
           className="h-8 px-3 hover:bg-lime-50 dark:hover:bg-lime-900/20"
         >
           <Eye className="h-3 w-3 mr-1" />
@@ -79,7 +80,7 @@ const DocumentLink = ({ title, url, type = 'document', t }) => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.open(url)}
+          onClick={() => window.open(url, '_blank')}
           className="h-8 px-3 border-lime-200 dark:border-lime-800 hover:bg-lime-50 dark:hover:bg-lime-900/20"
         >
           <ExternalLink className="h-3 w-3 mr-1" />
@@ -90,9 +91,7 @@ const DocumentLink = ({ title, url, type = 'document', t }) => {
   );
 };
 
-const MediaGallery = ({ media = [], t }) => {
-  const [selectedMedia, setSelectedMedia] = useState(null);
-
+const MediaGallery = ({ media = [], t, onPreview }) => {
   if (!media || media.length === 0) {
     return (
       <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
@@ -115,7 +114,7 @@ const MediaGallery = ({ media = [], t }) => {
             <div
               key={index}
               className="relative group cursor-pointer bg-gray-100 dark:bg-neutral-800 rounded-xl overflow-hidden aspect-square hover:shadow-xl transition-all duration-300"
-              onClick={() => setSelectedMedia(mediaUrl)}
+              onClick={() => onPreview({ name: mediaName, url: mediaUrl, type: 'image' })}
             >
               <NextImage
                 src={mediaUrl}
@@ -136,38 +135,6 @@ const MediaGallery = ({ media = [], t }) => {
           );
         })}
       </div>
-
-      {selectedMedia && (
-        <div
-          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
-          onClick={() => setSelectedMedia(null)}
-        >
-          <div className="relative max-w-5xl max-h-full">
-            <div className="relative w-[90vw] max-w-5xl h-[85vh] max-h-full">
-              <NextImage
-                src={selectedMedia}
-                alt={t('projectDetailsTab.selectedMedia')}
-                fill
-                className="object-contain rounded-lg"
-                sizes="90vw"
-                unoptimized
-              />
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedMedia(null);
-              }}
-              className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30"
-            >
-              <X className="h-4 w-4 mr-2" />
-              {t('projectDetailsTab.close')}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -247,6 +214,11 @@ const InvestmentReturns = ({ investmentReturns = {}, t }) => {
 
 export default function ProjectDetailsTab({ projectData }) {
   const { t } = useTranslation();
+  const [viewerDocument, setViewerDocument] = useState(null);
+
+  const handlePreview = (document) => {
+    setViewerDocument(document);
+  };
 
   if (!projectData) {
     return (
@@ -259,7 +231,7 @@ export default function ProjectDetailsTab({ projectData }) {
     );
   }
 
-  const { ipfs, firebase } = projectData;
+  const { ipfs } = projectData;
 
   return (
     <ScrollArea className="h-[calc(95vh-200px)]">
@@ -278,7 +250,7 @@ export default function ProjectDetailsTab({ projectData }) {
             </div>
             <div className="prose dark:prose-invert max-w-none">
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base whitespace-pre-wrap">
-                {ipfs?.description || firebase?.description || projectData.description || t('projectDetailsTab.noDescription')}
+                {ipfs?.description || projectData.description || t('projectDetailsTab.noDescription')}
               </p>
             </div>
           </CardContent>
@@ -339,6 +311,7 @@ export default function ProjectDetailsTab({ projectData }) {
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
                   t={t}
+                  onPreview={handlePreview}
                 />
               ))}
 
@@ -350,6 +323,7 @@ export default function ProjectDetailsTab({ projectData }) {
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
                   t={t}
+                  onPreview={handlePreview}
                 />
               ))}
 
@@ -361,34 +335,16 @@ export default function ProjectDetailsTab({ projectData }) {
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
                   t={t}
+                  onPreview={handlePreview}
                 />
               ))}
-
-              {/* Fallback pour ancienne structure */}
-              {firebase?.documents?.whitepaper && (
-                <DocumentLink
-                  title={t('projectDetailsTab.whitepaper')}
-                  url={firebase.documents.whitepaper}
-                  type="document"
-                  t={t}
-                />
-              )}
-
-              {firebase?.documents?.pitchDeck && (
-                <DocumentLink
-                  title={t('projectDetailsTab.pitchDeck')}
-                  url={firebase.documents.pitchDeck}
-                  type="document"
-                  t={t}
-                />
-              )}
 
               {/* Message si aucun document */}
               {(!ipfs?.documents || (
                 (!ipfs.documents.whitepaper?.length) &&
                 (!ipfs.documents.pitchDeck?.length) &&
                 (!ipfs.documents.legalDocuments?.length)
-              )) && !firebase?.documents && (
+              )) && (
                 <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">
@@ -413,11 +369,11 @@ export default function ProjectDetailsTab({ projectData }) {
                 </h3>
               </div>
               <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
-                {t('projectDetailsTab.mediaCount', { count: (ipfs?.documents?.media || firebase?.documents?.media)?.length || 0 })}
+                {t('projectDetailsTab.mediaCount', { count: ipfs?.documents?.media?.length || 0 })}
               </Badge>
             </div>
 
-            <MediaGallery media={ipfs?.documents?.media || firebase?.documents?.media} t={t} />
+            <MediaGallery media={ipfs?.documents?.media} t={t} onPreview={handlePreview} />
           </CardContent>
         </Card>
 
@@ -586,6 +542,13 @@ export default function ProjectDetailsTab({ projectData }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Document Viewer Modal */}
+      <DocumentViewer
+        document={viewerDocument}
+        isOpen={!!viewerDocument}
+        onClose={() => setViewerDocument(null)}
+      />
     </ScrollArea>
   );
 }
