@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { base, baseSepolia } from 'wagmi/chains';
@@ -14,15 +14,9 @@ import { useTheme } from 'next-themes';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '00000000000000000000000000000000';
 
-const wagmiConfig = getDefaultConfig({
-  appName: 'Livar',
-  projectId,
-  chains: [baseSepolia, base],
-  ssr: false,
-});
-
 export default function ThirdwebProviderWrapper({ children }) {
   const { theme } = useTheme();
+  const [wagmiConfig, setWagmiConfig] = useState(null);
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -36,6 +30,19 @@ export default function ThirdwebProviderWrapper({ children }) {
         },
       })
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const config = getDefaultConfig({
+      appName: 'Livar',
+      projectId,
+      chains: [baseSepolia, base],
+      ssr: false,
+    });
+
+    setWagmiConfig(config);
+  }, []);
 
   const rainbowTheme = useMemo(
     () =>
@@ -56,6 +63,10 @@ export default function ThirdwebProviderWrapper({ children }) {
           })),
     [theme]
   );
+
+  if (!wagmiConfig) {
+    return null;
+  }
 
   return (
     <WagmiProvider config={wagmiConfig}>

@@ -32,6 +32,13 @@ const translations = {
     'campaign.loadDataError': 'Impossible de charger les données de campagne',
     'campaign.dataLoadingError': 'Erreur lors du chargement des données',
     'campaign.connectWalletMessage': 'Veuillez connecter votre portefeuille pour accéder à la gestion de campagne.',
+    'campaign.errors.userRejected': 'Transaction annulée par l’utilisateur.',
+    'campaign.errors.walletUnknownAccount': 'Wallet Coinbase non initialisé. Rouvrez l’extension et reconnectez-vous.',
+    'campaign.errors.walletNotConnected': 'Veuillez connecter votre portefeuille.',
+    'campaign.errors.w3upExpired': 'Session Web3.Storage expirée. Merci de réauthentifier l’accès.',
+    'campaign.errors.generic': 'Erreur : {reason}',
+    'campaign.errors.unknown': 'Erreur inconnue',
+    'campaign.errors.wrongChain': 'Wallet sur une mauvaise blockchain. Passez sur Base Sepolia.',
     'campaign.finance': 'Finance',
     'campaign.investors': 'Investisseurs',
     'campaign.documents': 'Documents',
@@ -554,22 +561,24 @@ const translations = {
     'projectDetails.error.close': 'Fermer',
     
     // Project Overview
-    'projectOverview.stats.raised': 'Levée en cours',
+    'projectOverview.stats.keyInfo': 'Informations clés',
+    'projectOverview.stats.raised': 'Collecté',
     'projectOverview.stats.unitPrice': 'Prix unitaire',
     'projectOverview.stats.perShare': 'par part',
     'projectOverview.stats.investors': 'Investisseurs',
     'projectOverview.stats.participants': 'participants',
-    'projectOverview.stats.deadline': 'Échéance',
+    'projectOverview.stats.deadline': 'Fin',
+    'projectOverview.stats.sectorLabel': 'Secteur d\'activité',
     'projectOverview.status.ended': 'Terminé',
-    'projectOverview.daysUnit': 'j restants',
+    'projectOverview.daysUnit': 'j',
     'projectOverview.progress.title': 'Progression du financement',
-    'projectOverview.progress.subtitle': 'Suivi en temps réel de la collecte',
-    'projectOverview.progress.completed': 'Objectif atteint',
+    'projectOverview.progress.subtitle': 'Suivi en temps réel',
+    'projectOverview.progress.completed': 'Terminé',
     'projectOverview.progress.inProgress': 'En cours',
-    'projectOverview.progress.raised': 'ETH Levés',
-    'projectOverview.progress.goal': 'ETH Objectif',
-    'projectOverview.progress.remaining': 'ETH Restants',
-    'projectOverview.progress.sharesAvailable': 'Parts disponibles',
+    'projectOverview.progress.raised': 'Collecté',
+    'projectOverview.progress.goal': 'Objectif',
+    'projectOverview.progress.remaining': 'Restant',
+    'projectOverview.progress.sharesAvailable': 'Parts dispo',
     'campaign.card.daysRemaining': '{{days}}j restants',
     'campaign.card.hoursRemaining': '{{hours}}h restantes',
     
@@ -645,10 +654,17 @@ const translations = {
     'projectHeader.medium': 'Medium',
     
     // Share Selector
+    'shareSelector.title': 'Investir dans ce projet',
+    'shareSelector.sharesAvailable': '{count} parts disponibles',
+    'shareSelector.unitPrice': 'Prix unitaire',
+    'shareSelector.shares': 'parts',
+    'shareSelector.total': 'Total',
+    'shareSelector.quickBuy': 'Achat rapide:',
+    'shareSelector.max': 'Max ({count})',
     'shareSelector.campaignEnded': 'Campagne terminée',
-    'shareSelector.noSharesAvailable': 'Plus de shares disponibles',
+    'shareSelector.noSharesAvailable': 'Parts épuisées',
     'shareSelector.purchaseInProgress': 'Achat en cours...',
-    'shareSelector.buyShares': 'Acheter {count} Share{plural}',
+    'shareSelector.buyShares': 'Acheter {count} part{plural}',
     'shareSelector.buy': 'Acheter',
     'shareSelector.purchasing': 'Achat...',
     'shareSelector.sharesRemaining': '({count} restantes)',
@@ -665,6 +681,7 @@ const translations = {
     'projectDetailsTab.preview': 'Aperçu',
     'projectDetailsTab.open': 'Ouvrir',
     'projectDetailsTab.noDocuments': 'Aucun document disponible pour ce projet',
+    'projectDetailsTab.noDocumentsDescription': 'Les documents de cette campagne n’ont pas encore été ajoutés.',
     'projectDetailsTab.mediaGallery': 'Galerie média',
     'projectDetailsTab.mediaCount': '{count} média(s)',
     'projectDetailsTab.noMedia': 'Aucun média disponible',
@@ -681,6 +698,28 @@ const translations = {
     'projectDetailsTab.image': 'Image',
     'projectDetailsTab.video': 'Vidéo',
     'projectDetailsTab.document': 'Document',
+    'projectDetailsTab.nftPreview': 'Aperçu NFT',
+    'projectDetailsTab.documentsSummary': 'Aperçu des documents',
+    'projectDetailsTab.whitepaperDescription': 'Fondations techniques et vision stratégique.',
+    'projectDetailsTab.pitchDeckDescription': 'Présentation synthétique pour investisseurs.',
+    'projectDetailsTab.legalDocuments': 'Documents légaux',
+    'projectDetailsTab.legalDocumentsDescription': 'Contrats, certifications et conformité.',
+    'projectDetailsTab.mediaDescription': 'Images ou vidéos pour découvrir le projet.',
+    'projectDetailsTab.noDocumentsCategory': 'Aucun {category} fourni pour le moment.',
+    'projectDetailsTab.teamMembers': 'Équipe du projet',
+    'projectDetailsTab.teamMembersCount': '{count} membre(s)',
+    'projectDetailsTab.memberNameNotSpecified': 'Nom non précisé',
+    'projectDetailsTab.memberRoleNotSpecified': 'Rôle non précisé',
+    'projectDetailsTab.noTeamMembers': 'Le créateur n’a pas encore renseigné les membres de son équipe.',
+    'projectDetailsTab.socialLinks': 'Liens et réseaux sociaux',
+    'projectDetailsTab.noSocialLinks': 'Aucun lien social fourni.',
+    'projectDetailsTab.website': 'Site web',
+    'projectDetailsTab.twitter': 'Twitter',
+    'projectDetailsTab.github': 'GitHub',
+    'projectDetailsTab.discord': 'Discord',
+    'projectDetailsTab.telegram': 'Telegram',
+    'projectDetailsTab.medium': 'Medium',
+    'projectDetailsTab.mediaEmptyHint': 'Ajoutez des visuels pour mettre en valeur la campagne.',
     
     // Project Transactions
     'projectTransactions.title': 'Historique des transactions',
@@ -949,6 +988,13 @@ const translations = {
     'campaign.loadDataError': 'Unable to load campaign data',
     'campaign.dataLoadingError': 'Error loading data',
     'campaign.connectWalletMessage': 'Please connect your wallet to access campaign management.',
+    'campaign.errors.userRejected': 'Transaction cancelled by the user.',
+    'campaign.errors.walletUnknownAccount': 'Coinbase Wallet not initialised. Reopen the extension and reconnect.',
+    'campaign.errors.walletNotConnected': 'Please connect your wallet.',
+    'campaign.errors.w3upExpired': 'Web3.Storage session expired. Please re-authenticate the access.',
+    'campaign.errors.generic': 'Error: {reason}',
+    'campaign.errors.unknown': 'Unknown error',
+    'campaign.errors.wrongChain': 'Wallet on the wrong network. Please switch to Base Sepolia.',
     'campaign.finance': 'Finance',
     'campaign.investors': 'Investors',
     'campaign.documents': 'Documents',
@@ -1450,21 +1496,23 @@ const translations = {
     'projectDetails.error.close': 'Close',
     
     // Project Overview
-    'projectOverview.stats.raised': 'Current Raise',
+    'projectOverview.stats.keyInfo': 'Key Information',
+    'projectOverview.stats.raised': 'Raised',
     'projectOverview.stats.unitPrice': 'Unit Price',
     'projectOverview.stats.perShare': 'per share',
     'projectOverview.stats.investors': 'Investors',
     'projectOverview.stats.participants': 'participants',
     'projectOverview.stats.deadline': 'Deadline',
+    'projectOverview.stats.sectorLabel': 'Business Sector',
     'projectOverview.status.ended': 'Ended',
-    'projectOverview.daysUnit': 'd remaining',
+    'projectOverview.daysUnit': 'd',
     'projectOverview.progress.title': 'Funding Progress',
-    'projectOverview.progress.subtitle': 'Real-time fundraising tracking',
-    'projectOverview.progress.completed': 'Goal Reached',
+    'projectOverview.progress.subtitle': 'Real-time tracking',
+    'projectOverview.progress.completed': 'Completed',
     'projectOverview.progress.inProgress': 'In Progress',
-    'projectOverview.progress.raised': 'ETH Raised',
-    'projectOverview.progress.goal': 'ETH Goal',
-    'projectOverview.progress.remaining': 'ETH Remaining',
+    'projectOverview.progress.raised': 'Raised',
+    'projectOverview.progress.goal': 'Goal',
+    'projectOverview.progress.remaining': 'Remaining',
     'projectOverview.progress.sharesAvailable': 'Shares Available',
     
     // Footer
@@ -1539,10 +1587,17 @@ const translations = {
     'projectHeader.medium': 'Medium',
     
     // Share Selector
+    'shareSelector.title': 'Invest in this project',
+    'shareSelector.sharesAvailable': '{count} shares available',
+    'shareSelector.unitPrice': 'Unit Price',
+    'shareSelector.shares': 'shares',
+    'shareSelector.total': 'Total',
+    'shareSelector.quickBuy': 'Quick buy:',
+    'shareSelector.max': 'Max ({count})',
     'shareSelector.campaignEnded': 'Campaign ended',
-    'shareSelector.noSharesAvailable': 'No shares available',
+    'shareSelector.noSharesAvailable': 'Shares sold out',
     'shareSelector.purchaseInProgress': 'Purchase in progress...',
-    'shareSelector.buyShares': 'Buy {count} Share{plural}',
+    'shareSelector.buyShares': 'Buy {count} share{plural}',
     'shareSelector.buy': 'Buy',
     'shareSelector.purchasing': 'Purchasing...',
     'shareSelector.sharesRemaining': '({count} remaining)',
@@ -1559,6 +1614,7 @@ const translations = {
     'projectDetailsTab.preview': 'Preview',
     'projectDetailsTab.open': 'Open',
     'projectDetailsTab.noDocuments': 'No documents available for this project',
+    'projectDetailsTab.noDocumentsDescription': 'Documents for this campaign are not available yet.',
     'projectDetailsTab.mediaGallery': 'Media gallery',
     'projectDetailsTab.mediaCount': '{count} media(s)',
     'projectDetailsTab.noMedia': 'No media available',
@@ -1575,6 +1631,28 @@ const translations = {
     'projectDetailsTab.image': 'Image',
     'projectDetailsTab.video': 'Video',
     'projectDetailsTab.document': 'Document',
+    'projectDetailsTab.nftPreview': 'NFT preview',
+    'projectDetailsTab.documentsSummary': 'Documents overview',
+    'projectDetailsTab.whitepaperDescription': 'Technical foundations and strategic vision.',
+    'projectDetailsTab.pitchDeckDescription': 'Investor-focused presentation.',
+    'projectDetailsTab.legalDocuments': 'Legal documents',
+    'projectDetailsTab.legalDocumentsDescription': 'Contracts, certifications and compliance items.',
+    'projectDetailsTab.mediaDescription': 'Images or videos that showcase the project.',
+    'projectDetailsTab.noDocumentsCategory': 'No {category} provided yet.',
+    'projectDetailsTab.teamMembers': 'Project team',
+    'projectDetailsTab.teamMembersCount': '{count} member(s)',
+    'projectDetailsTab.memberNameNotSpecified': 'Name not specified',
+    'projectDetailsTab.memberRoleNotSpecified': 'Role not specified',
+    'projectDetailsTab.noTeamMembers': 'The creator has not shared team members yet.',
+    'projectDetailsTab.socialLinks': 'Links & social networks',
+    'projectDetailsTab.noSocialLinks': 'No social links provided.',
+    'projectDetailsTab.website': 'Website',
+    'projectDetailsTab.twitter': 'Twitter',
+    'projectDetailsTab.github': 'GitHub',
+    'projectDetailsTab.discord': 'Discord',
+    'projectDetailsTab.telegram': 'Telegram',
+    'projectDetailsTab.medium': 'Medium',
+    'projectDetailsTab.mediaEmptyHint': 'Add visuals to highlight the campaign.',
     
     // Project Transactions
     'projectTransactions.title': 'Transaction history',
@@ -1836,6 +1914,13 @@ const translations = {
     'campaign.loadDataError': 'No se pudieron cargar los datos de la campaña',
     'campaign.dataLoadingError': 'Error al cargar los datos',
     'campaign.connectWalletMessage': 'Por favor conecta tu billetera para acceder a la gestión de campañas.',
+    'campaign.errors.userRejected': 'Transacción cancelada por el usuario.',
+    'campaign.errors.walletUnknownAccount': 'Coinbase Wallet no está inicializado. Reabre la extensión y reconéctate.',
+    'campaign.errors.walletNotConnected': 'Por favor conecta tu billetera.',
+    'campaign.errors.w3upExpired': 'Sesión de Web3.Storage expirada. Reautentica el acceso.',
+    'campaign.errors.generic': 'Error: {reason}',
+    'campaign.errors.unknown': 'Error desconocido',
+    'campaign.errors.wrongChain': 'Wallet en la red incorrecta. Cambia a Base Sepolia.',
     'campaign.finance': 'Finanzas',
     'campaign.investors': 'Inversores',
     'campaign.documents': 'Documentos',
@@ -2297,21 +2382,23 @@ const translations = {
     'projectDetails.error.close': 'Cerrar',
     
     // Project Overview
-    'projectOverview.stats.raised': 'Recaudación Actual',
+    'projectOverview.stats.keyInfo': 'Información Clave',
+    'projectOverview.stats.raised': 'Recaudado',
     'projectOverview.stats.unitPrice': 'Precio Unitario',
     'projectOverview.stats.perShare': 'por acción',
     'projectOverview.stats.investors': 'Inversores',
     'projectOverview.stats.participants': 'participantes',
-    'projectOverview.stats.deadline': 'Fecha Límite',
+    'projectOverview.stats.deadline': 'Fin',
+    'projectOverview.stats.sectorLabel': 'Sector de Actividad',
     'projectOverview.status.ended': 'Terminado',
-    'projectOverview.daysUnit': 'd restantes',
+    'projectOverview.daysUnit': 'd',
     'projectOverview.progress.title': 'Progreso de Financiación',
-    'projectOverview.progress.subtitle': 'Seguimiento en tiempo real de la recaudación',
-    'projectOverview.progress.completed': 'Objetivo Alcanzado',
+    'projectOverview.progress.subtitle': 'Seguimiento en tiempo real',
+    'projectOverview.progress.completed': 'Completado',
     'projectOverview.progress.inProgress': 'En Progreso',
-    'projectOverview.progress.raised': 'ETH Recaudado',
-    'projectOverview.progress.goal': 'ETH Objetivo',
-    'projectOverview.progress.remaining': 'ETH Restante',
+    'projectOverview.progress.raised': 'Recaudado',
+    'projectOverview.progress.goal': 'Objetivo',
+    'projectOverview.progress.remaining': 'Restante',
     'projectOverview.progress.sharesAvailable': 'Acciones Disponibles',
     
     // Footer
@@ -2386,10 +2473,17 @@ const translations = {
     'projectHeader.medium': 'Medium',
     
     // Share Selector
+    'shareSelector.title': 'Invertir en este proyecto',
+    'shareSelector.sharesAvailable': '{count} acciones disponibles',
+    'shareSelector.unitPrice': 'Precio Unitario',
+    'shareSelector.shares': 'acciones',
+    'shareSelector.total': 'Total',
+    'shareSelector.quickBuy': 'Compra rápida:',
+    'shareSelector.max': 'Máx ({count})',
     'shareSelector.campaignEnded': 'Campaña terminada',
-    'shareSelector.noSharesAvailable': 'No hay acciones disponibles',
+    'shareSelector.noSharesAvailable': 'Acciones agotadas',
     'shareSelector.purchaseInProgress': 'Compra en progreso...',
-    'shareSelector.buyShares': 'Comprar {count} Acción{plural}',
+    'shareSelector.buyShares': 'Comprar {count} acción{plural}',
     'shareSelector.buy': 'Comprar',
     'shareSelector.purchasing': 'Comprando...',
     'shareSelector.sharesRemaining': '({count} restantes)',
@@ -2406,6 +2500,7 @@ const translations = {
     'projectDetailsTab.preview': 'Vista previa',
     'projectDetailsTab.open': 'Abrir',
     'projectDetailsTab.noDocuments': 'No hay documentos disponibles para este proyecto',
+    'projectDetailsTab.noDocumentsDescription': 'Los documentos de esta campaña aún no están disponibles.',
     'projectDetailsTab.mediaGallery': 'Galería de medios',
     'projectDetailsTab.mediaCount': '{count} medio(s)',
     'projectDetailsTab.noMedia': 'No hay medios disponibles',
@@ -2422,6 +2517,28 @@ const translations = {
     'projectDetailsTab.image': 'Imagen',
     'projectDetailsTab.video': 'Video',
     'projectDetailsTab.document': 'Documento',
+    'projectDetailsTab.nftPreview': 'Vista previa del NFT',
+    'projectDetailsTab.documentsSummary': 'Resumen de documentos',
+    'projectDetailsTab.whitepaperDescription': 'Bases técnicas y visión estratégica.',
+    'projectDetailsTab.pitchDeckDescription': 'Presentación para inversores.',
+    'projectDetailsTab.legalDocuments': 'Documentos legales',
+    'projectDetailsTab.legalDocumentsDescription': 'Contratos, certificaciones y cumplimiento.',
+    'projectDetailsTab.mediaDescription': 'Imágenes o videos para descubrir el proyecto.',
+    'projectDetailsTab.noDocumentsCategory': 'No hay {category} disponible todavía.',
+    'projectDetailsTab.teamMembers': 'Equipo del proyecto',
+    'projectDetailsTab.teamMembersCount': '{count} miembro(s)',
+    'projectDetailsTab.memberNameNotSpecified': 'Nombre no especificado',
+    'projectDetailsTab.memberRoleNotSpecified': 'Rol no especificado',
+    'projectDetailsTab.noTeamMembers': 'El creador aún no ha indicado miembros del equipo.',
+    'projectDetailsTab.socialLinks': 'Enlaces y redes sociales',
+    'projectDetailsTab.noSocialLinks': 'No hay enlaces sociales proporcionados.',
+    'projectDetailsTab.website': 'Sitio web',
+    'projectDetailsTab.twitter': 'Twitter',
+    'projectDetailsTab.github': 'GitHub',
+    'projectDetailsTab.discord': 'Discord',
+    'projectDetailsTab.telegram': 'Telegram',
+    'projectDetailsTab.medium': 'Medium',
+    'projectDetailsTab.mediaEmptyHint': 'Agrega imágenes o videos para destacar la campaña.',
     
     // Project Transactions
     'projectTransactions.title': 'Historial de transacciones',
@@ -2728,27 +2845,74 @@ export const LanguageProvider = ({ children }) => {
   }, []);
   
   // Fonction de traduction
-  const t = useCallback((key, fallback = key) => {
+  const t = useCallback((key, arg1, arg2) => {
+    let fallback = key;
+    let params = {};
+
+    if (typeof arg1 === 'string') {
+      fallback = arg1;
+      if (arg2 && typeof arg2 === 'object') {
+        params = arg2;
+      }
+    } else if (arg1 && typeof arg1 === 'object') {
+      params = arg1;
+      if (typeof arg2 === 'string') {
+        fallback = arg2;
+      }
+    } else if (typeof arg1 !== 'undefined') {
+      fallback = String(arg1);
+    }
+
+    if (typeof arg2 === 'object' && typeof arg1 !== 'object') {
+      params = arg2;
+    }
+
+    if (typeof fallback !== 'string') {
+      fallback = key;
+    }
+
     try {
       const currentTranslations = translations[currentLanguage];
-      if (!currentTranslations) {
-        return fallback;
+      let template;
+
+      if (currentTranslations) {
+        if (typeof currentTranslations[key] !== 'undefined') {
+          template = currentTranslations[key];
+        } else {
+          const keys = key.split('.');
+          let value = currentTranslations;
+
+          for (const k of keys) {
+            value = value?.[k];
+          }
+
+          template = value;
+        }
       }
-      
-      // Chercher d'abord dans les clés à points
-      if (currentTranslations[key]) {
-        return currentTranslations[key];
+
+      if (typeof template === 'object' && template !== null) {
+        // Protéger contre un objet passé par erreur
+        template = undefined;
       }
-      
-      // Puis essayer la navigation par points
-      const keys = key.split('.');
-      let value = currentTranslations;
-      
-      for (const k of keys) {
-        value = value?.[k];
+
+      if (typeof template !== 'string') {
+        template = fallback;
       }
-      
-      return value || fallback;
+
+      if (typeof template !== 'string') {
+        return key;
+      }
+
+      if (template.includes('{') && Object.keys(params).length > 0) {
+        template = template.replace(/\{([^}]+)\}/g, (match, token) => {
+          if (Object.prototype.hasOwnProperty.call(params, token)) {
+            return params[token];
+          }
+          return match;
+        });
+      }
+
+      return template;
     } catch (error) {
       console.error('Erreur lors de la traduction:', error);
       return fallback;

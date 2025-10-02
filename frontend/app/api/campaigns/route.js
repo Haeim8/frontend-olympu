@@ -12,6 +12,15 @@ export async function GET(request) {
   const status = searchParams.get('status');
 
   try {
+    // Vérifier que Supabase est configuré
+    if (!supabaseAdmin) {
+      console.error('[API] ⚠️ Supabase client non initialisé');
+      return NextResponse.json(
+        { campaigns: [], error: 'Database non configurée' },
+        { status: 200 }
+      );
+    }
+
     let query = supabaseAdmin
       .from('campaigns')
       .select('*')
@@ -28,10 +37,18 @@ export async function GET(request) {
     const { data, error } = await query;
 
     if (error) {
+      console.error('[API] campaigns fetch error', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw error;
     }
 
     const campaigns = (data ?? []).map(mapCampaignRow);
+
+    console.log(`[API] ✅ ${campaigns.length} campagnes récupérées`);
 
     return NextResponse.json(
       { campaigns },
@@ -42,7 +59,12 @@ export async function GET(request) {
       },
     );
   } catch (error) {
-    console.error('[API] campaigns fetch error', error);
+    console.error('[API] campaigns fetch error', {
+      message: error?.message || 'Unknown error',
+      details: error?.details || error?.toString(),
+      hint: error?.hint || '',
+      code: error?.code || ''
+    });
 
     return NextResponse.json(
       {

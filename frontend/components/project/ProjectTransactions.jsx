@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
+import { useTranslation } from '@/hooks/useLanguage';
+import {
   History,
   ArrowUpRight,
   ArrowDownRight,
@@ -18,21 +19,19 @@ import {
   Eye,
   Clock
 } from 'lucide-react';
-import { useTranslation } from '@/hooks/useLanguage';
 
-const TransactionRow = ({ transaction, index }) => {
-  const { t } = useTranslation();
+const TransactionRow = ({ transaction, index, t }) => {
   
   const getTransactionIcon = (type) => {
     switch (type) {
       case 'Achat':
       case 'Purchase':
       case 'Compra':
-        return <ArrowUpRight className="h-4 w-4 text-green-600" />;
+        return <ArrowUpRight className="h-4 w-4 text-lime-600" />;
       case 'Remboursement':
       case 'Refund':
       case 'Reembolso':
-        return <ArrowDownRight className="h-4 w-4 text-orange-600" />;
+        return <ArrowDownRight className="h-4 w-4 text-gray-600" />;
       default:
         return <History className="h-4 w-4 text-gray-600" />;
     }
@@ -43,11 +42,11 @@ const TransactionRow = ({ transaction, index }) => {
       case 'Achat':
       case 'Purchase':
       case 'Compra':
-        return 'text-green-600 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+        return 'text-lime-700 dark:text-lime-300 bg-lime-50 dark:bg-lime-900/20 border-lime-200 dark:border-lime-800';
       case 'Remboursement':
       case 'Refund':
       case 'Reembolso':
-        return 'text-orange-600 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800';
+        return 'text-gray-600 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800';
       default:
         return 'text-gray-600 bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800';
     }
@@ -74,12 +73,12 @@ const TransactionRow = ({ transaction, index }) => {
           <div>
             <div className="flex items-center gap-2">
               <p className="font-semibold text-gray-900 dark:text-gray-100">
-                {transaction.type === 'Achat' ? t('projectTransactions.purchase') : 
-                 transaction.type === 'Remboursement' ? t('projectTransactions.refund') : 
+                {transaction.type === 'Achat' || transaction.type === 'Purchase' || transaction.type === 'Compra' ? t('projectTransactions.purchase') :
+                 transaction.type === 'Remboursement' || transaction.type === 'Refund' || transaction.type === 'Reembolso' ? t('projectTransactions.refund') :
                  transaction.type}
               </p>
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className={`text-xs ${getTransactionColor(transaction.type)}`}
               >
                 #{transaction.id}
@@ -112,9 +111,9 @@ const TransactionRow = ({ transaction, index }) => {
       </td>
       
       <td className="py-4 text-center">
-        <div className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full">
-          <TrendingUp className="h-3 w-3 text-blue-600" />
-          <span className="font-semibold text-blue-700 dark:text-blue-300">
+        <div className="inline-flex items-center gap-1 px-3 py-1 bg-lime-50 dark:bg-lime-900/20 rounded-full">
+          <TrendingUp className="h-3 w-3 text-lime-600" />
+          <span className="font-semibold text-lime-700 dark:text-lime-300">
             {transaction.nftCount}
           </span>
         </div>
@@ -187,7 +186,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
   const stats = React.useMemo(() => {
     const purchases = transactions.filter(tx => tx.type === 'Achat' || tx.type === 'Purchase' || tx.type === 'Compra');
     const refunds = transactions.filter(tx => tx.type === 'Remboursement' || tx.type === 'Refund' || tx.type === 'Reembolso');
-    
+
     return {
       totalTransactions: transactions.length,
       totalPurchases: purchases.length,
@@ -198,7 +197,13 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
   }, [transactions]);
 
   const exportToCSV = () => {
-    const headers = [t('projectTransactions.type'), t('projectTransactions.investor'), t('projectTransactions.shares'), t('projectTransactions.value') + ' (ETH)', t('projectTransactions.block')];
+    const headers = [
+      t('projectTransactions.type'),
+      t('projectTransactions.investor'),
+      t('projectTransactions.shares'),
+      t('projectTransactions.value'),
+      t('projectTransactions.block')
+    ];
     const csvContent = [
       headers.join(','),
       ...filteredAndSortedTransactions.map(tx => [
@@ -214,7 +219,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `project_transactions_${Date.now()}.csv`;
+    a.download = `transactions_${Date.now()}.csv`;
     a.click();
   };
 
@@ -257,13 +262,13 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                <History className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-lime-100 dark:bg-lime-900/20 rounded-lg">
+                <History className="h-5 w-5 text-lime-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {t('projectTransactions.title')}
               </h3>
-              <Badge className="bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
+              <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
                 {stats.totalTransactions}
               </Badge>
             </div>
@@ -281,7 +286,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
                 placeholder={t('projectTransactions.search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-48"
+                className="pl-10 pr-4 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent transition-colors w-48"
               />
             </div>
 
@@ -289,7 +294,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             >
               <option value="all">{t('projectTransactions.allTypes')}</option>
               <option value="Achat">{t('projectTransactions.purchases')}</option>
@@ -300,7 +305,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             >
               <option value="block">{t('projectTransactions.block')}</option>
               <option value="value">{t('projectTransactions.value')}</option>
@@ -313,7 +318,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
               variant="outline"
               size="sm"
               onClick={exportToCSV}
-              className="border-gray-300 dark:border-neutral-700"
+              className="border-lime-200 dark:border-lime-800 hover:bg-lime-50 dark:hover:bg-lime-900/20"
             >
               <Download className="h-4 w-4 mr-2" />
               {t('projectTransactions.export')}
@@ -323,27 +328,27 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
 
         {/* Stats cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+          <div className="bg-gradient-to-br from-lime-50 to-green-100 dark:from-lime-900/20 dark:to-green-800/20 p-4 rounded-xl border border-lime-200 dark:border-lime-800 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-blue-600" />
-              <span className="text-sm text-blue-600 font-medium">{t('projectTransactions.purchases')}</span>
+              <TrendingUp className="h-4 w-4 text-lime-600" />
+              <span className="text-sm text-lime-600 font-medium">{t('projectTransactions.purchases')}</span>
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+            <p className="text-2xl font-bold text-lime-700 dark:text-lime-300">
               {stats.totalPurchases}
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-4 rounded-xl border border-orange-200 dark:border-orange-800">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <ArrowDownRight className="h-4 w-4 text-orange-600" />
-              <span className="text-sm text-orange-600 font-medium">{t('projectTransactions.refunds')}</span>
+              <ArrowDownRight className="h-4 w-4 text-gray-600" />
+              <span className="text-sm text-gray-600 font-medium">{t('projectTransactions.refunds')}</span>
             </div>
-            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+            <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">
               {stats.totalRefunds}
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl border border-green-200 dark:border-green-800">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="h-4 w-4 text-green-600" />
               <span className="text-sm text-green-600 font-medium">{t('projectTransactions.totalVolume')}</span>
@@ -353,12 +358,12 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
+          <div className="bg-gradient-to-br from-lime-50 to-lime-100 dark:from-lime-900/20 dark:to-lime-800/20 p-4 rounded-xl border border-lime-200 dark:border-lime-800 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="h-4 w-4 text-purple-600" />
-              <span className="text-sm text-purple-600 font-medium">{t('projectTransactions.totalShares')}</span>
+              <Users className="h-4 w-4 text-lime-600" />
+              <span className="text-sm text-lime-600 font-medium">{t('projectTransactions.totalShares')}</span>
             </div>
-            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+            <p className="text-2xl font-bold text-lime-700 dark:text-lime-300">
               {stats.totalShares}
             </p>
           </div>
@@ -375,7 +380,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               {searchTerm || filterType !== 'all'
-                ? t('projectTransactions.modifyFilters')
+                ? t('projectTransactions.adjustFilters')
                 : t('projectTransactions.transactionsWillAppear')
               }
             </p>
@@ -408,6 +413,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
                     key={`${transaction.id}-${transaction.investor}-${index}`}
                     transaction={transaction}
                     index={index}
+                    t={t}
                   />
                 ))}
               </tbody>

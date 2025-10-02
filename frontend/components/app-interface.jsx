@@ -83,7 +83,7 @@ export default function AppInterface() {
     } finally {
       setIsLoadingCampaigns(false);
     }
-  }, [address]);
+  }, [address, activePage]);
 
   useEffect(() => {
     loadCampaignsData();

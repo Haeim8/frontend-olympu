@@ -72,7 +72,7 @@ const FileIcon = ({ file }) => {
   return <File className="h-4 w-4" />;
 };
 
-const FileItem = ({ file, index, onRemove, type }) => {
+const FileItem = ({ file, index, onRemove, config }) => {
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -84,7 +84,7 @@ const FileItem = ({ file, index, onRemove, type }) => {
   return (
     <div className="flex items-center justify-between p-3 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg group hover:bg-gray-50 dark:hover:bg-neutral-750 transition-colors">
       <div className="flex items-center space-x-3 flex-1 min-w-0">
-        <div className={`p-2 rounded-lg bg-gray-100 dark:bg-neutral-700 ${documentConfig[type]?.color || 'text-gray-600'}`}>
+        <div className={`p-2 rounded-lg bg-gray-100 dark:bg-neutral-700 ${config?.color || 'text-gray-600'}`}>
           <FileIcon file={file} />
         </div>
         <div className="flex-1 min-w-0">
@@ -116,10 +116,10 @@ const DocumentUpload = ({ type, files, onFileChange, onRemoveFile, error }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded-lg bg-gray-100 dark:bg-neutral-800 ${config.color}`}>
-            <Icon className="h-5 w-5" />
-          </div>
+          <div className="flex items-center space-x-3">
+            <div className={`p-2 rounded-lg bg-gray-100 dark:bg-neutral-800 ${config.color}`}>
+              <Icon className="h-5 w-5" />
+            </div>
           <div>
             <div className="flex items-center gap-2">
               <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -190,7 +190,7 @@ const DocumentUpload = ({ type, files, onFileChange, onRemoveFile, error }) => {
                 file={file}
                 index={index}
                 onRemove={onRemoveFile}
-                type={type}
+                config={config}
               />
             ))}
           </div>

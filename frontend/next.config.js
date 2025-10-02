@@ -1,3 +1,10 @@
+// next.config.mjs
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -8,10 +15,10 @@ const nextConfig = {
     config.resolve.extensions = ['.js', '.jsx', '.ts', '.tsx', ...config.resolve.extensions];
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@react-native-async-storage/async-storage': require.resolve('./lib/shims/asyncStorage'),
+      '@react-native-async-storage/async-storage': path.resolve(__dirname, './lib/shims/asyncStorage'),
     };
     return config;
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

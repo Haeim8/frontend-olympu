@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { syncCampaigns } from '@/lib/indexer/campaign-indexer';
+import { syncCampaigns } from '@/lib/indexer/campaign-indexer.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

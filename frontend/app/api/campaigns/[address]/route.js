@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import { mapCampaignRow } from '../utils';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export async function GET(request, { params }) {
   const rawAddress = params?.address;

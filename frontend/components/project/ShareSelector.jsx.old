@@ -1,0 +1,113 @@
+"use client";
+
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { 
+  Minus, 
+  Plus, 
+  Clock, 
+  AlertTriangle,
+  Zap
+} from 'lucide-react';
+import { useTranslation } from '@/hooks/useLanguage';
+
+export default function ShareSelector({ 
+  project, 
+  onBuyShares, 
+  isLoading, 
+  buying 
+}) {
+  const { t } = useTranslation();
+  const [nftCount, setNftCount] = useState(1);
+
+  if (!project) return null;
+
+  const isCampaignEnded = new Date(project.endDate) < new Date();
+  const isOutOfShares = parseFloat(project.raised) >= parseFloat(project.goal);
+  const isDisabled = isCampaignEnded || isOutOfShares || buying || isLoading;
+  const totalPrice = nftCount * parseFloat(project.sharePrice);
+  const sharesRemaining = Math.floor((parseFloat(project.goal) - parseFloat(project.raised)) / parseFloat(project.sharePrice));
+
+  const handleBuyShares = () => {
+    onBuyShares(nftCount);
+  };
+
+  const getButtonContent = () => {
+    if (buying) return { text: t('shareSelector.purchaseInProgress'), icon: <Clock className="h-4 w-4 animate-spin" /> };
+    if (isCampaignEnded) return { text: t('shareSelector.campaignEnded'), icon: <AlertTriangle className="h-4 w-4" /> };
+    if (isOutOfShares) return { text: t('shareSelector.noSharesAvailable'), icon: <AlertTriangle className="h-4 w-4" /> };
+    return { 
+      text: t('shareSelector.buyShares', { count: nftCount, plural: nftCount > 1 ? 's' : '' }), 
+      icon: <Zap className="h-4 w-4" /> 
+    };
+  };
+
+  const buttonContent = getButtonContent();
+
+  return (
+    <div className="relative overflow-hidden p-6 bg-gradient-to-br from-lime-500/10 via-green-500/5 to-lime-500/10 dark:from-lime-500/20 dark:via-green-500/10 dark:to-lime-500/20 rounded-2xl border border-lime-500/30 backdrop-blur-sm shadow-xl">
+      <div className="absolute inset-0 bg-gradient-to-r from-lime-500/0 via-lime-500/10 to-lime-500/0 animate-pulse" />
+
+      <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
+        {/* Sélecteur quantité */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2 bg-white/80 dark:bg-black/30 p-2 rounded-xl shadow-lg backdrop-blur-sm border border-lime-500/20">
+            <Button
+              onClick={() => setNftCount(Math.max(1, nftCount - 1))}
+              disabled={nftCount <= 1 || isDisabled}
+              variant="outline"
+              size="sm"
+              className="w-10 h-10 p-0 bg-white dark:bg-neutral-800 border-lime-500/30 hover:bg-lime-50 dark:hover:bg-lime-900/20 hover:border-lime-500 transition-all duration-300 disabled:opacity-50"
+            >
+              <Minus className="h-4 w-4 text-lime-600 dark:text-lime-400" />
+            </Button>
+
+            <input
+              type="number"
+              value={nftCount}
+              onChange={(e) => setNftCount(Math.max(1, Math.min(parseInt(e.target.value) || 1, sharesRemaining)))}
+              className="w-20 text-center bg-transparent border-0 text-xl font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-0"
+              disabled={isDisabled}
+              min="1"
+              max={sharesRemaining}
+            />
+
+            <Button
+              onClick={() => setNftCount(Math.min(nftCount + 1, sharesRemaining))}
+              disabled={nftCount >= sharesRemaining || isDisabled}
+              variant="outline"
+              size="sm"
+              className="w-10 h-10 p-0 bg-white dark:bg-neutral-800 border-lime-500/30 hover:bg-lime-50 dark:hover:bg-lime-900/20 hover:border-lime-500 transition-all duration-300 disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4 text-lime-600 dark:text-lime-400" />
+            </Button>
+          </div>
+
+          <div className="flex flex-col items-start">
+            <span className="text-2xl font-bold bg-gradient-to-r from-lime-600 to-green-600 dark:from-lime-400 dark:to-green-400 bg-clip-text text-transparent">
+              {totalPrice.toFixed(4)} ETH
+            </span>
+            {!isDisabled && (
+              <span className="text-xs font-medium text-lime-700 dark:text-lime-300">
+                {t('shareSelector.sharesRemaining', { count: sharesRemaining })}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Bouton achat */}
+        <Button
+          onClick={handleBuyShares}
+          disabled={isDisabled}
+          className="group relative overflow-hidden bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white px-8 py-6 text-lg font-bold rounded-xl shadow-lg shadow-lime-500/30 hover:shadow-xl hover:shadow-lime-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative flex items-center justify-center gap-2">
+            {buttonContent.icon}
+            <span>{buying ? t('shareSelector.purchasing') : t('shareSelector.buy') + ` ${nftCount}`}</span>
+          </div>
+        </Button>
+      </div>
+    </div>
+  );
+}

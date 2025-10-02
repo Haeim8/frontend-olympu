@@ -5,11 +5,13 @@ import NextImage from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  FileText, 
-  Download, 
-  ExternalLink, 
-  Image as ImageIcon, 
+import { Card, CardContent } from "@/components/ui/card";
+import { useTranslation } from '@/hooks/useLanguage';
+import {
+  FileText,
+  Download,
+  ExternalLink,
+  Image as ImageIcon,
   Play,
   Eye,
   Folder,
@@ -19,28 +21,40 @@ import {
   Building,
   Users,
   Trophy,
-  TrendingUp
+  TrendingUp,
+  Globe,
+  Twitter,
+  Github,
+  MessageCircle,
+  Send,
+  Briefcase,
+  X
 } from 'lucide-react';
-import { useTranslation } from '@/hooks/useLanguage';
 
-const DocumentLink = ({ title, url, type = 'document' }) => {
-  const { t } = useTranslation();
-  
+const DocumentLink = ({ title, url, type = 'document', t }) => {
   const getIcon = () => {
     switch (type) {
       case 'image':
-        return <ImageIcon className="h-5 w-5 text-blue-500" />;
+        return <ImageIcon className="h-5 w-5 text-lime-500" />;
       case 'video':
-        return <Play className="h-5 w-5 text-red-500" />;
+        return <Play className="h-5 w-5 text-green-500" />;
       default:
         return <FileText className="h-5 w-5 text-lime-500" />;
     }
   };
 
+  const getTypeLabel = () => {
+    switch (type) {
+      case 'image': return t('projectDetailsTab.image');
+      case 'video': return t('projectDetailsTab.video');
+      default: return t('projectDetailsTab.document');
+    }
+  };
+
   return (
-    <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-neutral-800 dark:to-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 hover:shadow-lg transition-all duration-300">
+    <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-neutral-800 dark:to-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-lg transition-all duration-300">
       <div className="flex items-center space-x-3">
-        <div className="p-2 bg-white dark:bg-neutral-800 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
+        <div className="p-2 bg-white dark:bg-neutral-800 rounded-lg shadow-sm group-hover:scale-110 group-hover:bg-lime-50 dark:group-hover:bg-lime-900/20 transition-all">
           {getIcon()}
         </div>
         <div>
@@ -48,23 +62,23 @@ const DocumentLink = ({ title, url, type = 'document' }) => {
             {title}
           </span>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {type === 'image' ? t('projectDetailsTab.image') : type === 'video' ? t('projectDetailsTab.video') : t('projectDetailsTab.document')}
+            {getTypeLabel()}
           </p>
         </div>
       </div>
       <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="sm"
           onClick={() => window.open(url, '_blank')}
-          className="h-8 px-3"
+          className="h-8 px-3 hover:bg-lime-50 dark:hover:bg-lime-900/20"
         >
           <Eye className="h-3 w-3 mr-1" />
           {t('projectDetailsTab.preview')}
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => window.open(url)}
           className="h-8 px-3 border-lime-200 dark:border-lime-800 hover:bg-lime-50 dark:hover:bg-lime-900/20"
         >
@@ -76,13 +90,12 @@ const DocumentLink = ({ title, url, type = 'document' }) => {
   );
 };
 
-const MediaGallery = ({ media = [] }) => {
-  const { t } = useTranslation();
+const MediaGallery = ({ media = [], t }) => {
   const [selectedMedia, setSelectedMedia] = useState(null);
 
   if (!media || media.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
         <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-gray-400">{t('projectDetailsTab.noMedia')}</p>
       </div>
@@ -93,52 +106,50 @@ const MediaGallery = ({ media = [] }) => {
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {media.map((mediaItem, index) => {
-          // Gérer les deux formats : objet {url, name, etc.} ou simple string
           const mediaUrl = typeof mediaItem === 'string' ? mediaItem : mediaItem?.url;
           const mediaName = typeof mediaItem === 'object' ? mediaItem?.name : t('projectDetailsTab.media', { index: index + 1 });
-          
+
           if (!mediaUrl) return null;
-          
+
           return (
-            <div 
-              key={index} 
-              className="relative group cursor-pointer bg-gray-100 dark:bg-neutral-800 rounded-xl overflow-hidden aspect-square"
+            <div
+              key={index}
+              className="relative group cursor-pointer bg-gray-100 dark:bg-neutral-800 rounded-xl overflow-hidden aspect-square hover:shadow-xl transition-all duration-300"
               onClick={() => setSelectedMedia(mediaUrl)}
             >
               <NextImage
                 src={mediaUrl}
-                alt={mediaName || 'Media'}
+                alt={mediaName || t('projectDetailsTab.media', { index: index + 1 })}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-110"
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 unoptimized
               />
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
-                  <Eye className="h-5 w-5 text-white" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center p-4">
+                <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                  <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                    <Eye className="h-5 w-5 text-white" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           );
         })}
       </div>
 
-      {/* Modal pour média sélectionné */}
       {selectedMedia && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
           onClick={() => setSelectedMedia(null)}
         >
-          <div className="relative max-w-4xl max-h-full">
-            <div className="relative w-[80vw] max-w-4xl h-[80vh] max-h-full">
+          <div className="relative max-w-5xl max-h-full">
+            <div className="relative w-[90vw] max-w-5xl h-[85vh] max-h-full">
               <NextImage
                 src={selectedMedia}
                 alt={t('projectDetailsTab.selectedMedia')}
                 fill
                 className="object-contain rounded-lg"
-                sizes="80vw"
+                sizes="90vw"
                 unoptimized
               />
             </div>
@@ -151,6 +162,7 @@ const MediaGallery = ({ media = [] }) => {
               }}
               className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30"
             >
+              <X className="h-4 w-4 mr-2" />
               {t('projectDetailsTab.close')}
             </Button>
           </div>
@@ -160,14 +172,13 @@ const MediaGallery = ({ media = [] }) => {
   );
 };
 
-const InvestmentReturns = ({ investmentReturns = {} }) => {
-  const { t } = useTranslation();
+const InvestmentReturns = ({ investmentReturns = {}, t }) => {
   const enabledReturns = Object.entries(investmentReturns)
     .filter(([key, value]) => value.enabled);
 
   if (enabledReturns.length === 0) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
         <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500 dark:text-gray-400">
           {t('projectDetailsTab.noInvestmentReturns')}
@@ -179,54 +190,56 @@ const InvestmentReturns = ({ investmentReturns = {} }) => {
   const getReturnIcon = (type) => {
     switch (type.toLowerCase()) {
       case 'dividend':
-        return <Star className="h-5 w-5 text-yellow-500" />;
+        return <Star className="h-5 w-5 text-lime-500" />;
       case 'revenue':
         return <TrendingUp className="h-5 w-5 text-green-500" />;
       case 'equity':
-        return <Building className="h-5 w-5 text-blue-500" />;
+        return <Building className="h-5 w-5 text-lime-500" />;
       default:
-        return <Trophy className="h-5 w-5 text-purple-500" />;
+        return <Trophy className="h-5 w-5 text-green-500" />;
     }
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {enabledReturns.map(([type, data]) => (
-        <div 
+        <Card
           key={type}
-          className="bg-gradient-to-br from-white to-gray-50 dark:from-neutral-900 dark:to-neutral-800 p-6 rounded-xl border border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-lg transition-all duration-300"
+          className="border-2 border-lime-200 dark:border-lime-800 bg-gradient-to-br from-white to-lime-50 dark:from-neutral-900 dark:to-lime-900/10 hover:shadow-xl transition-all duration-300"
         >
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 dark:bg-neutral-700 rounded-lg">
-                {getReturnIcon(type)}
-              </div>
-              <div>
-                <h4 className="font-semibold text-lg text-gray-900 dark:text-white capitalize">
-                  {type.replace(/([A-Z])/g, ' $1').toLowerCase()}
-                </h4>
-                <Badge variant="outline" className="mt-1">
-                  {t('projectDetailsTab.active')}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          {data.details && (
-            <div className="space-y-3">
-              {Object.entries(data.details).map(([detailKey, detailValue]) => (
-                <div key={detailKey} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-neutral-700 last:border-0">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize">
-                    {detailKey.replace(/([A-Z])/g, ' $1').toLowerCase()}:
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {detailValue}
-                  </span>
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-lime-100 dark:bg-lime-900/20 rounded-xl">
+                  {getReturnIcon(type)}
                 </div>
-              ))}
+                <div>
+                  <h4 className="font-semibold text-lg text-gray-900 dark:text-white capitalize">
+                    {type.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                  </h4>
+                  <Badge variant="outline" className="mt-1 border-lime-300 dark:border-lime-700 text-lime-700 dark:text-lime-300">
+                    {t('projectDetailsTab.active')}
+                  </Badge>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+
+            {data.details && (
+              <div className="space-y-2">
+                {Object.entries(data.details).map(([detailKey, detailValue]) => (
+                  <div key={detailKey} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-neutral-700 last:border-0">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400 capitalize">
+                      {detailKey.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                    </span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      {detailValue}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       ))}
     </div>
   );
@@ -234,11 +247,11 @@ const InvestmentReturns = ({ investmentReturns = {} }) => {
 
 export default function ProjectDetailsTab({ projectData }) {
   const { t } = useTranslation();
-  
+
   if (!projectData) {
     return (
       <div className="text-center py-12">
-        <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
         <p className="text-gray-500 dark:text-gray-400">
           {t('projectDetailsTab.loading')}
         </p>
@@ -247,22 +260,14 @@ export default function ProjectDetailsTab({ projectData }) {
   }
 
   const { ipfs, firebase } = projectData;
-  
-  console.log('🔍 ProjectDetailsTab received:', { ipfs, firebase });
-  console.log('🔍 IPFS structure détaillée:', {
-    documents: ipfs?.documents,
-    teamMembers: ipfs?.teamMembers,
-    socials: ipfs?.socials,
-    allKeys: Object.keys(ipfs || {}),
-    fullData: ipfs
-  });
 
   return (
-    <ScrollArea className="h-[600px] pr-4">
-      <div className="space-y-8">
+    <ScrollArea className="h-[calc(95vh-200px)]">
+      <div className="space-y-6 pr-4">
+
         {/* Description du projet */}
-        <section className="bg-white dark:bg-neutral-900 p-6 rounded-xl border border-gray-200 dark:border-neutral-800">
-          <div className="mb-6">
+        <Card className="border-2 border-gray-200 dark:border-neutral-800 shadow-sm">
+          <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-lime-100 dark:bg-lime-900/20 rounded-lg">
                 <FileText className="h-5 w-5 text-lime-600" />
@@ -272,37 +277,60 @@ export default function ProjectDetailsTab({ projectData }) {
               </h3>
             </div>
             <div className="prose dark:prose-invert max-w-none">
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base whitespace-pre-wrap">
                 {ipfs?.description || firebase?.description || projectData.description || t('projectDetailsTab.noDescription')}
               </p>
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
-        {/* Documents */}
-        <section className="bg-white dark:bg-neutral-900 p-6 rounded-xl border border-gray-200 dark:border-neutral-800">
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+        {/* Secteur */}
+        {ipfs?.sector && (
+          <Card className="border-2 border-lime-200 dark:border-lime-800 bg-gradient-to-r from-lime-50 to-green-50 dark:from-lime-900/20 dark:to-green-900/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white dark:bg-neutral-800 rounded-lg">
+                    <Briefcase className="h-5 w-5 text-lime-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                      {t('projectOverview.stats.sector') || 'Secteur d\'activité'}
+                    </h3>
+                    <Badge className="mt-1 bg-lime-500 text-white text-base px-4 py-1.5">
+                      {ipfs.sector}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Documents officiels */}
+        <Card className="border-2 border-gray-200 dark:border-neutral-800 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <Folder className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-lime-100 dark:bg-lime-900/20 rounded-lg">
+                  <Folder className="h-5 w-5 text-lime-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {t('projectDetailsTab.officialDocuments')}
                 </h3>
               </div>
-              <Badge className="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
-                {t('projectDetailsTab.documentsCount', { 
+              <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
+                {t('projectDetailsTab.documentsCount', {
                   count: [
-                    ipfs?.documents?.whitepaper || firebase?.documents?.whitepaper,
-                    ipfs?.documents?.pitchDeck || firebase?.documents?.pitchDeck,
-                    ...(Array.isArray(ipfs?.documents?.legalDocuments || firebase?.documents?.legalDocuments) ? (ipfs?.documents?.legalDocuments || firebase?.documents?.legalDocuments) : [])
-                  ].filter(Boolean).length 
+                    ...(ipfs?.documents?.whitepaper || []),
+                    ...(ipfs?.documents?.pitchDeck || []),
+                    ...(ipfs?.documents?.legalDocuments || [])
+                  ].length
                 })}
               </Badge>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Whitepaper */}
               {ipfs?.documents?.whitepaper?.map((doc, index) => (
                 <DocumentLink
@@ -310,11 +338,10 @@ export default function ProjectDetailsTab({ projectData }) {
                   title={doc.name || t('projectDetailsTab.whitepaper')}
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
-                  fileName={doc.fileName}
-                  size={doc.size}
+                  t={t}
                 />
               ))}
-              
+
               {/* Pitch Deck */}
               {ipfs?.documents?.pitchDeck?.map((doc, index) => (
                 <DocumentLink
@@ -322,11 +349,10 @@ export default function ProjectDetailsTab({ projectData }) {
                   title={doc.name || t('projectDetailsTab.pitchDeck')}
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
-                  fileName={doc.fileName}
-                  size={doc.size}
+                  t={t}
                 />
               ))}
-              
+
               {/* Documents légaux */}
               {ipfs?.documents?.legalDocuments?.map((doc, index) => (
                 <DocumentLink
@@ -334,35 +360,36 @@ export default function ProjectDetailsTab({ projectData }) {
                   title={doc.name || t('projectDetailsTab.legalDocument', { index: index + 1 })}
                   url={doc.url}
                   type={doc.type?.startsWith('image') ? 'image' : 'document'}
-                  fileName={doc.fileName}
-                  size={doc.size}
+                  t={t}
                 />
               ))}
-              
+
               {/* Fallback pour ancienne structure */}
               {firebase?.documents?.whitepaper && (
                 <DocumentLink
                   title={t('projectDetailsTab.whitepaper')}
                   url={firebase.documents.whitepaper}
                   type="document"
+                  t={t}
                 />
               )}
-              
+
               {firebase?.documents?.pitchDeck && (
                 <DocumentLink
                   title={t('projectDetailsTab.pitchDeck')}
                   url={firebase.documents.pitchDeck}
                   type="document"
+                  t={t}
                 />
               )}
-              
+
               {/* Message si aucun document */}
               {(!ipfs?.documents || (
-                (!ipfs.documents.whitepaper?.length) && 
-                (!ipfs.documents.pitchDeck?.length) && 
+                (!ipfs.documents.whitepaper?.length) &&
+                (!ipfs.documents.pitchDeck?.length) &&
                 (!ipfs.documents.legalDocuments?.length)
               )) && !firebase?.documents && (
-                <div className="text-center py-8">
+                <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-500 dark:text-gray-400">
                     {t('projectDetailsTab.noDocuments')}
@@ -370,48 +397,146 @@ export default function ProjectDetailsTab({ projectData }) {
                 </div>
               )}
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
-        {/* Médias */}
-        <section className="bg-white dark:bg-neutral-900 p-6 rounded-xl border border-gray-200 dark:border-neutral-800">
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+        {/* Galerie média */}
+        <Card className="border-2 border-gray-200 dark:border-neutral-800 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                  <ImageIcon className="h-5 w-5 text-purple-600" />
+                <div className="p-2 bg-lime-100 dark:bg-lime-900/20 rounded-lg">
+                  <ImageIcon className="h-5 w-5 text-lime-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {t('projectDetailsTab.mediaGallery')}
                 </h3>
               </div>
-              <Badge className="bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
+              <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
                 {t('projectDetailsTab.mediaCount', { count: (ipfs?.documents?.media || firebase?.documents?.media)?.length || 0 })}
               </Badge>
             </div>
 
-            <MediaGallery media={ipfs?.documents?.media || firebase?.documents?.media} />
-            
-            {/* Affichage en liste si pas de galerie */}
-            {ipfs?.documents?.media?.map((media, index) => (
-              <DocumentLink
-                key={`media-${index}`}
-                title={media.name || t('projectDetailsTab.media', { index: index + 1 })}
-                url={media.url}
-                type={media.type?.startsWith('image') ? 'image' : media.type?.startsWith('video') ? 'video' : 'document'}
-                fileName={media.fileName}
-                size={media.size}
-              />
-            ))}
-          </div>
-        </section>
+            <MediaGallery media={ipfs?.documents?.media || firebase?.documents?.media} t={t} />
+          </CardContent>
+        </Card>
 
+        {/* Équipe */}
+        {ipfs?.teamMembers && ipfs.teamMembers.length > 0 && (
+          <Card className="border-2 border-gray-200 dark:border-neutral-800 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-lime-100 dark:bg-lime-900/20 rounded-lg">
+                  <Users className="h-5 w-5 text-lime-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('projectDetailsTab.teamMembers')}
+                </h3>
+                <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
+                  {t('projectDetailsTab.teamMembersCount', { count: ipfs.teamMembers.length })}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {ipfs.teamMembers.map((member, index) => (
+                  <Card key={index} className="border border-gray-200 dark:border-neutral-800 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-lg transition-all duration-300">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 bg-lime-100 dark:bg-lime-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Users className="h-6 w-6 text-lime-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                            {member.name || t('projectDetailsTab.memberNameNotSpecified')}
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            {member.role || t('projectDetailsTab.memberRoleNotSpecified')}
+                          </p>
+                          {member.socials && (Object.keys(member.socials).length > 0) && (
+                            <div className="flex gap-2 mt-2">
+                              {member.socials.twitter && (
+                                <a href={member.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:text-lime-700 transition-colors">
+                                  <Twitter className="h-4 w-4" />
+                                </a>
+                              )}
+                              {member.socials.linkedin && (
+                                <a href={member.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:text-lime-700 transition-colors">
+                                  <Users className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Réseaux sociaux */}
+        {ipfs?.socials && Object.values(ipfs.socials).some(social => social) && (
+          <Card className="border-2 border-lime-200 dark:border-lime-800 bg-gradient-to-r from-lime-50 to-green-50 dark:from-lime-900/20 dark:to-green-900/20">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Globe className="h-5 w-5 text-lime-600" />
+                {t('projectDetailsTab.socialLinks')}
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {ipfs.socials.website && (
+                  <a href={ipfs.socials.website} target="_blank" rel="noopener noreferrer"
+                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    <Globe className="h-4 w-4 text-lime-600" />
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.website')}</span>
+                  </a>
+                )}
+                {ipfs.socials.twitter && (
+                  <a href={ipfs.socials.twitter} target="_blank" rel="noopener noreferrer"
+                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    <Twitter className="h-4 w-4 text-lime-600" />
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.twitter')}</span>
+                  </a>
+                )}
+                {ipfs.socials.github && (
+                  <a href={ipfs.socials.github} target="_blank" rel="noopener noreferrer"
+                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    <Github className="h-4 w-4 text-lime-600" />
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.github')}</span>
+                  </a>
+                )}
+                {ipfs.socials.discord && (
+                  <a href={ipfs.socials.discord} target="_blank" rel="noopener noreferrer"
+                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    <MessageCircle className="h-4 w-4 text-lime-600" />
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.discord')}</span>
+                  </a>
+                )}
+                {ipfs.socials.telegram && (
+                  <a href={ipfs.socials.telegram} target="_blank" rel="noopener noreferrer"
+                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    <Send className="h-4 w-4 text-lime-600" />
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.telegram')}</span>
+                  </a>
+                )}
+                {ipfs.socials.medium && (
+                  <a href={ipfs.socials.medium} target="_blank" rel="noopener noreferrer"
+                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    <FileText className="h-4 w-4 text-lime-600" />
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.medium')}</span>
+                  </a>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Retours sur investissement */}
         {firebase?.investmentReturns && (
-          <section className="bg-white dark:bg-neutral-900 p-6 rounded-xl border border-gray-200 dark:border-neutral-800">
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-4">
+          <Card className="border-2 border-green-200 dark:border-green-800 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
                   <TrendingUp className="h-5 w-5 text-green-600" />
                 </div>
@@ -420,46 +545,46 @@ export default function ProjectDetailsTab({ projectData }) {
                 </h3>
               </div>
 
-              <InvestmentReturns investmentReturns={firebase.investmentReturns} />
-            </div>
-          </section>
+              <InvestmentReturns investmentReturns={firebase.investmentReturns} t={t} />
+            </CardContent>
+          </Card>
         )}
 
         {/* Informations supplémentaires */}
-        <section className="bg-gradient-to-br from-gray-50 to-white dark:from-neutral-800 dark:to-neutral-900 p-6 rounded-xl border border-gray-200 dark:border-neutral-700">
-          <div className="mb-4">
+        <Card className="border-2 border-gray-200 dark:border-neutral-800 bg-gradient-to-br from-gray-50 to-white dark:from-neutral-800 dark:to-neutral-900">
+          <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                <Building className="h-5 w-5 text-orange-600" />
+              <div className="p-2 bg-lime-100 dark:bg-lime-900/20 rounded-lg">
+                <Building className="h-5 w-5 text-lime-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                 {t('projectDetailsTab.additionalInfo')}
               </h3>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-white dark:bg-neutral-800 rounded-lg">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('projectDetailsTab.lastUpdate')}</p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {new Date().toLocaleDateString('fr-FR')}
-                </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3 p-4 bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700">
+                <Calendar className="h-5 w-5 text-lime-600" />
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('projectDetailsTab.lastUpdate')}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {new Date().toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-4 bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700">
+                <Users className="h-5 w-5 text-lime-600" />
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('projectDetailsTab.projectType')}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {t('projectDetailsTab.participatoryCrowdfunding')}
+                  </p>
+                </div>
               </div>
             </div>
-
-            <div className="flex items-center gap-3 p-3 bg-white dark:bg-neutral-800 rounded-lg">
-              <Users className="h-4 w-4 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('projectDetailsTab.projectType')}</p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {t('projectDetailsTab.participatoryCrowdfunding')}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       </div>
     </ScrollArea>
   );

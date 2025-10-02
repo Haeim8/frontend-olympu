@@ -7,9 +7,11 @@ import { useTranslation } from '@/hooks/useLanguage';
 import HomeHeader from '@/components/home/HomeHeader';
 import CampaignFilters from '@/components/home/CampaignFilters';
 import CampaignGrid from '@/components/home/CampaignGrid';
-import CreateCampaignCTA from '@/components/home/CreateCampaignCTA';
+// CreateCampaignCTA supprimé
+import { PromotedCampaignsCarousel } from '@/components/home/PromotedCampaignsCarousel';
 import CampaignModal from './CampaignModal';
 import ProjectDetails from './ProjectDetails';
+import { Sparkles } from 'lucide-react';
 
 const normalizeCampaign = (campaign) => {
   if (!campaign) return null;
@@ -142,24 +144,86 @@ export default function Home() {
     return filtered;
   }, []);
 
+  const fetchOnchainCampaigns = useCallback(async () => {
+    const results = [];
+    try {
+      const addresses = await apiManager.getAllCampaigns(false);
+      for (const addr of addresses) {
+        try {
+          const data = await apiManager.getCampaignData(addr, false);
+          if (data) {
+            const normalized = normalizeCampaign(data);
+            if (normalized) {
+              results.push(normalized);
+            }
+          }
+        } catch (chainError) {
+          console.warn('Fallback chain fetch failed for', addr, chainError);
+        }
+      }
+    } catch (error) {
+      console.warn('Erreur fallback getAllCampaigns:', error);
+    }
+    return results;
+  }, []);
+
   const loadCampaigns = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
+    const applyCampaigns = (campaigns) => {
+      setProjects(campaigns);
+      calculateStats(campaigns);
+    };
+
     try {
+      // 1️⃣ CHARGER LES CAMPAGNES DE LA DB UNIQUEMENT (instantané)
       const campaigns = await apiManager.listCampaigns({}, { useCache: true });
       const normalized = campaigns.map(normalizeCampaign).filter(Boolean);
-      setProjects(normalized);
-      calculateStats(normalized);
+
+      // 2️⃣ AFFICHER IMMÉDIATEMENT LES DONNÉES DE LA DB
+      if (normalized.length > 0) {
+        applyCampaigns(normalized);
+        setIsLoading(false); // Arrêter le loading MAINTENANT
+      }
+
+      // 3️⃣ SYNC EN BACKGROUND SANS BLOQUER L'UI
+      fetch('/api/campaigns/sync-now', { method: 'POST' })
+        .then(() => {
+          console.log('✅ Sync terminé - refresh silencieux');
+          return apiManager.listCampaigns({}, { useCache: false });
+        })
+        .then(freshCampaigns => {
+          const freshNormalized = freshCampaigns.map(normalizeCampaign).filter(Boolean);
+          if (freshNormalized.length > 0) {
+            applyCampaigns(freshNormalized); // Mise à jour silencieuse
+          }
+        })
+        .catch(err => console.warn('Sync background error:', err));
+
+      // Si aucune campagne DB, fallback onchain
+      if (normalized.length === 0) {
+        const onchainCampaigns = await fetchOnchainCampaigns();
+        if (onchainCampaigns.length > 0) {
+          applyCampaigns(onchainCampaigns);
+        } else {
+          applyCampaigns([]);
+        }
+      }
     } catch (err) {
       console.error('Error fetching campaigns:', err);
-      setProjects([]);
-      calculateStats([]);
-      setError(t('campaigns.error.generic', 'Impossible de charger les campagnes. Veuillez réessayer plus tard.'));
+      const fallback = await fetchOnchainCampaigns();
+      if (fallback.length > 0) {
+        applyCampaigns(fallback);
+      } else {
+        setProjects([]);
+        calculateStats([]);
+        setError(t('campaigns.error.generic', 'Impossible de charger les campagnes. Veuillez réessayer plus tard.'));
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [calculateStats, t]);
+  }, [calculateStats, t, fetchOnchainCampaigns]);
 
   useEffect(() => {
     loadCampaigns();
@@ -174,12 +238,32 @@ export default function Home() {
     setShowCreateCampaign(true);
   }, []);
 
-  const handleCampaignCreated = useCallback(() => {
+  const handleCampaignCreated = useCallback(async (newCampaignAddress) => {
     setShowCreateCampaign(false);
     apiManager.invalidateCache('api_campaign');
     apiManager.invalidateCache('campaign');
+    if (newCampaignAddress) {
+      try {
+        const data = await apiManager.getCampaignData(newCampaignAddress, false);
+        if (data) {
+          const normalized = normalizeCampaign(data);
+          if (normalized) {
+            setProjects((prev) => {
+              const lower = newCampaignAddress.toLowerCase();
+              const without = prev.filter((project) => project.address?.toLowerCase?.() !== lower);
+              const updated = [normalized, ...without];
+              calculateStats(updated);
+              return updated;
+            });
+            return;
+          }
+        }
+      } catch (chainError) {
+        console.warn('Impossible de récupérer la campagne nouvellement créée:', chainError);
+      }
+    }
     loadCampaigns();
-  }, [loadCampaigns]);
+  }, [loadCampaigns, calculateStats]);
 
   const handleViewDetails = useCallback((project) => {
     setSelectedProject(project);
@@ -216,6 +300,20 @@ export default function Home() {
           campaignStats={campaignStats}
         />
 
+        {/* Carousel des campagnes promues - MOCKUP VISIBLE */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-500" />
+              Campagnes boostées
+            </h2>
+          </div>
+          <PromotedCampaignsCarousel
+            onViewCampaign={handleViewDetails}
+            darkMode={false}
+          />
+        </div>
+
         <CampaignFilters
           filters={filters}
           onFiltersChange={handleFiltersChange}
@@ -233,16 +331,7 @@ export default function Home() {
           onPreloadHover={handlePreloadHover}
         />
 
-        {!error && !isLoading && (
-          <CreateCampaignCTA
-            onClick={handleCreateCampaign}
-            campaignStats={{
-              total: campaignStats.total,
-              success: campaignStats.finalized,
-              totalRaised: campaignStats.totalRaised / 1000000,
-            }}
-          />
-        )}
+        {/* CreateCampaignCTA supprimé - bouton déjà dans header */}
 
         {selectedProject && (
           <ProjectDetails

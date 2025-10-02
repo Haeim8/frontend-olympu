@@ -8,7 +8,6 @@ import { CheckCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { ethers } from 'ethers';
 import html2canvas from 'html2canvas';
-import { pinataService } from '@/lib/services/storage';
 import { apiManager } from '@/lib/services/api-manager';
 import { useTranslation } from '@/hooks/useLanguage';
 
@@ -19,6 +18,22 @@ import CampaignDocuments from '@/components/campaign-creation/CampaignDocuments'
 import CampaignTeamSocials from '@/components/campaign-creation/CampaignTeamSocials';
 import CampaignNFTPreview from '@/components/campaign-creation/CampaignNFTPreview';
 import CampaignReview from '@/components/campaign-creation/CampaignReview';
+
+const REQUIRED_CHAIN = {
+  id: 84532,
+  hex: '0x14a34',
+  params: {
+    chainId: '0x14a34',
+    chainName: 'Base Sepolia',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+    rpcUrls: ['https://sepolia.base.org'],
+    blockExplorerUrls: ['https://sepolia.basescan.org'],
+  },
+};
 
 const INITIAL_FORM_DATA = {
   creatorAddress: '',
@@ -77,8 +92,111 @@ export default function CampaignModal({
   const cardRef = useRef(null);
 
   // Hooks blockchain
-  const { address } = useAccount();
+  const { address, connector } = useAccount();
   const [writeLoading, setWriteLoading] = useState(false);
+  const draftRestoredRef = useRef(false);
+
+  const getDraftKey = useCallback((addr) => `livar_campaign_draft_${addr ? addr.toLowerCase() : 'guest'}`, []);
+
+  const fileToDataURL = useCallback((file) => new Promise((resolve, reject) => {
+    if (!file) return resolve(null);
+    if (file._base64) {
+      return resolve(file._base64);
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      file._base64 = reader.result;
+      resolve(reader.result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  }), []);
+
+  const blobToDataURL = useCallback((blob) => new Promise((resolve, reject) => {
+    if (!blob) return resolve(null);
+    if (blob._base64) {
+      return resolve(blob._base64);
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      blob._base64 = reader.result;
+      resolve(reader.result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  }), []);
+
+  const dataURLToFile = useCallback(async (dataUrl, name, type, lastModified) => {
+    if (!dataUrl) return null;
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], name, { type: type || blob.type || 'application/octet-stream', lastModified: lastModified || Date.now() });
+    file._base64 = dataUrl;
+    return file;
+  }, []);
+
+  const deserializeDraft = useCallback(async (storedDraft) => {
+    const parsed = JSON.parse(storedDraft);
+    const draft = {
+      ...INITIAL_FORM_DATA,
+      ...parsed,
+    };
+
+    if (parsed.documents) {
+      const restoredDocuments = {};
+      await Promise.all(Object.entries(parsed.documents).map(async ([docType, docArray]) => {
+        restoredDocuments[docType] = await Promise.all((docArray || []).map(async (doc) => {
+          return dataURLToFile(doc.dataUrl, doc.name, doc.type, doc.lastModified);
+        }));
+      }));
+      draft.documents = restoredDocuments;
+    }
+
+    if (parsed.cardImageDataUrl) {
+      const restoredCard = await dataURLToFile(parsed.cardImageDataUrl, 'card.png', parsed.cardImageMimeType || 'image/png');
+      draft._restoredCardImage = restoredCard;
+    }
+
+    return draft;
+  }, [dataURLToFile]);
+
+  const serializeDraft = useCallback(async (data, cardImageValue) => {
+    const serialized = {
+      ...data,
+    };
+
+    const documents = {};
+    await Promise.all(Object.entries(data.documents).map(async ([docType, docFiles]) => {
+      documents[docType] = await Promise.all((docFiles || []).map(async (file) => {
+        const dataUrl = await fileToDataURL(file);
+        return {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          lastModified: file.lastModified,
+          dataUrl,
+        };
+      }));
+    }));
+
+    serialized.documents = documents;
+
+    if (cardImageValue) {
+      const dataUrl = await blobToDataURL(cardImageValue);
+      serialized.cardImageDataUrl = dataUrl;
+      serialized.cardImageMimeType = cardImageValue.type || 'image/png';
+    } else {
+      serialized.cardImageDataUrl = null;
+      serialized.cardImageMimeType = null;
+    }
+
+    return serialized;
+  }, [fileToDataURL, blobToDataURL]);
+
+  const clearDraft = useCallback((addr) => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.removeItem(getDraftKey(addr));
+  }, [getDraftKey]);
 
   // Initialisation de l'adresse
   useEffect(() => {
@@ -126,6 +244,7 @@ export default function CampaignModal({
       setStatus('idle');
       setTransactionHash('');
       setCardImage(null);
+      draftRestoredRef.current = false;
     } else {
       // Quand le modal s'ouvre, s'assurer que l'adresse est définie
       if (address) {
@@ -138,6 +257,56 @@ export default function CampaignModal({
       }
     }
   }, [showCreateCampaign, address]);
+
+  useEffect(() => {
+    if (!showCreateCampaign || draftRestoredRef.current) return;
+    if (typeof window === 'undefined') return;
+    const draftKey = getDraftKey(address);
+    const storedDraft = window.localStorage.getItem(draftKey);
+    if (!storedDraft) {
+      draftRestoredRef.current = true;
+      return;
+    }
+    (async () => {
+      try {
+        const restored = await deserializeDraft(storedDraft);
+        const { _restoredCardImage, ...restForm } = restored;
+        setFormData(prev => ({
+          ...prev,
+          ...restForm,
+        }));
+        if (_restoredCardImage) {
+          setCardImage(_restoredCardImage);
+        }
+      } catch (error) {
+        console.warn('Impossible de restaurer le brouillon:', error);
+      } finally {
+        draftRestoredRef.current = true;
+      }
+    })();
+  }, [showCreateCampaign, address, deserializeDraft, getDraftKey]);
+
+  useEffect(() => {
+    if (!showCreateCampaign) return;
+    if (status === 'success') return;
+    if (typeof window === 'undefined') return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const serialized = await serializeDraft(formData, cardImage);
+        if (cancelled) return;
+        window.localStorage.setItem(getDraftKey(address), JSON.stringify(serialized));
+      } catch (error) {
+        console.warn('Erreur sauvegarde brouillon:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formData, cardImage, address, showCreateCampaign, status, serializeDraft, getDraftKey]);
 
   // Validation des étapes
   const validateStep = useCallback((step) => {
@@ -192,6 +361,84 @@ export default function CampaignModal({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData, t]);
+
+  const formatSubmissionError = useCallback((error) => {
+    if (!error) {
+      return t('campaign.errors.generic', { reason: t('campaign.errors.unknown') });
+    }
+    if (error.code === 'USER_REJECTED' || error.code === 4001) {
+      return t('campaign.errors.userRejected');
+    }
+    if (error.code === 'UNSUPPORTED_OPERATION' && error.message?.includes('unknown account')) {
+      return t('campaign.errors.walletUnknownAccount');
+    }
+    if (error.message?.includes('Access request expired')) {
+      return t('campaign.errors.w3upExpired');
+    }
+    if (error.message?.includes('Wallet non connecté')) {
+      return t('campaign.errors.walletNotConnected');
+    }
+    if (error?.code === 'CHAIN_MISMATCH' || error?.message?.includes('wallet_switchEthereumChain')) {
+      return t('campaign.errors.wrongChain');
+    }
+    return t('campaign.errors.generic', { reason: error.message || t('campaign.errors.unknown') });
+  }, [t]);
+
+  const resolveExternalProvider = useCallback(async () => {
+    if (connector?.getProvider) {
+      try {
+        const provider = await connector.getProvider();
+        if (provider) {
+          return provider;
+        }
+      } catch (e) {
+        console.warn('Impossible de récupérer le provider via le connector:', e);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      const { ethereum } = window;
+      if (!ethereum) {
+        throw new Error('Wallet provider indisponible');
+      }
+
+      if (ethereum.providers?.length) {
+        if (connector?.id === 'coinbaseWallet') {
+          const cb = ethereum.providers.find((prov) => prov?.isCoinbaseWallet);
+          if (cb) return cb;
+        }
+        if (connector?.id === 'metaMask') {
+          const mm = ethereum.providers.find((prov) => prov?.isMetaMask);
+          if (mm) return mm;
+        }
+        const fallback = ethereum.providers.find((prov) => prov?.request);
+        if (fallback) return fallback;
+      }
+
+      return ethereum;
+    }
+
+    throw new Error('Wallet provider indisponible');
+  }, [connector]);
+
+  const ensureCorrectChain = useCallback(async (web3Provider) => {
+    const network = await web3Provider.getNetwork();
+    if (network.chainId === REQUIRED_CHAIN.id) {
+      return;
+    }
+
+    try {
+      await web3Provider.send('wallet_switchEthereumChain', [{ chainId: REQUIRED_CHAIN.hex }]);
+    } catch (switchError) {
+      if (switchError?.code === 4902 || switchError?.data?.originalError?.code === 4902) {
+        await web3Provider.send('wallet_addEthereumChain', [REQUIRED_CHAIN.params]);
+        return;
+      }
+      const error = new Error('Wallet sur mauvaise chaîne');
+      error.code = 'CHAIN_MISMATCH';
+      throw error;
+    }
+  }, []);
 
   // Gestionnaires d'événements
   const handleInputChange = useCallback((e, nestedField = null) => {
@@ -305,27 +552,49 @@ export default function CampaignModal({
     setCurrentStep(prev => Math.max(prev - 1, 1));
   }, [currentStep]);
 
-  // Upload IPFS avec Web3.Storage
+  // Upload IPFS via Pinata
+  const storageClientRef = useRef(null);
+
+  const getStorageClient = useCallback(async () => {
+    if (storageClientRef.current) {
+      return storageClientRef.current;
+    }
+
+    const { create } = await import('@storacha/client');
+    const client = await create();
+    try {
+      await client.login(process.env.NEXT_PUBLIC_W3UP_EMAIL);
+    } catch (err) {
+      storageClientRef.current = null;
+      throw err;
+    }
+
+    const spaces = client.spaces();
+    if (!spaces.length) {
+      throw new Error('Aucun espace W3UP disponible');
+    }
+
+    const preferredSpace = process.env.NEXT_PUBLIC_W3UP_SPACE;
+    const spaceToUse = preferredSpace
+      ? spaces.find(space => space.did() === preferredSpace) || spaces[0]
+      : spaces[0];
+
+    await client.setCurrentSpace(spaceToUse.did());
+    storageClientRef.current = client;
+    return client;
+  }, []);
+
   const uploadToIPFS = useCallback(async (campaignData) => {
     try {
-      const { create } = await import('@storacha/client');
-      const client = await create();
-      await client.login(process.env.NEXT_PUBLIC_W3UP_EMAIL);
-      
-      // Vérifier et définir l'espace de travail
-      const spaces = Array.from(client.spaces());
-      if (spaces.length === 0) {
-        // Créer un nouvel espace si aucun n'existe
-        await client.createSpace('livar-campaigns');
-      } else {
-        // Utiliser le premier espace disponible
-        client.setCurrentSpace(spaces[0].did());
-      }
-      
+      console.info('[W3UP] Starting upload for campaign', campaignData?.name);
+      const client = await getStorageClient();
+      const spaces = client.spaces().map((space) => space.did());
+      const maskedSpaces = spaces.map((did) => `${did.slice(0, 12)}…`);
+      console.info('[W3UP] Client ready with spaces:', maskedSpaces);
+
       const files = [];
       const documentReferences = {};
-      
-      // D'abord traiter les documents pour créer les références
+
       Object.entries(campaignData.documents).forEach(([docType, docFiles]) => {
         if (docFiles && docFiles.length > 0) {
           documentReferences[docType] = [];
@@ -341,8 +610,7 @@ export default function CampaignModal({
           });
         }
       });
-      
-      // Métadonnées campagne (JSON principal) avec références aux documents
+
       const campaignMetadata = {
         name: campaignData.name,
         description: campaignData.description,
@@ -353,12 +621,11 @@ export default function CampaignModal({
         teamMembers: campaignData.teamMembers,
         socials: campaignData.socials,
         royaltyFee: campaignData.royaltyFee,
-        documents: documentReferences  // ✅ Ajout des références aux fichiers
+        documents: documentReferences
       };
-      
+
       files.push(new File([JSON.stringify(campaignMetadata, null, 2)], 'campaign-data.json', { type: 'application/json' }));
-      
-      // Métadonnées NFT
+
       const nftMetadata = {
         name: campaignData.name,
         description: campaignData.description || "",
@@ -368,32 +635,39 @@ export default function CampaignModal({
           { trait_type: "Text Color", value: campaignData.nftCustomization.textColor }
         ]
       };
-      
+
       files.push(new File([JSON.stringify(nftMetadata, null, 2)], 'nft-metadata.json', { type: 'application/json' }));
-      
-      // Image NFT card
+
       if (cardImage) {
         files.push(new File([cardImage], 'nft-card.png', { type: 'image/png' }));
       }
-      
+      console.info('[W3UP] Uploading directory with', files.length, 'entries');
+
       const cid = await client.uploadDirectory(files);
-      
+      console.info('[W3UP] Upload success CID:', cid?.toString?.() ?? cid);
+
       return {
         success: true,
         ipfsHash: cid,
         campaignFolderName: `campaign_${campaignData.name.replace(/\s+/g, '_').toLowerCase()}`
       };
-      
+
     } catch (error) {
-      console.error('Erreur upload IPFS:', error);
+      console.error('[W3UP] Upload failed:', error);
       throw new Error(`Échec upload IPFS: ${error.message}`);
     }
-  }, [cardImage]);
+  }, [cardImage, getStorageClient]);
 
   // Soumission du formulaire
   const handleSubmit = useCallback(async () => {
     if (!validateStep(5)) return;
     if (status === 'loading' || status === 'success') return;
+
+    if (!address) {
+      setErrors({ general: t('campaign.errors.walletNotConnected') });
+      setStatus('error');
+      return;
+    }
 
     setStatus('loading');
     setErrors({});
@@ -415,6 +689,22 @@ export default function CampaignModal({
 
       // Créer la campagne sur la blockchain avec api-manager
       setWriteLoading(true);
+      let signer = null;
+      try {
+        const externalProvider = await resolveExternalProvider();
+        const web3Provider = new ethers.providers.Web3Provider(externalProvider, 'any');
+        try {
+          await web3Provider.getSigner().getAddress();
+        } catch (_) {
+          await web3Provider.send('eth_requestAccounts', []);
+        }
+        await ensureCorrectChain(web3Provider);
+        signer = web3Provider.getSigner();
+      } catch (providerError) {
+        console.error('Erreur provider/signature:', providerError);
+        throw providerError;
+      }
+
       const result = await apiManager.createCampaign({
         name: formData.name,
         symbol: formData.symbol,
@@ -424,7 +714,13 @@ export default function CampaignModal({
         category: formData.sector, // _category parameter
         metadata: metadataURI, // _metadata parameter
         royaltyFee: ethers.BigNumber.from(formData.royaltyFee),
-        logo: "" // _logo parameter (empty string for now)
+        logo: "", // _logo parameter (empty string for now)
+        creationFee: campaignFee,
+        nftBackgroundColor: formData.nftCustomization?.backgroundColor,
+        nftTextColor: formData.nftCustomization?.textColor,
+        nftLogoUrl: formData.nftCustomization?.logo?.url || '',
+        nftSector: formData.sector === 'Autre' ? formData.otherSector : formData.sector,
+        signer,
       });
       setWriteLoading(false);
 
@@ -436,6 +732,19 @@ export default function CampaignModal({
       
       setTransactionHash(result.txHash);
       setStatus('success');
+      clearDraft(address);
+
+      try {
+        await fetch('/api/campaigns/sync-single', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ address: campaignAddress }),
+        });
+      } catch (syncError) {
+        console.warn('sync-single API call failed:', syncError);
+      }
       
       // Précharger les données de la nouvelle campagne dans le cache
       if (campaignAddress) {
@@ -456,19 +765,17 @@ export default function CampaignModal({
       
       // Notifier le parent
       if (onCampaignCreated) {
-        onCampaignCreated();
+        onCampaignCreated(campaignAddress);
       }
 
     } catch (error) {
       console.error("Erreur:", error);
       setStatus('error');
       setErrors({ 
-        general: error.code === "INSUFFICIENT_FUNDS" 
-          ? "Fonds insuffisants pour créer la campagne" 
-          : error.message 
+        general: formatSubmissionError(error)
       });
     }
-  }, [formData, validateStep, status, uploadToIPFS, onCampaignCreated]);
+  }, [formData, validateStep, status, uploadToIPFS, onCampaignCreated, address, connector, clearDraft, formatSubmissionError, t, resolveExternalProvider, ensureCorrectChain]);
 
   // Rendu du contenu selon l'étape
   const renderStepContent = () => {

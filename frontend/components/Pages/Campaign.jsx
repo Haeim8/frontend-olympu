@@ -93,7 +93,7 @@ export default function Campaign() {
     };
 
     initializeCampaign();
-  }, [address]);
+  }, [address, t]);
 
   useEffect(() => {
     if (!campaignAddress) return;
@@ -124,7 +124,7 @@ export default function Campaign() {
     };
 
     loadCampaignData();
-  }, [campaignAddress]);
+  }, [campaignAddress, t]);
 
   const handlePreloadHover = useCallback((identifier) => {
     if (identifier && identifier !== campaignAddress) {

@@ -57,7 +57,7 @@ const normalizeCampaignSummary = (summary) => {
   const goalNumber = parseFloat(goal) || 0;
   const raisedNumber = parseFloat(raised) || 0;
   const sharePriceNumber = parseFloat(sharePrice) || 0;
-  const investors = Number.parseInt(sharesSold, 10);
+  const investors = Number.parseInt(summary.total_investors ?? summary.unique_investors ?? summary.uniqueInvestors ?? sharesSold, 10);
   const progress = goalNumber > 0 ? (raisedNumber / goalNumber) * 100 : 0;
 
   return {
@@ -78,7 +78,8 @@ const normalizeCampaignSummary = (summary) => {
     isActive: isActive ?? false,
     isFinalized: isFinalized ?? false,
     endDate,
-    metadataUri: summary.metadataUri ?? summary.metadata_uri ?? null,
+    metadata_uri: summary.metadata_uri ?? summary.metadataUri ?? summary.metadata ?? null,
+    metadataUri: summary.metadataUri ?? summary.metadata_uri ?? summary.metadata ?? null,
     category: summary.category,
     sector: summary.sector ?? summary.category ?? 'General',
     logo: summary.logo,
@@ -491,6 +492,13 @@ class ApiManager {
         if (typeof window !== 'undefined' && window.ethereum) {
           const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
           providerOrSigner = web3Provider.getSigner();
+          try {
+            await providerOrSigner.getAddress();
+          } catch (_) {
+            await web3Provider.send('eth_requestAccounts', []);
+            providerOrSigner = web3Provider.getSigner();
+            await providerOrSigner.getAddress();
+          }
         } else {
           throw new Error('Wallet non connecté - requis pour les transactions');
         }
@@ -506,6 +514,106 @@ class ApiManager {
     return this.contracts[contractKey];
   }
 
+
+  async getCampaignCreationFee() {
+    const divarProxy = await this.getContract('DivarProxy');
+    const fee = await divarProxy.getCampaignCreationFeeETH();
+    return {
+      raw: fee,
+      formatted: this.formatEthValue(fee, 6)
+    };
+  }
+
+  async createCampaign(options = {}) {
+    const requiredFields = ['name', 'symbol', 'targetAmount', 'sharePrice', 'endTime', 'category', 'metadata'];
+    for (const field of requiredFields) {
+      if (!options[field]) {
+        throw new Error(`Missing campaign field: ${field}`);
+      }
+    }
+
+    const { ethers } = await import('ethers');
+
+    try {
+      let divarProxySigner;
+      if (options.signer) {
+        await this.loadABIs();
+        divarProxySigner = new ethers.Contract(
+          this.contractAddresses.DivarProxy,
+          this.abis.DivarProxy,
+          options.signer
+        );
+      } else {
+        divarProxySigner = await this.getContract('DivarProxy', null, true);
+        if (!divarProxySigner.signer) {
+          throw new Error('Wallet non connecté');
+        }
+      }
+
+      let creationFee = options.creationFee ?? options.feeWei ?? options.fee;
+      if (!creationFee) {
+        const divarProxyRead = await this.getContract('DivarProxy');
+        creationFee = await divarProxyRead.getCampaignCreationFeeETH();
+      }
+
+      if (!ethers.BigNumber.isBigNumber(creationFee)) {
+        creationFee = ethers.BigNumber.from(creationFee);
+      }
+
+      const tx = await divarProxySigner.createCampaign(
+        options.name,
+        options.symbol,
+        options.targetAmount,
+        options.sharePrice,
+        options.endTime,
+        options.category ?? '',
+        options.metadata ?? '',
+        options.royaltyFee ?? 0,
+        options.logo ?? '',
+        options.nftBackgroundColor ?? '#0f172a',
+        options.nftTextColor ?? '#FFFFFF',
+        options.nftLogoUrl ?? '',
+        options.nftSector ?? (options.category ?? '')
+      , { value: creationFee });
+
+      const receipt = await tx.wait();
+
+      let campaignAddress = null;
+      for (const log of receipt.logs || []) {
+        try {
+          const parsed = divarProxySigner.interface.parseLog(log);
+          if (parsed && parsed.name === 'CampaignCreated') {
+            campaignAddress = parsed.args.campaignAddress;
+            break;
+          }
+        } catch (_) {
+          // Ignorer les logs qui ne concernent pas DivarProxy
+        }
+      }
+
+      return {
+        success: true,
+        txHash: tx.hash,
+        campaignAddress,
+        receipt
+      };
+    } catch (error) {
+      if (error?.code === 4001 || error?.code === 'ACTION_REJECTED') {
+        return {
+          success: false,
+          error: 'Transaction rejetée par l’utilisateur',
+          code: 'USER_REJECTED'
+        };
+      }
+
+      console.error('Erreur createCampaign:', error);
+      return {
+        success: false,
+        error: error?.message || 'createCampaign failed',
+        code: error?.code
+      };
+    }
+  }
 
   async checkUserRegistration(address) {
     // Plus besoin de vérifier l'inscription - toujours true maintenant
@@ -628,28 +736,20 @@ class ApiManager {
     }
 
     try {
-      // Rate limiting - attendre entre chaque campagne pour éviter 429
-      await new Promise(resolve => setTimeout(resolve, 150));
-
       const campaign = await this.getContract('Campaign', campaignAddress);
       const divarProxy = await this.getContract('DivarProxy');
 
-      // Réduire la charge en chargeant séquentiellement au lieu de Promise.all
-      const name = await campaign.name();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      const symbol = await campaign.symbol();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      const currentRound = await campaign.getCurrentRound();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      const totalShares = await campaign.totalSupply();
+      // Charger en parallèle pour optimiser les performances
+      const [name, symbol, currentRound, totalShares, registry] = await Promise.all([
+        campaign.name(),
+        campaign.symbol(),
+        campaign.getCurrentRound(),
+        campaign.totalSupply(),
+        divarProxy.getCampaignRegistry(campaignAddress)
+      ]);
 
-      // Récupération du registry avec la VRAIE fonction getCampaignRegistry
-      await new Promise(resolve => setTimeout(resolve, 50));
-      const registry = await divarProxy.getCampaignRegistry(campaignAddress);
-
-      // Récupérer les données du round actuel avec gestion d'erreur  
+      // Récupérer les données du round actuel avec gestion d'erreur
       const currentRoundNumber = typeof currentRound === 'object' && currentRound.toNumber ? currentRound.toNumber() : parseInt(currentRound.toString());
-      await new Promise(resolve => setTimeout(resolve, 50));
       const roundData = await campaign.rounds(currentRoundNumber);
 
       // Validation que roundData est un array avec les bonnes propriétés
@@ -683,8 +783,10 @@ class ApiManager {
         creator: registry.creator,
         category: registry.category,
         metadata: registry.metadata,
+        metadata_uri: registry.metadata, // Ajouté pour compatibilité avec ipfs-fetcher
+        metadataUri: registry.metadata,  // Ajouté pour compatibilité avec ipfs-fetcher
         logo: registry.logo,
-        
+
         // Récupération métadonnées IPFS
         ipfsHash: registry.metadata.replace('ipfs://', ''),
         

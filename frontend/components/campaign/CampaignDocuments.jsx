@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -352,7 +351,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
         )}
 
         {/* Liste des documents */}
-        <ScrollArea className="h-[400px]">
+        <div className="max-h-[400px] overflow-y-auto">
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
@@ -377,7 +376,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
               <p className="text-gray-500 dark:text-gray-400 mb-6">
                 {t('campaignDocuments.noDocumentsDescription')}
               </p>
-              <Button 
+              <Button
                 onClick={() => setShowUploadDialog(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
@@ -386,9 +385,9 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 pr-2">
               {documents.map((doc, index) => (
-                <div 
+                <div
                   key={`${doc.hash || index}-${doc.name}`}
                   className="flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-900 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors duration-150"
                 >
@@ -419,7 +418,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -447,7 +446,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {/* Notes importantes */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">

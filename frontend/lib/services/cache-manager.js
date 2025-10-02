@@ -36,9 +36,9 @@ class BlockchainCache {
     if (!cached) return null;
 
     if (this.isExpired(cached)) {
-      this.cache.delete(key);
       this.scheduleRefresh(key);
-      return null;
+      // Retourner les données périmées pendant le refresh
+      return cached.data;
     }
 
     cached.lastAccessed = Date.now();

@@ -197,7 +197,7 @@ p {
   transform-origin: top left;
 }
 
-/* Ajustements pour le scroll */
+/* Ajustements pour le scroll - Style moderne */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -208,10 +208,42 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 5px;
+  background: linear-gradient(180deg, #84cc16, #22c55e);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #666;
+  background: linear-gradient(180deg, #65a30d, #16a34a);
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #a3e635, #4ade80);
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #84cc16, #22c55e);
+  background-clip: padding-box;
+}
+
+/* Scrollbar personnalisé pour le modal */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(163, 230, 53, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #84cc16, #22c55e);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #65a30d, #16a34a);
 }

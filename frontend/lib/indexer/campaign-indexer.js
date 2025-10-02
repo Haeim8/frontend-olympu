@@ -1,5 +1,5 @@
 import { baseSepolia } from 'viem/chains';
-import { createPublicClient, http, parseAbiItem, formatEther } from 'viem';
+import { createPublicClient, http, parseAbiItem, formatEther, keccak256, toHex } from 'viem';
 import path from 'path';
 import dotenv from 'dotenv';
 import { pathToFileURL } from 'url';
@@ -32,92 +32,170 @@ const publicClient = createPublicClient({
 const DIVAR_PROXY_ABI = DivarProxyArtifact.abi;
 const CAMPAIGN_ABI = CampaignArtifact.abi;
 
-const EVENT_CAMPAIGN_CREATED = parseAbiItem(
-  'event CampaignCreated(address indexed campaignAddress, address indexed creator, string name, uint256 timestamp)'
-);
-
-const EVENT_SHARES_PURCHASED = parseAbiItem(
-  'event SharesPurchased(address indexed investor, uint256 amount, uint256 shares, uint256 timestamp)'
-);
+// Plus besoin d'événements - tout est récupéré via fonctions du contrat!
 
 export async function syncCampaigns() {
-  const currentBlock = await publicClient.getBlockNumber();
-  const fromBlock = await getLastSyncedBlock('campaigns');
+  console.log('[Indexer] 🚀 Synchronisation INTELLIGENTE (APPELS RPC DIRECTS)');
 
-  const startBlock = fromBlock > 0n ? fromBlock + 1n : DEFAULT_START_BLOCK;
-  if (startBlock > currentBlock) {
-    return { processed: 0, skipped: true };
+  const currentBlock = await publicClient.getBlockNumber();
+
+  // 1. Récupérer toutes les campagnes depuis la DB
+  const { data: campaigns } = await supabaseAdmin
+    .from('campaigns')
+    .select('address, creator');
+
+  if (!campaigns || campaigns.length === 0) {
+    console.log('[Indexer] ⚠️ Aucune campagne dans la DB');
+    return { processed: 0 };
   }
 
+  console.log(`[Indexer] 📋 ${campaigns.length} campagnes trouvées dans la DB`);
+
+  // 2. Mettre à jour chaque campagne via appels RPC directs
   let processed = 0;
-  let cursor = startBlock;
-  let totalLogs = 0;
-  const discoveredCampaignAddresses = new Set();
-
-  console.log(`[Indexer] Synchronisation depuis le bloc ${startBlock.toString()} jusqu'au bloc ${currentBlock.toString()}`);
-
-  while (cursor <= currentBlock) {
-    const upper = cursor + BLOCK_CHUNK - 1n > currentBlock ? currentBlock : cursor + BLOCK_CHUNK - 1n;
-
-    const logs = await publicClient.getLogs({
-      address: DIVAR_PROXY_ADDRESS,
-      event: EVENT_CAMPAIGN_CREATED,
-      fromBlock: cursor,
-      toBlock: upper,
-    });
-
-    const count = logs.length;
-    totalLogs += count;
-    console.log(`[Indexer] Bloc ${cursor.toString()} -> ${upper.toString()} : ${count} campagnes trouvées (cumul = ${totalLogs})`);
-
-    for (const log of logs) {
-      const campaignAddress = log.args.campaignAddress.toLowerCase();
-      const creator = log.args.creator.toLowerCase();
-      const blockNumber = log.blockNumber ?? upper;
-
-      const details = await fetchCampaignDetails(campaignAddress);
-      discoveredCampaignAddresses.add(campaignAddress);
+  for (const campaign of campaigns) {
+    try {
+      const details = await fetchCampaignDetails(campaign.address);
 
       await persistCampaign({
-        address: campaignAddress,
-        creator,
-        blockNumber,
+        address: campaign.address,
+        creator: campaign.creator,
+        blockNumber: 0n,
         ...details,
       });
-      processed += 1;
-    }
 
-    await updateLastSyncedBlock('campaigns', upper);
-    cursor = upper + 1n;
-  }
-
-
-  const { data: existingCampaignRows } = await supabaseAdmin
-    .from('campaigns')
-    .select('address');
-
-  const allCampaignAddresses = new Set(
-    (existingCampaignRows ?? [])
-      .map((row) => row.address?.toLowerCase?.())
-      .filter(Boolean),
-  );
-  for (const addr of discoveredCampaignAddresses) {
-    if (addr) {
-      allCampaignAddresses.add(addr.toLowerCase());
+      processed++;
+    } catch (error) {
+      console.error(`[Indexer] ❌ Erreur ${campaign.address}:`, error.message);
     }
   }
 
-  await refreshExistingCampaigns();
+  console.log(`[Indexer] ✅ ${processed}/${campaigns.length} campagnes mises à jour`);
 
-  await syncCampaignTransactions([...allCampaignAddresses], startBlock, currentBlock);
+  // 3. Sync des transactions via appels RPC directs (getInvestments)
+  const campaignAddresses = campaigns.map(c => c.address.toLowerCase());
+  await syncCampaignTransactionsFromContract(campaignAddresses);
 
-  console.log(`[Indexer] Total de logs traités : ${totalLogs}`);
+  await updateLastSyncedBlock('campaigns', currentBlock);
 
   return { processed };
 }
 
+async function syncCampaignTransactionsFromContract(campaignAddresses) {
+  console.log('[Indexer][Tx] 🔄 Récupération transactions via fonctions contrat...');
+
+  for (const campaignAddress of campaignAddresses) {
+    try {
+      // 1. Récupérer totalSupply (nombre de NFTs)
+      const totalSupply = await publicClient.readContract({
+        address: campaignAddress,
+        abi: CAMPAIGN_ABI,
+        functionName: 'totalSupply',
+      });
+
+      const supply = Number(totalSupply.toString());
+      if (supply === 0) {
+        console.log(`[Indexer][Tx] ⚠️ ${campaignAddress}: Aucun NFT`);
+        continue;
+      }
+
+      console.log(`[Indexer][Tx] 📋 ${campaignAddress}: ${supply} NFT(s)`);
+
+      // 2. Récupérer les propriétaires uniques
+      const owners = new Set();
+      for (let tokenId = 0; tokenId < supply; tokenId++) {
+        try {
+          const owner = await publicClient.readContract({
+            address: campaignAddress,
+            abi: CAMPAIGN_ABI,
+            functionName: 'ownerOf',
+            args: [BigInt(tokenId)],
+          });
+          owners.add(owner.toLowerCase());
+        } catch (error) {
+          // NFT brûlé ou erreur
+        }
+      }
+
+      console.log(`[Indexer][Tx] 👥 ${campaignAddress}: ${owners.size} investisseur(s)`);
+
+      // 3. Pour chaque investisseur, récupérer ses investissements
+      for (const investor of owners) {
+        try {
+          const investments = await publicClient.readContract({
+            address: campaignAddress,
+            abi: CAMPAIGN_ABI,
+            functionName: 'getInvestments',
+            args: [investor],
+          });
+
+          // Insérer dans la DB
+          for (const inv of investments) {
+            // Générer un hash valide au format 0x[64 hex chars]
+            const compositeKey = `${campaignAddress}-${investor}-${inv.timestamp.toString()}`;
+            const txHash = keccak256(toHex(compositeKey));
+
+            // Stocker en Wei (string) pour éviter les pertes de précision
+            const amountWei = inv.amount.toString();
+            const commissionWei = ((inv.amount * 12n) / 100n).toString();
+            const netAmountWei = (inv.amount - (inv.amount * 12n) / 100n).toString();
+
+            const payload = {
+              tx_hash: txHash,
+              campaign_address: campaignAddress,
+              investor: investor,
+              amount: amountWei,
+              shares: inv.shares.toString(),
+              round_number: inv.roundNumber.toString(),
+              type: 'purchase',
+              block_number: 0,
+              timestamp: new Date(Number(inv.timestamp) * 1000).toISOString(),
+              commission: commissionWei,
+              net_amount: netAmountWei,
+            };
+
+            const { data, error } = await supabaseAdmin
+              .from('campaign_transactions')
+              .upsert(payload, { onConflict: 'tx_hash' });
+
+            if (error) {
+              console.error(`[Indexer][Tx] ❌ Erreur insertion ${txHash}:`, error.message);
+            }
+          }
+
+          console.log(`[Indexer][Tx] ✅ ${investor}: ${investments.length} transaction(s)`);
+        } catch (error) {
+          console.warn(`[Indexer][Tx] ⚠️ Erreur ${investor}:`, error.message);
+        }
+      }
+    } catch (error) {
+      console.error(`[Indexer][Tx] ❌ Erreur ${campaignAddress}:`, error.message);
+    }
+  }
+
+  console.log('[Indexer][Tx] ✅ Transactions récupérées');
+}
+
 async function fetchCampaignDetails(campaignAddress) {
-  const [name, symbol, currentRoundRaw, totalSupply, registry] = await Promise.all([
+  console.log(`[Indexer] 📞 Appels RPC pour ${campaignAddress}...`);
+
+  // TOUS LES APPELS RPC EN PARALLÈLE
+  const [
+    name,
+    symbol,
+    currentRoundRaw,
+    totalSupply,
+    registry,
+    startup,
+    totalSharesIssued,
+    totalDividendsDeposited,
+    dividendsPerShare,
+    escrowInfo,
+    nftBackgroundColor,
+    nftTextColor,
+    nftLogoUrl,
+    nftSector
+  ] = await Promise.all([
     publicClient.readContract({
       address: campaignAddress,
       abi: CAMPAIGN_ABI,
@@ -144,37 +222,77 @@ async function fetchCampaignDetails(campaignAddress) {
       functionName: 'getCampaignRegistry',
       args: [campaignAddress],
     }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'startup',
+    }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'totalSharesIssued',
+    }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'totalDividendsDeposited',
+    }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'dividendsPerShare',
+    }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'getEscrowInfo',
+    }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'nftBackgroundColor',
+    }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'nftTextColor',
+    }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'nftLogoUrl',
+    }),
+    publicClient.readContract({
+      address: campaignAddress,
+      abi: CAMPAIGN_ABI,
+      functionName: 'nftSector',
+    }),
   ]);
 
-  const roundIndexValue = Array.isArray(currentRoundRaw)
-    ? currentRoundRaw[0]
-    : currentRoundRaw;
-  const roundIndex = typeof roundIndexValue === 'object' && roundIndexValue?.toString
-    ? Number(roundIndexValue.toString())
-    : Number(roundIndexValue);
+  const roundIndexValue = Array.isArray(currentRoundRaw) ? currentRoundRaw[0] : currentRoundRaw;
+  const roundIndex = Number(roundIndexValue?.toString?.() ?? roundIndexValue);
 
   if (!Number.isFinite(roundIndex) || roundIndex < 0) {
     throw new Error(`Invalid round index for ${campaignAddress}: ${currentRoundRaw}`);
   }
 
-  const roundData = Array.isArray(currentRoundRaw)
-    ? currentRoundRaw
-    : await publicClient.readContract({
-        address: campaignAddress,
-        abi: CAMPAIGN_ABI,
-        functionName: 'rounds',
-        args: [BigInt(roundIndex)],
-      });
+  const roundData = Array.isArray(currentRoundRaw) ? currentRoundRaw : [];
 
-  const sharePrice = formatEther(roundData[1]);
-  const targetAmount = formatEther(roundData[2]);
-  const fundsRaised = formatEther(roundData[3]);
-  const sharesSold = roundData[4].toString();
-  const endTime = Number(roundData[5]);
+  const sharePrice = formatEther(roundData[1] ?? 0n);
+  const targetAmount = formatEther(roundData[2] ?? 0n);
+  const fundsRaised = formatEther(roundData[3] ?? 0n);
+  const sharesSold = roundData[4]?.toString() ?? '0';
+  const endTime = Number(roundData[5] ?? 0);
   const isActive = Boolean(roundData[6]);
   const isFinalized = Boolean(roundData[7]);
 
   const status = determineStatus({ isActive, isFinalized, endTime });
+
+  // Escrow info
+  const escrowAmount = escrowInfo[0] ? formatEther(escrowInfo[0]) : '0';
+  const escrowReleaseTime = Number(escrowInfo[1] ?? 0);
+  const escrowTimeRemaining = Number(escrowInfo[2] ?? 0);
+  const escrowIsReleased = Boolean(escrowInfo[3]);
 
   return {
     name,
@@ -192,6 +310,21 @@ async function fetchCampaignDetails(campaignAddress) {
     category: registry.category,
     logo: registry.logo,
     currentRound: roundIndex,
+    creator: startup?.toLowerCase?.() ?? registry.creator?.toLowerCase?.() ?? null,
+    nftBackgroundColor: nftBackgroundColor ?? '',
+    nftTextColor: nftTextColor ?? '',
+    nftLogoUrl: nftLogoUrl ?? '',
+    nftSector: nftSector ?? '',
+    totalSharesIssued: totalSharesIssued?.toString() ?? '0',
+    totalDividendsDeposited: totalDividendsDeposited ? formatEther(totalDividendsDeposited) : '0',
+    dividendsPerShare: dividendsPerShare ? formatEther(dividendsPerShare) : '0',
+    escrowAmount,
+    escrowReleaseTime: escrowReleaseTime > 0 ? new Date(escrowReleaseTime * 1000).toISOString() : null,
+    escrowTimeRemaining,
+    escrowIsReleased,
+    roundSharePrice: sharePrice,
+    roundTargetAmount: targetAmount,
+    roundEndTime: endTime > 0 ? endTime : null,
   };
 }
 
@@ -222,7 +355,39 @@ async function persistCampaign(payload) {
     category,
     logo,
     currentRound,
+    nftBackgroundColor,
+    nftTextColor,
+    nftLogoUrl,
+    nftSector,
+    totalSharesIssued,
+    totalDividendsDeposited,
+    dividendsPerShare,
+    escrowAmount,
+    escrowReleaseTime,
+    escrowTimeRemaining,
+    escrowIsReleased,
+    roundSharePrice,
+    roundTargetAmount,
+    roundEndTime,
   } = payload;
+
+  // Calculer progress_percentage
+  const goalNum = parseFloat(goal || '0');
+  const raisedNum = parseFloat(raised || '0');
+  const progressPercentage = goalNum > 0 ? Math.min((raisedNum / goalNum) * 100, 100) : 0;
+
+  // Compter total_transactions et unique_investors depuis la DB
+  const { count: txCount } = await supabaseAdmin
+    .from('campaign_transactions')
+    .select('*', { count: 'exact', head: true })
+    .eq('campaign_address', address);
+
+  const { data: investors } = await supabaseAdmin
+    .from('campaign_transactions')
+    .select('investor')
+    .eq('campaign_address', address);
+
+  const uniqueInvestors = new Set((investors || []).map(i => i.investor)).size;
 
   const upsertPayload = {
     address,
@@ -242,6 +407,17 @@ async function persistCampaign(payload) {
     category,
     logo,
     current_round: currentRound,
+    nft_background_color: nftBackgroundColor || '',
+    nft_text_color: nftTextColor || '',
+    nft_logo_url: nftLogoUrl || null,
+    nft_sector: nftSector || null,
+    round_share_price: roundSharePrice ?? sharePrice,
+    round_target_amount: roundTargetAmount ?? goal,
+    round_end_time: roundEndTime ?? endDate,
+    total_investors: uniqueInvestors,
+    unique_investors: uniqueInvestors,
+    total_transactions: txCount || 0,
+    progress_percentage: progressPercentage,
     updated_at: new Date().toISOString(),
   };
 
@@ -252,117 +428,26 @@ async function persistCampaign(payload) {
   await supabaseAdmin.from('campaigns').upsert(upsertPayload);
 }
 
-async function syncCampaignTransactions(campaignAddresses, startBlock, currentBlock) {
-  if (!Array.isArray(campaignAddresses) || campaignAddresses.length === 0) {
-    console.log('[Indexer][Tx] Aucune campagne à synchroniser');
-    return;
+export async function syncSingleCampaign(address) {
+  if (!address) {
+    throw new Error('syncSingleCampaign: address is required');
+  }
+  const campaignAddress = address.toLowerCase();
+  const details = await fetchCampaignDetails(campaignAddress);
+  if (!details) {
+    throw new Error(`syncSingleCampaign: unable to fetch details for ${campaignAddress}`);
   }
 
-  const txFromBlock = await getLastSyncedBlock('campaign_transactions');
-  const txStartBlock = txFromBlock > 0n ? txFromBlock + 1n : startBlock;
-  if (txStartBlock > currentBlock) {
-    console.log('[Indexer][Tx] Transactions déjà à jour');
-    return;
-  }
+  await persistCampaign({
+    address: campaignAddress,
+    creator: details.creator ?? null,
+    blockNumber: 0n,
+    ...details,
+  });
 
-  const uniqueAddresses = Array.from(new Set(
-    campaignAddresses
-      .map((addr) => addr?.toLowerCase?.())
-      .filter(Boolean),
-  ));
+  await syncCampaignTransactionsFromContract([campaignAddress]);
 
-  console.log(
-    `[Indexer][Tx] Synchronisation des transactions depuis le bloc ${txStartBlock.toString()} jusqu'au bloc ${currentBlock.toString()} (${uniqueAddresses.length} campagnes)`
-  );
-
-  const addressChunks = chunkArray(uniqueAddresses, 40);
-  let cursor = txStartBlock;
-
-  while (cursor <= currentBlock) {
-    const upper = cursor + BLOCK_CHUNK - 1n > currentBlock ? currentBlock : cursor + BLOCK_CHUNK - 1n;
-    let totalForRange = 0;
-
-    for (const addressChunk of addressChunks) {
-      if (!addressChunk || addressChunk.length === 0) continue;
-
-      try {
-        const logs = await publicClient.getLogs({
-          address: addressChunk,
-          event: EVENT_SHARES_PURCHASED,
-          fromBlock: cursor,
-          toBlock: upper,
-        });
-
-        totalForRange += logs.length;
-        if (logs.length === 0) continue;
-
-        const rows = logs.map((log) => {
-          const investor = log.args?.investor;
-          const amount = log.args?.amount;
-          const shares = log.args?.shares;
-          const timestamp = log.args?.timestamp;
-          const blockNumber = log.blockNumber ?? upper;
-
-          const amountEth = amount !== undefined ? formatEther(amount) : '0';
-          const timestampSeconds = typeof timestamp === 'object' && timestamp?.toString
-            ? Number(timestamp.toString())
-            : Number(timestamp ?? 0);
-          const isoTimestamp = Number.isFinite(timestampSeconds) && timestampSeconds > 0
-            ? new Date(timestampSeconds * 1000).toISOString()
-            : new Date().toISOString();
-
-          return {
-            tx_hash: log.transactionHash,
-            campaign_address: log.address.toLowerCase(),
-            investor: investor?.toLowerCase?.() ?? investor,
-            amount: amountEth,
-            shares: shares?.toString?.() ?? '0',
-            type: 'purchase',
-            block_number: Number(blockNumber),
-            timestamp: isoTimestamp,
-          };
-        });
-
-        await supabaseAdmin
-          .from('campaign_transactions')
-          .upsert(rows, { onConflict: 'tx_hash' });
-      } catch (error) {
-        console.warn('[Indexer][Tx] Erreur lors de la récupération des transactions:', error.message);
-      }
-    }
-
-    console.log(`[Indexer][Tx] Blocs ${cursor.toString()} -> ${upper.toString()} : ${totalForRange} transactions`);
-    await updateLastSyncedBlock('campaign_transactions', upper);
-    cursor = upper + 1n;
-  }
-}
-
-function chunkArray(list, size) {
-  if (!Array.isArray(list) || size <= 0) return [];
-  const chunks = [];
-  for (let i = 0; i < list.length; i += size) {
-    chunks.push(list.slice(i, i + size));
-  }
-  return chunks;
-}
-
-
-async function refreshExistingCampaigns() {
-  const { data: campaigns } = await supabaseAdmin
-    .from('campaigns')
-    .select('address, creator');
-
-  if (!campaigns) return;
-
-  for (const row of campaigns) {
-    try {
-      const address = row.address;
-      const details = await fetchCampaignDetails(address);
-      await persistCampaign({ address, creator: row.creator, blockNumber: 0n, ...details });
-    } catch (error) {
-      console.error('[Indexer] Failed to refresh campaign', row.address, error);
-    }
-  }
+  return { address: campaignAddress };
 }
 
 async function getLastSyncedBlock(id) {

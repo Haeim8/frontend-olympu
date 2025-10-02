@@ -36,7 +36,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
   // Récupérer l'adresse du wallet (remplace useAddress de ThirdWeb)
   const [userAddress, setUserAddress] = useState(null);
-  
+
   useEffect(() => {
     if (typeof window !== 'undefined' && window.ethereum) {
       window.ethereum.request({ method: 'eth_accounts' })
@@ -58,32 +58,90 @@ export default function ProjectDetails({ selectedProject, onClose }) {
     if (!project?.id) return;
 
     try {
-      setIsLoading(true);
+      // 1. CHECK CACHE ET AFFICHER IMMÉDIATEMENT
+      const cacheKey = `campaign_${project.id}`;
+      const txCacheKey = `campaign_transactions_${project.id}`;
+
+      const cachedCampaign = apiManager.cache.get(cacheKey);
+      const cachedTx = apiManager.cache.get(txCacheKey);
+
+      if (cachedCampaign) {
+        console.log('✅ Cache hit - affichage immédiat');
+        setProjectData(cachedCampaign);
+        setIsLoading(false);
+
+        if (cachedTx?.transactions) {
+          setTransactions(cachedTx.transactions);
+        }
+      } else {
+        setIsLoading(true);
+      }
+
       setError(null);
 
-      // Utiliser seulement les données blockchain - pas de système centralisé
-      const [projectDetails, ipfsDocuments] = await Promise.all([
-        apiManager.getCampaignData(project.id),
-        apiManager.getCampaignDocuments(project.id)
+      // 2. REFRESH EN BACKGROUND (ne bloque pas UI)
+      const [projectDetails, txData] = await Promise.all([
+        apiManager.getCampaignData(project.id, false),
+        fetch(`/api/campaigns/${project.id}/transactions`).then(r => r.json())
       ]);
 
       if (projectDetails) {
-        const combinedData = {
+        console.log('🔍 ProjectDetails - projectDetails received from apiManager:', {
+          address: projectDetails.address,
+          name: projectDetails.name,
+          metadata_uri: projectDetails.metadata_uri,
+          metadataUri: projectDetails.metadataUri,
+          hasMetadataUri: !!(projectDetails.metadata_uri || projectDetails.metadataUri),
+          allKeys: Object.keys(projectDetails)
+        });
+
+        // 🚀 AFFICHER IMMÉDIATEMENT LES DONNÉES DE BASE (sans attendre IPFS)
+        const baseData = {
           ...projectDetails,
-          ipfs: ipfsDocuments
+          ipfs: null, // Sera chargé après
+          documents: [],
         };
-        console.log('🔍 Combined project data:', combinedData);
-        console.log('🔍 IPFS documents:', ipfsDocuments);
-        setProjectData(combinedData);
+        setProjectData(baseData);
+
+        // 3️⃣ CHARGER IPFS EN ARRIÈRE-PLAN (NON-BLOQUANT)
+        const { getCampaignMetadata } = await import('@/lib/services/ipfs-fetcher.js');
+        console.log('🔍 ProjectDetails - Loading IPFS in background...');
+
+        getCampaignMetadata(projectDetails)
+          .then(metadata => {
+            console.log('🔍 ProjectDetails - IPFS metadata loaded:', metadata);
+
+            const combinedData = {
+              ...projectDetails,
+              ...metadata.ipfs,
+              ipfs: metadata.ipfs,
+              documents: metadata.documents,
+            };
+
+            console.log('🔍 Combined project data:', combinedData);
+
+            // Mise à jour silencieuse avec données IPFS
+            setProjectData(combinedData);
+            apiManager.cache.set(cacheKey, combinedData);
+          })
+          .catch(err => {
+            console.warn('⚠️ IPFS loading failed, using base data:', err);
+            // Pas grave, on garde les données de base
+          });
       }
 
-      // TODO: Récupérer les transactions depuis la blockchain directement
-      // Pour l'instant on laisse vide en attendant l'implémentation on-chain
-      setTransactions([]);
+      // Charger les transactions depuis Supabase
+      if (txData?.transactions) {
+        setTransactions(txData.transactions);
+        apiManager.cache.set(txCacheKey, txData);
+        console.log('🔍 Transactions:', txData.transactions);
+      }
 
     } catch (error) {
       console.error('Erreur lors du chargement des données du projet:', error);
-      setError(error.message || 'Impossible de charger les données du projet');
+      if (!cachedCampaign) {
+        setError(error.message || 'Impossible de charger les données du projet');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -113,39 +171,57 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       });
 
       if (receipt?.transactionHash) {
-        console.log(t('projectDetails.transactionConfirmed'), receipt.transactionHash);
-        
+        console.log('Transaction confirmée', receipt.transactionHash);
+
         // Invalider le cache pour recharger les données mises à jour
         apiManager.invalidateCache(`campaign_${project.id}`);
         apiManager.invalidateCache(`transactions_${project.id}`);
-        
-        // Recharger les données
+
+        // 🚀 SYNC EN ARRIÈRE-PLAN (NON-BLOQUANT)
+        // Ne pas attendre la sync pour ne pas bloquer l'UI
+        fetch('/api/campaigns/sync-single', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ address: project.id }),
+        })
+          .then(() => {
+            console.log('✅ Sync terminée en arrière-plan');
+            // Recharger silencieusement après sync
+            loadProjectData();
+          })
+          .catch(syncError => {
+            console.warn('⚠️ sync-single après achat échoué:', syncError);
+            // Pas grave, recharger quand même
+            loadProjectData();
+          });
+
+        // Recharger les données IMMÉDIATEMENT (sans attendre la sync)
         loadProjectData();
-        
+
         setError(null);
       }
     } catch (err) {
-      console.error(t('projectDetails.purchaseError'), err);
-      setError(err.message || t('projectDetails.transactionError'));
+      console.error('Erreur lors de l\'achat', err);
+      setError(err.message || 'Erreur lors de la transaction');
     }
-  }, [userAddress, project.sharePrice, project.id, loadProjectData, t]);
+  }, [userAddress, project.sharePrice, project.id, loadProjectData]);
 
   const handleShare = useCallback(() => {
-    if (navigator.share) {
-      navigator.share({
-        title: project.name,
-        text: `Découvrez le projet ${project.name} sur Livar`,
-        url: window.location.href
+    // Copier directement le lien dans le presse-papier
+    navigator.clipboard.writeText(window.location.href)
+      .then(() => {
+        // Optionnel : afficher une notification de succès
+        console.log('Lien copié !');
+      })
+      .catch(err => {
+        console.error('Erreur lors de la copie:', err);
       });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      // Vous pouvez ajouter une notification toast ici
-    }
-  }, [project.name]);
+  }, []);
 
   const handleFavorite = useCallback(() => {
     setIsFavorite(!isFavorite);
-    // Vous pouvez ajouter la logique de sauvegarde des favoris ici
   }, [isFavorite]);
 
   const handleRefresh = useCallback(() => {
@@ -188,59 +264,81 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
   return (
     <Dialog open={showProjectDetails} onOpenChange={() => { setShowProjectDetails(false); onClose(); }}>
-      <DialogContent className="bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 max-w-6xl max-h-[95vh] overflow-hidden p-0">
-        <div className="h-full max-h-[95vh] overflow-y-auto">
-          {/* Tout le contenu est maintenant scrollable */}
-          <div className="p-6">
-            {/* Header */}
-            <ProjectHeader
-              project={project}
-              projectData={projectData}
-              isFavorite={isFavorite}
-              onFavorite={handleFavorite}
-              onShare={handleShare}
-            />
-            
-            {/* Séparateur */}
-            <div className="border-b border-gray-200 dark:border-neutral-800 my-6"></div>
-            {/* Share Selector */}
-            <ShareSelector
-              project={project}
-              onBuyShares={handleBuyShares}
-              isLoading={isLoading}
-            />
+      <DialogContent className="bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 max-w-6xl w-[95vw] max-h-[95vh] p-0 overflow-hidden border border-gray-200 dark:border-neutral-800">
 
-            {/* Tabs */}
-            <Tabs defaultValue="overview" className="w-full mt-8">
-              <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-neutral-800">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-lime-500 data-[state=active]:text-white">
-                  {t('projectDetails.tabs.overview')}
-                </TabsTrigger>
-                <TabsTrigger value="details" className="data-[state=active]:bg-lime-500 data-[state=active]:text-white">
-                  {t('projectDetails.tabs.details')}
-                </TabsTrigger>
-                <TabsTrigger value="transactions" className="data-[state=active]:bg-lime-500 data-[state=active]:text-white">
-                  {t('projectDetails.tabs.transactions')}
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="mt-6">
-                <ProjectOverview project={project} />
-              </TabsContent>
-
-              <TabsContent value="details" className="mt-6">
-                <ProjectDetailsTab projectData={projectData} />
-              </TabsContent>
-
-              <TabsContent value="transactions" className="mt-6">
-                <ProjectTransactions 
-                  transactions={transactions} 
-                  isLoading={isLoading} 
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
+        {/* Header moderne et compact */}
+        <div className="border-b border-gray-200 dark:border-neutral-800 px-6 py-4 bg-gradient-to-r from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-950">
+          <ProjectHeader
+            project={project}
+            projectData={projectData}
+            isFavorite={isFavorite}
+            onFavorite={handleFavorite}
+            onShare={handleShare}
+          />
         </div>
+
+        {/* Tabs horizontaux modernes */}
+        <Tabs defaultValue="overview" className="flex flex-col h-[calc(95vh-120px)]">
+          <TabsList className="w-full bg-gray-100 dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800 rounded-none px-6 py-2 flex justify-center gap-2">
+            <TabsTrigger
+              value="overview"
+              className="data-[state=active]:bg-lime-500 data-[state=active]:text-white px-6 py-2 rounded-lg transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span className="hidden sm:inline">{t('projectDetails.tabs.overview')}</span>
+              </div>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="details"
+              className="data-[state=active]:bg-lime-500 data-[state=active]:text-white px-6 py-2 rounded-lg transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="hidden sm:inline">{t('projectDetails.tabs.details')}</span>
+              </div>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="transactions"
+              className="data-[state=active]:bg-lime-500 data-[state=active]:text-white px-6 py-2 rounded-lg transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <span className="hidden sm:inline">{t('projectDetails.tabs.transactions')}</span>
+              </div>
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="flex-1 overflow-y-auto">
+            <TabsContent value="overview" className="m-0 p-6 space-y-6">
+              <ShareSelector
+                project={project}
+                onBuyShares={handleBuyShares}
+                isLoading={isLoading}
+              />
+              <ProjectOverview project={project} projectData={projectData} />
+            </TabsContent>
+
+            <TabsContent value="details" className="m-0 p-6">
+              <ProjectDetailsTab projectData={projectData} />
+            </TabsContent>
+
+            <TabsContent value="transactions" className="m-0 p-6">
+              <ProjectTransactions
+                transactions={transactions}
+                isLoading={isLoading}
+              />
+            </TabsContent>
+          </div>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
