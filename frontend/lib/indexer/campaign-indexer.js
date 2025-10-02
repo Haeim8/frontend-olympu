@@ -2,13 +2,33 @@ import { baseSepolia } from 'viem/chains';
 import { createPublicClient, http, parseAbiItem, formatEther, keccak256, toHex } from 'viem';
 import path from 'path';
 import dotenv from 'dotenv';
+import { pathToFileURL } from 'url';
+import { readFile } from 'fs/promises';
+import { fileURLToPath } from 'url';
 
-// Import direct des ABIs (fonctionne sur Vercel)
-import DivarProxyArtifact from '../../ABI/DivarProxyABI.json' assert { type: 'json' };
-import CampaignArtifact from '../../ABI/CampaignABI.json' assert { type: 'json' };
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+// Import ABIs - avec fallback pour Vercel
+let DivarProxyArtifact, CampaignArtifact;
+try {
+  // Essayer d'abord l'import dynamique (dev)
+  DivarProxyArtifact = JSON.parse(
+    await readFile(path.resolve(__dirname, '../../ABI/DivarProxyABI.json'), 'utf-8')
+  );
+  CampaignArtifact = JSON.parse(
+    await readFile(path.resolve(__dirname, '../../ABI/CampaignABI.json'), 'utf-8')
+  );
+} catch (error) {
+  // Fallback : import statique pour Vercel
+  const DivarProxy = await import('../../ABI/DivarProxyABI.json');
+  const Campaign = await import('../../ABI/CampaignABI.json');
+  DivarProxyArtifact = DivarProxy.default || DivarProxy;
+  CampaignArtifact = Campaign.default || Campaign;
+}
 
 const { supabaseAdmin } = await import('../supabase/server.js');
 
