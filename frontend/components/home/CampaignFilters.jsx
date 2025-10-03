@@ -32,7 +32,14 @@ export default function CampaignFilters({
   const [showOnlyHot, setShowOnlyHot] = useState(filters.hot || false);
 
   const sectors = [
-    'Tech', 'Finance', 'DeFi', 'Gaming', 'NFT', 'Blockchain', 'Infrastructure', 'Industrie'
+    { value: 'Tech', label: t('filters.sectors.tech') },
+    { value: 'Finance', label: t('filters.sectors.finance') },
+    { value: 'DeFi', label: t('filters.sectors.defi') },
+    { value: 'Gaming', label: t('filters.sectors.gaming') },
+    { value: 'NFT', label: t('filters.sectors.nft') },
+    { value: 'Blockchain', label: t('filters.sectors.blockchain') },
+    { value: 'Infrastructure', label: t('filters.sectors.infrastructure') },
+    { value: 'Industrie', label: t('filters.sectors.industry') }
   ];
 
   const sortOptions = [
@@ -108,7 +115,7 @@ export default function CampaignFilters({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher une campagne..."
+            placeholder={t('filters.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-transparent transition-all duration-200"
@@ -148,7 +155,7 @@ export default function CampaignFilters({
           className="relative border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-900"
         >
           <Filter className="h-4 w-4 mr-2" />
-          Filtres
+          {t('filters.title')}
           {activeFiltersCount > 0 && (
             <Badge className="ml-2 bg-lime-500 text-white text-xs px-2 py-0.5">
               {activeFiltersCount}
@@ -172,9 +179,9 @@ export default function CampaignFilters({
           }`}
         >
           <CheckCircle className="h-4 w-4 mr-1" />
-          Certifiés
+          {t('filters.certified')}
         </Button>
-        
+
         <Button
           variant={showOnlyHot ? "default" : "outline"}
           size="sm"
@@ -182,13 +189,13 @@ export default function CampaignFilters({
             setShowOnlyHot(!showOnlyHot);
             applyFilters({ hot: !showOnlyHot });
           }}
-          className={`${showOnlyHot 
-            ? 'bg-orange-500 hover:bg-orange-600 text-white' 
+          className={`${showOnlyHot
+            ? 'bg-orange-500 hover:bg-orange-600 text-white'
             : 'border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-900'
           }`}
         >
           <Star className="h-4 w-4 mr-1" />
-          Populaires
+          {t('filters.popular')}
         </Button>
       </div>
 
@@ -197,20 +204,20 @@ export default function CampaignFilters({
         <div className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-xl p-6 space-y-6 animate-in slide-in-from-top-4 duration-300">
           {/* Secteurs */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Secteurs</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('filters.sectorsTitle')}</h3>
             <div className="flex flex-wrap gap-2">
               {sectors.map(sector => (
                 <Badge
-                  key={sector}
-                  variant={selectedSectors.includes(sector) ? "default" : "outline"}
+                  key={sector.value}
+                  variant={selectedSectors.includes(sector.value) ? "default" : "outline"}
                   className={`cursor-pointer transition-all duration-200 ${
-                    selectedSectors.includes(sector)
+                    selectedSectors.includes(sector.value)
                       ? 'bg-lime-500 hover:bg-lime-600 text-white'
                       : 'border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-900'
                   }`}
-                  onClick={() => handleSectorToggle(sector)}
+                  onClick={() => handleSectorToggle(sector.value)}
                 >
-                  {sector}
+                  {sector.label}
                 </Badge>
               ))}
             </div>
@@ -218,10 +225,10 @@ export default function CampaignFilters({
 
           {/* Fourchette de prix */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Prix unitaire (ETH)</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">{t('filters.priceRange')}</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Min</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('filters.min')}</label>
                 <input
                   type="number"
                   placeholder="0.001"
@@ -231,7 +238,7 @@ export default function CampaignFilters({
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Max</label>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('filters.max')}</label>
                 <input
                   type="number"
                   placeholder="1.0"
@@ -246,7 +253,7 @@ export default function CampaignFilters({
           {/* Actions */}
           <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-neutral-800">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {totalCount} campagne{totalCount !== 1 ? 's' : ''} • {activeCount} active{activeCount !== 1 ? 's' : ''}
+              {totalCount} {t('filters.campaign')}{totalCount !== 1 ? 's' : ''} • {activeCount} {t('filters.active')}{activeCount !== 1 ? 's' : ''}
             </div>
             <div className="flex gap-2">
               {activeFiltersCount > 0 && (
@@ -257,7 +264,7 @@ export default function CampaignFilters({
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 >
                   <X className="h-4 w-4 mr-1" />
-                  Effacer
+                  {t('filters.clear')}
                 </Button>
               )}
               <Button
@@ -265,7 +272,7 @@ export default function CampaignFilters({
                 onClick={() => setIsExpanded(false)}
                 className="bg-lime-500 hover:bg-lime-600 text-white"
               >
-                Appliquer
+                {t('filters.apply')}
               </Button>
             </div>
           </div>

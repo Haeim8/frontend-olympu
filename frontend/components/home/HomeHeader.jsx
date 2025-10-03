@@ -62,7 +62,7 @@ export default function HomeHeader({
               </div>
 
               <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
-                Projets <span className="bg-gradient-to-r from-lime-500 to-blue-600 bg-clip-text text-transparent">en financement</span>
+                {t('header.title_part1')} <span className="bg-gradient-to-r from-lime-500 to-blue-600 bg-clip-text text-transparent">{t('header.title_part2')}</span>
               </h1>
 
               {/* Stats inline */}

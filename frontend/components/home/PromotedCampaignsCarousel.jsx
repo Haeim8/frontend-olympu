@@ -13,19 +13,19 @@ import { useTranslation } from '@/hooks/useLanguage';
 const PROMOTION_TYPES = {
   featured: {
     icon: Star,
-    label: 'En vedette',
+    labelKey: 'promoted.featured',
     color: 'from-yellow-400 to-orange-500',
     badge: 'bg-yellow-500',
   },
   trending: {
     icon: TrendingUp,
-    label: 'Tendance',
+    labelKey: 'promoted.trending',
     color: 'from-purple-400 to-pink-500',
     badge: 'bg-purple-500',
   },
   spotlight: {
     icon: Zap,
-    label: 'Coup de projecteur',
+    labelKey: 'promoted.spotlight',
     color: 'from-blue-400 to-cyan-500',
     badge: 'bg-blue-500',
   },
@@ -166,10 +166,10 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
             </div>
             <div>
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Campagnes en vedette
+                {t('promoted.title')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Découvrez nos projets mis en avant
+                {t('promoted.subtitle')}
               </p>
             </div>
           </div>
@@ -235,7 +235,7 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
                           <div className="absolute top-4 right-4">
                             <Badge className={`${promotionInfo.badge} text-white flex items-center gap-2 px-3 py-1.5`}>
                               <PromotionIcon className="w-4 h-4" />
-                              {promotionInfo.label}
+                              {t(promotionInfo.labelKey)}
                             </Badge>
                           </div>
                         </div>
@@ -261,19 +261,19 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
                             <div className="text-2xl font-bold text-lime-600 dark:text-lime-400">
                               {currentCampaign.progress.toFixed(0)}%
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">Progression</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{t('promoted.progress')}</div>
                           </div>
                           <div>
                             <div className="text-2xl font-bold text-gray-900 dark:text-white">
                               {parseFloat(currentCampaign.raised).toFixed(4)} ETH
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">Levés</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{t('promoted.raised')}</div>
                           </div>
                           <div>
                             <div className="text-2xl font-bold text-gray-900 dark:text-white">
                               {currentCampaign.investors}
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">Investisseurs</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{t('promoted.investors')}</div>
                           </div>
                         </div>
 
@@ -292,7 +292,7 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
                           onClick={() => onViewCampaign?.(currentCampaign)}
                           className={`w-full bg-gradient-to-r ${promotionInfo.color} hover:opacity-90 text-white font-semibold py-6 text-lg`}
                         >
-                          Découvrir le projet
+                          {t('promoted.discover')}
                           <ExternalLink className="w-5 h-5 ml-2" />
                         </Button>
                       </div>
@@ -325,7 +325,7 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
         {/* Campagnes count */}
         <div className="text-center mt-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {currentIndex + 1} / {campaigns.length} campagnes promues
+            {currentIndex + 1} / {campaigns.length} {t('promoted.count')}
           </p>
         </div>
       </div>
