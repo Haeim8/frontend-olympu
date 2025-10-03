@@ -166,7 +166,7 @@ export default function Wallet() {
   // Rendu conditionnel si pas d'adresse connectée
   if (!address) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md mx-auto text-center space-y-6 p-8">
           <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl flex items-center justify-center mx-auto">
             <WifiOff className="w-10 h-10 text-blue-600 dark:text-blue-400" />
@@ -191,8 +191,8 @@ export default function Wallet() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
-      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+    <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8 relative z-10">
         
         {/* Header principal */}
         <WalletHeader

@@ -13,6 +13,7 @@ import ConnectPrompt from './app/ConnectPrompt';
 import { useDisconnect, useAccount } from 'wagmi';
 import { apiManager } from '@/lib/services/api-manager';
 import { useFavoritesAndInvestments } from '@/hooks/useFavoritesAndInvestments';
+import { BackgroundRippleEffect } from './ui/BackgroundRippleEffect';
 
 export default function AppInterface() {
   const { theme, setTheme } = useTheme();
@@ -169,9 +170,15 @@ export default function AppInterface() {
           setShowMobileMenu={setShowMobileMenu}
           hasCampaign={hasCampaign}
         />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-neutral-950 transition-all duration-300 ease-in-out">
-          {renderActivePage()}
-          
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-neutral-950 transition-all duration-300 ease-in-out relative">
+          {/* Background grille ripple subtil */}
+          <BackgroundRippleEffect rows={8} cols={25} cellSize={40} />
+
+          {/* Contenu des pages */}
+          <div className="relative z-10">
+            {renderActivePage()}
+          </div>
+
           {/* Debug info en développement */}
           {process.env.NODE_ENV === 'development' && (
             <div className="fixed bottom-4 right-4 p-2 bg-gray-800 text-white text-xs rounded max-w-xs">

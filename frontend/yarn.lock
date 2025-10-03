@@ -10844,7 +10844,9 @@ __metadata:
     tailwind-merge: "npm:^2.5.2"
     tailwindcss: "npm:^3.4.10"
     tailwindcss-animate: "npm:^1.0.7"
+    three: "npm:^0.180.0"
     typescript: "npm:^5.5.4"
+    vanta: "npm:^0.5.24"
     viem: "npm:^2.21.0"
     wagmi: "npm:^2.16.8"
     web3: "npm:^4.14.0"
@@ -19331,6 +19333,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"three@npm:^0.180.0":
+  version: 0.180.0
+  resolution: "three@npm:0.180.0"
+  checksum: 10c0/2b5954b3e0946676cd606f126b1fbbe337ab6e72ae5a25b3eadbf1b8c502c17f21d851b9f5fe035edd48736306e339f143b5ee9cd4e91a2e614681abacef08de
+  languageName: node
+  linkType: hard
+
 "throttled-queue@npm:^2.1.2":
   version: 2.1.4
   resolution: "throttled-queue@npm:2.1.4"
@@ -20260,6 +20269,13 @@ __metadata:
     react:
       optional: true
   checksum: 10c0/514b8509308056e474c7d3ccfbbd6ac8e589740a92c53c53c78591a217e14da0694bd67f54195d8ec46920b6aab89eebab3c78c98c33d814b3606cdaacb6489b
+  languageName: node
+  linkType: hard
+
+"vanta@npm:^0.5.24":
+  version: 0.5.24
+  resolution: "vanta@npm:0.5.24"
+  checksum: 10c0/1cdcb4554509d0365c4a5430f8c3369d5147b50d5cf7622c161f08b3db954407d140328bc1d832ec87a02152d0f13df88f437ea22e1d5e770b82b94e0ffa0255
   languageName: node
   linkType: hard
 

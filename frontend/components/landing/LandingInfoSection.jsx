@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from '@/hooks/useLanguage';
+import { Wallet, BarChart3, Trophy, Shield } from 'lucide-react';
 
 const numberFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 0,
@@ -20,25 +21,25 @@ export function LandingInfoSection({ darkMode, stats, statsLoading }) {
     {
       title: t('landing.features.decentralizedFunding.title'),
       description: t('landing.features.decentralizedFunding.description'),
-      icon: "💸",
+      icon: Wallet,
       gradient: "from-blue-500 to-cyan-500",
     },
     {
       title: t('landing.features.realTimeInsights.title'),
       description: t('landing.features.realTimeInsights.description'),
-      icon: "📊",
+      icon: BarChart3,
       gradient: "from-purple-500 to-indigo-500",
     },
     {
       title: t('landing.features.transparentRewards.title'),
       description: t('landing.features.transparentRewards.description'),
-      icon: "🏆",
+      icon: Trophy,
       gradient: "from-yellow-500 to-orange-500",
     },
     {
       title: t('landing.features.maxSecurity.title'),
       description: t('landing.features.maxSecurity.description'),
-      icon: "🔒",
+      icon: Shield,
       gradient: "from-green-500 to-emerald-500",
     },
   ];
@@ -104,13 +105,13 @@ export function LandingInfoSection({ darkMode, stats, statsLoading }) {
               }}
             >
               <Card className={`h-full ${
-                darkMode 
-                  ? "bg-white/5 border border-white/10" 
+                darkMode
+                  ? "bg-white/5 border border-white/10"
                   : "bg-white/80 border border-white/30"
               } backdrop-blur-md shadow-2xl hover:shadow-lime-500/20 transition-all duration-300`}>
                 <CardContent className="p-6 text-center">
-                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${feature.gradient} flex items-center justify-center text-2xl shadow-lg transform hover:rotate-12 transition-transform duration-300`}>
-                    {feature.icon}
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${feature.gradient} flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform duration-300`}>
+                    <feature.icon className="w-8 h-8 text-white" strokeWidth={2} />
                   </div>
                   <h3 className={`text-lg font-bold mb-3 ${darkMode ? "text-white" : "text-gray-900"}`}>
                     {feature.title}

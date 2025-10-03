@@ -63,6 +63,8 @@
     "react-toastify": "^10.0.6",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "three": "^0.180.0",
+    "vanta": "^0.5.24",
     "viem": "^2.21.0",
     "wagmi": "^2.16.8",
     "web3": "^4.14.0"

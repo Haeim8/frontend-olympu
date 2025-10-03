@@ -290,8 +290,8 @@ export default function Home() {
   const activeVisible = filteredProjects.filter((project) => project.isActive && !project.isFinalized).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
-      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+    <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8 relative z-10">
         <HomeHeader
           showFinalized={showFinalized}
           setShowFinalized={setShowFinalized}
