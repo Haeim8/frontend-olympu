@@ -166,7 +166,7 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
             </div>
             <div>
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {t('promoted.title')}
+                {t('promoted.trending')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mt-1">
                 {t('promoted.subtitle')}

@@ -11,7 +11,6 @@ import CampaignGrid from '@/components/home/CampaignGrid';
 import { PromotedCampaignsCarousel } from '@/components/home/PromotedCampaignsCarousel';
 import CampaignModal from './CampaignModal';
 import ProjectDetails from './ProjectDetails';
-import { Sparkles } from 'lucide-react';
 
 const normalizeCampaign = (campaign) => {
   if (!campaign) return null;
@@ -300,19 +299,11 @@ export default function Home() {
           campaignStats={campaignStats}
         />
 
-        {/* Carousel des campagnes promues - MOCKUP VISIBLE */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-yellow-500" />
-              Campagnes boostées
-            </h2>
-          </div>
-          <PromotedCampaignsCarousel
-            onViewCampaign={handleViewDetails}
-            darkMode={false}
-          />
-        </div>
+        {/* Carousel des campagnes promues - Affiché uniquement si campagnes boostées */}
+        <PromotedCampaignsCarousel
+          onViewCampaign={handleViewDetails}
+          darkMode={false}
+        />
 
         <CampaignFilters
           filters={filters}
