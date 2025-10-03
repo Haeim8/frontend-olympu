@@ -12,12 +12,12 @@ import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useLanguage';
 import { Megaphone, Target, Calendar, DollarSign, Users, TrendingUp, Zap } from 'lucide-react';
 
-export default function PromoteCampaignDialog({ 
-  isOpen, 
-  onClose, 
-  campaignData, 
-  campaignAddress, 
-  onSuccess 
+export default function PromoteCampaignDialog({
+  isOpen,
+  onClose,
+  campaignData,
+  campaignAddress,
+  onSuccess
 }) {
   const { t } = useTranslation();
   const [promotionForm, setPromotionForm] = useState({
@@ -34,59 +34,59 @@ export default function PromoteCampaignDialog({
   const promotionPackages = [
     {
       id: 'boost',
-      name: 'Boost Standard',
+      name: t('promote.boost.name'),
       price: '0.1',
-      duration: '7 jours',
+      duration: t('promote.boost.duration'),
       features: [
-        'Mise en avant sur la page d\'accueil',
-        'Badge "Promu" visible',
-        'Notifications push aux investisseurs',
-        'Analytics détaillés'
+        t('promote.boost.feature1'),
+        t('promote.boost.feature2'),
+        t('promote.boost.feature3'),
+        t('promote.boost.feature4')
       ],
-      color: 'blue',
+      color: 'lime',
       estimatedViews: '1K - 5K',
       estimatedInvestors: '10 - 50'
     },
     {
       id: 'premium',
-      name: 'Premium',
+      name: t('promote.premium.name'),
       price: '0.25',
-      duration: '14 jours',
+      duration: t('promote.premium.duration'),
       features: [
-        'Toutes les fonctionnalités Boost',
-        'Article dédié dans la newsletter',
-        'Partage sur les réseaux sociaux Livar',
-        'Support marketing personnalisé'
+        t('promote.premium.feature1'),
+        t('promote.premium.feature2'),
+        t('promote.premium.feature3'),
+        t('promote.premium.feature4')
       ],
-      color: 'purple',
+      color: 'lime',
       popular: true,
       estimatedViews: '5K - 15K',
       estimatedInvestors: '50 - 150'
     },
     {
       id: 'ultimate',
-      name: 'Ultimate',
+      name: t('promote.ultimate.name'),
       price: '0.5',
-      duration: '30 jours',
+      duration: t('promote.ultimate.duration'),
       features: [
-        'Toutes les fonctionnalités Premium',
-        'Interview avec l\'équipe Livar',
-        'Campagne d\'influence partenaire',
-        'Conseils stratégiques dédiés'
+        t('promote.ultimate.feature1'),
+        t('promote.ultimate.feature2'),
+        t('promote.ultimate.feature3'),
+        t('promote.ultimate.feature4')
       ],
-      color: 'gold',
+      color: 'lime',
       estimatedViews: '15K - 50K',
       estimatedInvestors: '150 - 500'
     }
   ];
 
   const targetAudiences = [
-    { value: 'crypto_investors', label: 'Investisseurs Crypto' },
-    { value: 'tech_enthusiasts', label: 'Passionnés de Tech' },
-    { value: 'startup_community', label: 'Communauté Startup' },
-    { value: 'defi_users', label: 'Utilisateurs DeFi' },
-    { value: 'nft_collectors', label: 'Collectionneurs NFT' },
-    { value: 'general_public', label: 'Grand Public' }
+    { value: 'crypto_investors', label: t('promote.audience.cryptoInvestors') },
+    { value: 'tech_enthusiasts', label: t('promote.audience.techEnthusiasts') },
+    { value: 'startup_community', label: t('promote.audience.startupCommunity') },
+    { value: 'defi_users', label: t('promote.audience.defiUsers') },
+    { value: 'nft_collectors', label: t('promote.audience.nftCollectors') },
+    { value: 'general_public', label: t('promote.audience.generalPublic') }
   ];
 
   const handleFormChange = (field, value) => {
@@ -109,17 +109,17 @@ export default function PromoteCampaignDialog({
     try {
       // Simulation de l'API call pour promouvoir la campagne
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       if (onSuccess) {
         onSuccess(promotionForm);
       }
 
       onClose();
-      alert(`Campagne promue avec succès ! Package ${selectedPackage?.name} activé.`);
+      alert(t('promote.success', { package: selectedPackage?.name }));
 
     } catch (error) {
       console.error("Erreur lors de la promotion:", error);
-      alert("Erreur lors de la promotion de la campagne");
+      alert(t('promote.error'));
     } finally {
       setIsPromoting(false);
     }
@@ -127,26 +127,14 @@ export default function PromoteCampaignDialog({
 
   const getPackageColor = (colorType) => {
     const colors = {
-      blue: {
-        bg: 'bg-blue-50 dark:bg-blue-900/20',
-        border: 'border-blue-200 dark:border-blue-800',
-        text: 'text-blue-800 dark:text-blue-200',
-        badge: 'bg-blue-600'
-      },
-      purple: {
-        bg: 'bg-purple-50 dark:bg-purple-900/20',
-        border: 'border-purple-200 dark:border-purple-800',
-        text: 'text-purple-800 dark:text-purple-200',
-        badge: 'bg-purple-600'
-      },
-      gold: {
-        bg: 'bg-yellow-50 dark:bg-yellow-900/20',
-        border: 'border-yellow-200 dark:border-yellow-800',
-        text: 'text-yellow-800 dark:text-yellow-200',
-        badge: 'bg-gradient-to-r from-yellow-400 to-orange-500'
+      lime: {
+        bg: 'bg-lime-50 dark:bg-lime-900/20',
+        border: 'border-lime-200 dark:border-lime-800',
+        text: 'text-lime-800 dark:text-lime-200',
+        badge: 'bg-lime-600'
       }
     };
-    return colors[colorType] || colors.blue;
+    return colors[colorType] || colors.lime;
   };
 
   return (
@@ -154,8 +142,8 @@ export default function PromoteCampaignDialog({
       <DialogContent className="bg-white dark:bg-neutral-950 max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Megaphone className="h-5 w-5 text-purple-500" />
-            Promouvoir votre Campagne
+            <Megaphone className="h-5 w-5 text-lime-500" />
+            {t('promote.dialog.title')}
           </DialogTitle>
         </DialogHeader>
 
@@ -163,59 +151,59 @@ export default function PromoteCampaignDialog({
           {/* Stats actuelles */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-green-500 mx-auto mb-1" />
+              <TrendingUp className="h-6 w-6 text-lime-500 mx-auto mb-1" />
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {campaignData?.raised || 0}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">ETH Levés</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('promote.stats.ethRaised')}</p>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-              <Users className="h-6 w-6 text-blue-500 mx-auto mb-1" />
+              <Users className="h-6 w-6 text-lime-500 mx-auto mb-1" />
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {campaignData?.investors || 0}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Investisseurs</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('promote.stats.investors')}</p>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-              <Target className="h-6 w-6 text-orange-500 mx-auto mb-1" />
+              <Target className="h-6 w-6 text-lime-500 mx-auto mb-1" />
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {Math.round(((campaignData?.raised || 0) / (campaignData?.goal || 1)) * 100)}%
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Progression</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('promote.stats.progress')}</p>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-              <Calendar className="h-6 w-6 text-purple-500 mx-auto mb-1" />
+              <Calendar className="h-6 w-6 text-lime-500 mx-auto mb-1" />
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {Math.floor((campaignData?.timeRemaining || 0) / (1000 * 60 * 60 * 24))}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Jours restants</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('promote.stats.daysRemaining')}</p>
             </div>
           </div>
 
           {/* Packages de promotion */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              Choisissez votre package de promotion
+              {t('promote.choosePackage')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {promotionPackages.map((pkg) => {
                 const colors = getPackageColor(pkg.color);
                 const isSelected = selectedPackage?.id === pkg.id;
-                
+
                 return (
                   <Card
                     key={pkg.id}
                     className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                      isSelected ? `ring-2 ring-${pkg.color}-500 shadow-lg` : ''
+                      isSelected ? 'ring-2 ring-lime-500 shadow-lg' : ''
                     } ${colors.bg} ${colors.border}`}
                     onClick={() => handlePackageSelect(pkg)}
                   >
                     <CardContent className="p-4">
                       <div className="text-center">
                         {pkg.popular && (
-                          <Badge className="mb-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                          <Badge className="mb-2 bg-gradient-to-r from-lime-500 to-green-600 text-white">
                             <Zap className="h-3 w-3 mr-1" />
-                            Populaire
+                            {t('promote.popular')}
                           </Badge>
                         )}
                         <h4 className={`text-xl font-bold ${colors.text} mb-2`}>
@@ -231,7 +219,7 @@ export default function PromoteCampaignDialog({
                         <p className={`text-sm ${colors.text} mb-4`}>
                           {pkg.duration}
                         </p>
-                        
+
                         <div className="space-y-2 mb-4">
                           {pkg.features.map((feature, index) => (
                             <div key={index} className="flex items-start gap-2 text-sm">
@@ -242,8 +230,8 @@ export default function PromoteCampaignDialog({
                         </div>
 
                         <div className={`text-xs ${colors.text} space-y-1 border-t pt-3`}>
-                          <p><strong>Vues estimées:</strong> {pkg.estimatedViews}</p>
-                          <p><strong>Nouveaux investisseurs:</strong> {pkg.estimatedInvestors}</p>
+                          <p><strong>{t('promote.estimatedViews')}:</strong> {pkg.estimatedViews}</p>
+                          <p><strong>{t('promote.estimatedInvestors')}:</strong> {pkg.estimatedInvestors}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -257,13 +245,13 @@ export default function PromoteCampaignDialog({
           {selectedPackage && (
             <div className="space-y-4 p-4 bg-gray-50 dark:bg-neutral-900 rounded-lg">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Configuration de la promotion
+                {t('promote.configuration')}
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="target-audience" className="text-gray-700 dark:text-gray-300">
-                    Audience cible
+                    {t('promote.targetAudience')}
                   </Label>
                   <Select
                     value={promotionForm.targetAudience}
@@ -284,7 +272,7 @@ export default function PromoteCampaignDialog({
 
                 <div>
                   <Label className="text-gray-700 dark:text-gray-300">
-                    Budget
+                    {t('promote.budget')}
                   </Label>
                   <div className="mt-1 p-3 bg-white dark:bg-neutral-800 rounded-lg border">
                     <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -299,18 +287,18 @@ export default function PromoteCampaignDialog({
 
               <div>
                 <Label htmlFor="promo-message" className="text-gray-700 dark:text-gray-300">
-                  Message de promotion personnalisé (optionnel)
+                  {t('promote.customMessage')}
                 </Label>
                 <Textarea
                   id="promo-message"
                   value={promotionForm.message}
                   onChange={(e) => handleFormChange('message', e.target.value)}
-                  placeholder="Ajoutez un message spécial pour attirer les investisseurs..."
+                  placeholder={t('promote.messagePlaceholder')}
                   className="bg-white dark:bg-neutral-800 mt-1 h-20"
                   maxLength={280}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {promotionForm.message.length}/280 caractères
+                  {promotionForm.message.length}/280 {t('promote.characters')}
                 </p>
               </div>
             </div>
@@ -323,41 +311,37 @@ export default function PromoteCampaignDialog({
               onClick={onClose}
               disabled={isPromoting}
             >
-              Annuler
+              {t('promote.cancel')}
             </Button>
             <Button
               onClick={handlePromoteCampaign}
               disabled={!selectedPackage || isPromoting}
-              className={`${
-                selectedPackage?.color === 'gold' 
-                  ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600' 
-                  : 'bg-purple-600 hover:bg-purple-700'
-              } text-white min-w-[160px]`}
+              className="bg-gradient-to-r from-lime-500 to-green-600 hover:from-lime-600 hover:to-green-700 text-white min-w-[160px]"
             >
               {isPromoting ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Activation...
+                  {t('promote.activating')}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <Megaphone className="h-4 w-4" />
-                  Activer la Promotion
+                  {t('promote.activate')}
                 </div>
               )}
             </Button>
           </div>
 
           {/* Note importante */}
-          <div className="text-xs text-gray-500 dark:text-gray-400 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-            <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-              📈 Comment la promotion fonctionne :
+          <div className="text-xs text-gray-500 dark:text-gray-400 p-4 bg-lime-50 dark:bg-lime-900/20 rounded-lg border border-lime-200 dark:border-lime-800">
+            <p className="font-medium text-lime-800 dark:text-lime-200 mb-2">
+              📈 {t('promote.howItWorks')}
             </p>
-            <ul className="space-y-1 text-yellow-700 dark:text-yellow-300">
-              <li>• Votre campagne sera mise en avant selon le package choisi</li>
-              <li>• Le paiement sera déduit automatiquement de votre portefeuille</li>
-              <li>• Vous recevrez des analytics détaillés pendant la promotion</li>
-              <li>• Les résultats sont visibles dans les 24-48h suivant l&apos;activation</li>
+            <ul className="space-y-1 text-lime-700 dark:text-lime-300">
+              <li>• {t('promote.howItWorks1')}</li>
+              <li>• {t('promote.howItWorks2')}</li>
+              <li>• {t('promote.howItWorks3')}</li>
+              <li>• {t('promote.howItWorks4')}</li>
             </ul>
           </div>
         </div>

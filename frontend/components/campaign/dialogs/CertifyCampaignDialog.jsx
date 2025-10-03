@@ -49,15 +49,15 @@ export default function CertifyCampaignDialog({
   const certificationOptions = [
     {
       id: 'basic',
-      name: 'Certification Basique',
+      name: t('certify.basic.name'),
       price: '0.05',
-      duration: '3-5 jours ouvrés',
-      lawyer: 'Avocat Junior Certifié',
+      duration: t('certify.basic.duration'),
+      lawyer: t('certify.basic.lawyer'),
       features: [
-        'Vérification des documents légaux',
-        'Conformité réglementaire de base',
-        'Certificat de validation',
-        'Support par email'
+        t('certify.basic.feature1'),
+        t('certify.basic.feature2'),
+        t('certify.basic.feature3'),
+        t('certify.basic.feature4')
       ],
       color: 'blue',
       rating: 4.2,
@@ -65,16 +65,16 @@ export default function CertifyCampaignDialog({
     },
     {
       id: 'premium',
-      name: 'Certification Premium',
+      name: t('certify.premium.name'),
       price: '0.15',
-      duration: '2-3 jours ouvrés',
-      lawyer: 'Avocat Senior Spécialisé',
+      duration: t('certify.premium.duration'),
+      lawyer: t('certify.premium.lawyer'),
       features: [
-        'Audit complet des documents',
-        'Conformité réglementaire avancée',
-        'Conseils personnalisés',
-        'Certificat premium avec sceau',
-        'Support téléphonique prioritaire'
+        t('certify.premium.feature1'),
+        t('certify.premium.feature2'),
+        t('certify.premium.feature3'),
+        t('certify.premium.feature4'),
+        t('certify.premium.feature5')
       ],
       color: 'purple',
       popular: true,
@@ -83,17 +83,17 @@ export default function CertifyCampaignDialog({
     },
     {
       id: 'enterprise',
-      name: 'Certification Enterprise',
+      name: t('certify.enterprise.name'),
       price: '0.3',
-      duration: '1-2 jours ouvrés',
-      lawyer: 'Cabinet d\'Avocats Partenaire',
+      duration: t('certify.enterprise.duration'),
+      lawyer: t('certify.enterprise.lawyer'),
       features: [
-        'Audit complet et détaillé',
-        'Conformité internationale',
-        'Rédaction de documents légaux',
-        'Conseils stratégiques',
-        'Accompagnement personnalisé',
-        'Garantie de conformité'
+        t('certify.enterprise.feature1'),
+        t('certify.enterprise.feature2'),
+        t('certify.enterprise.feature3'),
+        t('certify.enterprise.feature4'),
+        t('certify.enterprise.feature5'),
+        t('certify.enterprise.feature6')
       ],
       color: 'gold',
       rating: 4.9,
@@ -102,9 +102,9 @@ export default function CertifyCampaignDialog({
   ];
 
   const urgencyLevels = [
-    { value: 'standard', label: 'Standard', extra: '+0 ETH' },
-    { value: 'urgent', label: 'Urgent (24h)', extra: '+0.02 ETH' },
-    { value: 'express', label: 'Express (12h)', extra: '+0.05 ETH' }
+    { value: 'standard', label: t('certify.urgency.standard'), extra: '+0 ETH' },
+    { value: 'urgent', label: t('certify.urgency.urgent'), extra: '+0.02 ETH' },
+    { value: 'express', label: t('certify.urgency.express'), extra: '+0.05 ETH' }
   ];
 
   const handleFormChange = (field, value) => {
@@ -162,11 +162,11 @@ export default function CertifyCampaignDialog({
       }
 
       onClose();
-      alert(`Demande de certification soumise ! Un ${selectedLawyer.lawyer} vous contactera sous ${selectedLawyer.duration}.`);
+      alert(t('certify.successMessage', { lawyer: selectedLawyer.lawyer, duration: selectedLawyer.duration }));
 
     } catch (error) {
       console.error("Erreur lors de la soumission:", error);
-      alert("Erreur lors de la soumission de la demande");
+      alert(t('certify.errorMessage'));
     } finally {
       setIsSubmitting(false);
     }
@@ -201,28 +201,27 @@ export default function CertifyCampaignDialog({
       <DialogContent className="bg-white dark:bg-neutral-950 max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-green-500" />
-            Certification Légale de votre Campagne
+            <ShieldCheck className="h-5 w-5 text-lime-500" />
+            {t('certify.dialog.title')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Alerte d'information */}
-          <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <Info className="h-4 w-4 text-green-600 dark:text-green-400" />
-            <AlertTitle className="text-green-800 dark:text-green-200">
-              Pourquoi certifier votre campagne ?
+          <Alert className="bg-lime-50 dark:bg-lime-900/20 border-lime-200 dark:border-lime-800">
+            <Info className="h-4 w-4 text-lime-600 dark:text-lime-400" />
+            <AlertTitle className="text-lime-800 dark:text-lime-200">
+              {t('certify.whyTitle')}
             </AlertTitle>
-            <AlertDescription className="text-green-700 dark:text-green-300">
-              La certification par un avocat augmente la confiance des investisseurs de 300% en moyenne et 
-              garantit la conformité légale de votre projet selon les réglementations en vigueur.
+            <AlertDescription className="text-lime-700 dark:text-lime-300">
+              {t('certify.whyDescription')}
             </AlertDescription>
           </Alert>
 
           {/* Options de certification */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              Choisissez votre niveau de certification
+              {t('certify.chooseLevel')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {certificationOptions.map((option) => {
@@ -240,9 +239,9 @@ export default function CertifyCampaignDialog({
                     <CardContent className="p-4">
                       <div className="text-center">
                         {option.popular && (
-                          <Badge className="mb-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                          <Badge className="mb-2 bg-gradient-to-r from-lime-500 to-green-500 text-white">
                             <Star className="h-3 w-3 mr-1" />
-                            Recommandé
+                            {t('certify.recommended')}
                           </Badge>
                         )}
                         <h4 className={`text-xl font-bold ${colors.text} mb-2`}>
@@ -264,7 +263,7 @@ export default function CertifyCampaignDialog({
                             </span>
                           </div>
                           <span className={`text-xs ${colors.text}`}>
-                            ({option.completedCases} cas traités)
+                            ({option.completedCases} {t('certify.casesProcessed')})
                           </span>
                         </div>
 
@@ -300,15 +299,15 @@ export default function CertifyCampaignDialog({
 
           {/* Configuration détaillée */}
           {selectedLawyer && (
-            <div className="space-y-6 p-6 bg-gray-50 dark:bg-neutral-900 rounded-lg">
+            <div className="space-y-6 p-6 bg-lime-50/50 dark:bg-lime-900/10 rounded-lg border border-lime-200 dark:border-lime-800">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Configuration de la certification
+                {t('certify.configuration')}
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="urgency" className="text-gray-700 dark:text-gray-300 font-medium">
-                    Niveau d&apos;urgence
+                    {t('certify.urgencyLevel')}
                   </Label>
                   <Select
                     value={certificationForm.urgency}
@@ -332,10 +331,10 @@ export default function CertifyCampaignDialog({
 
                 <div>
                   <Label className="text-gray-700 dark:text-gray-300 font-medium">
-                    Prix Total
+                    {t('certify.totalPrice')}
                   </Label>
-                  <div className="mt-1 p-3 bg-white dark:bg-neutral-800 rounded-lg border">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="mt-1 p-3 bg-white dark:bg-neutral-800 rounded-lg border border-lime-200 dark:border-lime-700">
+                    <div className="text-2xl font-bold text-lime-600 dark:text-lime-400">
                       {calculateTotalPrice()} ETH
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -348,28 +347,28 @@ export default function CertifyCampaignDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="contact-email" className="text-gray-700 dark:text-gray-300 font-medium">
-                    Email de contact *
+                    {t('certify.contactEmail')} *
                   </Label>
                   <Input
                     id="contact-email"
                     type="email"
                     value={certificationForm.contactInfo.email}
                     onChange={(e) => handleFormChange('contactInfo.email', e.target.value)}
-                    placeholder="votre@email.com"
+                    placeholder={t('certify.contactEmailPlaceholder')}
                     className="bg-white dark:bg-neutral-800 mt-1"
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="contact-phone" className="text-gray-700 dark:text-gray-300 font-medium">
-                    Téléphone (optionnel)
+                    {t('certify.contactPhone')}
                   </Label>
                   <Input
                     id="contact-phone"
                     type="tel"
                     value={certificationForm.contactInfo.phone}
                     onChange={(e) => handleFormChange('contactInfo.phone', e.target.value)}
-                    placeholder="+33 6 12 34 56 78"
+                    placeholder={t('certify.contactPhonePlaceholder')}
                     className="bg-white dark:bg-neutral-800 mt-1"
                   />
                 </div>
@@ -377,48 +376,48 @@ export default function CertifyCampaignDialog({
 
               <div>
                 <Label htmlFor="special-requests" className="text-gray-700 dark:text-gray-300 font-medium">
-                  Demandes spéciales ou points à vérifier
+                  {t('certify.specialRequests')}
                 </Label>
                 <Textarea
                   id="special-requests"
                   value={certificationForm.specialRequests}
                   onChange={(e) => handleFormChange('specialRequests', e.target.value)}
-                  placeholder="Mentionnez des aspects spécifiques de votre projet que l'avocat devrait examiner..."
+                  placeholder={t('certify.specialRequestsPlaceholder')}
                   className="bg-white dark:bg-neutral-800 mt-1 h-24"
                   maxLength={500}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {certificationForm.specialRequests.length}/500 caractères
+                  {t('certify.charactersCount', { count: certificationForm.specialRequests.length })}
                 </p>
               </div>
 
               {/* Résumé de la commande */}
-              <div className="border-t pt-4">
+              <div className="border-t border-lime-200 dark:border-lime-800 pt-4">
                 <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
-                  Résumé de votre commande
+                  {t('certify.orderSummary')}
                 </h4>
-                <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg space-y-2">
+                <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg space-y-2 border border-lime-200 dark:border-lime-700">
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Service:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('certify.service')}</span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {selectedLawyer.name}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Avocat:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('certify.lawyer')}</span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {selectedLawyer.lawyer}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Délai:</span>
+                    <span className="text-gray-600 dark:text-gray-400">{t('certify.delay')}</span>
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {selectedLawyer.duration}
                     </span>
                   </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="text-gray-900 dark:text-gray-100 font-semibold">Total:</span>
-                    <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="flex justify-between border-t border-lime-200 dark:border-lime-700 pt-2">
+                    <span className="text-gray-900 dark:text-gray-100 font-semibold">{t('certify.total')}</span>
+                    <span className="text-xl font-bold text-lime-600 dark:text-lime-400">
                       {calculateTotalPrice()} ETH
                     </span>
                   </div>
@@ -433,38 +432,39 @@ export default function CertifyCampaignDialog({
               variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
+              className="hover:bg-gray-100 dark:hover:bg-neutral-800"
             >
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleSubmitCertification}
               disabled={!selectedLawyer || !certificationForm.contactInfo.email || isSubmitting}
-              className="bg-green-600 hover:bg-green-700 text-white min-w-[180px]"
+              className="bg-lime-600 hover:bg-lime-700 text-white min-w-[180px]"
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Soumission...
+                  {t('certify.submitting')}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4" />
-                  Demander la Certification
+                  {t('certify.submit')}
                 </div>
               )}
             </Button>
           </div>
 
           {/* Garanties */}
-          <div className="text-xs text-gray-500 dark:text-gray-400 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-              🛡️ Nos garanties :
+          <div className="text-xs text-gray-500 dark:text-gray-400 p-4 bg-lime-50 dark:bg-lime-900/20 rounded-lg border border-lime-200 dark:border-lime-800">
+            <p className="font-medium text-lime-800 dark:text-lime-200 mb-2">
+              {t('certify.guaranteesTitle')}
             </p>
-            <ul className="space-y-1 text-blue-700 dark:text-blue-300">
-              <li>• Avocats certifiés et spécialisés en droit des cryptomonnaies</li>
-              <li>• Confidentialité absolue de vos documents</li>
-              <li>• Remboursement si les délais ne sont pas respectés</li>
-              <li>• Support client disponible 24/7 pendant le processus</li>
+            <ul className="space-y-1 text-lime-700 dark:text-lime-300">
+              <li>{t('certify.guarantee1')}</li>
+              <li>{t('certify.guarantee2')}</li>
+              <li>{t('certify.guarantee3')}</li>
+              <li>{t('certify.guarantee4')}</li>
             </ul>
           </div>
         </div>

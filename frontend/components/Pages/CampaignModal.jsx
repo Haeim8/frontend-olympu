@@ -915,10 +915,10 @@ export default function CampaignModal({
       <DialogContent className="sm:max-w-4xl h-[90vh] max-h-[90vh] flex flex-col bg-white dark:bg-neutral-900 border-0 shadow-2xl">
         <DialogHeader className="pb-4 flex-shrink-0">
           <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Créer une nouvelle campagne
+            {t('campaign.modal.title')}
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400">
-            Lancez votre campagne de financement en quelques étapes simples
+            {t('campaign.modal.subtitle')}
           </DialogDescription>
         </DialogHeader>
 
@@ -948,11 +948,11 @@ export default function CampaignModal({
               className="flex items-center gap-2 px-6 py-2 font-semibold border-2 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ArrowLeft className="h-4 w-4" />
-              Précédent
+              {t('common.previous')}
             </Button>
 
             <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-neutral-800 px-3 py-1 rounded-full font-medium">
-              Étape {currentStep} sur 5
+              {t('campaign.steps.stepCount', { current: currentStep, total: 5 })}
             </div>
 
             {currentStep < 5 ? (
@@ -961,7 +961,7 @@ export default function CampaignModal({
                 onClick={handleNextStep}
                 className="bg-gradient-to-r from-lime-500 to-lime-600 hover:from-lime-600 hover:to-lime-700 text-white flex items-center gap-2 px-6 py-2 font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
-                Suivant
+                {t('common.next')}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (

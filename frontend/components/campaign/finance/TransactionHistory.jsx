@@ -33,7 +33,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
       
     } catch (err) {
       console.error('Erreur chargement transactions:', err);
-      setError('Impossible de charger l\'historique des transactions');
+      setError(t('transactionHistory.errorLoading'));
     } finally {
       setIsLoading(false);
     }
@@ -48,8 +48,8 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
     let filtered = Array.isArray(transactions) ? transactions : [];
 
     if (filter !== 'all') {
-      filtered = filtered.filter(tx => 
-        filter === 'buy' ? tx.type === 'Achat' : tx.type === 'Remboursement'
+      filtered = filtered.filter(tx =>
+        filter === 'buy' ? tx.type === t('transactionHistory.buy') : tx.type === t('transactionHistory.refund')
       );
     }
 
@@ -76,18 +76,18 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
   };
 
   const getTransactionIcon = (type) => {
-    return type === 'Achat' ? 
-      <TrendingUp className="h-4 w-4 text-green-500" /> : 
+    return type === t('transactionHistory.buy') ?
+      <TrendingUp className="h-4 w-4 text-lime-500" /> :
       <TrendingDown className="h-4 w-4 text-red-500" />;
   };
 
   const getTransactionBadge = (type) => {
-    return type === 'Achat' ? 
-      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-        Achat
-      </Badge> : 
+    return type === t('transactionHistory.buy') ?
+      <Badge className="bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-200">
+        {t('transactionHistory.buy')}
+      </Badge> :
       <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-        Remboursement
+        {t('transactionHistory.refund')}
       </Badge>;
   };
 
@@ -98,10 +98,10 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
   const getTransactionStats = () => {
     // Vérifier que transactions est bien un array
     const txArray = Array.isArray(transactions) ? transactions : [];
-    
+
     const totalTransactions = txArray.length;
-    const purchases = txArray.filter(tx => tx.type === 'Achat').length;
-    const refunds = txArray.filter(tx => tx.type === 'Remboursement').length;
+    const purchases = txArray.filter(tx => tx.type === t('transactionHistory.buy')).length;
+    const refunds = txArray.filter(tx => tx.type === t('transactionHistory.refund')).length;
     const totalVolume = txArray.reduce((sum, tx) => sum + parseFloat(tx.value || 0), 0);
 
     return { totalTransactions, purchases, refunds, totalVolume };
@@ -116,7 +116,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
           <div className="text-center">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <Button onClick={loadTransactions} variant="outline">
-              Réessayer
+              {t('transactionHistory.retry')}
             </Button>
           </div>
         </CardContent>
@@ -129,11 +129,11 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
       <CardHeader>
         <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart className="h-5 w-5 text-blue-500" />
-            Historique des Transactions
+            <BarChart className="h-5 w-5 text-lime-500" />
+            {t('transactionHistory.title')}
           </div>
           <Badge variant="outline" className="text-sm">
-            {stats.totalTransactions} transactions
+            {stats.totalTransactions} {t('transactionHistory.transactions')}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -141,24 +141,24 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
         {/* Stats rapides */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.purchases}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Achats</p>
+            <p className="text-2xl font-bold text-lime-600 dark:text-lime-400">{stats.purchases}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('transactionHistory.purchases')}</p>
           </div>
           <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
             <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.refunds}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Remboursements</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('transactionHistory.refunds')}</p>
           </div>
           <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <p className="text-2xl font-bold text-lime-600 dark:text-lime-400">
               {stats.totalVolume.toFixed(4)}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">ETH Total</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('transactionHistory.totalETH')}</p>
           </div>
           <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+            <p className="text-2xl font-bold text-lime-600 dark:text-lime-400">
               {Array.isArray(transactions) ? new Set(transactions.map(tx => tx.investor)).size : 0}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Investisseurs uniques</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('transactionHistory.uniqueInvestors')}</p>
           </div>
         </div>
 
@@ -167,7 +167,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Rechercher par adresse..."
+              placeholder={t('transactionHistory.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-gray-50 dark:bg-neutral-900"
@@ -179,9 +179,9 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes les transactions</SelectItem>
-              <SelectItem value="buy">Achats uniquement</SelectItem>
-              <SelectItem value="refund">Remboursements uniquement</SelectItem>
+              <SelectItem value="all">{t('transactionHistory.filterAll')}</SelectItem>
+              <SelectItem value="buy">{t('transactionHistory.filterBuy')}</SelectItem>
+              <SelectItem value="refund">{t('transactionHistory.filterRefund')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -189,10 +189,10 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="recent">Plus récent</SelectItem>
-              <SelectItem value="oldest">Plus ancien</SelectItem>
-              <SelectItem value="amount_high">Montant décroissant</SelectItem>
-              <SelectItem value="amount_low">Montant croissant</SelectItem>
+              <SelectItem value="recent">{t('transactionHistory.sortRecent')}</SelectItem>
+              <SelectItem value="oldest">{t('transactionHistory.sortOldest')}</SelectItem>
+              <SelectItem value="amount_high">{t('transactionHistory.sortHighAmount')}</SelectItem>
+              <SelectItem value="amount_low">{t('transactionHistory.sortLowAmount')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -277,7 +277,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
               onClick={loadTransactions}
               className="text-gray-600 dark:text-gray-400"
             >
-              Actualiser les données
+              {t('transactionHistory.refresh')}
             </Button>
           </div>
         )}

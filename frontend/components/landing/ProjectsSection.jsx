@@ -63,11 +63,11 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
           projectsData.push({
             address: campaignAddress,
             title: campaignData.name || 'Campaign',
-            description: campaignData.description || 'Description non disponible',
+            description: campaignData.description || '',
             raised: campaignData.raised || '0',
             target: campaignData.goal || '0',
             backers: campaignData.investorCount || 0,
-            timeLeft: campaignData.isActive ? 'En cours' : 'Terminé',
+            timeLeft: campaignData.isActive ? t('campaign.status.ongoing') : t('campaign.status.completed'),
             status: status,
             image: campaignData.logo || '🚀',
             tags: [campaignData.category || 'Startup'],
@@ -271,7 +271,7 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
                         {project.title}
                       </h3>
                       <p className={`text-sm leading-relaxed ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-                        {project.description}
+                        {project.description || t('landing.projects.noDescription')}
                       </p>
                     </div>
 
@@ -295,7 +295,7 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
                     <div className="mb-4">
                       <div className="flex justify-between text-sm mb-2">
                         <span className={darkMode ? "text-gray-300" : "text-gray-600"}>
-                          {project.raised} ETH levés
+                          {project.raised} {t('landing.projects.ethRaised')}
                         </span>
                         <span className="text-lime-500 font-medium">
                           {project.progress}%
@@ -317,11 +317,11 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
                       <div className="flex items-center space-x-1">
                         <Users className="w-4 h-4 text-lime-500" />
                         <span className={darkMode ? "text-gray-300" : "text-gray-600"}>
-                          {project.backers} contributeurs
+                          {project.backers} {t('campaign.contributors')}
                         </span>
                       </div>
                       <span className={`font-medium ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-                        Objectif: {project.target} ETH
+                        {t('landing.projects.goal')}: {project.target} ETH
                       </span>
                     </div>
 
@@ -334,17 +334,17 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
                       {project.status === 'funded' ? (
                         <>
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          Projet financé
+                          {t('campaign.status.funded')}
                         </>
                       ) : isLandingPage && !address ? (
                         <>
                           <Wallet className="w-4 h-4 mr-2" />
-                          Connectez-vous pour investir
+                          {t('campaign.connectToInvest')}
                         </>
                       ) : (
                         <>
                           <ExternalLink className="w-4 h-4 mr-2" />
-                          Voir le projet
+                          {t('campaign.viewProject')}
                         </>
                       )}
                     </Button>

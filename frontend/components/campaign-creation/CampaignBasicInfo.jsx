@@ -10,8 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Info, DollarSign, Hash, Calendar, Target } from 'lucide-react';
 import { useTranslation } from '@/hooks/useLanguage';
 
-const SECTORS = [
-  "Tech", "Finance", "DeFi", "Gaming", "NFT", "Blockchain", "Infrastructure", "Industrie", "Autre"
+const getSectors = (t) => [
+  { value: "Tech", label: t('filters.sectors.tech') },
+  { value: "Finance", label: t('filters.sectors.finance') },
+  { value: "DeFi", label: t('filters.sectors.defi') },
+  { value: "Gaming", label: t('filters.sectors.gaming') },
+  { value: "NFT", label: t('filters.sectors.nft') },
+  { value: "Blockchain", label: t('filters.sectors.blockchain') },
+  { value: "Infrastructure", label: t('filters.sectors.infrastructure') },
+  { value: "Industry", label: t('filters.sectors.industry') },
+  { value: "Other", label: t('sectors.other') }
 ];
 
 const InfoTooltip = ({ content }) => (
@@ -36,6 +44,7 @@ export default function CampaignBasicInfo({
   onSelectChange
 }) {
   const { t } = useTranslation();
+  const sectors = getSectors(t);
   console.log('CampaignBasicInfo - formData.creatorAddress:', formData.creatorAddress);
   const targetAmount = (parseFloat(formData.sharePrice || 0) * parseFloat(formData.numberOfShares || 0));
 
@@ -142,9 +151,9 @@ export default function CampaignBasicInfo({
               <SelectValue placeholder={t('campaignBasic.sectorPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              {SECTORS.map((sector) => (
-                <SelectItem key={sector} value={sector}>
-                  {sector}
+              {sectors.map((sector) => (
+                <SelectItem key={sector.value} value={sector.value}>
+                  {sector.label}
                 </SelectItem>
               ))}
             </SelectContent>

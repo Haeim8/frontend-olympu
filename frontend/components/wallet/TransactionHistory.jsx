@@ -24,11 +24,11 @@ const TransactionRow = ({ transaction, index }) => {
   
   const getTransactionIcon = (type) => {
     switch (type) {
-      case 'Investment':
-        return <ArrowUpRight className="h-4 w-4 text-green-600" />;
-      case 'Dividend':
-        return <TrendingUp className="h-4 w-4 text-blue-600" />;
-      case 'Withdrawal':
+      case t('wallet.transaction.investment'):
+        return <ArrowUpRight className="h-4 w-4 text-lime-600" />;
+      case t('wallet.transaction.dividend'):
+        return <TrendingUp className="h-4 w-4 text-lime-600" />;
+      case t('wallet.transaction.withdrawal'):
         return <ArrowDownRight className="h-4 w-4 text-orange-600" />;
       default:
         return <History className="h-4 w-4 text-gray-600" />;
@@ -37,11 +37,11 @@ const TransactionRow = ({ transaction, index }) => {
 
   const getTransactionColor = (type) => {
     switch (type) {
-      case 'Investment':
-        return 'text-green-600 bg-green-50 dark:bg-green-900/20';
-      case 'Dividend':
-        return 'text-blue-600 bg-blue-50 dark:bg-blue-900/20';
-      case 'Withdrawal':
+      case t('wallet.transaction.investment'):
+        return 'text-lime-600 bg-lime-50 dark:bg-lime-900/20';
+      case t('wallet.transaction.dividend'):
+        return 'text-lime-600 bg-lime-50 dark:bg-lime-900/20';
+      case t('wallet.transaction.withdrawal'):
         return 'text-orange-600 bg-orange-50 dark:bg-orange-900/20';
       default:
         return 'text-gray-600 bg-gray-50 dark:bg-gray-900/20';
@@ -160,15 +160,15 @@ export default function TransactionHistory({ transactions, isLoading }) {
   }, [transactions, searchTerm, filterType, sortBy]);
 
   const totalInvested = transactions
-    .filter(tx => tx.type === 'Investment')
+    .filter(tx => tx.type === t('wallet.transaction.investment'))
     .reduce((sum, tx) => sum + parseFloat(tx.amount.replace(/[^\d.-]/g, '')), 0);
 
   const totalDividends = transactions
-    .filter(tx => tx.type === 'Dividend')
+    .filter(tx => tx.type === t('wallet.transaction.dividend'))
     .reduce((sum, tx) => sum + parseFloat(tx.amount.replace(/[^\d.-]/g, '')), 0);
 
   const exportToCSV = () => {
-    const headers = ['Type', 'Projet', 'Montant', 'Date', 'Hash'];
+    const headers = [t('wallet.transaction.typeHeader'), t('wallet.transaction.projectHeader'), t('wallet.transaction.amountHeader'), t('wallet.transaction.dateHeader'), 'Hash'];
     const csvContent = [
       headers.join(','),
       ...filteredAndSortedTransactions.map(tx => [
@@ -194,18 +194,18 @@ export default function TransactionHistory({ transactions, isLoading }) {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <History className="h-5 w-5 text-purple-600" />
+              <History className="h-5 w-5 text-lime-600" />
               {t('wallet.transaction.title')}
-              <Badge className="bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300">
+              <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300">
                 {transactions.length}
               </Badge>
             </CardTitle>
             <div className="flex items-center space-x-4 text-sm">
               <span className="text-gray-600 dark:text-gray-400">
-                Total investi: <span className="font-semibold text-green-600">{totalInvested.toFixed(4)} ETH</span>
+                {t('wallet.transaction.totalInvested')}: <span className="font-semibold text-lime-600">{totalInvested.toFixed(4)} ETH</span>
               </span>
               <span className="text-gray-600 dark:text-gray-400">
-                Dividendes: <span className="font-semibold text-blue-600">{totalDividends.toFixed(4)} ETH</span>
+                {t('wallet.transaction.dividends')}: <span className="font-semibold text-lime-600">{totalDividends.toFixed(4)} ETH</span>
               </span>
             </div>
           </div>
@@ -216,10 +216,10 @@ export default function TransactionHistory({ transactions, isLoading }) {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Rechercher..."
+                placeholder={t('wallet.transaction.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors w-48"
+                className="pl-10 pr-4 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent transition-colors w-48"
               />
             </div>
 
@@ -227,9 +227,9 @@ export default function TransactionHistory({ transactions, isLoading }) {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             >
-              <option value="all">Tous types</option>
+              <option value="all">{t('wallet.transaction.allTypes')}</option>
               {transactionTypes.map(type => (
                 <option key={type} value={type}>{type}</option>
               ))}
@@ -239,12 +239,12 @@ export default function TransactionHistory({ transactions, isLoading }) {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent"
             >
-              <option value="date">Date</option>
-              <option value="amount">Montant</option>
-              <option value="project">Projet</option>
-              <option value="type">Type</option>
+              <option value="date">{t('wallet.transaction.sortDate')}</option>
+              <option value="amount">{t('wallet.transaction.sortAmount')}</option>
+              <option value="project">{t('wallet.transaction.sortProject')}</option>
+              <option value="type">{t('wallet.transaction.sortType')}</option>
             </select>
 
             {/* Export */}
@@ -255,7 +255,7 @@ export default function TransactionHistory({ transactions, isLoading }) {
               className="border-gray-300 dark:border-neutral-700"
             >
               <Download className="h-4 w-4 mr-2" />
-              Export
+              {t('wallet.transaction.export')}
             </Button>
           </div>
         </div>
@@ -281,12 +281,12 @@ export default function TransactionHistory({ transactions, isLoading }) {
           <div className="text-center py-12">
             <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              {searchTerm || filterType !== 'all' ? 'Aucune transaction trouvée' : 'Aucune transaction'}
+              {searchTerm || filterType !== 'all' ? t('wallet.transaction.noTransactionsFound') : t('wallet.transaction.noTransactions')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               {searchTerm || filterType !== 'all'
-                ? 'Essayez de modifier vos filtres de recherche'
-                : 'Vos transactions d\'investissement apparaîtront ici'
+                ? t('wallet.transaction.tryModifyFilters')
+                : t('wallet.transaction.transactionsWillAppear')
               }
             </p>
           </div>
@@ -296,19 +296,19 @@ export default function TransactionHistory({ transactions, isLoading }) {
               <thead className="bg-gray-50 dark:bg-neutral-900">
                 <tr>
                   <th className="text-left py-3 pl-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Type
+                    {t('wallet.transaction.typeHeader')}
                   </th>
                   <th className="text-left py-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Projet
+                    {t('wallet.transaction.projectHeader')}
                   </th>
                   <th className="text-right py-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Montant
+                    {t('wallet.transaction.amountHeader')}
                   </th>
                   <th className="text-left py-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Date
+                    {t('wallet.transaction.dateHeader')}
                   </th>
                   <th className="text-center py-3 pr-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Action
+                    {t('wallet.transaction.actionHeader')}
                   </th>
                 </tr>
               </thead>
