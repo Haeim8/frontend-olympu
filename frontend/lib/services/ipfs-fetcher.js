@@ -136,7 +136,6 @@ function parseCampaignMetadata(metadata, ipfsHash = '') {
           // Sinon, construire l'URL IPFS complète avec le fileName
           const fileName = doc.fileName || doc.name || '';
           if (fileName && ipfsHash) {
-            // Construire l'URL: ipfs://hash/fileName
             return {
               ...doc,
               url: `ipfs://${ipfsHash}/${fileName}`

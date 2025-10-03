@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, Download, ExternalLink, FileText, Image as ImageIcon, Film } from 'lucide-react';
+import { X, Download, ExternalLink, FileText, Image as ImageIcon, Film, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useLanguage';
 
 /**
@@ -13,6 +13,15 @@ import { useTranslation } from '@/hooks/useLanguage';
 export default function DocumentViewer({ document, isOpen, onClose }) {
   const { t } = useTranslation();
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Réinitialiser les états quand le document change
+  useEffect(() => {
+    if (document) {
+      setLoading(true);
+      setError(false);
+    }
+  }, [document]);
 
   if (!document) return null;
 
@@ -58,11 +67,25 @@ export default function DocumentViewer({ document, isOpen, onClose }) {
       case 'image':
         return (
           <div className="relative w-full h-full flex items-center justify-center bg-gray-100 dark:bg-neutral-900 rounded-lg overflow-hidden">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-neutral-900 z-10">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-12 w-12 text-lime-600 animate-spin" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('documentViewer.loading') || 'Chargement...'}
+                  </p>
+                </div>
+              </div>
+            )}
             <img
               src={fileUrl}
               alt={fileName}
               className="max-w-full max-h-[70vh] object-contain"
-              onError={() => setError(true)}
+              onLoad={() => setLoading(false)}
+              onError={() => {
+                setError(true);
+                setLoading(false);
+              }}
             />
           </div>
         );
@@ -70,11 +93,25 @@ export default function DocumentViewer({ document, isOpen, onClose }) {
       case 'video':
         return (
           <div className="relative w-full bg-black rounded-lg overflow-hidden">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-12 w-12 text-lime-600 animate-spin" />
+                  <p className="text-sm text-white">
+                    {t('documentViewer.loading') || 'Chargement...'}
+                  </p>
+                </div>
+              </div>
+            )}
             <video
               src={fileUrl}
               controls
               className="w-full max-h-[70vh]"
-              onError={() => setError(true)}
+              onLoadedData={() => setLoading(false)}
+              onError={() => {
+                setError(true);
+                setLoading(false);
+              }}
             >
               {t('documentViewer.videoNotSupported') || 'Votre navigateur ne supporte pas la vidéo.'}
             </video>
@@ -84,11 +121,28 @@ export default function DocumentViewer({ document, isOpen, onClose }) {
       case 'pdf':
         return (
           <div className="relative w-full h-[70vh] bg-gray-100 dark:bg-neutral-900 rounded-lg overflow-hidden">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-neutral-900 z-10">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-12 w-12 text-lime-600 animate-spin" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('documentViewer.loadingPdf') || 'Chargement du PDF depuis IPFS...'}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    {t('documentViewer.loadingPdfHint') || 'Cela peut prendre quelques secondes'}
+                  </p>
+                </div>
+              </div>
+            )}
             <iframe
               src={`${fileUrl}#view=FitH`}
               className="w-full h-full border-0"
               title={fileName}
-              onError={() => setError(true)}
+              onLoad={() => setLoading(false)}
+              onError={() => {
+                setError(true);
+                setLoading(false);
+              }}
             />
           </div>
         );

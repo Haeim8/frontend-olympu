@@ -681,10 +681,14 @@ const translations = {
 
     // Document Viewer
     'documentViewer.loadError': 'Impossible de charger le document',
+    'documentViewer.loadErrorHint': 'Essayez de télécharger le document ou réessayez plus tard',
     'documentViewer.openInNewTab': 'Ouvrir dans un nouvel onglet',
     'documentViewer.videoNotSupported': 'Votre navigateur ne supporte pas la vidéo.',
     'documentViewer.previewNotAvailable': 'Aperçu non disponible pour ce type de fichier',
     'documentViewer.download': 'Télécharger',
+    'documentViewer.loading': 'Chargement...',
+    'documentViewer.loadingPdf': 'Chargement du PDF depuis IPFS...',
+    'documentViewer.loadingPdfHint': 'Cela peut prendre quelques secondes',
 
     // Project Details Tab
     'projectDetailsTab.loading': 'Chargement des détails du projet...',
@@ -1631,10 +1635,14 @@ const translations = {
 
     // Document Viewer
     'documentViewer.loadError': 'Unable to load document',
+    'documentViewer.loadErrorHint': 'Try downloading the document or try again later',
     'documentViewer.openInNewTab': 'Open in new tab',
     'documentViewer.videoNotSupported': 'Your browser does not support video playback.',
     'documentViewer.previewNotAvailable': 'Preview not available for this file type',
     'documentViewer.download': 'Download',
+    'documentViewer.loading': 'Loading...',
+    'documentViewer.loadingPdf': 'Loading PDF from IPFS...',
+    'documentViewer.loadingPdfHint': 'This may take a few seconds',
 
     // Project Details Tab
     'projectDetailsTab.loading': 'Loading project details...',
@@ -2534,10 +2542,14 @@ const translations = {
 
     // Document Viewer
     'documentViewer.loadError': 'No se puede cargar el documento',
+    'documentViewer.loadErrorHint': 'Intente descargar el documento o vuelva a intentarlo más tarde',
     'documentViewer.openInNewTab': 'Abrir en nueva pestaña',
     'documentViewer.videoNotSupported': 'Su navegador no soporta la reproducción de video.',
     'documentViewer.previewNotAvailable': 'Vista previa no disponible para este tipo de archivo',
     'documentViewer.download': 'Descargar',
+    'documentViewer.loading': 'Cargando...',
+    'documentViewer.loadingPdf': 'Cargando PDF desde IPFS...',
+    'documentViewer.loadingPdfHint': 'Esto puede tardar unos segundos',
 
     // Project Details Tab
     'projectDetailsTab.loading': 'Cargando detalles del proyecto...',

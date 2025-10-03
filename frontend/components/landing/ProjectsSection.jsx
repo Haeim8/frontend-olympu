@@ -1,11 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
-import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, TrendingUp, Users, Clock, CheckCircle, Zap, Star, Diamond, Wallet } from "lucide-react";
+import { ExternalLink, TrendingUp, Users, Clock, CheckCircle, Zap, Star, Diamond, Wallet, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiManager } from '@/lib/services/api-manager';
 import { PromotionService } from '@/lib/services/promotion-service';
 import { useTranslation } from '@/hooks/useLanguage';
@@ -16,6 +16,8 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [promotions, setPromotions] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const autoPlayRef = useRef(null);
 
   // Récupérer l'adresse du wallet
   useEffect(() => {
@@ -42,7 +44,7 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
       const activePromotions = await PromotionService.getActivePromotions();
       setPromotions(activePromotions);
 
-      for (const campaignAddress of campaignAddresses.slice(0, 6)) { // Limiter à 6 pour l'affichage
+      for (const campaignAddress of campaignAddresses.slice(0, 20)) { // Charger plus pour trier
         try {
           const campaignData = await apiManager.getCampaignData(campaignAddress);
           if (!campaignData) continue;
@@ -78,17 +80,17 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
         }
       }
 
-      // Trier par promotions (boostées en premier)
+      // Trier par popularité (nombre d'investisseurs)
       projectsData.sort((a, b) => {
+        // D'abord les campagnes promues
         if (a.promotion && !b.promotion) return -1;
         if (!a.promotion && b.promotion) return 1;
-        if (a.promotion && b.promotion) {
-          return (b.promotion.boost_type || 0) - (a.promotion.boost_type || 0);
-        }
-        return 0;
+        // Ensuite par nombre d'investisseurs (popularité)
+        return b.backers - a.backers;
       });
 
-      setProjects(projectsData);
+      // Garder seulement les 5 plus populaires
+      setProjects(projectsData.slice(0, 5));
     } catch (error) {
       console.error('Erreur chargement projets:', error);
     } finally {
@@ -99,6 +101,21 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
+
+  // Auto-scroll carousel
+  useEffect(() => {
+    if (projects.length <= 3) return; // Pas besoin d'auto-scroll si 3 ou moins
+
+    autoPlayRef.current = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % projects.length);
+    }, 4000); // Change toutes les 4 secondes
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [projects.length]);
 
   const connectWallet = async () => {
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -171,9 +188,9 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
             <div className="animate-pulse bg-gray-300 dark:bg-gray-700 h-8 w-64 mx-auto mb-4 rounded"></div>
             <div className="animate-pulse bg-gray-200 dark:bg-gray-600 h-4 w-96 mx-auto rounded"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-white/5 border border-white/10 rounded-lg p-6 h-80">
+          <div className="flex gap-6 overflow-hidden">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex-shrink-0 w-full md:w-1/3 animate-pulse bg-white/5 border border-white/10 rounded-lg p-6 h-80">
                 <div className="bg-gray-300 dark:bg-gray-700 h-4 w-3/4 mb-4 rounded"></div>
                 <div className="bg-gray-200 dark:bg-gray-600 h-3 w-full mb-2 rounded"></div>
                 <div className="bg-gray-200 dark:bg-gray-600 h-3 w-2/3 rounded"></div>
@@ -207,18 +224,21 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
           </p>
         </motion.div>
 
-        {/* Projets */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {projects.map((project, index) => {
+        {/* Carousel - UNE SEULE LIGNE */}
+        <div className="relative mb-12">
+          <div className="overflow-hidden">
+            <motion.div
+              className="flex gap-6"
+              animate={{ x: `-${currentIndex * (100 / 3)}%` }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            >
+              {projects.map((project, index) => {
             const StatusIcon = getStatusIcon(project.status);
             
             return (
               <motion.div
                 key={project.address || index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
+                className="flex-shrink-0 w-full md:w-1/3"
                 whileHover={{ y: -5 }}
               >
                 <Card className={`h-full relative ${
@@ -333,6 +353,30 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
               </motion.div>
             );
           })}
+            </motion.div>
+          </div>
+
+          {/* Flèches navigation */}
+          {projects.length > 3 && (
+            <>
+              <button
+                onClick={() => setCurrentIndex((prev) => (prev - 1 + projects.length) % projects.length)}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 rounded-full ${
+                  darkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'
+                } backdrop-blur-lg flex items-center justify-center transition-all`}
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => setCurrentIndex((prev) => (prev + 1) % projects.length)}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 rounded-full ${
+                  darkMode ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'
+                } backdrop-blur-lg flex items-center justify-center transition-all`}
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* CTA */}

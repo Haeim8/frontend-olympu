@@ -51,7 +51,7 @@ const CAMPAIGN_ABI = CampaignArtifact.abi;
 
 // Plus besoin d'événements - tout est récupéré via fonctions du contrat!
 
-export async function syncCampaigns() {
+export async function syncCampaigns(batchSize = 5) {
   console.log('[Indexer] 🚀 Synchronisation INTELLIGENTE (APPELS RPC DIRECTS)');
 
   const currentBlock = await publicClient.getBlockNumber();
@@ -59,7 +59,8 @@ export async function syncCampaigns() {
   // 1. Récupérer toutes les campagnes depuis la DB
   const { data: campaigns } = await supabaseAdmin
     .from('campaigns')
-    .select('address, creator');
+    .select('address, creator, updated_at')
+    .order('updated_at', { ascending: true }); // Prioriser les plus anciennes
 
   if (!campaigns || campaigns.length === 0) {
     console.log('[Indexer] ⚠️ Aucune campagne dans la DB');
@@ -68,9 +69,12 @@ export async function syncCampaigns() {
 
   console.log(`[Indexer] 📋 ${campaigns.length} campagnes trouvées dans la DB`);
 
-  // 2. Mettre à jour chaque campagne via appels RPC directs
-  let processed = 0;
-  for (const campaign of campaigns) {
+  // 2. Limiter le nombre de campagnes à traiter pour éviter timeout (max 5 par appel)
+  const campaignsToProcess = campaigns.slice(0, batchSize);
+  console.log(`[Indexer] ⚡ Traitement de ${campaignsToProcess.length}/${campaigns.length} campagnes (batch)`);
+
+  // 3. Mettre à jour les campagnes EN PARALLÈLE (au lieu de séquentiel)
+  const updatePromises = campaignsToProcess.map(async (campaign) => {
     try {
       const details = await fetchCampaignDetails(campaign.address);
 
@@ -81,27 +85,35 @@ export async function syncCampaigns() {
         ...details,
       });
 
-      processed++;
+      return { success: true, address: campaign.address };
     } catch (error) {
       console.error(`[Indexer] ❌ Erreur ${campaign.address}:`, error.message);
+      return { success: false, address: campaign.address };
     }
-  }
+  });
 
-  console.log(`[Indexer] ✅ ${processed}/${campaigns.length} campagnes mises à jour`);
+  const results = await Promise.all(updatePromises);
+  const processed = results.filter(r => r.success).length;
 
-  // 3. Sync des transactions via appels RPC directs (getInvestments)
-  const campaignAddresses = campaigns.map(c => c.address.toLowerCase());
-  await syncCampaignTransactionsFromContract(campaignAddresses);
+  console.log(`[Indexer] ✅ ${processed}/${campaignsToProcess.length} campagnes mises à jour`);
+
+  // 4. Sync des transactions UNIQUEMENT pour les campagnes traitées
+  const campaignAddresses = campaignsToProcess.map(c => c.address.toLowerCase());
+  await syncCampaignTransactionsFromContract(campaignAddresses, 2); // Max 2 campagnes pour les transactions
 
   await updateLastSyncedBlock('campaigns', currentBlock);
 
-  return { processed };
+  return { processed, total: campaigns.length };
 }
 
-async function syncCampaignTransactionsFromContract(campaignAddresses) {
+async function syncCampaignTransactionsFromContract(campaignAddresses, maxCampaigns = 2) {
   console.log('[Indexer][Tx] 🔄 Récupération transactions via fonctions contrat...');
 
-  for (const campaignAddress of campaignAddresses) {
+  // Limiter le nombre de campagnes pour éviter timeout
+  const addressesToProcess = campaignAddresses.slice(0, maxCampaigns);
+  console.log(`[Indexer][Tx] ⚡ Traitement de ${addressesToProcess.length}/${campaignAddresses.length} campagnes (batch)`);
+
+  for (const campaignAddress of addressesToProcess) {
     try {
       // 1. Récupérer totalSupply (nombre de NFTs)
       const totalSupply = await publicClient.readContract({
