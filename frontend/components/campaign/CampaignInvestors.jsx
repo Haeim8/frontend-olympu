@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, Search, ExternalLink, Crown, Trophy, Award } from 'lucide-react';
+import { Users, Search, ExternalLink, Crown, Trophy, Award, TrendingUp } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
 
 export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
@@ -20,14 +20,14 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
 
   const loadInvestors = useCallback(async () => {
     if (!campaignAddress) return;
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const investorData = await apiManager.getCampaignInvestors(campaignAddress);
       setInvestors(investorData || []);
-      
+
     } catch (err) {
       console.error('Erreur chargement investors:', err);
       setError(t('campaignInvestors.loadError'));
@@ -43,14 +43,14 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
   const filteredInvestors = () => {
     const investorArray = Array.isArray(investors) ? investors : [];
     if (!searchTerm) return investorArray;
-    
-    return investorArray.filter(investor => 
+
+    return investorArray.filter(investor =>
       investor.address.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
   const sortedInvestors = () => {
-    return filteredInvestors().sort((a, b) => 
+    return filteredInvestors().sort((a, b) =>
       parseInt(b.nftCount) - parseInt(a.nftCount)
     );
   };
@@ -60,7 +60,7 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
     const totalInvestors = investorArray.length;
     const totalNFTs = investorArray.reduce((sum, inv) => sum + parseInt(inv.nftCount || 0), 0);
     const avgNFTsPerInvestor = totalInvestors > 0 ? (totalNFTs / totalInvestors).toFixed(2) : 0;
-    const topInvestor = investorArray.length > 0 ? 
+    const topInvestor = investorArray.length > 0 ?
       Math.max(...investorArray.map(inv => parseInt(inv.nftCount || 0))) : 0;
 
     return { totalInvestors, totalNFTs, avgNFTsPerInvestor, topInvestor };
@@ -68,26 +68,26 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
 
   const getInvestorTier = (nftCount) => {
     const count = parseInt(nftCount);
-    if (count >= 100) return { tier: 'Diamond', icon: Crown, color: 'text-purple-600 dark:text-purple-400' };
-    if (count >= 50) return { tier: 'Gold', icon: Trophy, color: 'text-yellow-600 dark:text-yellow-400' };
-    if (count >= 20) return { tier: 'Silver', icon: Award, color: 'text-gray-600 dark:text-gray-400' };
-    return { tier: 'Bronze', icon: null, color: 'text-orange-600 dark:text-orange-400' };
+    if (count >= 100) return { tier: 'Diamond', icon: Crown, color: 'text-cyan-400', bg: 'bg-cyan-400/10 border-cyan-400/20' };
+    if (count >= 50) return { tier: 'Gold', icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-400/10 border-yellow-400/20' };
+    if (count >= 20) return { tier: 'Silver', icon: Award, color: 'text-slate-300', bg: 'bg-slate-300/10 border-slate-300/20' };
+    return { tier: 'Bronze', icon: null, color: 'text-orange-400', bg: 'bg-orange-400/10 border-orange-400/20' };
   };
 
   const formatAddress = (address) => {
-    return `${address.slice(0, 8)}...${address.slice(-6)}`;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   const stats = getInvestorStats();
 
   if (error) {
     return (
-      <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
+      <Card className="glass-card border-red-500/20">
         <CardContent className="p-6">
           <div className="text-center">
-            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-            <Button onClick={loadInvestors} variant="outline">
-              {t('campaignInvestors.retry')}
+            <p className="text-red-400 mb-4">{error}</p>
+            <Button onClick={loadInvestors} variant="outline" className="border-red-500/20 hover:bg-red-500/10 text-red-400">
+              {t('campaignInvestors.retry', 'Réessayer')}
             </Button>
           </div>
         </CardContent>
@@ -96,175 +96,182 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
   }
 
   return (
-    <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <CardHeader>
-        <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-green-500" />
-            {t('campaignInvestors.title')}
+    <Card className="glass-card border-border shadow-none">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              {t('campaignInvestors.title', 'Investisseurs')}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {t('campaignInvestors.subtitle', 'Top détenteurs et répartition des parts.')}
+            </p>
           </div>
-          <Badge variant="outline" className="text-sm">
-            {stats.totalInvestors} {t('campaignInvestors.investors')}
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 backdrop-blur-md">
+            {stats.totalInvestors} {t('campaignInvestors.investors', 'Holders')}
           </Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="space-y-6">
         {/* Stats rapides */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/20 transition-all group">
+            <p className="text-2xl font-bold text-white group-hover:text-primary transition-colors">
               {stats.totalInvestors}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignInvestors.investorsLabel')}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('campaignInvestors.investorsLabel', 'Investisseurs')}</p>
           </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <div className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-blue-500/20 transition-all group">
+            <p className="text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
               {stats.totalNFTs}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignInvestors.totalNFTs')}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('campaignInvestors.totalNFTs', 'Shares Totales')}</p>
           </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <div className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-purple-500/20 transition-all group">
+            <p className="text-2xl font-bold text-white group-hover:text-purple-400 transition-colors">
               {stats.avgNFTsPerInvestor}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignInvestors.averagePerInvestor')}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('campaignInvestors.averagePerInvestor', 'Moyenne / Inv.')}</p>
           </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+          <div className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-yellow-500/20 transition-all group">
+            <p className="text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors">
               {stats.topInvestor}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('campaignInvestors.maxHeld')}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('campaignInvestors.maxHeld', 'Top Holder')}</p>
           </div>
         </div>
 
         {/* Barre de recherche */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={t('campaignInvestors.searchPlaceholder')}
+            placeholder={t('campaignInvestors.searchPlaceholder', 'Rechercher une adresse (0x...)')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-gray-50 dark:bg-neutral-900"
+            className="pl-10 bg-muted/30 border-input/50 focus:border-primary/50 text-foreground placeholder:text-muted-foreground/50 transition-all"
           />
         </div>
 
         {/* Table des investisseurs */}
-        <ScrollArea className="h-[400px] rounded-lg border border-gray-200 dark:border-gray-700">
-          <Table>
-            <TableHeader className="sticky top-0 bg-gray-50 dark:bg-neutral-900">
-              <TableRow>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.rank')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.investor')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.nftsHeld')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.tier')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.share')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('campaignInvestors.action')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                [...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                  </TableRow>
-                ))
-              ) : sortedInvestors().length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-gray-500 dark:text-gray-400 py-8">
-                    {searchTerm ? t('campaignInvestors.noInvestorsFound') : t('campaignInvestors.noInvestors')}
-                  </TableCell>
+        <div className="rounded-xl border border-border/50 overflow-hidden bg-background/20 backdrop-blur-sm">
+          <ScrollArea className="h-[400px]">
+            <Table>
+              <TableHeader className="bg-muted/50 sticky top-0 backdrop-blur-md z-10">
+                <TableRow className="border-border/50 hover:bg-transparent">
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase w-[100px] pl-4">{t('campaignInvestors.rank', 'Rang')}</TableHead>
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase">{t('campaignInvestors.investor', 'Investisseur')}</TableHead>
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase text-right">{t('campaignInvestors.nftsHeld', 'Parts')}</TableHead>
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase">{t('campaignInvestors.tier', 'Rang')}</TableHead>
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase text-right">{t('campaignInvestors.share', '%')}</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
-              ) : (
-                sortedInvestors().map((investor, index) => {
-                  const tier = getInvestorTier(investor.nftCount);
-                  const percentage = stats.totalNFTs > 0 ? 
-                    ((parseInt(investor.nftCount) / stats.totalNFTs) * 100).toFixed(1) : 0;
-                  
-                  return (
-                    <TableRow 
-                      key={`${investor.address}-${index}`}
-                      className="hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors duration-150"
-                      onMouseEnter={() => onPreloadHover && onPreloadHover(investor.address)}
-                    >
-                      <TableCell className="text-gray-900 dark:text-gray-100 font-semibold">
-                        <div className="flex items-center gap-2">
-                          {index === 0 && <Crown className="h-4 w-4 text-yellow-500" />}
-                          #{index + 1}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-900 dark:text-gray-100 font-mono">
-                        {formatAddress(investor.address)}
-                      </TableCell>
-                      <TableCell className="text-gray-900 dark:text-gray-100 font-bold text-lg">
-                        {investor.nftCount}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {tier.icon && <tier.icon className={`h-4 w-4 ${tier.color}`} />}
-                          <Badge variant="outline" className={tier.color}>
-                            {tier.tier}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-900 dark:text-gray-100 font-semibold">
-                        {percentage}%
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(`https://sepolia.basescan.org/address/${investor.address}`, '_blank')}
-                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i} className="border-border/30">
+                      <TableCell><div className="h-6 w-8 bg-muted/50 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-6 w-32 bg-muted/50 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-6 w-12 bg-muted/50 rounded animate-pulse ml-auto"></div></TableCell>
+                      <TableCell><div className="h-6 w-16 bg-muted/50 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-6 w-12 bg-muted/50 rounded animate-pulse ml-auto"></div></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-muted/50 rounded animate-pulse"></div></TableCell>
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+                  ))
+                ) : sortedInvestors().length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                      {searchTerm ? t('campaignInvestors.noInvestorsFound', 'Aucun investisseur trouvé') : t('campaignInvestors.noInvestors', 'Aucun investisseur pour le moment')}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  sortedInvestors().map((investor, index) => {
+                    const tier = getInvestorTier(investor.nftCount);
+                    const percentage = stats.totalNFTs > 0 ?
+                      ((parseInt(investor.nftCount) / stats.totalNFTs) * 100).toFixed(1) : 0;
+
+                    return (
+                      <TableRow
+                        key={`${investor.address}-${index}`}
+                        className="hover:bg-muted/30 transition-colors border-border/30 group"
+                        onMouseEnter={() => onPreloadHover && onPreloadHover(investor.address)}
+                      >
+                        <TableCell className="pl-4">
+                          <div className={`
+                                flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                                ${index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
+                              index === 1 ? 'bg-slate-300/20 text-slate-300' :
+                                index === 2 ? 'bg-orange-500/20 text-orange-500' : 'text-muted-foreground'}
+                            `}>
+                            {index + 1}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm text-foreground">
+                          {formatAddress(investor.address)}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-foreground">
+                          {investor.nftCount}
+                        </TableCell>
+                        <TableCell>
+                          <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${tier.bg} ${tier.color}`}>
+                            {tier.icon && <tier.icon className="h-3 w-3" />}
+                            {tier.tier}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm text-muted-foreground">
+                          {percentage}%
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => window.open(`https://sepolia.basescan.org/address/${investor.address}`, '_blank')}
+                            className="h-8 w-8 hover:bg-primary/20 hover:text-primary text-muted-foreground opacity-0 group-hover:opacity-100 transition-all font"
+                            title="View on Explorer"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </div>
 
         {/* Légende des tiers */}
-        <div className="mt-4 p-4 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {t('campaignInvestors.investorTiers')}:
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-            <div className="flex items-center gap-1">
-              <Crown className="h-3 w-3 text-purple-600 dark:text-purple-400" />
-              <span className="text-purple-600 dark:text-purple-400">{t('campaignInvestors.diamondTier')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Trophy className="h-3 w-3 text-yellow-600 dark:text-yellow-400" />
-              <span className="text-yellow-600 dark:text-yellow-400">{t('campaignInvestors.goldTier')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Award className="h-3 w-3 text-gray-600 dark:text-gray-400" />
-              <span className="text-gray-600 dark:text-gray-400">{t('campaignInvestors.silverTier')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="h-3 w-3 rounded-full bg-orange-600 dark:bg-orange-400"></div>
-              <span className="text-orange-600 dark:text-orange-400">{t('campaignInvestors.bronzeTier')}</span>
-            </div>
+        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground p-3 bg-muted/10 rounded-lg border border-border/20 justify-center">
+          <div className="flex items-center gap-1.5 opacity-70">
+            <Crown className="h-3 w-3 text-cyan-400" />
+            <span className="font-medium">Diamond (100+)</span>
+          </div>
+          <div className="flex items-center gap-1.5 opacity-70">
+            <Trophy className="h-3 w-3 text-yellow-400" />
+            <span className="font-medium">Gold (50+)</span>
+          </div>
+          <div className="flex items-center gap-1.5 opacity-70">
+            <Award className="h-3 w-3 text-slate-300" />
+            <span className="font-medium">Silver (20+)</span>
+          </div>
+          <div className="flex items-center gap-1.5 opacity-70">
+            <div className="h-2 w-2 rounded-full bg-orange-400"></div>
+            <span className="font-medium">Bronze</span>
           </div>
         </div>
 
         {sortedInvestors().length > 0 && (
-          <div className="mt-4 text-center">
+          <div className="text-center pt-2">
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={loadInvestors}
-              className="text-gray-600 dark:text-gray-400"
+              className="text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              {t('campaignInvestors.refreshData')}
+              {t('campaignInvestors.refreshData', 'Rafraîchir les données')}
             </Button>
           </div>
         )}

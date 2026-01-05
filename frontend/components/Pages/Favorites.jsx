@@ -55,22 +55,22 @@ export default function Favorites({
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6 relative z-10">
         {/* Header avec stats */}
         <div className="space-y-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
             {t('favorites.title')}
           </h2>
 
           {/* Badges de statistiques */}
           <div className="flex flex-wrap gap-3">
-            <Badge variant="outline" className="px-3 py-1.5 bg-white dark:bg-neutral-900 border-gray-300 dark:border-neutral-700">
-              <TrendingUp className="h-4 w-4 mr-2 text-lime-600" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Badge variant="outline" className="px-3 py-1.5 bg-primary/10 border-primary/30 backdrop-blur-md">
+              <TrendingUp className="h-4 w-4 mr-2 text-primary-light" />
+              <span className="text-sm font-medium text-white">
                 {stats.invested} {t('favorites.invested') || 'Investissements'}
               </span>
             </Badge>
 
-            <Badge variant="outline" className="px-3 py-1.5 bg-white dark:bg-neutral-900 border-gray-300 dark:border-neutral-700">
-              <Heart className="h-4 w-4 mr-2 text-red-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Badge variant="outline" className="px-3 py-1.5 bg-accent/10 border-accent/30 backdrop-blur-md">
+              <Heart className="h-4 w-4 mr-2 text-accent" />
+              <span className="text-sm font-medium text-white">
                 {stats.favoriteOnly} {t('favorites.favoriteOnly') || 'Favoris uniquement'}
               </span>
             </Badge>
@@ -79,22 +79,22 @@ export default function Favorites({
 
         {/* Contenu */}
         {isLoading ? (
-          <Card className="bg-white dark:bg-neutral-900 shadow-md border border-gray-200 dark:border-neutral-800">
+          <Card className="glass-card border-white/10">
             <CardContent className="p-12 flex flex-col items-center justify-center">
-              <Loader2 className="h-8 w-8 text-lime-600 animate-spin mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">
+              <Loader2 className="h-8 w-8 text-primary animate-spin mb-4" />
+              <p className="text-gray-400">
                 {t('favorites.loading') || 'Chargement de vos projets suivis...'}
               </p>
             </CardContent>
           </Card>
         ) : trackedProjects.length === 0 ? (
-          <Card className="bg-white dark:bg-neutral-900 shadow-md border border-gray-200 dark:border-neutral-800">
+          <Card className="glass-card border-white/10">
             <CardContent className="p-8 text-center">
-              <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <Heart className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">
                 {t('favorites.empty')}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">
+              <p className="text-gray-400 text-sm">
                 {t('favorites.emptyDescription') || 'Ajoutez des projets en favoris ou investissez pour les suivre ici'}
               </p>
             </CardContent>
@@ -106,11 +106,11 @@ export default function Favorites({
               const isFav = favorites.includes(project.id?.toLowerCase());
 
               return (
-                <div key={project.id} className="relative">
+                <div key={project.id} className="relative group">
                   {/* Badge "Investi" */}
                   {isInvested && (
-                    <div className="absolute -top-2 -left-2 z-10">
-                      <Badge className="bg-lime-600 text-white border-2 border-white dark:border-neutral-950 shadow-lg">
+                    <div className="absolute -top-2 -left-2 z-20">
+                      <Badge className="bg-gradient-to-r from-primary to-secondary text-white border-none shadow-[0_0_15px_rgba(112,0,255,0.5)]">
                         <TrendingUp className="h-3 w-3 mr-1" />
                         {t('favorites.investedBadge') || 'Investi'}
                       </Badge>

@@ -18,14 +18,14 @@ const translations = {
     community: "Communauté",
     favorites: "Favoris",
     campaign: "Ma Campagne",
-    
+
     // Header & Wallet
     connectWallet: "Connect Wallet",
     myWallet: "Mon portefeuille",
-    activity: "Activité", 
+    activity: "Activité",
     settings: "Paramètres",
     disconnect: "Se déconnecter",
-    
+
     // Campaign Page
     'campaign.noCampaignFound': 'Aucune campagne trouvée pour cette adresse',
     'campaign.loadError': 'Impossible de charger les données de campagne',
@@ -43,7 +43,7 @@ const translations = {
     'campaign.investors': 'Investisseurs',
     'campaign.documents': 'Documents',
     'campaign.social': 'Social',
-    
+
     // Campaign Header
     'campaignHeader.error': 'Erreur',
     'campaignHeader.noData': 'Aucune donnée de campagne disponible.',
@@ -60,7 +60,7 @@ const translations = {
     'campaignHeader.nftsMax': '{count} NFTs max',
     'campaignHeader.progress': 'Progression',
     'campaignHeader.lawyerCertified': 'Campagne certifiée par un avocat',
-    
+
     // Dividend Distribution
     'dividends.title': 'Distribution de Dividendes',
     'dividends.invalidAmount': 'Veuillez entrer un montant valide',
@@ -84,7 +84,7 @@ const translations = {
     'dividends.info1': 'La distribution sera automatiquement répartie entre tous les détenteurs de NFTs',
     'dividends.info2': 'Les frais de transaction seront déduits du montant envoyé',
     'dividends.info3': 'Cette action est irréversible',
-    
+
     // Campaign Actions
     'campaignActions.title': 'Actions de Campagne',
     'campaignActions.escrowSuccess': 'Escrow libéré avec succès !',
@@ -105,7 +105,7 @@ const translations = {
     'campaignActions.info1': 'Disponible uniquement si l\'objectif est atteint',
     'campaignActions.info2': 'Lance un nouveau round de financement',
     'campaignActions.info3': 'Validation par un avocat partenaire',
-    
+
     // Campaign Investors
     'campaignInvestors.title': 'Liste des Investisseurs',
     'campaignInvestors.investors': 'investisseurs',
@@ -130,7 +130,7 @@ const translations = {
     'campaignInvestors.refreshData': 'Actualiser les données',
     'campaignInvestors.retry': 'Réessayer',
     'campaignInvestors.loadError': 'Impossible de charger la liste des investisseurs',
-    
+
     // Campaign Documents
     'campaignDocuments.title': 'Documents Légaux',
     'campaignDocuments.documents': 'documents',
@@ -171,7 +171,7 @@ const translations = {
     'campaignDocuments.importance.point2': 'Démontrent la transparence de votre projet',
     'campaignDocuments.importance.point3': 'Peuvent être vérifiés par nos avocats partenaires',
     'campaignDocuments.importance.point4': 'Stockés de manière décentralisée sur IPFS',
-    
+
     // Campaign Social
     'campaignSocial.title': 'Réseaux Sociaux et Communication',
     'campaignSocial.edit': 'Modifier',
@@ -204,10 +204,10 @@ const translations = {
     'campaignSocial.engagementTips.tip3': 'Montrez les progrès de développement',
     'campaignSocial.engagementTips.tip4': 'Organisez des AMAs (Ask Me Anything) en live',
     'campaignSocial.engagementTips.tip5': 'Remerciez votre communauté pour leur soutien',
-    
+
     settings: "Paramètres",
     help: "Aide",
-    
+
     // Header
     notifications: "Notifications",
     darkMode: "Mode sombre",
@@ -216,7 +216,7 @@ const translations = {
     disconnect: "Se déconnecter",
     myWallet: "Mon portefeuille",
     activity: "Activité",
-    
+
     // Common
     loading: "Chargement...",
     error: "Erreur",
@@ -231,7 +231,7 @@ const translations = {
     retry: "Réessayer",
     previous: "Précédent",
     next: "Suivant",
-    
+
     // Projects
     investmentPlatform: "Plateforme d'investissement",
     projects: "Projets",
@@ -242,27 +242,27 @@ const translations = {
     endDate: "Date de fin",
     progress: "Progression",
     'projects.errors.loadFailed': 'Erreur chargement projets:',
-    
+
     // Language selector
     chooseLanguage: "Choisir la langue",
     selectLanguage: "Sélectionnez votre langue préférée",
-    
+
     // Status
     connected: "Connecté au réseau",
     active: "Actif",
     newNotifications: "nouveau(x)",
     noNotifications: "Aucune notification",
-    
+
     // Campagne
     finance: "Finance",
-    investors: "Investisseurs", 
+    investors: "Investisseurs",
     documents: "Documents",
     social: "Social",
     promote: "Promouvoir",
     certify: "Certifier",
     reopen: "Rouvrir",
     endedCampaign: "Campagne terminée",
-    
+
     // Landing Page
     decentralizedInvestment: "Investissement décentralisé",
     investInInnovation: "Investissez dans l'innovation",
@@ -286,10 +286,10 @@ const translations = {
     andBePart: "et faites partie de la révolution décentralisée qui façonne notre futur financier.",
     launchApp: "Lancer l'App",
     connectWallet: "Veuillez connecter votre portefeuille",
-    
+
     // Categories
     tech: "Tech",
-    finance: "Finance", 
+    finance: "Finance",
     defi: "DeFi",
     gaming: "Gaming",
     nft: "NFT",
@@ -297,7 +297,7 @@ const translations = {
     infrastructure: "Infrastructure",
     industry: "Industrie",
     other: "Autre",
-    
+
     // Campaign Creation
     basicInfo: "Informations de base",
     projectName: "Nom du projet",
@@ -307,7 +307,7 @@ const translations = {
     sharePrice: "Prix par part",
     duration: "Durée",
     description: "Description",
-    
+
     // HomeHeader
     'header.live_badge': 'Live',
     'header.title_part1': 'Projets en cours de',
@@ -320,7 +320,7 @@ const translations = {
     'header.filter.ongoing': 'Campagnes en cours',
     'header.filter.finalized': 'Campagnes finalisées',
     'header.create_campaign': 'Créer campagne',
-    
+
     // CampaignGrid
     'campaigns.error.title': 'Erreur de chargement',
     'campaigns.error.retry': 'Réessayer',
@@ -329,7 +329,7 @@ const translations = {
     'campaigns.refresh': 'Actualiser',
     'campaigns.finalized_title': 'Campagnes finalisées',
     'campaigns.ongoing_title': 'Campagnes en cours',
-    
+
     // CreateCampaignCTA
     'cta.launch_project': 'Lancez votre projet',
     'cta.title_part1': 'Créez votre campagne',
@@ -339,14 +339,14 @@ const translations = {
     'cta.benefits.security': 'Sécurité blockchain',
     'cta.benefits.community': 'Communauté active',
     'cta.benefits.growth': 'Croissance rapide',
-    
+
     // ProjectCard
     'project.unit_price': 'Prix unitaire',
     'project.current_raise': 'Levée en cours',
     'project.goal': 'Objectif',
     'project.progress': '{percent}% atteint',
     'project.view_details': 'Voir détails',
-    
+
     // Wallet
     'wallet.investment': 'Investissement',
     'wallet.notConnected.title': 'Portefeuille non connecté',
@@ -362,7 +362,7 @@ const translations = {
     'wallet.nftDetails.dividends': 'Dividendes reçus',
     'wallet.nftDetails.viewOnBasescan': 'Voir sur Basescan',
     'wallet.status.new': 'Nouveau',
-    'wallet.status.beginner': 'Débutant', 
+    'wallet.status.beginner': 'Débutant',
     'wallet.status.active': 'Actif',
     'wallet.status.investor': 'Investisseur',
     'wallet.online': 'En ligne',
@@ -374,7 +374,7 @@ const translations = {
     'wallet.refresh': 'Actualiser',
     'wallet.export': 'Exporter',
     'wallet.settings': 'Paramètres',
-    
+
     // Wallet Stats
     'wallet.stats.title': 'Statistiques du portefeuille',
     'wallet.stats.subtitle': 'Aperçu de vos investissements et NFT',
@@ -385,7 +385,7 @@ const translations = {
     'wallet.stats.dividends': 'Dividendes perçus',
     'wallet.stats.startInvesting': 'Commencez à investir !',
     'wallet.stats.noInvestmentsYet': 'Vous n\'avez pas encore d\'investissements. Découvrez les projets disponibles pour commencer.',
-    
+
     // Wallet NFT
     'wallet.nft.title': 'Vos NFTs',
     'wallet.nft.shares': 'parts',
@@ -395,13 +395,13 @@ const translations = {
     'wallet.nft.totalValue': 'Valeur totale: {value} ETH • Dividendes: {dividends} ETH',
     'wallet.nft.search': 'Rechercher...',
     'wallet.nft.sortDate': 'Date',
-    'wallet.nft.sortAmount': 'Montant', 
+    'wallet.nft.sortAmount': 'Montant',
     'wallet.nft.sortDividends': 'Dividendes',
     'wallet.nft.noResults': 'Aucun NFT trouvé',
     'wallet.nft.noNFTs': 'Aucun NFT détenu',
     'wallet.nft.trySearch': 'Essayez de modifier votre recherche',
     'wallet.nft.startInvesting': 'Commencez par investir dans des projets pour obtenir vos premiers NFT',
-    
+
     // Wallet Transactions
     'wallet.transaction.title': 'Historique des transactions',
     'wallet.transaction.campaign': 'Campagne',
@@ -425,13 +425,13 @@ const translations = {
     'wallet.transaction.noTransactions': 'Aucune transaction',
     'wallet.transaction.tryFilters': 'Essayez de modifier vos filtres de recherche',
     'wallet.transaction.transactionsWillAppear': 'Vos transactions d\'investissement apparaîtront ici',
-    
+
     // Discussions
     'discussions.title': 'Discussions',
     'discussions.generalChat': 'Chat Général',
     'discussions.campaignChats': 'Chats des Campagnes',
     'discussions.noCampaigns': 'Aucune campagne disponible pour le moment.',
-    
+
     // Favorites
     'favorites.title': 'Mes Projets Suivis',
     'favorites.empty': 'Aucun projet suivi',
@@ -440,7 +440,7 @@ const translations = {
     'favorites.favoriteOnly': 'Favoris uniquement',
     'favorites.investedBadge': 'Investi',
     'favorites.loading': 'Chargement de vos projets suivis...',
-    
+
     // News
     'news.title': 'Actualités Livar',
     'news.invested': 'Investi',
@@ -450,7 +450,7 @@ const translations = {
     'news.filterSector': 'Filtrer par secteur',
     'news.allSectors': 'Tous les secteurs',
     'news.yourInvestments': 'Vos Investissements',
-    
+
     // Campaign Creation
     'campaign.validation.nameRequired': 'Le nom est requis',
     'campaign.validation.symbolRequired': 'Le symbole est requis',
@@ -464,11 +464,11 @@ const translations = {
     'campaign.validation.whitepaperRequired': 'Le whitepaper est requis',
     'campaign.validation.teamMemberRequired': 'Au moins un membre d\'équipe avec un nom est requis',
     'campaign.validation.termsRequired': 'Vous devez accepter les conditions',
-    
+
     // Admin
     'admin.error.promotions': 'Erreur promotions',
     'admin.error.stats': 'Erreur stats',
-    
+
     // Article
     'article.close': 'Fermer l\'article',
     'article.share': 'Partager l\'article',
@@ -476,14 +476,14 @@ const translations = {
     'article.copyLink': 'Copier le lien de l\'article',
     'article.copyLinkButton': 'Copier le lien',
     'article.viewCampaign': 'Voir la campagne',
-    
+
     // Dialogs
     'dialog.reopen.validation.goalPositive': 'L\'objectif doit être supérieur à 0',
     'dialog.reopen.validation.pricePositive': 'Le prix des NFTs doit être supérieur à 0',
-    
+
     // Campaign Card
     'campaign.card.promotionError': 'Erreur check promotion',
-    
+
     // Filters
     'filters.searchPlaceholder': 'Rechercher une campagne...',
     'filters.title': 'Filtres',
@@ -533,60 +533,80 @@ const translations = {
     'landing.projects.noDescription': 'Description non disponible',
     'landing.projects.ethRaised': 'ETH levés',
     'landing.projects.goal': 'Objectif',
-    
-    // Landing Hero (déjà dans le contexte global mais réorganisé)
-    crowdfundingDefi: 'Financement Participatif DeFi',
-    support: 'Soutenez',
-    future: 'l\'avenir',
-    ecosystem: 'de l\'écosystème',
-    contributeText: 'Contribuez au développement des technologies',
-    web3Advanced: 'Web3 de pointe',
-    andBePart: 'et faites partie de la révolution décentralisée qui façonne notre futur financier.',
-    
-    // Autres textes landing manquants
-    'landing.hero.connectWallet': 'Veuillez connecter votre portefeuille',
-    'landing.hero.secureConnectionRequired': 'Connexion sécurisée requise',
-    switchNetwork: 'Changer de réseau',
-    'wallet.connectButton': 'Connecter le wallet',
-    'landing.hero.headline': 'Prêt à rejoindre la révolution DeFi ?',
-    'landing.hero.subtitle': 'Connectez votre portefeuille, explorez des campagnes vérifiées et suivez vos performances en temps réel.',
-    'landing.features.title': 'Pourquoi choisir notre plateforme?',
-    'landing.features.subtitle': 'Notre plateforme de financement participatif décentralisée offre des avantages uniques pour les créateurs et les investisseurs dans l\'écosystème Web3.',
-    'landing.features.decentralizedFunding.title': 'Financement Décentralisé',
-    'landing.features.decentralizedFunding.description': 'Accédez à un financement sans intermédiaires grâce à notre plateforme DeFi innovante.',
-    'landing.features.realTimeInsights.title': 'Tableau de bord en temps réel',
-    'landing.features.realTimeInsights.description': 'Visualisez les performances de vos campagnes avec des indicateurs on-chain mis à jour automatiquement.',
-    'landing.features.transparentRewards.title': 'Récompenses Transparentes',
-    'landing.features.transparentRewards.description': 'Recevez des récompenses proportionnelles à votre contribution, le tout enregistré sur la blockchain.',
-    'landing.features.maxSecurity.title': 'Sécurité Maximale',
-    'landing.features.maxSecurity.description': 'Vos fonds sont sécurisés par des contrats intelligents audités et des protocoles de sécurité avancés.',
-    'landing.stats.activeUsers': 'Utilisateurs actifs',
-    'landing.stats.fundsRaised': 'Fonds levés',
-    'landing.stats.projectsFunded': 'Projets financés',
-    'landing.stats.activeSupport': 'Support actif',
-    'landing.stats.free': 'GRATUIT',
-    'landing.stats.registration': 'Inscription',
-    'landing.stats.decentralized': 'Décentralisé',
-    'landing.footer.copyright': '© 2024 Livar. Tous droits réservés.',
-    
+
+    // Landing Hero
+    'landing.hero.liveOnBase': 'En direct sur Base Mainnet',
+    'landing.hero.titlePart1': 'L\'Avenir de',
+    'landing.hero.titlePart2': 'l\'Investissement Direct.',
+    'landing.hero.subtitle': 'Une plateforme de qualité institutionnelle pour la levée de fonds décentralisée. Connectez votre portefeuille pour accéder à des campagnes à haut rendement, des analyses en temps réel et une distribution automatisée des dividendes.',
+    'landing.hero.startInvesting': 'Commencer à Investir',
+    'landing.hero.viewDocumentation': 'Voir la Documentation',
+    'landing.hero.audited': 'Audité',
+    'landing.hero.kycCompliant': 'Conforme KYC',
+    'landing.hero.zkProofs': 'Preuves Zero-Knowledge',
+    'landing.hero.terminalVersion': 'Terminal Pro Livar v2.1 • Base Mainnet',
+    'landing.hero.terminalMarket': 'Marché / Campagne',
+    'landing.hero.terminalRaised': 'Volume Levé',
+    'landing.hero.terminalApy': 'APY (Est.)',
+    'landing.hero.terminalStatus': 'Statut',
+    'landing.hero.terminalTotalVolume': 'Volume Total',
+
     // How It Works
-    'landing.howItWorks.title': 'Comment ça marche ?',
-    'landing.howItWorks.subtitle': 'Rejoindre la révolution DeFi n\'a jamais été aussi simple. Suivez ces 3 étapes pour commencer votre aventure Web3.',
-    'landing.howItWorks.step1.title': 'Connectez votre wallet',
-    'landing.howItWorks.step1.description': 'Utilisez MetaMask, WalletConnect ou tout autre wallet compatible Ethereum',
-    'landing.howItWorks.step2.title': 'Choisissez une campagne',
-    'landing.howItWorks.step2.description': 'Parcourez les opportunités, comparez les KPI on-chain et sélectionnez celles qui vous inspirent.',
-    'landing.howItWorks.step3.title': 'Activez vos rewards',
-    'landing.howItWorks.step3.description': 'Recevez vos récompenses et suivez vos investissements directement depuis votre tableau de bord.',
-    'landing.howItWorks.readyInMinutes': 'Prêt en moins de 2 minutes',
-    
+    'landing.howItWorks.simpleOnboarding': 'Intégration Simple',
+    'landing.howItWorks.titlePart1': 'Commencez à Investir en',
+    'landing.howItWorks.titlePart2': 'Trois Étapes Simples.',
+    'landing.howItWorks.subtitle': 'Nous avons simplifié le processus d\'investissement DeFi. Pas de ponts complexes, pas d\'interfaces confuses. Connectez-vous, choisissez et gagnez.',
+    'landing.howItWorks.checklist1': 'Connexion instantanée du portefeuille',
+    'landing.howItWorks.checklist2': 'Transactions optimisées (Base L2)',
+    'landing.howItWorks.checklist3': 'Suivi de portefeuille en temps réel',
+    'landing.howItWorks.step1.title': 'Connecter le Portefeuille',
+    'landing.howItWorks.step1.description': 'Reliez votre portefeuille compatible MetaMask ou WalletConnect en quelques secondes.',
+    'landing.howItWorks.step2.title': 'Sélectionner une Stratégie',
+    'landing.howItWorks.step2.description': 'Parcourez les campagnes auditées et choisissez selon l\'APY, le profil de risque et la durée.',
+    'landing.howItWorks.step3.title': 'Générer du Rendement',
+    'landing.howItWorks.step3.description': 'Recevez des distributions de dividendes automatisées directement sur votre portefeuille en temps réel.',
+
+    // Stats Section
+    'landing.stats.networkStatus': 'État du Réseau',
+    'landing.stats.blockTime': 'Temps de Bloc',
+    'landing.stats.gasPrice': 'Prix du Gas',
+    'landing.stats.systemOperational': 'Système Opérationnel',
+    'landing.stats.ethCollected': 'Valeur Totale Verrouillée',
+    'landing.stats.registeredUsers': 'Investisseurs Inscrits',
+    'landing.stats.activeCampaigns': 'Entreprises Actives',
+    'landing.stats.verifiedContracts': '100% Vérifié',
+    'landing.stats.verifiedDesc': 'Tous les contrats sont audités et vérifiés sur Basescan.',
+    'landing.stats.weeklyGrowth': '+12.5% cette semaine',
+
+    // Landing Info Section
+    'landing.info.titlePrefix': 'Infrastructure de',
+    'landing.info.titleSuffix': 'Qualité Institutionnelle',
+    'landing.info.description': 'Découvrez l\'avenir de la levée de fonds décentralisée avec des outils conçus pour les investisseurs professionnels et les projets sérieux.',
+    'landing.info.realTimeTitle': 'Analyses de Marché Temps Réel',
+    'landing.info.realTimeDesc': 'Accédez à des flux de données en direct, des graphiques avancés et une analyse approfondie de la liquidité pour chaque campagne.',
+    'landing.info.latency': 'Latence',
+    'landing.info.uptime': 'Disponibilité',
+    'landing.info.decentralizedTitle': 'Financement Décentralisé',
+    'landing.info.decentralizedDesc': 'Mécanismes de financement directs pair-à-contrat assurant une transparence totale et un règlement immédiat.',
+    'landing.info.securityTitle': 'Sécurité Auditée',
+    'landing.info.securityDesc': 'Contrats intelligents rigoureusement audités et vérifiés. Vos actifs sont protégés par des protocoles de sécurité conformes aux normes de l\'industrie.',
+    'landing.info.executionTitle': 'Exécution Rapide',
+    'landing.info.executionDesc': 'Optimisé pour les interactions haute fréquence sur Base L2.',
+    'landing.info.rewardsTitle': 'Récompenses Transparentes',
+    'landing.info.rewardsDesc': 'Distribution automatisée des dividendes directement sur votre portefeuille.',
+
     // Projects Section
-    'landing.projects.title': 'Projets en cours',
-    'landing.projects.subtitle': 'Découvrez les projets Web3 innovants qui façonnent l\'avenir. Chaque projet est vérifié et audité par notre communauté.',
-    'landing.projects.viewAll': 'Voir tous les projets',
+    // Projects Section
+    'landing.projects.title': 'Opportunités Actives',
+    'landing.projects.subtitle': 'Actifs de qualité institutionnelle ouverts à l\'investissement.',
+    'landing.projects.viewAll': 'Voir toutes les opportunités',
+    'landing.projects.viewOpportunity': 'Voir l\'Opportunité',
+    'landing.projects.certified': 'Certifié',
+    'landing.projects.raised': 'Levé',
+    'landing.projects.funded': 'Financé',
     'campaigns.active': 'Campagnes actives',
     'campaigns.investSubtitle': 'Investissez dans les campagnes les plus prometteuses. Les campagnes boostées apparaissent en premier.',
-    
+
     // Campaign Status  
     'campaign.status.ongoing': 'En cours',
     'campaign.status.ended': 'Terminé',
@@ -597,7 +617,7 @@ const translations = {
     'campaign.card.progress': 'Progression',
     'campaign.card.certified': 'Certifié',
     'campaign.card.popular': 'Populaire',
-    
+
     // Project Details
     'projectDetails.tabs.overview': 'Vue d\'ensemble',
     'projectDetails.tabs.details': 'Détails',
@@ -605,7 +625,45 @@ const translations = {
     'projectDetails.error.title': 'Erreur de chargement',
     'projectDetails.error.retry': 'Réessayer',
     'projectDetails.error.close': 'Fermer',
-    
+
+    // Project Details Modal - New Keys
+    'projectDetails.description': 'Détails de la campagne {name}',
+    'projectDetails.status.active': 'En cours',
+    'projectDetails.status.funded': 'Objectif atteint',
+    'projectDetails.status.ended': 'Terminé',
+    'projectDetails.status.finalized': 'Finalisé',
+    'projectDetails.status.inactive': 'Inactif',
+    'projectDetails.funded': 'financé',
+    'projectDetails.verified': 'Vérifié',
+    'projectDetails.defaultSector': 'Général',
+    'projectDetails.stats.goal': 'Objectif',
+    'projectDetails.stats.raised': 'Levés',
+    'projectDetails.stats.investors': 'Investisseurs',
+    'projectDetails.stats.time': 'Temps',
+    'projectDetails.time.ended': 'Terminé',
+    'projectDetails.time.notSpecified': 'Non spécifié',
+    'projectDetails.time.days': 'j',
+    'projectDetails.time.hours': 'h',
+    'projectDetails.tabs.overview': 'Aperçu',
+    'projectDetails.tabs.invest': 'Investir',
+    'projectDetails.tabs.history': 'Historique',
+    'projectDetails.progress': 'Progression',
+    'projectDetails.descriptionTitle': 'Description',
+    'projectDetails.noDescription': 'Aucune description disponible.',
+    'projectDetails.links': 'Liens',
+    'projectDetails.social.website': 'Site web',
+    'projectDetails.contract': 'Contrat',
+    'projectDetails.contractAddress': 'Adresse',
+    'projectDetails.pricePerShare': 'Prix par part',
+    'projectDetails.numberOfShares': 'Nombre de parts',
+    'projectDetails.total': 'Total',
+    'projectDetails.investNow': 'Investir maintenant',
+    'projectDetails.connectWallet': 'Connectez votre wallet pour investir',
+    'projectDetails.campaignNotActive': 'Cette campagne n\'est plus active',
+    'projectDetails.noTransactions': 'Aucune transaction',
+    'projectDetails.share': 'part',
+    'projectDetails.recent': 'Récent',
+
     // Project Overview
     'projectOverview.stats.keyInfo': 'Informations clés',
     'projectOverview.stats.raised': 'Collecté',
@@ -627,7 +685,7 @@ const translations = {
     'projectOverview.progress.sharesAvailable': 'Parts dispo',
     'campaign.card.daysRemaining': '{{days}}j restants',
     'campaign.card.hoursRemaining': '{{hours}}h restantes',
-    
+
     // Footer
     'landing.footer.description': 'La première plateforme de financement participatif entièrement décentralisée. Construisons ensemble l\'avenir de la finance Web3.',
     'landing.footer.platform': 'Plateforme',
@@ -642,14 +700,14 @@ const translations = {
     'landing.footer.termsOfUse': 'Conditions d\'utilisation',
     'landing.footer.privacyPolicy': 'Politique de confidentialité',
     'landing.footer.legalNotices': 'Mentions légales',
-    
+
     // CTA Section
     'landing.cta.title': 'Prêt à rejoindre la révolution DeFi?',
     'landing.cta.description': 'Connectez votre portefeuille et financez des projets innovants qui façonnent l\'avenir de la finance décentralisée.',
     'landing.cta.activeUsers': 'Utilisateurs actifs',
     'landing.cta.fundsRaised': 'Fonds levés',
     'landing.cta.projectsFunded': 'Projets financés',
-    
+
     // Stats Section
     'landing.stats.registeredUsers': 'Utilisateurs inscrits',
     'landing.stats.activeCampaigns': 'Campagnes actives',
@@ -657,11 +715,11 @@ const translations = {
     'landing.stats.realTimeTitle': 'Statistiques en temps réel',
     'landing.stats.blockchainData': 'Données directement depuis la blockchain Ethereum',
     'landing.stats.realTimeUpdate': 'Mis à jour en temps réel depuis la blockchain',
-    
+
     // Social
     'social.twitter': 'Twitter',
     'social.discord': 'Discord',
-    
+
     // Project Details Modal
     'projectDetails.modal.title': 'Détails du projet',
     'projectDetails.shareProject': 'Partager le projet',
@@ -671,17 +729,17 @@ const translations = {
     'projectDetails.transactionConfirmed': 'Transaction confirmée:',
     'projectDetails.purchaseError': 'Erreur lors de l\'achat:',
     'projectDetails.transactionError': 'Erreur lors de la transaction',
-    
+
     // Project Header
     'projectHeader.projectStatus.expired': 'Terminé',
-    'projectHeader.projectStatus.success': 'Objectif atteint', 
+    'projectHeader.projectStatus.success': 'Objectif atteint',
     'projectHeader.projectStatus.near': 'Bientôt complet',
     'projectHeader.projectStatus.active': 'En cours',
     'projectHeader.fundedPercent': '{percent}% financé',
     'projectHeader.investmentProject': 'Projet d\'investissement',
     'projectHeader.consultDetails': 'Consultez les détails complets du projet et investissez en achetant des shares pour participer au financement.',
     'projectHeader.raised': 'Levé',
-    'projectHeader.goal': 'Objectif', 
+    'projectHeader.goal': 'Objectif',
     'projectHeader.price': 'Prix',
     'projectHeader.end': 'Fin',
     'projectHeader.fundingProgress': 'Progression du financement',
@@ -698,7 +756,7 @@ const translations = {
     'projectHeader.discord': 'Discord',
     'projectHeader.telegram': 'Telegram',
     'projectHeader.medium': 'Medium',
-    
+
     // Share Selector
     'shareSelector.title': 'Investir dans ce projet',
     'shareSelector.sharesAvailable': '{count} parts disponibles',
@@ -782,7 +840,7 @@ const translations = {
     'projectDetailsTab.telegram': 'Telegram',
     'projectDetailsTab.medium': 'Medium',
     'projectDetailsTab.mediaEmptyHint': 'Ajoutez des visuels pour mettre en valeur la campagne.',
-    
+
     // Project Transactions
     'projectTransactions.title': 'Historique des transactions',
     'projectTransactions.subtitle': 'Toutes les transactions blockchain pour ce projet',
@@ -808,7 +866,7 @@ const translations = {
     'projectTransactions.refund': 'Remboursement',
     'projectTransactions.totalVolume': 'Volume total',
     'projectTransactions.totalShares': 'Shares total',
-    
+
     // Campaign Creation - Basic Info
     'campaignBasic.title': 'Informations de Base',
     'campaignBasic.subtitle': 'Définissez les éléments fondamentaux de votre campagne de financement',
@@ -840,7 +898,7 @@ const translations = {
     'campaignBasic.royaltyTooltip': '100 basis points = 1%. Frais sur les transactions secondaires.',
     'campaignBasic.royaltyPercent': '{percent}% de royalties',
     'campaignBasic.royaltyReceiver': 'Adresse de réception des royalties',
-    
+
     // Campaign Creation - Steps
     'campaignSteps.information': 'Informations',
     'campaignSteps.informationDesc': 'Détails du projet',
@@ -852,7 +910,7 @@ const translations = {
     'campaignSteps.nftDesc': 'Design & aperçu',
     'campaignSteps.verification': 'Vérification',
     'campaignSteps.verificationDesc': 'Validation finale',
-    
+
     // Campaign Creation - Documents
     'campaignDocs.title': 'Documents et Médias',
     'campaignDocs.subtitle': 'Téléchargez les documents nécessaires pour présenter votre projet',
@@ -879,7 +937,7 @@ const translations = {
     'campaignDocs.tip2': '• Utilisez des formats standard (PDF recommandé)',
     'campaignDocs.tip3': '• Les images doivent être en haute résolution',
     'campaignDocs.tip4': '• Vérifiez que tous vos documents sont à jour',
-    
+
     // Campaign Creation - Team & Socials
     'campaignTeam.title': 'Équipe et Réseaux',
     'campaignTeam.subtitle': 'Présentez votre équipe et vos réseaux sociaux',
@@ -915,7 +973,7 @@ const translations = {
     'campaignTeam.teamMembersDesc': 'Présentez les personnes clés de votre projet',
     'campaignTeam.noTeamMembers': 'Aucun membre d\'équipe',
     'campaignTeam.addFirstMember': 'Commencez par ajouter le premier membre de votre équipe',
-    
+
     // Campaign Creation - Review
     'campaignReview.title': 'Vérification et Validation',
     'campaignReview.subtitle': 'Vérifiez tous les détails avant de publier votre campagne',
@@ -950,7 +1008,7 @@ const translations = {
     'campaignReview.publishing': 'Publication en cours...',
     'campaignReview.finalStep': 'Dernière étape avant la publication',
     'campaignReview.acceptTerms': 'Vous devez accepter les conditions pour continuer',
-    
+
     // Campaign Creation - NFT Preview  
     'campaignNFT.title': 'Prévisualisation NFT',
     'campaignNFT.subtitle': 'Personnalisez l\'apparence de vos NFT de parts',
@@ -1257,7 +1315,7 @@ const translations = {
     'campaignReview.info4': 'La campagne sera visible publiquement sur la plateforme',
     'campaignReview.errorGeneral': 'Erreur:'
   },
-  
+
   en: {
     // Navigation
     home: "Home",
@@ -1269,14 +1327,14 @@ const translations = {
     community: "Community",
     favorites: "Favorites",
     campaign: "My Campaign",
-    
+
     // Header & Wallet
     connectWallet: "Connect Wallet",
     myWallet: "My wallet",
     activity: "Activity",
     settings: "Settings",
     disconnect: "Disconnect",
-    
+
     // Campaign Page
     'campaign.noCampaignFound': 'No campaign found for this address',
     'campaign.loadError': 'Unable to load campaign data',
@@ -1294,7 +1352,7 @@ const translations = {
     'campaign.investors': 'Investors',
     'campaign.documents': 'Documents',
     'campaign.social': 'Social',
-    
+
     // Campaign Header
     'campaignHeader.error': 'Error',
     'campaignHeader.noData': 'No campaign data available.',
@@ -1311,7 +1369,7 @@ const translations = {
     'campaignHeader.nftsMax': '{count} NFTs max',
     'campaignHeader.progress': 'Progress',
     'campaignHeader.lawyerCertified': 'Campaign certified by lawyer',
-    
+
     // Dividend Distribution
     'dividends.title': 'Dividend Distribution',
     'dividends.invalidAmount': 'Please enter a valid amount',
@@ -1335,7 +1393,7 @@ const translations = {
     'dividends.info1': 'Distribution will be automatically split among all NFT holders',
     'dividends.info2': 'Transaction fees will be deducted from the sent amount',
     'dividends.info3': 'This action is irreversible',
-    
+
     // Campaign Investors
     'campaignInvestors.title': 'Investor List',
     'campaignInvestors.investors': 'investors',
@@ -1360,7 +1418,7 @@ const translations = {
     'campaignInvestors.refreshData': 'Refresh data',
     'campaignInvestors.retry': 'Retry',
     'campaignInvestors.loadError': 'Unable to load investor list',
-    
+
     // Campaign Documents
     'campaignDocuments.title': 'Legal Documents',
     'campaignDocuments.documents': 'documents',
@@ -1401,7 +1459,7 @@ const translations = {
     'campaignDocuments.importance.point2': 'Demonstrate your project\'s transparency',
     'campaignDocuments.importance.point3': 'Can be verified by our partner lawyers',
     'campaignDocuments.importance.point4': 'Stored decentralized on IPFS',
-    
+
     // Campaign Social
     'campaignSocial.title': 'Social Networks and Communication',
     'campaignSocial.edit': 'Edit',
@@ -1434,10 +1492,10 @@ const translations = {
     'campaignSocial.engagementTips.tip3': 'Show development progress',
     'campaignSocial.engagementTips.tip4': 'Organize live AMAs (Ask Me Anything)',
     'campaignSocial.engagementTips.tip5': 'Thank your community for their support',
-    
+
     settings: "Settings",
     help: "Help",
-    
+
     // Header
     notifications: "Notifications",
     darkMode: "Dark mode",
@@ -1446,7 +1504,7 @@ const translations = {
     disconnect: "Disconnect",
     myWallet: "My wallet",
     activity: "Activity",
-    
+
     // Common
     loading: "Loading...",
     error: "Error",
@@ -1472,27 +1530,27 @@ const translations = {
     endDate: "End date",
     progress: "Progress",
     'projects.errors.loadFailed': 'Projects loading error:',
-    
+
     // Language selector
     chooseLanguage: "Choose language",
     selectLanguage: "Select your preferred language",
-    
+
     // Status
     connected: "Connected to network",
     active: "Active",
     newNotifications: "new",
     noNotifications: "No notifications",
-    
+
     // Campaign
     finance: "Finance",
-    investors: "Investors", 
+    investors: "Investors",
     documents: "Documents",
     social: "Social",
     promote: "Promote",
     certify: "Certify",
     reopen: "Reopen",
     endedCampaign: "Campaign ended",
-    
+
     // Landing Page
     decentralizedInvestment: "Decentralized investment",
     investInInnovation: "Invest in innovation",
@@ -1516,10 +1574,10 @@ const translations = {
     andBePart: "and be part of the decentralized revolution that shapes our financial future.",
     launchApp: "Launch App",
     connectWallet: "Please connect your wallet",
-    
+
     // Categories
     tech: "Tech",
-    finance: "Finance", 
+    finance: "Finance",
     defi: "DeFi",
     gaming: "Gaming",
     nft: "NFT",
@@ -1527,7 +1585,7 @@ const translations = {
     infrastructure: "Infrastructure",
     industry: "Industry",
     other: "Other",
-    
+
     // Campaign Creation
     basicInfo: "Basic information",
     projectName: "Project name",
@@ -1537,7 +1595,7 @@ const translations = {
     sharePrice: "Share price",
     duration: "Duration",
     description: "Description",
-    
+
     // HomeHeader
     'header.live_badge': 'Live',
     'header.title_part1': 'Projects currently',
@@ -1550,7 +1608,7 @@ const translations = {
     'header.filter.ongoing': 'Ongoing campaigns',
     'header.filter.finalized': 'Finalized campaigns',
     'header.create_campaign': 'Create campaign',
-    
+
     // CampaignGrid
     'campaigns.error.title': 'Loading error',
     'campaigns.error.retry': 'Retry',
@@ -1559,7 +1617,7 @@ const translations = {
     'campaigns.refresh': 'Refresh',
     'campaigns.finalized_title': 'Finalized campaigns',
     'campaigns.ongoing_title': 'Ongoing campaigns',
-    
+
     // CreateCampaignCTA
     'cta.launch_project': 'Launch your project',
     'cta.title_part1': 'Create your',
@@ -1569,14 +1627,14 @@ const translations = {
     'cta.benefits.security': 'Blockchain security',
     'cta.benefits.community': 'Active community',
     'cta.benefits.growth': 'Rapid growth',
-    
+
     // ProjectCard
     'project.unit_price': 'Unit price',
     'project.current_raise': 'Current raise',
     'project.goal': 'Goal',
     'project.progress': '{percent}% reached',
     'project.view_details': 'View details',
-    
+
     // Wallet
     'wallet.investment': 'Investment',
     'wallet.notConnected.title': 'Wallet not connected',
@@ -1592,7 +1650,7 @@ const translations = {
     'wallet.nftDetails.dividends': 'Dividends received',
     'wallet.nftDetails.viewOnBasescan': 'View on Basescan',
     'wallet.status.new': 'New',
-    'wallet.status.beginner': 'Beginner', 
+    'wallet.status.beginner': 'Beginner',
     'wallet.status.active': 'Active',
     'wallet.status.investor': 'Investor',
     'wallet.online': 'Online',
@@ -1604,7 +1662,7 @@ const translations = {
     'wallet.refresh': 'Refresh',
     'wallet.export': 'Export',
     'wallet.settings': 'Settings',
-    
+
     // Wallet Stats
     'wallet.stats.title': 'Wallet Statistics',
     'wallet.stats.subtitle': 'Overview of your investments and NFTs',
@@ -1615,7 +1673,7 @@ const translations = {
     'wallet.stats.dividends': 'Dividends received',
     'wallet.stats.startInvesting': 'Start investing!',
     'wallet.stats.noInvestmentsYet': 'You don\'t have any investments yet. Discover available projects to get started.',
-    
+
     // Wallet NFT
     'wallet.nft.title': 'Your NFTs',
     'wallet.nft.shares': 'shares',
@@ -1631,7 +1689,7 @@ const translations = {
     'wallet.nft.noNFTs': 'No NFTs held',
     'wallet.nft.trySearch': 'Try modifying your search',
     'wallet.nft.startInvesting': 'Start by investing in projects to get your first NFTs',
-    
+
     // Wallet Transactions
     'wallet.transaction.title': 'Transaction History',
     'wallet.transaction.campaign': 'Campaign',
@@ -1655,13 +1713,13 @@ const translations = {
     'wallet.transaction.noTransactions': 'No transactions',
     'wallet.transaction.tryFilters': 'Try modifying your search filters',
     'wallet.transaction.transactionsWillAppear': 'Your investment transactions will appear here',
-    
+
     // Discussions
     'discussions.title': 'Discussions',
     'discussions.generalChat': 'General Chat',
     'discussions.campaignChats': 'Campaign Chats',
     'discussions.noCampaigns': 'No campaigns available at the moment.',
-    
+
     // Favorites
     'favorites.title': 'My Tracked Projects',
     'favorites.empty': 'No tracked projects',
@@ -1670,7 +1728,7 @@ const translations = {
     'favorites.favoriteOnly': 'Favorites only',
     'favorites.investedBadge': 'Invested',
     'favorites.loading': 'Loading your tracked projects...',
-    
+
     // News
     'news.title': 'Livar News',
     'news.invested': 'Invested',
@@ -1680,7 +1738,7 @@ const translations = {
     'news.filterSector': 'Filter by sector',
     'news.allSectors': 'All sectors',
     'news.yourInvestments': 'Your Investments',
-    
+
     // Campaign Creation
     'campaign.validation.nameRequired': 'Name is required',
     'campaign.validation.symbolRequired': 'Symbol is required',
@@ -1694,11 +1752,11 @@ const translations = {
     'campaign.validation.whitepaperRequired': 'Whitepaper is required',
     'campaign.validation.teamMemberRequired': 'At least one team member with a name is required',
     'campaign.validation.termsRequired': 'You must accept the terms',
-    
+
     // Admin
     'admin.error.promotions': 'Promotions error',
     'admin.error.stats': 'Stats error',
-    
+
     // Article
     'article.close': 'Close article',
     'article.share': 'Share article',
@@ -1706,14 +1764,14 @@ const translations = {
     'article.copyLink': 'Copy article link',
     'article.copyLinkButton': 'Copy link',
     'article.viewCampaign': 'View campaign',
-    
+
     // Dialogs
     'dialog.reopen.validation.goalPositive': 'Goal must be greater than 0',
     'dialog.reopen.validation.pricePositive': 'NFT price must be greater than 0',
-    
+
     // Campaign Card
     'campaign.card.promotionError': 'Promotion check error',
-    
+
     // Filters
     'filters.searchPlaceholder': 'Search for a campaign...',
     'filters.title': 'Filters',
@@ -1763,60 +1821,80 @@ const translations = {
     'landing.projects.noDescription': 'No description available',
     'landing.projects.ethRaised': 'ETH raised',
     'landing.projects.goal': 'Goal',
-    
+
     // Landing Hero
-    crowdfundingDefi: 'DeFi Crowdfunding',
-    support: 'Support',
-    future: 'the future',
-    ecosystem: 'of the ecosystem',
-    contributeText: 'Contribute to the development of technologies',
-    web3Advanced: 'Advanced Web3',
-    andBePart: 'and be part of the decentralized revolution that shapes our financial future.',
-    
-    // Other landing texts
-    'landing.hero.connectWallet': 'Please connect your wallet',
-    'landing.hero.secureConnectionRequired': 'Secure connection required',
-    switchNetwork: 'Switch network',
-    'wallet.connectButton': 'Connect wallet',
-    'landing.hero.headline': 'Ready to join the DeFi revolution?',
-    'landing.hero.subtitle': 'Connect your wallet, explore verified campaigns, and track your performance in real time.',
-    'landing.features.title': 'Why choose our platform?',
-    'landing.features.subtitle': 'Our decentralized crowdfunding platform offers unique advantages for creators and investors in the Web3 ecosystem.',
-    'landing.features.decentralizedFunding.title': 'Decentralized Funding',
-    'landing.features.decentralizedFunding.description': 'Access funding without intermediaries through our innovative DeFi platform.',
-    'landing.features.realTimeInsights.title': 'Real-time analytics',
-    'landing.features.realTimeInsights.description': 'Monitor every campaign with on-chain metrics and instant performance updates.',
-    'landing.features.transparentRewards.title': 'Transparent Rewards',
-    'landing.features.transparentRewards.description': 'Receive rewards proportional to your contribution, all recorded on the blockchain.',
-    'landing.features.maxSecurity.title': 'Maximum Security',
-    'landing.features.maxSecurity.description': 'Your funds are secured by audited smart contracts and advanced security protocols.',
-    'landing.stats.activeUsers': 'Active users',
-    'landing.stats.fundsRaised': 'Funds raised',
-    'landing.stats.projectsFunded': 'Projects funded',
-    'landing.stats.activeSupport': 'Active support',
-    'landing.stats.free': 'FREE',
-    'landing.stats.registration': 'Registration',
-    'landing.stats.decentralized': 'Decentralized',
-    'landing.footer.copyright': '© 2024 Livar. All rights reserved.',
-    
+    'landing.hero.liveOnBase': 'Live on Base Mainnet',
+    'landing.hero.titlePart1': 'The Future of',
+    'landing.hero.titlePart2': 'Direct Investing.',
+    'landing.hero.subtitle': 'An institutional-grade platform for decentralized fundraising. Connect your wallet to access high-yield campaigns, real-time analytics, and automated dividend distribution.',
+    'landing.hero.startInvesting': 'Start Investing',
+    'landing.hero.viewDocumentation': 'View Documentation',
+    'landing.hero.audited': 'Audited',
+    'landing.hero.kycCompliant': 'KYC Compliant',
+    'landing.hero.zkProofs': 'Zero-Knowledge Proofs',
+    'landing.hero.terminalVersion': 'Livar Pro Terminal v2.1 • Base Mainnet',
+    'landing.hero.terminalMarket': 'Market / Campaign',
+    'landing.hero.terminalRaised': 'Raised Volume',
+    'landing.hero.terminalApy': 'APY (Est.)',
+    'landing.hero.terminalStatus': 'Status',
+    'landing.hero.terminalTotalVolume': 'Total Volume',
+
     // How It Works
-    'landing.howItWorks.title': 'How does it work?',
-    'landing.howItWorks.subtitle': 'Joining the DeFi revolution has never been easier. Follow these 3 steps to start your Web3 journey.',
-    'landing.howItWorks.step1.title': 'Connect your wallet',
-    'landing.howItWorks.step1.description': 'Use MetaMask, WalletConnect or any other Ethereum compatible wallet',
-    'landing.howItWorks.step2.title': 'Choose a campaign',
-    'landing.howItWorks.step2.description': 'Browse opportunities, compare on-chain KPIs, and pick the ones that inspire you.',
-    'landing.howItWorks.step3.title': 'Activate your rewards',
-    'landing.howItWorks.step3.description': 'Collect rewards and track your investments directly from your dashboard.',
-    'landing.howItWorks.readyInMinutes': 'Ready in less than 2 minutes',
-    
+    'landing.howItWorks.simpleOnboarding': 'Simple Onboarding',
+    'landing.howItWorks.titlePart1': 'Start Investing in',
+    'landing.howItWorks.titlePart2': 'Three Simple Steps.',
+    'landing.howItWorks.subtitle': 'We\'ve streamlined the DeFi investment process. No complex bridges, no confused interfaces. Just connect, pick, and earn.',
+    'landing.howItWorks.checklist1': 'Instant wallet connection',
+    'landing.howItWorks.checklist2': 'Gas-optimized transactions (Base L2)',
+    'landing.howItWorks.checklist3': 'Real-time portfolio tracking',
+    'landing.howItWorks.step1.title': 'Connect Wallet',
+    'landing.howItWorks.step1.description': 'Link your MetaMask or WalletConnect compatible wallet in seconds.',
+    'landing.howItWorks.step2.title': 'Select Strategy',
+    'landing.howItWorks.step2.description': 'Browse audited campaigns and choose based on APY, risk profile, and duration.',
+    'landing.howItWorks.step3.title': 'Earn Yield',
+    'landing.howItWorks.step3.description': 'Receive automated dividend distributions directly to your wallet in real-time.',
+
+    // Stats Section
+    'landing.stats.networkStatus': 'Network Status',
+    'landing.stats.blockTime': 'Block Time',
+    'landing.stats.gasPrice': 'Gas Price',
+    'landing.stats.systemOperational': 'System Operational',
+    'landing.stats.ethCollected': 'Total Value Locked',
+    'landing.stats.registeredUsers': 'Registered Investors',
+    'landing.stats.activeCampaigns': 'Active Ventures',
+    'landing.stats.verifiedContracts': '100% Verified',
+    'landing.stats.verifiedDesc': 'All contracts are audited and verified on Etherscan.',
+    'landing.stats.weeklyGrowth': '+12.5% this week',
+
+    // Landing Info Section
+    'landing.info.titlePrefix': 'Institutional Grade',
+    'landing.info.titleSuffix': 'Infrastructure',
+    'landing.info.description': 'Experience the future of decentralized fundraising with tools built for professional investors and serious projects.',
+    'landing.info.realTimeTitle': 'Real-Time Market Analytics',
+    'landing.info.realTimeDesc': 'Access live data streams, advanced charting, and deep liquidity analysis for every campaign. Decision-making powered by real-time blockchain telemetry.',
+    'landing.info.latency': 'Latency',
+    'landing.info.uptime': 'Uptime',
+    'landing.info.decentralizedTitle': 'Decentralized Funding',
+    'landing.info.decentralizedDesc': 'Direct peer-to-contract funding mechanisms ensuring complete transparency and immediate settlement.',
+    'landing.info.securityTitle': 'Audited Security',
+    'landing.info.securityDesc': 'Smart contracts rigorously audited and verified. Your assets are protected by industry-standard security protocols.',
+    'landing.info.executionTitle': 'Fast Execution',
+    'landing.info.executionDesc': 'Optimized for high-frequency interactions on Base L2.',
+    'landing.info.rewardsTitle': 'Transparent Rewards',
+    'landing.info.rewardsDesc': 'Automated dividend distribution directly to your wallet.',
+
     // Projects Section
-    'landing.projects.title': 'Ongoing Projects',
-    'landing.projects.subtitle': 'Discover innovative Web3 projects shaping the future. Each project is verified and audited by our community.',
-    'landing.projects.viewAll': 'View all projects',
+    // Projects Section
+    'landing.projects.title': 'Active Opportunities',
+    'landing.projects.subtitle': 'Institutional grade assets open for investment.',
+    'landing.projects.viewAll': 'View all opportunities',
+    'landing.projects.viewOpportunity': 'View Opportunity',
+    'landing.projects.certified': 'Certified',
+    'landing.projects.raised': 'Raised',
+    'landing.projects.funded': 'Funded',
     'campaigns.active': 'Active Campaigns',
     'campaigns.investSubtitle': 'Invest in the most promising campaigns. Boosted campaigns appear first.',
-    
+
     // Campaign Status  
     'campaign.status.ongoing': 'Ongoing',
     'campaign.status.ended': 'Ended',
@@ -1827,7 +1905,7 @@ const translations = {
     'campaign.card.progress': 'Progress',
     'campaign.card.certified': 'Certified',
     'campaign.card.popular': 'Popular',
-    
+
     // Project Details
     'projectDetails.tabs.overview': 'Overview',
     'projectDetails.tabs.details': 'Details',
@@ -1835,7 +1913,7 @@ const translations = {
     'projectDetails.error.title': 'Loading Error',
     'projectDetails.error.retry': 'Retry',
     'projectDetails.error.close': 'Close',
-    
+
     // Project Overview
     'projectOverview.stats.keyInfo': 'Key Information',
     'projectOverview.stats.raised': 'Raised',
@@ -1855,7 +1933,7 @@ const translations = {
     'projectOverview.progress.goal': 'Goal',
     'projectOverview.progress.remaining': 'Remaining',
     'projectOverview.progress.sharesAvailable': 'Shares Available',
-    
+
     // Footer
     'landing.footer.description': 'The first fully decentralized crowdfunding platform. Let\'s build the future of Web3 finance together.',
     'landing.footer.platform': 'Platform',
@@ -1870,14 +1948,14 @@ const translations = {
     'landing.footer.termsOfUse': 'Terms of Use',
     'landing.footer.privacyPolicy': 'Privacy Policy',
     'landing.footer.legalNotices': 'Legal Notices',
-    
+
     // CTA Section
     'landing.cta.title': 'Ready to join the DeFi revolution?',
     'landing.cta.description': 'Connect your wallet and back innovative projects that shape the future of decentralized finance.',
     'landing.cta.activeUsers': 'Active users',
     'landing.cta.fundsRaised': 'Funds raised',
     'landing.cta.projectsFunded': 'Projects funded',
-    
+
     // Stats Section
     'landing.stats.registeredUsers': 'Registered users',
     'landing.stats.activeCampaigns': 'Active campaigns',
@@ -1885,11 +1963,11 @@ const translations = {
     'landing.stats.realTimeTitle': 'Real-time statistics',
     'landing.stats.blockchainData': 'Data directly from the Ethereum blockchain',
     'landing.stats.realTimeUpdate': 'Updated in real-time from the blockchain',
-    
+
     // Social
     'social.twitter': 'Twitter',
     'social.discord': 'Discord',
-    
+
     // Project Details Modal
     'projectDetails.modal.title': 'Project details',
     'projectDetails.shareProject': 'Share project',
@@ -1899,17 +1977,17 @@ const translations = {
     'projectDetails.transactionConfirmed': 'Transaction confirmed:',
     'projectDetails.purchaseError': 'Purchase error:',
     'projectDetails.transactionError': 'Transaction error',
-    
+
     // Project Header
     'projectHeader.projectStatus.expired': 'Ended',
-    'projectHeader.projectStatus.success': 'Goal achieved', 
+    'projectHeader.projectStatus.success': 'Goal achieved',
     'projectHeader.projectStatus.near': 'Nearly complete',
     'projectHeader.projectStatus.active': 'Active',
     'projectHeader.fundedPercent': '{percent}% funded',
     'projectHeader.investmentProject': 'Investment project',
     'projectHeader.consultDetails': 'View complete project details and invest by purchasing shares to participate in funding.',
     'projectHeader.raised': 'Raised',
-    'projectHeader.goal': 'Goal', 
+    'projectHeader.goal': 'Goal',
     'projectHeader.price': 'Price',
     'projectHeader.end': 'End',
     'projectHeader.fundingProgress': 'Funding progress',
@@ -1926,7 +2004,7 @@ const translations = {
     'projectHeader.discord': 'Discord',
     'projectHeader.telegram': 'Telegram',
     'projectHeader.medium': 'Medium',
-    
+
     // Share Selector
     'shareSelector.title': 'Invest in this project',
     'shareSelector.sharesAvailable': '{count} shares available',
@@ -2010,7 +2088,7 @@ const translations = {
     'projectDetailsTab.telegram': 'Telegram',
     'projectDetailsTab.medium': 'Medium',
     'projectDetailsTab.mediaEmptyHint': 'Add visuals to highlight the campaign.',
-    
+
     // Project Transactions
     'projectTransactions.title': 'Transaction history',
     'projectTransactions.subtitle': 'All blockchain transactions for this project',
@@ -2036,7 +2114,7 @@ const translations = {
     'projectTransactions.refund': 'Refund',
     'projectTransactions.totalVolume': 'Total volume',
     'projectTransactions.totalShares': 'Total shares',
-    
+
     // Campaign Creation - Basic Info
     'campaignBasic.title': 'Basic Information',
     'campaignBasic.subtitle': 'Define the fundamental elements of your funding campaign',
@@ -2068,7 +2146,7 @@ const translations = {
     'campaignBasic.royaltyTooltip': '100 basis points = 1%. Fees on secondary transactions.',
     'campaignBasic.royaltyPercent': '{percent}% royalties',
     'campaignBasic.royaltyReceiver': 'Royalty receiver address',
-    
+
     // Campaign Creation - Steps
     'campaignSteps.information': 'Information',
     'campaignSteps.informationDesc': 'Project details',
@@ -2080,7 +2158,7 @@ const translations = {
     'campaignSteps.nftDesc': 'Design & preview',
     'campaignSteps.verification': 'Verification',
     'campaignSteps.verificationDesc': 'Final validation',
-    
+
     // Campaign Creation - Documents
     'campaignDocs.title': 'Documents and Media',
     'campaignDocs.subtitle': 'Upload the necessary documents to present your project',
@@ -2107,7 +2185,7 @@ const translations = {
     'campaignDocs.tip2': '• Use standard formats (PDF recommended)',
     'campaignDocs.tip3': '• Images should be high resolution',
     'campaignDocs.tip4': '• Make sure all your documents are up to date',
-    
+
     // Campaign Creation - Team & Socials
     'campaignTeam.title': 'Team and Networks',
     'campaignTeam.subtitle': 'Present your team and social networks',
@@ -2143,7 +2221,7 @@ const translations = {
     'campaignTeam.teamMembersDesc': 'Introduce the key people in your project',
     'campaignTeam.noTeamMembers': 'No team members',
     'campaignTeam.addFirstMember': 'Start by adding the first team member',
-    
+
     // Campaign Creation - Review
     'campaignReview.title': 'Verification and Validation',
     'campaignReview.subtitle': 'Check all details before publishing your campaign',
@@ -2178,7 +2256,7 @@ const translations = {
     'campaignReview.publishing': 'Publishing...',
     'campaignReview.finalStep': 'Final step before publishing',
     'campaignReview.acceptTerms': 'You must accept the terms to continue',
-    
+
     // Campaign Creation - NFT Preview  
     'campaignNFT.title': 'NFT Preview',
     'campaignNFT.subtitle': 'Customize the appearance of your share NFTs',
@@ -2485,7 +2563,7 @@ const translations = {
     'campaignReview.info4': 'The campaign will be publicly visible on the platform',
     'campaignReview.errorGeneral': 'Error:'
   },
-  
+
   es: {
     // Navigation
     home: "Inicio",
@@ -2497,7 +2575,7 @@ const translations = {
     community: "Comunidad",
     favorites: "Favoritos",
     campaign: "Mi Campaña",
-    
+
     // Campaign Page
     'campaign.noCampaignFound': 'No se encontró campaña para esta dirección',
     'campaign.loadError': 'No se pudieron cargar los datos de la campaña',
@@ -2515,7 +2593,7 @@ const translations = {
     'campaign.investors': 'Inversores',
     'campaign.documents': 'Documentos',
     'campaign.social': 'Social',
-    
+
     // Campaign Header
     'campaignHeader.error': 'Error',
     'campaignHeader.noData': 'No hay datos de campaña disponibles.',
@@ -2532,7 +2610,7 @@ const translations = {
     'campaignHeader.nftsMax': '{count} NFTs máx',
     'campaignHeader.progress': 'Progreso',
     'campaignHeader.lawyerCertified': 'Campaña certificada por abogado',
-    
+
     // Campaign Investors
     'campaignInvestors.title': 'Lista de Inversores',
     'campaignInvestors.investors': 'inversores',
@@ -2557,7 +2635,7 @@ const translations = {
     'campaignInvestors.refreshData': 'Actualizar datos',
     'campaignInvestors.retry': 'Reintentar',
     'campaignInvestors.loadError': 'No se pudo cargar la lista de inversores',
-    
+
     // Campaign Documents
     'campaignDocuments.title': 'Documentos Legales',
     'campaignDocuments.documents': 'documentos',
@@ -2598,7 +2676,7 @@ const translations = {
     'campaignDocuments.importance.point2': 'Demuestran la transparencia de su proyecto',
     'campaignDocuments.importance.point3': 'Pueden ser verificados por nuestros abogados asociados',
     'campaignDocuments.importance.point4': 'Almacenados de manera descentralizada en IPFS',
-    
+
     // Campaign Social
     'campaignSocial.title': 'Redes Sociales y Comunicación',
     'campaignSocial.edit': 'Editar',
@@ -2631,10 +2709,10 @@ const translations = {
     'campaignSocial.engagementTips.tip3': 'Muestra el progreso de desarrollo',
     'campaignSocial.engagementTips.tip4': 'Organiza AMAs (Ask Me Anything) en vivo',
     'campaignSocial.engagementTips.tip5': 'Agradece a tu comunidad por su apoyo',
-    
+
     settings: "Configuración",
     help: "Ayuda",
-    
+
     // Header
     notifications: "Notificaciones",
     darkMode: "Modo oscuro",
@@ -2643,7 +2721,7 @@ const translations = {
     disconnect: "Desconectar",
     myWallet: "Mi cartera",
     activity: "Actividad",
-    
+
     // Common
     loading: "Cargando...",
     error: "Error",
@@ -2669,37 +2747,37 @@ const translations = {
     endDate: "Fecha de fin",
     progress: "Progreso",
     'projects.errors.loadFailed': 'Error cargando proyectos:',
-    
+
     // Language selector
     chooseLanguage: "Elegir idioma",
     selectLanguage: "Selecciona tu idioma preferido",
-    
+
     // Status
     connected: "Conectado a la red",
     active: "Activo",
     newNotifications: "nuevo(s)",
     noNotifications: "Sin notificaciones",
-    
+
     // Campaign
     finance: "Finanzas",
-    investors: "Inversores", 
+    investors: "Inversores",
     documents: "Documentos",
     social: "Social",
     promote: "Promover",
     certify: "Certificar",
     reopen: "Reabrir",
     endedCampaign: "Campaña terminada",
-    
+
     // Landing Page
     decentralizedInvestment: "Inversión descentralizada",
     investInInnovation: "Invierte en innovación",
     discoverProjects: "Descubre proyectos",
     yourInvestments: "Tus inversiones",
     exploreMarket: "Explorar mercado",
-    
+
     // Categories
     tech: "Tech",
-    finance: "Finanzas", 
+    finance: "Finanzas",
     defi: "DeFi",
     gaming: "Gaming",
     nft: "NFT",
@@ -2707,7 +2785,7 @@ const translations = {
     infrastructure: "Infraestructura",
     industry: "Industria",
     other: "Otro",
-    
+
     // Campaign Creation
     basicInfo: "Información básica",
     projectName: "Nombre del proyecto",
@@ -2717,7 +2795,7 @@ const translations = {
     sharePrice: "Precio por acción",
     duration: "Duración",
     description: "Descripción",
-    
+
     // HomeHeader
     'header.live_badge': 'En vivo',
     'header.title_part1': 'Proyectos en',
@@ -2730,7 +2808,7 @@ const translations = {
     'header.filter.ongoing': 'Campañas en curso',
     'header.filter.finalized': 'Campañas finalizadas',
     'header.create_campaign': 'Crear campaña',
-    
+
     // CampaignGrid
     'campaigns.error.title': 'Error de carga',
     'campaigns.error.retry': 'Reintentar',
@@ -2739,7 +2817,7 @@ const translations = {
     'campaigns.refresh': 'Actualizar',
     'campaigns.finalized_title': 'Campañas finalizadas',
     'campaigns.ongoing_title': 'Campañas en curso',
-    
+
     // CreateCampaignCTA
     'cta.launch_project': 'Lanza tu proyecto',
     'cta.title_part1': 'Crea tu campaña',
@@ -2749,14 +2827,14 @@ const translations = {
     'cta.benefits.security': 'Seguridad blockchain',
     'cta.benefits.community': 'Comunidad activa',
     'cta.benefits.growth': 'Crecimiento rápido',
-    
+
     // ProjectCard
     'project.unit_price': 'Precio unitario',
     'project.current_raise': 'Recaudación actual',
     'project.goal': 'Objetivo',
     'project.progress': '{percent}% alcanzado',
     'project.view_details': 'Ver detalles',
-    
+
     // Wallet
     'wallet.investment': 'Inversión',
     'wallet.notConnected.title': 'Cartera no conectada',
@@ -2772,7 +2850,7 @@ const translations = {
     'wallet.nftDetails.dividends': 'Dividendos recibidos',
     'wallet.nftDetails.viewOnBasescan': 'Ver en Basescan',
     'wallet.status.new': 'Nuevo',
-    'wallet.status.beginner': 'Principiante', 
+    'wallet.status.beginner': 'Principiante',
     'wallet.status.active': 'Activo',
     'wallet.status.investor': 'Inversor',
     'wallet.online': 'En línea',
@@ -2784,7 +2862,7 @@ const translations = {
     'wallet.refresh': 'Actualizar',
     'wallet.export': 'Exportar',
     'wallet.settings': 'Configuración',
-    
+
     // Wallet Stats
     'wallet.stats.title': 'Estadísticas de la Cartera',
     'wallet.stats.subtitle': 'Resumen de sus inversiones y NFTs',
@@ -2795,7 +2873,7 @@ const translations = {
     'wallet.stats.dividends': 'Dividendos recibidos',
     'wallet.stats.startInvesting': '¡Comience a invertir!',
     'wallet.stats.noInvestmentsYet': 'Aún no tiene inversiones. Descubra proyectos disponibles para comenzar.',
-    
+
     // Wallet NFT
     'wallet.nft.title': 'Sus NFTs',
     'wallet.nft.shares': 'acciones',
@@ -2811,7 +2889,7 @@ const translations = {
     'wallet.nft.noNFTs': 'No posee NFTs',
     'wallet.nft.trySearch': 'Intente modificar su búsqueda',
     'wallet.nft.startInvesting': 'Comience invirtiendo en proyectos para obtener sus primeros NFTs',
-    
+
     // Wallet Transactions
     'wallet.transaction.title': 'Historial de Transacciones',
     'wallet.transaction.campaign': 'Campaña',
@@ -2835,13 +2913,13 @@ const translations = {
     'wallet.transaction.noTransactions': 'No hay transacciones',
     'wallet.transaction.tryFilters': 'Intente modificar sus filtros de búsqueda',
     'wallet.transaction.transactionsWillAppear': 'Sus transacciones de inversión aparecerán aquí',
-    
+
     // Discussions
     'discussions.title': 'Discusiones',
     'discussions.generalChat': 'Chat General',
     'discussions.campaignChats': 'Chats de Campañas',
     'discussions.noCampaigns': 'No hay campañas disponibles por el momento.',
-    
+
     // Favorites
     'favorites.title': 'Mis Proyectos Seguidos',
     'favorites.empty': 'No hay proyectos seguidos',
@@ -2850,7 +2928,7 @@ const translations = {
     'favorites.favoriteOnly': 'Solo favoritos',
     'favorites.investedBadge': 'Invertido',
     'favorites.loading': 'Cargando sus proyectos seguidos...',
-    
+
     // News
     'news.title': 'Noticias Livar',
     'news.invested': 'Invertido',
@@ -2860,7 +2938,7 @@ const translations = {
     'news.filterSector': 'Filtrar por sector',
     'news.allSectors': 'Todos los sectores',
     'news.yourInvestments': 'Tus Inversiones',
-    
+
     // Campaign Creation
     'campaign.validation.nameRequired': 'El nombre es requerido',
     'campaign.validation.symbolRequired': 'El símbolo es requerido',
@@ -2874,11 +2952,11 @@ const translations = {
     'campaign.validation.whitepaperRequired': 'El whitepaper es requerido',
     'campaign.validation.teamMemberRequired': 'Se requiere al menos un miembro del equipo con nombre',
     'campaign.validation.termsRequired': 'Debes aceptar los términos',
-    
+
     // Admin
     'admin.error.promotions': 'Error de promociones',
     'admin.error.stats': 'Error de estadísticas',
-    
+
     // Article
     'article.close': 'Cerrar artículo',
     'article.share': 'Compartir artículo',
@@ -2886,14 +2964,14 @@ const translations = {
     'article.copyLink': 'Copiar enlace del artículo',
     'article.copyLinkButton': 'Copiar enlace',
     'article.viewCampaign': 'Ver campaña',
-    
+
     // Dialogs
     'dialog.reopen.validation.goalPositive': 'El objetivo debe ser mayor a 0',
     'dialog.reopen.validation.pricePositive': 'El precio del NFT debe ser mayor a 0',
-    
+
     // Campaign Card
     'campaign.card.promotionError': 'Error verificación promoción',
-    
+
     // Filters
     'filters.searchPlaceholder': 'Buscar una campaña...',
     'filters.title': 'Filtros',
@@ -2943,61 +3021,79 @@ const translations = {
     'landing.projects.noDescription': 'Descripción no disponible',
     'landing.projects.ethRaised': 'ETH recaudados',
     'landing.projects.goal': 'Objetivo',
-    
+
     // Landing Hero
-    crowdfundingDefi: 'Crowdfunding DeFi',
-    support: 'Apoya',
-    future: 'el futuro',
-    ecosystem: 'del ecosistema',
-    contributeText: 'Contribuye al desarrollo de tecnologías',
-    web3Advanced: 'Web3 avanzadas',
-    andBePart: 'y sé parte de la revolución descentralizada que moldea nuestro futuro financiero.',
-    
-    // Other landing texts
-    'landing.hero.connectWallet': 'Por favor conecta tu cartera',
-    'landing.hero.secureConnectionRequired': 'Conexión segura requerida',
-    launchApp: 'Lanzar la app',
-    switchNetwork: 'Cambiar de red',
-    'wallet.connectButton': 'Conectar wallet',
-    'landing.hero.headline': '¿Listo para unirte a la revolución DeFi?',
-    'landing.hero.subtitle': 'Conecta tu wallet, explora campañas verificadas y sigue tus resultados en tiempo real.',
-    'landing.features.title': '¿Por qué elegir nuestra plataforma?',
-    'landing.features.subtitle': 'Nuestra plataforma de crowdfunding descentralizada ofrece ventajas únicas para creadores e inversores en el ecosistema Web3.',
-    'landing.features.decentralizedFunding.title': 'Financiamiento Descentralizado',
-    'landing.features.decentralizedFunding.description': 'Accede a financiamiento sin intermediarios a través de nuestra innovadora plataforma DeFi.',
-    'landing.features.realTimeInsights.title': 'Analítica en tiempo real',
-    'landing.features.realTimeInsights.description': 'Visualiza el rendimiento de tus campañas con métricas on-chain actualizadas automáticamente.',
-    'landing.features.transparentRewards.title': 'Recompensas Transparentes',
-    'landing.features.transparentRewards.description': 'Recibe recompensas proporcionales a tu contribución, todo registrado en la blockchain.',
-    'landing.features.maxSecurity.title': 'Seguridad Máxima',
-    'landing.features.maxSecurity.description': 'Tus fondos están asegurados por contratos inteligentes auditados y protocolos de seguridad avanzados.',
-    'landing.stats.activeUsers': 'Usuarios activos',
-    'landing.stats.fundsRaised': 'Fondos recaudados',
-    'landing.stats.projectsFunded': 'Proyectos financiados',
-    'landing.stats.activeSupport': 'Soporte activo',
-    'landing.stats.free': 'GRATIS',
-    'landing.stats.registration': 'Registro',
-    'landing.stats.decentralized': 'Descentralizado',
-    'landing.footer.copyright': '© 2024 Livar. Todos los derechos reservados.',
-    
+    'landing.hero.liveOnBase': 'En vivo en Base Mainnet',
+    'landing.hero.titlePart1': 'El Futuro de',
+    'landing.hero.titlePart2': 'la Inversión Directa.',
+    'landing.hero.subtitle': 'Una plataforma de grado institucional para la recaudación de fondos descentralizada. Conecte su billetera para acceder a campañas de alto rendimiento, análisis en tiempo real y distribución automatizada de dividendos.',
+    'landing.hero.startInvesting': 'Empezar a Invertir',
+    'landing.hero.viewDocumentation': 'Ver Documentación',
+    'landing.hero.audited': 'Auditado',
+    'landing.hero.kycCompliant': 'Cumple con KYC',
+    'landing.hero.zkProofs': 'Pruebas de conocimiento cero',
+    'landing.hero.terminalVersion': 'Terminal Pro Livar v2.1 • Base Mainnet',
+    'landing.hero.terminalMarket': 'Mercado / Campaña',
+    'landing.hero.terminalRaised': 'Volumen Recaudado',
+    'landing.hero.terminalApy': 'APY (Est.)',
+    'landing.hero.terminalStatus': 'Estado',
+    'landing.hero.terminalTotalVolume': 'Volumen Total',
+
     // How It Works
-    'landing.howItWorks.title': '¿Cómo funciona?',
-    'landing.howItWorks.subtitle': 'Unirse a la revolución DeFi nunca ha sido tan fácil. Sigue estos 3 pasos para comenzar tu aventura Web3.',
-    'landing.howItWorks.step1.title': 'Conecta tu wallet',
-    'landing.howItWorks.step1.description': 'Usa MetaMask, WalletConnect o cualquier otro wallet compatible con Ethereum',
-    'landing.howItWorks.step2.title': 'Elige una campaña',
-    'landing.howItWorks.step2.description': 'Explora las oportunidades, compara los KPI on-chain y selecciona las que te motiven.',
-    'landing.howItWorks.step3.title': 'Activa tus rewards',
-    'landing.howItWorks.step3.description': 'Recibe recompensas y sigue tus inversiones directamente desde tu panel.',
-    'landing.howItWorks.readyInMinutes': 'Listo en menos de 2 minutos',
-    
+    'landing.howItWorks.simpleOnboarding': 'Incorporación Simple',
+    'landing.howItWorks.titlePart1': 'Comience a Invertir en',
+    'landing.howItWorks.titlePart2': 'Tres Pasos Simples.',
+    'landing.howItWorks.subtitle': 'Hemos simplificado el proceso de inversión DeFi. Sin puentes complejos, sin interfaces confusas. Solo conecte, elija y gane.',
+    'landing.howItWorks.checklist1': 'Conexión instantánea de billetera',
+    'landing.howItWorks.checklist2': 'Transacciones optimizadas (Base L2)',
+    'landing.howItWorks.checklist3': 'Seguimiento de cartera en tiempo real',
+    'landing.howItWorks.step1.title': 'Conectar Billetera',
+    'landing.howItWorks.step1.description': 'Vincule su billetera compatible con MetaMask o WalletConnect en segundos.',
+    'landing.howItWorks.step2.title': 'Seleccionar Estrategia',
+    'landing.howItWorks.step2.description': 'Explore campañas auditadas y elija según APY, perfil de riesgo y duración.',
+    'landing.howItWorks.step3.title': 'Generar Rendimiento',
+    'landing.howItWorks.step3.description': 'Reciba distribuciones de dividendos automatizadas directamente en su billetera en tiempo real.',
+
+    // Stats Section
+    'landing.stats.networkStatus': 'Estado de la Red',
+    'landing.stats.blockTime': 'Tiempo de Bloque',
+    'landing.stats.gasPrice': 'Precio del Gas',
+    'landing.stats.systemOperational': 'Sistema Operativo',
+    'landing.stats.ethCollected': 'Valor Total Bloqueado',
+    'landing.stats.registeredUsers': 'Inversores Registrados',
+    'landing.stats.activeCampaigns': 'Empresas Activas',
+    'landing.stats.verifiedContracts': '100% Verificado',
+    'landing.stats.verifiedDesc': 'Todos los contratos están auditados y verificados en Basescan.',
+    'landing.stats.weeklyGrowth': '+12.5% esta semana',
+
+    // Landing Info Section
+    'landing.info.titlePrefix': 'Infraestructura de',
+    'landing.info.titleSuffix': 'Grado Institucional',
+    'landing.info.description': 'Experimente el futuro de la recaudación de fondos descentralizada con herramientas creadas para inversores profesionales y proyectos serios.',
+    'landing.info.realTimeTitle': 'Análisis de Mercado en Tiempo Real',
+    'landing.info.realTimeDesc': 'Acceda a flujos de datos en vivo, gráficos avanzados y análisis de liquidez profunda para cada campaña.',
+    'landing.info.latency': 'Latencia',
+    'landing.info.uptime': 'Tiempo de actividad',
+    'landing.info.decentralizedTitle': 'Financiamiento Descentralizado',
+    'landing.info.decentralizedDesc': 'Mecanismos de financiación directa peer-to-contract que garantizan transparencia total y liquidación inmediata.',
+    'landing.info.securityTitle': 'Seguridad Auditada',
+    'landing.info.securityDesc': 'Contratos inteligentes rigurosamente auditados y verificados. Sus activos están protegidos por protocolos de seguridad estándar de la industria.',
+    'landing.info.executionTitle': 'Ejecución Rápida',
+    'landing.info.executionDesc': 'Optimizado para interacciones de alta frecuencia en Base L2.',
+    'landing.info.rewardsTitle': 'Recompensas Transparentes',
+    'landing.info.rewardsDesc': 'Distribución automatizada de dividendos directamente a su billetera.',
+
     // Projects Section
-    'landing.projects.title': 'Proyectos en Curso',
-    'landing.projects.subtitle': 'Descubre proyectos Web3 innovadores que dan forma al futuro. Cada proyecto es verificado y auditado por nuestra comunidad.',
-    'landing.projects.viewAll': 'Ver todos los proyectos',
+    'landing.projects.title': 'Oportunidades Activas',
+    'landing.projects.subtitle': 'Activos de grado institucional abiertos a la inversión.',
+    'landing.projects.viewAll': 'Ver todas las oportunidades',
+    'landing.projects.viewOpportunity': 'Ver Oportunidad',
+    'landing.projects.certified': 'Certificado',
+    'landing.projects.raised': 'Recaudado',
+    'landing.projects.funded': 'Financiado',
     'campaigns.active': 'Campañas Activas',
     'campaigns.investSubtitle': 'Invierte en las campañas más prometedoras. Las campañas potenciadas aparecen primero.',
-    
+
     // Campaign Status  
     'campaign.status.ongoing': 'En curso',
     'campaign.status.ended': 'Terminado',
@@ -3008,7 +3104,7 @@ const translations = {
     'campaign.card.progress': 'Progreso',
     'campaign.card.certified': 'Certificado',
     'campaign.card.popular': 'Popular',
-    
+
     // Project Details
     'projectDetails.tabs.overview': 'Resumen',
     'projectDetails.tabs.details': 'Detalles',
@@ -3016,7 +3112,7 @@ const translations = {
     'projectDetails.error.title': 'Error de Carga',
     'projectDetails.error.retry': 'Reintentar',
     'projectDetails.error.close': 'Cerrar',
-    
+
     // Project Overview
     'projectOverview.stats.keyInfo': 'Información Clave',
     'projectOverview.stats.raised': 'Recaudado',
@@ -3036,7 +3132,7 @@ const translations = {
     'projectOverview.progress.goal': 'Objetivo',
     'projectOverview.progress.remaining': 'Restante',
     'projectOverview.progress.sharesAvailable': 'Acciones Disponibles',
-    
+
     // Footer
     'landing.footer.description': 'La primera plataforma de crowdfunding completamente descentralizada. Construyamos juntos el futuro de las finanzas Web3.',
     'landing.footer.platform': 'Plataforma',
@@ -3051,14 +3147,14 @@ const translations = {
     'landing.footer.termsOfUse': 'Términos de Uso',
     'landing.footer.privacyPolicy': 'Política de Privacidad',
     'landing.footer.legalNotices': 'Avisos Legales',
-    
+
     // CTA Section
     'landing.cta.title': '¿Listo para unirte a la revolución DeFi?',
     'landing.cta.description': 'Conecta tu wallet y financia proyectos innovadores que dan forma al futuro de las finanzas descentralizadas.',
     'landing.cta.activeUsers': 'Usuarios activos',
     'landing.cta.fundsRaised': 'Fondos recaudados',
     'landing.cta.projectsFunded': 'Proyectos financiados',
-    
+
     // Stats Section
     'landing.stats.registeredUsers': 'Usuarios registrados',
     'landing.stats.activeCampaigns': 'Campañas activas',
@@ -3066,11 +3162,11 @@ const translations = {
     'landing.stats.realTimeTitle': 'Estadísticas en tiempo real',
     'landing.stats.blockchainData': 'Datos directamente de la blockchain Ethereum',
     'landing.stats.realTimeUpdate': 'Actualizado en tiempo real desde la blockchain',
-    
+
     // Social
     'social.twitter': 'Twitter',
     'social.discord': 'Discord',
-    
+
     // Project Details Modal
     'projectDetails.modal.title': 'Detalles del proyecto',
     'projectDetails.shareProject': 'Compartir proyecto',
@@ -3080,17 +3176,17 @@ const translations = {
     'projectDetails.transactionConfirmed': 'Transacción confirmada:',
     'projectDetails.purchaseError': 'Error en la compra:',
     'projectDetails.transactionError': 'Error en la transacción',
-    
+
     // Project Header
     'projectHeader.projectStatus.expired': 'Terminado',
-    'projectHeader.projectStatus.success': 'Objetivo alcanzado', 
+    'projectHeader.projectStatus.success': 'Objetivo alcanzado',
     'projectHeader.projectStatus.near': 'Casi completo',
     'projectHeader.projectStatus.active': 'Activo',
     'projectHeader.fundedPercent': '{percent}% financiado',
     'projectHeader.investmentProject': 'Proyecto de inversión',
     'projectHeader.consultDetails': 'Consulta los detalles completos del proyecto e invierte comprando acciones para participar en la financiación.',
     'projectHeader.raised': 'Recaudado',
-    'projectHeader.goal': 'Objetivo', 
+    'projectHeader.goal': 'Objetivo',
     'projectHeader.price': 'Precio',
     'projectHeader.end': 'Fin',
     'projectHeader.fundingProgress': 'Progreso de financiación',
@@ -3107,7 +3203,7 @@ const translations = {
     'projectHeader.discord': 'Discord',
     'projectHeader.telegram': 'Telegram',
     'projectHeader.medium': 'Medium',
-    
+
     // Share Selector
     'shareSelector.title': 'Invertir en este proyecto',
     'shareSelector.sharesAvailable': '{count} acciones disponibles',
@@ -3191,7 +3287,7 @@ const translations = {
     'projectDetailsTab.telegram': 'Telegram',
     'projectDetailsTab.medium': 'Medium',
     'projectDetailsTab.mediaEmptyHint': 'Agrega imágenes o videos para destacar la campaña.',
-    
+
     // Project Transactions
     'projectTransactions.title': 'Historial de transacciones',
     'projectTransactions.subtitle': 'Todas las transacciones blockchain de este proyecto',
@@ -3217,7 +3313,7 @@ const translations = {
     'projectTransactions.refund': 'Reembolso',
     'projectTransactions.totalVolume': 'Volumen total',
     'projectTransactions.totalShares': 'Acciones totales',
-    
+
     // Campaign Creation - Basic Info
     'campaignBasic.title': 'Información Básica',
     'campaignBasic.subtitle': 'Define los elementos fundamentales de tu campaña de financiación',
@@ -3249,7 +3345,7 @@ const translations = {
     'campaignBasic.royaltyTooltip': '100 puntos básicos = 1%. Comisiones en transacciones secundarias.',
     'campaignBasic.royaltyPercent': '{percent}% de regalías',
     'campaignBasic.royaltyReceiver': 'Dirección de recepción de regalías',
-    
+
     // Campaign Creation - Steps
     'campaignSteps.information': 'Información',
     'campaignSteps.informationDesc': 'Detalles del proyecto',
@@ -3261,7 +3357,7 @@ const translations = {
     'campaignSteps.nftDesc': 'Diseño y vista previa',
     'campaignSteps.verification': 'Verificación',
     'campaignSteps.verificationDesc': 'Validación final',
-    
+
     // Campaign Creation - Documents
     'campaignDocs.title': 'Documentos y Medios',
     'campaignDocs.subtitle': 'Sube los documentos necesarios para presentar tu proyecto',
@@ -3288,7 +3384,7 @@ const translations = {
     'campaignDocs.tip2': '• Usa formatos estándar (PDF recomendado)',
     'campaignDocs.tip3': '• Las imágenes deben ser de alta resolución',
     'campaignDocs.tip4': '• Verifica que todos tus documentos estén actualizados',
-    
+
     // Campaign Creation - Team & Socials
     'campaignTeam.title': 'Equipo y Redes',
     'campaignTeam.subtitle': 'Presenta tu equipo y redes sociales',
@@ -3324,7 +3420,7 @@ const translations = {
     'campaignTeam.teamMembersDesc': 'Presenta a las personas clave de tu proyecto',
     'campaignTeam.noTeamMembers': 'Sin miembros del equipo',
     'campaignTeam.addFirstMember': 'Comienza añadiendo el primer miembro del equipo',
-    
+
     // Campaign Creation - Review
     'campaignReview.title': 'Verificación y Validación',
     'campaignReview.subtitle': 'Verifica todos los detalles antes de publicar tu campaña',
@@ -3359,7 +3455,7 @@ const translations = {
     'campaignReview.publishing': 'Publicando...',
     'campaignReview.finalStep': 'Último paso antes de la publicación',
     'campaignReview.acceptTerms': 'Debes aceptar los términos para continuar',
-    
+
     // Campaign Creation - NFT Preview  
     'campaignNFT.title': 'Vista Previa NFT',
     'campaignNFT.subtitle': 'Personaliza la apariencia de tus NFT de acciones',
@@ -3666,7 +3762,7 @@ const translations = {
     'campaignReview.info4': 'La campaña será visible públicamente en la plataforma',
     'campaignReview.errorGeneral': 'Error:'
   }
-  
+
   // Vous pouvez ajouter d'autres langues ici...
 };
 
@@ -3674,7 +3770,7 @@ const translations = {
 export const LanguageProvider = ({ children }) => {
   const [currentLanguage, setCurrentLanguage] = useState('fr');
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Charger la langue sauvegardée ou détecter la langue du navigateur
   useEffect(() => {
     const initializeLanguage = () => {
@@ -3686,19 +3782,19 @@ export const LanguageProvider = ({ children }) => {
           setIsLoading(false);
           return;
         }
-        
+
         // 2. Détecter la langue du navigateur
         if (typeof window !== 'undefined') {
           const browserLang = navigator.language || navigator.languages[0];
           const langCode = browserLang.split('-')[0];
-          
+
           if (translations[langCode]) {
             setCurrentLanguage(langCode);
           } else {
             setCurrentLanguage('fr'); // Langue par défaut
           }
         }
-        
+
         setIsLoading(false);
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la langue:', error);
@@ -3706,29 +3802,29 @@ export const LanguageProvider = ({ children }) => {
         setIsLoading(false);
       }
     };
-    
+
     initializeLanguage();
   }, []);
-  
+
   // Fonction pour changer de langue
   const changeLanguage = useCallback((languageCode) => {
     if (translations[languageCode]) {
       setCurrentLanguage(languageCode);
-      
+
       // Sauvegarder dans localStorage
       try {
         localStorage.setItem('selectedLanguage', languageCode);
       } catch (error) {
         console.error('Erreur lors de la sauvegarde de la langue:', error);
       }
-      
+
       // Émettre un événement pour informer les autres composants
       window.dispatchEvent(new CustomEvent('languageChanged', {
         detail: { language: languageCode }
       }));
     }
   }, []);
-  
+
   // Fonction de traduction
   const t = useCallback((key, arg1, arg2) => {
     let fallback = key;
@@ -3803,7 +3899,7 @@ export const LanguageProvider = ({ children }) => {
       return fallback;
     }
   }, [currentLanguage]);
-  
+
   // Fonction pour ajouter des traductions dynamiquement
   const addTranslations = useCallback((languageCode, newTranslations) => {
     if (translations[languageCode]) {
@@ -3815,7 +3911,7 @@ export const LanguageProvider = ({ children }) => {
       translations[languageCode] = newTranslations;
     }
   }, []);
-  
+
   // Fonction pour obtenir toutes les langues disponibles
   const getAvailableLanguages = useCallback(() => {
     return Object.keys(translations).map(code => ({
@@ -3824,7 +3920,7 @@ export const LanguageProvider = ({ children }) => {
       nativeName: getLanguageNativeName(code)
     }));
   }, []);
-  
+
   const value = {
     currentLanguage,
     changeLanguage,
@@ -3834,7 +3930,7 @@ export const LanguageProvider = ({ children }) => {
     getAvailableLanguages,
     isLoading
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -3842,7 +3938,7 @@ export const LanguageProvider = ({ children }) => {
       </div>
     );
   }
-  
+
   return (
     <LanguageContext.Provider value={value}>
       {children}

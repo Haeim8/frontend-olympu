@@ -6,10 +6,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useLanguage';
-import { 
-  Award, 
-  Search, 
-  Filter,
+import {
+  Award,
+  Search,
   TrendingUp,
   ExternalLink,
   Calendar,
@@ -21,124 +20,118 @@ import {
 
 const NFTCard = ({ nft, onViewDetails }) => {
   const { t } = useTranslation();
-  
+
   const formatDate = (timestamp) => {
     return new Date(timestamp * 1000).toLocaleDateString('fr-FR', {
       year: 'numeric',
-      month: 'short', 
+      month: 'short',
       day: 'numeric'
     });
   };
 
-  const progressPercentage = nft.dividends ? 
+  const progressPercentage = nft.dividends ?
     (parseFloat(nft.dividends) / parseFloat(nft.amount)) * 100 : 0;
 
   return (
-    <Card className="group bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <div className="group bg-card border border-border rounded-2xl shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 overflow-hidden relative flex flex-col h-full">
       {/* Header with token info */}
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Award className="h-4 w-4 text-lime-600" />
-              <CardTitle className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Token #{nft.id.split('-').pop()}
-              </CardTitle>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="p-4 pb-3 flex justify-between items-start">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center border border-primary/10">
+            <Award className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h4 className="font-bold text-foreground text-sm">
+              Token #{nft.id.split('-').pop()}
+            </h4>
+            <p className="text-xs text-muted-foreground font-medium truncate max-w-[120px]">
               {nft.campaign}
             </p>
           </div>
-          <Badge 
-            variant="outline" 
-            className="bg-lime-50 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border-lime-200 dark:border-lime-800"
-          >
-            {nft.shares} {t('wallet.nft.shares')}
-          </Badge>
         </div>
-      </CardHeader>
+        <Badge variant="outline" className="bg-muted/50 border-border text-muted-foreground">
+          {nft.shares} shares
+        </Badge>
+      </div>
 
-      <CardContent className="space-y-4">
+      <div className="px-4 py-2 space-y-4 flex-1">
         {/* Investment details */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
           <div className="space-y-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('wallet.nft.investment')}</p>
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-3 w-3 text-blue-600" />
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
-                {parseFloat(nft.amount).toFixed(4)} ETH
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{t('wallet.nft.investment', 'Investi')}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-foreground text-sm">
+                {parseFloat(nft.amount).toFixed(3)} Ξ
               </span>
             </div>
           </div>
-          
-          <div className="space-y-1">
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('wallet.nft.dividends')}</p>
-            <div className="flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-green-600" />
-              <span className="font-semibold text-green-600 dark:text-green-400">
-                {nft.dividends || '0.0000'} ETH
+
+          <div className="space-y-1 border-l border-border/50 pl-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{t('wallet.nft.dividends', 'Reçus')}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-green-500 text-sm">
+                +{nft.dividends || '0.00'} Ξ
               </span>
             </div>
           </div>
         </div>
 
         {/* Progress bar for ROI */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-500 dark:text-gray-400">ROI</span>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">ROI Progress</span>
+            <span className="text-xs font-bold text-primary">
               {progressPercentage.toFixed(1)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
-            <div 
-              className="h-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-500"
+          <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"
               style={{ width: `${Math.min(progressPercentage, 100)}%` }}
             />
           </div>
         </div>
+      </div>
 
-        {/* Date and actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-neutral-800">
-          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-            <Calendar className="h-3 w-3" />
-            {formatDate(nft.timestamp)}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onViewDetails(nft)}
-              className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              {t('wallet.nft.details')}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => window.open(`https://sepolia.basescan.org/address/${nft.txHash}`, '_blank')}
-            >
-              <ExternalLink className="h-3 w-3" />
-            </Button>
-          </div>
+      {/* Footer Actions */}
+      <div className="mt-auto px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+          <Calendar className="h-3 w-3" />
+          {formatDate(nft.timestamp)}
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onViewDetails(nft)}
+            className="h-7 px-3 text-xs font-bold text-primary hover:text-primary hover:bg-primary/10 rounded-lg"
+          >
+            {t('wallet.nft.details', 'Détails')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
+            onClick={() => window.open(`https://sepolia.basescan.org/address/${nft.txHash}`, '_blank')}
+          >
+            <ExternalLink className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 
 export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  const [sortBy, setSortBy] = useState('date'); // 'date', 'amount', 'dividends'
+  const [viewMode, setViewMode] = useState('grid');
+  const [sortBy, setSortBy] = useState('date');
 
   // Filter and sort NFTs
   const filteredAndSortedNFTs = React.useMemo(() => {
-    let filtered = nftHoldings.filter(nft => 
+    let filtered = nftHoldings.filter(nft =>
       nft.campaign.toLowerCase().includes(searchTerm.toLowerCase()) ||
       nft.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -162,32 +155,32 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
   const totalDividends = nftHoldings.reduce((sum, nft) => sum + parseFloat(nft.dividends || 0), 0);
 
   return (
-    <Card className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 shadow-lg">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="rounded-3xl bg-card border border-border shadow-xl overflow-hidden">
+      <div className="p-6 border-b border-border bg-muted/10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="space-y-1">
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Award className="h-5 w-5 text-lime-600" />
-              {t('wallet.nft.title')}
-              <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              {t('wallet.nft.title', 'Mes Actifs')}
+              <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 ml-2">
                 {nftHoldings.length}
               </Badge>
-            </CardTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            </h2>
+            <p className="text-sm text-muted-foreground font-medium">
               {t('wallet.nft.totalValue', { value: totalValue.toFixed(4), dividends: totalDividends.toFixed(4) })}
             </p>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="relative flex-1 sm:flex-none group">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <input
                 type="text"
-                placeholder={t('wallet.nft.search')}
+                placeholder={t('wallet.nft.search', 'Rechercher un token...')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent transition-colors"
+                className="w-full sm:w-48 pl-10 pr-4 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all outline-none"
               />
             </div>
 
@@ -195,109 +188,123 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-sm focus:ring-2 focus:ring-lime-500 focus:border-transparent"
+              className="px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary/50 cursor-pointer outline-none font-medium"
             >
-              <option value="date">{t('wallet.nft.sortDate')}</option>
-              <option value="amount">{t('wallet.nft.sortAmount')}</option>
-              <option value="dividends">{t('wallet.nft.sortDividends')}</option>
+              <option value="date">{t('wallet.nft.sortDate', 'Date')}</option>
+              <option value="amount">{t('wallet.nft.sortAmount', 'Montant')}</option>
+              <option value="dividends">{t('wallet.nft.sortDividends', 'Dividendes')}</option>
             </select>
 
             {/* View mode toggle */}
-            <div className="flex border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+            <div className="flex border border-border rounded-xl overflow-hidden bg-background p-1 gap-1">
               <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('grid')}
-                className="rounded-none"
+                className={`h-8 w-8 p-0 rounded-lg ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
                 <Grid3x3 className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                variant="ghost"
                 size="sm"
                 onClick={() => setViewMode('list')}
-                className="rounded-none"
+                className={`h-8 w-8 p-0 rounded-lg ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
               >
                 <List className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent>
+      <div className="p-6 bg-muted/5 min-h-[400px]">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-gray-200 dark:bg-neutral-800 rounded-lg h-48 animate-pulse" />
+              <div key={i} className="bg-card border border-border rounded-2xl h-64 animate-pulse relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 animate-shimmer" />
+              </div>
             ))}
           </div>
         ) : filteredAndSortedNFTs.length === 0 ? (
-          <div className="text-center py-12">
-            <Award className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              {searchTerm ? t('wallet.nft.noResults') : t('wallet.nft.noNFTs')}
+          <div className="text-center py-20 flex flex-col items-center">
+            <div className="w-20 h-20 bg-muted rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+              <Award className="h-10 w-10 text-muted-foreground/50" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground mb-2">
+              {searchTerm ? t('wallet.nft.noResults', 'Aucun résultat trouvé') : t('wallet.nft.noNFTs', 'Portefeuille vide')}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              {searchTerm 
-                ? t('wallet.nft.trySearch')
-                : t('wallet.nft.startInvesting')
+            <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+              {searchTerm
+                ? t('wallet.nft.trySearch', 'Essayez de modifier votre recherche.')
+                : t('wallet.nft.startInvesting', 'Vous n\'avez pas encore d\'actifs. Explorez les campagnes pour commencer.')
               }
             </p>
+            {!searchTerm && (
+              <Button className="rounded-xl font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+                Explore Campaigns
+              </Button>
+            )}
           </div>
         ) : (
-          <ScrollArea className="h-[400px]">
+          <ScrollArea className="h-[600px] pr-4 -mr-4">
             {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
                 {filteredAndSortedNFTs.map((nft, index) => (
                   <div
                     key={`${nft.id}-${nft.campaign}-${index}`}
-                    className="animate-in fade-in slide-in-from-bottom-4"
-                    style={{
-                      animationDelay: `${index * 50}ms`,
-                      animationDuration: '400ms',
-                      animationFillMode: 'both'
-                    }}
+                    className="animate-in fade-in slide-in-from-bottom-4 duration-500"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <NFTCard nft={nft} onViewDetails={onViewDetails} />
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3 pb-4">
                 {filteredAndSortedNFTs.map((nft, index) => (
                   <div
                     key={`${nft.id}-${nft.campaign}-${index}`}
-                    className="flex items-center justify-between p-4 border border-gray-200 dark:border-neutral-800 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors group"
+                    className="flex items-center justify-between p-4 border border-border rounded-2xl bg-card hover:bg-muted/30 transition-all duration-200 group animate-in fade-in slide-in-from-bottom-2"
                   >
                     <div className="flex items-center space-x-4">
-                      <Award className="h-8 w-8 text-lime-600 bg-lime-100 dark:bg-lime-900/20 rounded-lg p-2" />
+                      <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/10 group-hover:bg-primary/20 transition-colors">
+                        <Award className="h-5 w-5 text-primary" />
+                      </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                        <p className="font-bold text-foreground text-sm">
                           Token #{nft.id.split('-').pop()}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {nft.campaign} • {nft.shares} {t('wallet.nft.shares')}
+                        <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                          {nft.campaign}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-6">
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900 dark:text-gray-100">
+
+                    <div className="flex items-center gap-8">
+                      <div className="text-right hidden sm:block">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">{t('wallet.nft.shares', 'Parts')}</p>
+                        <Badge variant="secondary" className="bg-muted text-foreground">{nft.shares}</Badge>
+                      </div>
+
+                      <div className="text-right hidden sm:block">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">{t('wallet.nft.investment', 'Valeur')}</p>
+                        <p className="font-bold text-foreground tabular-nums">
                           {parseFloat(nft.amount).toFixed(4)} ETH
                         </p>
-                        <p className="text-sm text-green-600 dark:text-green-400">
-                          +{nft.dividends || '0.0000'} ETH
-                        </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onViewDetails(nft)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onViewDetails(nft)}
+                          className="bg-muted/50 hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-all rounded-lg"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -305,7 +312,7 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
             )}
           </ScrollArea>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -6,102 +6,86 @@ import { useTranslation } from '@/hooks/useLanguage';
 
 const StepIndicator = ({ currentStep, totalSteps }) => {
   const { t } = useTranslation();
-  
+
   const steps = [
-    { number: 1, title: t('campaignSteps.information'), description: t('campaignSteps.informationDesc') },
-    { number: 2, title: t('campaignSteps.documents'), description: t('campaignSteps.documentsDesc') },
-    { number: 3, title: t('campaignSteps.team'), description: t('campaignSteps.teamDesc') },
-    { number: 4, title: t('campaignSteps.nft'), description: t('campaignSteps.nftDesc') },
-    { number: 5, title: t('campaignSteps.verification'), description: t('campaignSteps.verificationDesc') }
+    { number: 1, title: t('campaignSteps.information', 'Information'), description: t('campaignSteps.informationDesc', 'Détails du projet') },
+    { number: 2, title: t('campaignSteps.documents', 'Documents'), description: t('campaignSteps.documentsDesc', 'Whitepaper & Deck') },
+    { number: 3, title: t('campaignSteps.team', 'Équipe'), description: t('campaignSteps.teamDesc', 'Membres clés') },
+    { number: 4, title: t('campaignSteps.nft', 'NFT Custom'), description: t('campaignSteps.nftDesc', 'Design de la carte') },
+    { number: 5, title: t('campaignSteps.verification', 'Vérification'), description: t('campaignSteps.verificationDesc', 'Revue finale') }
   ];
 
   return (
-    <div className="w-full py-6">
-      <div className="flex items-center justify-between">
-        {steps.map((step, index) => (
-          <React.Fragment key={step.number}>
-            <div className="flex flex-col items-center space-y-2">
-              {/* Cercle de l'étape */}
-              <div className={`
-                relative flex items-center justify-center w-12 h-12 rounded-full border-2 font-semibold text-sm transition-all duration-300
-                ${currentStep > step.number 
-                  ? 'bg-green-500 border-green-500 text-white' 
-                  : currentStep === step.number 
-                  ? 'bg-lime-500 border-lime-500 text-white ring-4 ring-lime-200 dark:ring-lime-800' 
-                  : 'bg-white dark:bg-neutral-900 border-gray-300 dark:border-neutral-600 text-gray-500 dark:text-gray-400'
-                }
-              `}>
-                {currentStep > step.number ? (
-                  <CheckCircle className="w-6 h-6" />
-                ) : (
-                  <span>{step.number}</span>
-                )}
-                
-                {/* Animation pulse pour l'étape active */}
-                {currentStep === step.number && (
-                  <div className="absolute inset-0 rounded-full bg-lime-500 animate-ping opacity-20" />
-                )}
-              </div>
+    <div className="w-full py-2">
+      <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 md:gap-0">
+        {steps.map((step, index) => {
+          const isCompleted = currentStep > step.number;
+          const isCurrent = currentStep === step.number;
 
-              {/* Labels */}
-              <div className="text-center space-y-1">
+          return (
+            <React.Fragment key={step.number}>
+              <div className="flex flex-col items-center space-y-3 z-10 w-1/5 min-w-[80px]">
+                {/* Cercle de l'étape */}
                 <div className={`
-                  text-sm font-semibold transition-colors
-                  ${currentStep >= step.number 
-                    ? 'text-gray-900 dark:text-gray-100' 
-                    : 'text-gray-500 dark:text-gray-400'
+                  relative flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-2 font-bold text-sm transition-all duration-500
+                  ${isCompleted
+                    ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]'
+                    : isCurrent
+                      ? 'bg-background border-primary text-primary ring-4 ring-primary/20 shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)] scale-110'
+                      : 'bg-muted/30 border-muted text-muted-foreground'
                   }
                 `}>
-                  {step.title}
-                </div>
-                <div className={`
-                  text-xs transition-colors
-                  ${currentStep >= step.number 
-                    ? 'text-gray-600 dark:text-gray-300' 
-                    : 'text-gray-400 dark:text-gray-500'
-                  }
-                `}>
-                  {step.description}
-                </div>
-              </div>
-            </div>
+                  {isCompleted ? (
+                    <CheckCircle className="w-5 h-5 md:w-6 md:h-6" />
+                  ) : (
+                    <span>{step.number}</span>
+                  )}
 
-            {/* Flèche entre les étapes */}
-            {index < steps.length - 1 && (
-              <div className={`
-                flex-1 max-w-24 mx-4 transition-colors duration-300
-                ${currentStep > step.number 
-                  ? 'text-green-500' 
-                  : 'text-gray-300 dark:text-gray-600'
-                }
-              `}>
-                <div className="flex items-center">
+                  {/* Animation pulse pour l'étape active */}
+                  {isCurrent && (
+                    <div className="absolute inset-0 rounded-full bg-primary animate-ping opacity-20" />
+                  )}
+                </div>
+
+                {/* Labels */}
+                <div className="text-center space-y-0.5 hidden md:block">
                   <div className={`
-                    flex-1 h-0.5 transition-colors
-                    ${currentStep > step.number 
-                      ? 'bg-green-500' 
-                      : 'bg-gray-300 dark:bg-gray-600'
+                    text-xs font-bold uppercase tracking-wider transition-colors
+                    ${isCurrent || isCompleted
+                      ? 'text-foreground'
+                      : 'text-muted-foreground'
                     }
-                  `} />
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  `}>
+                    {step.title}
+                  </div>
+                  {/* description is optional, hidden on mobile or small screens usually, shown here for completeness */}
                 </div>
               </div>
-            )}
-          </React.Fragment>
-        ))}
+
+              {/* Ligne de connexion entre les étapes */}
+              {index < steps.length - 1 && (
+                <div className="hidden md:flex flex-1 items-center px-2">
+                  <div className="relative w-full h-0.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`absolute left-0 top-0 bottom-0 transition-all duration-700 ease-out bg-primary ${isCompleted ? 'w-full' : 'w-0'
+                        }`}
+                    />
+                  </div>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
 
-      {/* Progress bar */}
-      <div className="mt-6 relative">
-        <div className="w-full bg-gray-200 dark:bg-neutral-700 rounded-full h-2">
-          <div 
-            className="bg-gradient-to-r from-lime-500 to-green-500 h-2 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-          />
-        </div>
-        <div className="absolute -top-1 right-0 text-xs font-medium text-gray-600 dark:text-gray-400">
-          {Math.round((currentStep / totalSteps) * 100)}%
-        </div>
+      {/* Mobile Only Progress Bar Description */}
+      <div className="md:hidden mt-4 text-center">
+        <p className="text-sm font-bold text-foreground">
+          {steps[currentStep - 1]?.title}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {currentStep} / {totalSteps}
+        </p>
       </div>
     </div>
   );

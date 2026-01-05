@@ -2,12 +2,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount } from 'wagmi'; 
-import Home from '@/components/leanding';
+import { useAccount } from 'wagmi';
+import Home from '@/components/landing';
 import AppInterface from '@/components/app-interface';
 
 export default function Page() {
-  const { address } = useAccount(); 
+  const { address } = useAccount();
   const [showInterface, setShowInterface] = useState(false);
 
   // Pas de loading screen, afficher directement la landing
@@ -17,7 +17,7 @@ export default function Page() {
       {showInterface ? (
         <AppInterface />
       ) : (
-        <Home 
+        <Home
           onAccessInterface={() => setShowInterface(true)}
         />
       )}

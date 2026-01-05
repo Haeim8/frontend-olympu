@@ -17,6 +17,8 @@ import ReopenCampaignDialog from '@/components/campaign/dialogs/ReopenCampaignDi
 import PromoteCampaignDialog from '@/components/campaign/dialogs/PromoteCampaignDialog';
 import CertifyCampaignDialog from '@/components/campaign/dialogs/CertifyCampaignDialog';
 
+import { Wallet, BarChart3, Users, FileText, Share2, AlertCircle, Loader2 } from 'lucide-react';
+
 const enrichCampaignData = (data) => {
   if (!data) return null;
 
@@ -77,12 +79,12 @@ export default function Campaign() {
         } else {
           setCampaignAddress(null);
           setCampaignData(null);
-          setError(t('campaign.noCampaignFound'));
+          setError(t('campaign.noCampaignFound', 'Aucune campagne trouvée.'));
         }
       } catch (err) {
         if (cancelled) return;
         console.error('Erreur initialisation campagne:', err);
-        setError(t('campaign.loadError'));
+        setError(t('campaign.loadError', 'Impossible de charger la campagne.'));
         setCampaignAddress(null);
         setCampaignData(null);
       } finally {
@@ -93,6 +95,7 @@ export default function Campaign() {
     };
 
     initializeCampaign();
+    return () => { cancelled = true; };
   }, [address, t]);
 
   useEffect(() => {
@@ -110,12 +113,12 @@ export default function Campaign() {
         if (data) {
           setCampaignData(enrichCampaignData(data));
         } else {
-          setError(t('campaign.loadDataError'));
+          setError(t('campaign.loadDataError', 'Données de campagne introuvables.'));
         }
       } catch (err) {
         if (cancelled) return;
         console.error('Erreur chargement campagne:', err);
-        setError(t('campaign.dataLoadingError'));
+        setError(t('campaign.dataLoadingError', 'Erreur lors du chargement des détails.'));
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -124,6 +127,7 @@ export default function Campaign() {
     };
 
     loadCampaignData();
+    return () => { cancelled = true; };
   }, [campaignAddress, t]);
 
   const handlePreloadHover = useCallback((identifier) => {
@@ -180,132 +184,167 @@ export default function Campaign() {
 
   if (!address) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-600 dark:text-gray-400">
-          {t('campaign.connectWalletMessage')}
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 animate-in fade-in zoom-in duration-500">
+        <div className="p-6 bg-primary/10 rounded-full animate-pulse">
+          <Wallet className="h-12 w-12 text-primary" />
+        </div>
+        <h2 className="text-2xl font-bold text-foreground">
+          {t('campaign.connectWalletTitle', 'Portefeuille non connecté')}
+        </h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          {t('campaign.connectWalletMessage', 'Veuillez connecter votre portefeuille pour accéder à la gestion de votre campagne.')}
         </p>
       </div>
     );
   }
 
+  if (isLoading && !campaignData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+        <p className="text-muted-foreground animate-pulse">{t('campaign.loading', 'Chargement de votre campagne...')}</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-4">
-      <CampaignHeader
-        campaignData={campaignData}
-        isLoading={isLoading}
-        error={error}
-      />
+    <div className="space-y-8 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-20 animate-in fade-in duration-700">
 
-      {!isLoading && !error && campaignData && (
-        <Tabs defaultValue="finance" className="space-y-6">
-          <TabsList className="bg-gray-100 dark:bg-neutral-900 p-1 rounded-lg">
-            <TabsTrigger
-              value="finance"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
-            >
-              {t('campaign.finance')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="investors"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
-            >
-              {t('campaign.investors')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="documents"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
-            >
-              {t('campaign.documents')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="social"
-              className="data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 px-6 py-2"
-            >
-              {t('campaign.social')}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="finance" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <DividendDistribution
-                campaignData={campaignData}
-                campaignAddress={campaignAddress}
-                onDistributionComplete={handleDistributionComplete}
-              />
-              <CampaignActions
-                campaignData={campaignData}
-                campaignAddress={campaignAddress}
-                onReopenClick={() => setShowReopenDialog(true)}
-                onPromoteClick={() => setShowPromoteDialog(true)}
-                onCertifyClick={() => setShowCertifyDialog(true)}
-                onActionComplete={handleActionComplete}
-              />
-            </div>
-            <TransactionHistory
-              campaignAddress={campaignAddress}
-              onPreloadHover={handlePreloadHover}
-            />
-          </TabsContent>
-
-          <TabsContent value="investors">
-            <CampaignInvestors
-              campaignAddress={campaignAddress}
-              onPreloadHover={handlePreloadHover}
-            />
-          </TabsContent>
-
-          <TabsContent value="documents">
-            <CampaignDocuments
-              campaignAddress={campaignAddress}
-              campaignData={campaignData}
-              onDocumentUpdate={handleDocumentUpdate}
-            />
-          </TabsContent>
-
-          <TabsContent value="social">
-            <CampaignSocial
-              campaignData={campaignData}
-              campaignAddress={campaignAddress}
-              onSocialUpdate={handleSocialUpdate}
-            />
-          </TabsContent>
-        </Tabs>
-      )}
-
-      <ReopenCampaignDialog
-        isOpen={showReopenDialog}
-        onClose={() => setShowReopenDialog(false)}
-        campaignData={campaignData}
-        campaignAddress={campaignAddress}
-        onSuccess={handleReopenSuccess}
-      />
-
-      <PromoteCampaignDialog
-        isOpen={showPromoteDialog}
-        onClose={() => setShowPromoteDialog(false)}
-        campaignData={campaignData}
-        campaignAddress={campaignAddress}
-        onSuccess={handlePromoteSuccess}
-      />
-
-      <CertifyCampaignDialog
-        isOpen={showCertifyDialog}
-        onClose={() => setShowCertifyDialog(false)}
-        campaignData={campaignData}
-        campaignAddress={campaignAddress}
-        onSuccess={handleCertifySuccess}
-      />
-
-      {process.env.NODE_ENV === 'development' && campaignData && (
-        <div className="mt-8 p-4 bg-gray-100 dark:bg-neutral-900 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Debug Info (dev only)
-          </h3>
-          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-            <p>Campaign Address: {campaignAddress}</p>
-            <p>Cache Stats: {JSON.stringify(apiManager.getCacheStats?.() ?? {}, null, 2)}</p>
-          </div>
+      {error && !campaignData ? (
+        <div className="flex flex-col items-center justify-center min-h-[30vh] space-y-4 glass-card p-8 border-red-500/30">
+          <AlertCircle className="h-10 w-10 text-red-500" />
+          <p className="text-red-400 font-medium text-lg">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors text-sm font-bold uppercase tracking-wider"
+          >
+            {t('campaign.retry', 'Réessayer')}
+          </button>
         </div>
+      ) : (
+        <>
+          <CampaignHeader
+            campaignData={campaignData}
+            isLoading={isLoading}
+            error={error}
+          />
+
+          {campaignData && (
+            <Tabs defaultValue="finance" className="space-y-8">
+              <div className="sticky top-20 z-30 bg-background/80 backdrop-blur-xl py-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:rounded-xl border-b sm:border border-white/5 shadow-lg shadow-black/5">
+                <TabsList className="bg-muted/30 p-1 rounded-lg w-full flex justify-start overflow-x-auto no-scrollbar gap-2 h-auto">
+                  <TabsTrigger value="finance" className="flex items-center gap-2 px-4 py-2.5 rounded-md data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all">
+                    <BarChart3 className="h-4 w-4" />
+                    {t('campaign.finance', 'Finance & Gestion')}
+                  </TabsTrigger>
+                  <TabsTrigger value="investors" className="flex items-center gap-2 px-4 py-2.5 rounded-md data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 transition-all">
+                    <Users className="h-4 w-4" />
+                    {t('campaign.investors', 'Investisseurs')}
+                  </TabsTrigger>
+                  <TabsTrigger value="documents" className="flex items-center gap-2 px-4 py-2.5 rounded-md data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400 transition-all">
+                    <FileText className="h-4 w-4" />
+                    {t('campaign.documents', 'Documents')}
+                  </TabsTrigger>
+                  <TabsTrigger value="social" className="flex items-center gap-2 px-4 py-2.5 rounded-md data-[state=active]:bg-pink-500/20 data-[state=active]:text-pink-400 transition-all">
+                    <Share2 className="h-4 w-4" />
+                    {t('campaign.social', 'Social & Partage')}
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              <div className="focus-visible:outline-none focus-visible:ring-0">
+                <TabsContent value="finance" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    <div className="space-y-8">
+                      <DividendDistribution
+                        campaignData={campaignData}
+                        campaignAddress={campaignAddress}
+                        onDistributionComplete={handleDistributionComplete}
+                      />
+                      <CampaignActions
+                        campaignData={campaignData}
+                        campaignAddress={campaignAddress}
+                        onReopenClick={() => setShowReopenDialog(true)}
+                        onPromoteClick={() => setShowPromoteDialog(true)}
+                        onCertifyClick={() => setShowCertifyDialog(true)}
+                        onActionComplete={handleActionComplete}
+                      />
+                    </div>
+                    <div className="h-full">
+                      <TransactionHistory
+                        campaignAddress={campaignAddress}
+                        onPreloadHover={handlePreloadHover}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="investors" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <CampaignInvestors
+                    campaignAddress={campaignAddress}
+                    onPreloadHover={handlePreloadHover}
+                  />
+                </TabsContent>
+
+                <TabsContent value="documents" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <CampaignDocuments
+                    campaignAddress={campaignAddress}
+                    campaignData={campaignData}
+                    onDocumentUpdate={handleDocumentUpdate}
+                  />
+                </TabsContent>
+
+                <TabsContent value="social" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                  <CampaignSocial
+                    campaignData={campaignData}
+                    campaignAddress={campaignAddress}
+                    onSocialUpdate={handleSocialUpdate}
+                  />
+                </TabsContent>
+              </div>
+            </Tabs>
+          )}
+
+          <ReopenCampaignDialog
+            isOpen={showReopenDialog}
+            onClose={() => setShowReopenDialog(false)}
+            campaignData={campaignData}
+            campaignAddress={campaignAddress}
+            onSuccess={handleReopenSuccess}
+          />
+
+          <PromoteCampaignDialog
+            isOpen={showPromoteDialog}
+            onClose={() => setShowPromoteDialog(false)}
+            campaignData={campaignData}
+            campaignAddress={campaignAddress}
+            onSuccess={handlePromoteSuccess}
+          />
+
+          <CertifyCampaignDialog
+            isOpen={showCertifyDialog}
+            onClose={() => setShowCertifyDialog(false)}
+            campaignData={campaignData}
+            campaignAddress={campaignAddress}
+            onSuccess={handleCertifySuccess}
+          />
+
+          {process.env.NODE_ENV === 'development' && campaignData && (
+            <div className="mt-12 p-4 rounded-xl border border-dashed border-white/10 bg-black/20 font-mono text-xs text-muted-foreground">
+              <p className="font-bold text-white mb-2 uppercase tracking-wide">Developer Debug Info</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="opacity-50 block">Campaign Address</span>
+                  <span className="text-primary">{campaignAddress}</span>
+                </div>
+                <div>
+                  <span className="opacity-50 block">Environment</span>
+                  <span className="text-yellow-400">Development</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

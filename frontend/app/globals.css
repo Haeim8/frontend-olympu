@@ -2,277 +2,109 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Configuration de base pour la taille */
-:root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 45%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
-  --radius: 0.5rem;
-}
+@layer base {
+  :root {
+    /* Professional FinTech Theme - Light Mode Default */
+    --background: 210 20% 98%;
+    --foreground: 222.2 84% 4.9%;
 
-/* Configuration du mode sombre */
-.dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
-}
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-/* Configuration globale de la taille */
-html {
-  font-size: 100%; /* 14px */
-  -webkit-text-size-adjust: 100%;
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-body {
-  font-size: 14px;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  width: 100%;
-  overflow-x: hidden;
-}
+    --primary: 84 81% 44%; /* Professional Lime/Green #65a30d */
+    --primary-foreground: 210 40% 98%;
+    --primary-light: 84 81% 54%;
+    --primary-dark: 84 81% 34%;
 
-/* Styles de texture et animations */
-.bg-texture {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.4' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
-  animation: grain 8s steps(10) infinite;
-}
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-.dark .bg-texture {
-  opacity: 0.06;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
-}
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16.3% 46.9%;
 
-/* Animation de grain */
-@keyframes grain {
-  0%, 100% { transform: translate(0, 0); }
-  10% { transform: translate(-5%, -10%); }
-  20% { transform: translate(-15%, 5%); }
-  30% { transform: translate(7%, -25%); }
-  40% { transform: translate(-5%, 25%); }
-  50% { transform: translate(-15%, 10%); }
-  60% { transform: translate(15%, 0%); }
-  70% { transform: translate(0%, 15%); }
-  80% { transform: translate(3%, 35%); }
-  90% { transform: translate(-10%, 10%); }
-}
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-/* Animations de transition de page */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-@keyframes slideIn {
-  from { transform: translateX(-20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 84 81% 44%;
 
-.page-transition-enter {
-  animation: fadeIn 0.3s ease-out, slideIn 0.3s ease-out;
-}
-
-.page-transition-exit {
-  animation: fadeIn 0.3s ease-in reverse, slideIn 0.3s ease-in reverse;
-}
-
-/* Configuration du conteneur */
-.container {
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-/* Media queries pour le responsive */
-@media (min-width: 640px) {
-  html {
-    font-size: 80%;
+    --radius: 0.5rem;
   }
-  .container {
-    max-width: 640px;
+
+  .dark {
+    /* Professional FinTech Theme - Dark Mode */
+    --background: 222.2 84% 4.9%; /* #020817 Deep Blue/Black */
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 47.4% 11.2%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 142 71% 45%; /* Vivid Green #22c55e range - specifically emerald/lime mix */
+    --primary-foreground: 144 75% 97%;
+    --primary-light: 142 71% 55%;
+    --primary-dark: 142 71% 35%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142 71% 45%;
   }
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 80%;
+@layer base {
+  * {
+    @apply border-border;
   }
-  .container {
-    max-width: 768px;
-  }
-}
 
-@media (min-width: 1024px) {
-  html {
-    font-size: 80.5%;
-  }
-  .container {
-    max-width: 1024px;
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-@media (min-width: 1280px) {
-  html {
-    font-size: 87.5%;
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-md bg-white/5 border border-white/10 shadow-sm;
   }
-  .container {
-    max-width: 1280px;
+
+  .glass-card {
+    @apply bg-card/50 backdrop-blur-lg border border-border shadow-sm transition-all duration-200;
   }
-}
-
-@media (min-width: 1536px) {
-  .container {
-    max-width: 1536px;
+  
+  /* Removed neon gradients */
+  .text-gradient {
+    @apply text-foreground;
   }
-}
 
-/* Optimisations pour les écrans Retina */
-@media screen and (-webkit-min-device-pixel-ratio: 2),
-       screen and (min-resolution: 192dpi) {
-  html {
-    font-size: 85%;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  /* Removed text-glow */
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
-}
 
-/* Styles de base pour les éléments communs */
-h1, h2, h3, h4, h5, h6 {
-  line-height: 1.2;
-}
-
-p {
-  line-height: 1.5;
-}
-
-/* Utilitaires supplémentaires */
-.text-scale {
-  transform-origin: top left;
-}
-
-/* Ajustements pour le scroll - Style moderne */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #84cc16, #22c55e);
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #65a30d, #16a34a);
-  background-clip: padding-box;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #a3e635, #4ade80);
-  background-clip: padding-box;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #84cc16, #22c55e);
-  background-clip: padding-box;
-}
-
-/* Scrollbar personnalisé pour le modal */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(163, 230, 53, 0.1);
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #84cc16, #22c55e);
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #65a30d, #16a34a);
-}
-
-/* Animation pour le ripple effect */
-@keyframes cell-ripple {
-  0% {
-    opacity: 0.3;
-    transform: scale(1);
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-  100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-}
-
-.animate-cell-ripple {
-  animation-name: cell-ripple;
-  animation-duration: var(--duration, 500ms);
-  animation-delay: var(--delay, 0ms);
-  animation-timing-function: ease-out;
-}
-
-/* Masque radial pour effet de disparition en diagonal */
-.mask-radial-faded {
-  -webkit-mask-image: radial-gradient(ellipse at top left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 40%, transparent 70%);
-  mask-image: radial-gradient(ellipse at top left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 40%, transparent 70%);
 }

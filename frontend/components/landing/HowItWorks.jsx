@@ -1,120 +1,110 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Wallet, Trophy, Compass, ArrowRight } from "lucide-react";
+import { Wallet, Trophy, Compass, ArrowRight, CheckCircle2, ChevronRight } from "lucide-react";
 import { useTranslation } from '@/hooks/useLanguage';
 
 export function HowItWorks({ darkMode }) {
   const { t } = useTranslation();
-  
+
   const steps = [
     {
       icon: Wallet,
       title: t('landing.howItWorks.step1.title'),
       description: t('landing.howItWorks.step1.description'),
-      color: "from-blue-400 to-blue-600",
-      delay: 0
+      accent: "text-blue-500",
+      bg: "bg-blue-500/10",
+      border: "border-blue-500/20"
     },
     {
       icon: Compass,
       title: t('landing.howItWorks.step2.title'),
       description: t('landing.howItWorks.step2.description'),
-      color: "from-purple-400 to-purple-600",
-      delay: 0.1
+      accent: "text-primary",
+      bg: "bg-primary/10",
+      border: "border-primary/20"
     },
     {
       icon: Trophy,
       title: t('landing.howItWorks.step3.title'),
       description: t('landing.howItWorks.step3.description'),
-      color: "from-lime-400 to-green-600",
-      delay: 0.2
+      accent: "text-green-500",
+      bg: "bg-green-500/10",
+      border: "border-green-500/20"
     }
   ];
 
   return (
-    <section id="comment-ca-marche" className="relative z-10 py-16 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Titre */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
-            {t('landing.howItWorks.title')}
-          </h2>
-          <p className={`text-sm max-w-2xl mx-auto ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-            {t('landing.howItWorks.subtitle')}
-          </p>
-        </motion.div>
+    <section id="how-it-works" className="relative z-10 py-24 px-4 bg-black/20 border-y border-white/5">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-        {/* Étapes */}
-        <div className="relative">
-          {/* Ligne de connexion pour desktop */}
-          <div className="hidden md:block absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl">
-            <div className={`h-0.5 ${darkMode ? "bg-gradient-to-r from-transparent via-lime-500/30 to-transparent" : "bg-gradient-to-r from-transparent via-lime-500/40 to-transparent"}`} />
+          {/* Left: Text Content */}
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 text-xs font-mono tracking-wider uppercase">
+              {t('landing.howItWorks.simpleOnboarding')}
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white">
+              {t('landing.howItWorks.titlePart1')} <br />
+              <span className="text-primary">{t('landing.howItWorks.titlePart2')}</span>
+            </h2>
+            <p className="text-lg text-gray-400 leading-relaxed max-w-xl">
+              {t('landing.howItWorks.subtitle')}
+            </p>
+
+            <div className="space-y-4 pt-4">
+              {[
+                t('landing.howItWorks.checklist1'),
+                t('landing.howItWorks.checklist2'),
+                t('landing.howItWorks.checklist3')
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 text-gray-300">
+                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {steps.map((step, index) => (
-              <motion.div
-                key={index}
-                className="relative"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: step.delay }}
-                viewport={{ once: true }}
-              >
-                {/* Numéro d'étape */}
-                <div className="flex justify-center mb-4">
-                  <div className="relative">
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${step.color} flex items-center justify-center shadow-lg`}>
-                      <step.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-lime-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg">
+          {/* Right: Vertical Process UI */}
+          <div className="relative">
+            {/* Connecting Line */}
+            <div className="absolute left-8 top-8 bottom-8 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent dashed-line" />
+
+            <div className="space-y-8">
+              {steps.map((step, index) => (
+                <motion.div
+                  key={index}
+                  className="relative pl-20"
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.2 }}
+                  viewport={{ once: true }}
+                >
+                  {/* Number Node */}
+                  <div className={`absolute left-0 top-0 w-16 h-16 rounded-2xl flex items-center justify-center border ${step.border} ${step.bg} shadow-lg backdrop-blur-md z-10 group hover:scale-105 transition-transform`}>
+                    <step.icon className={`w-7 h-7 ${step.accent}`} />
+                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black border border-white/10 flex items-center justify-center text-xs font-bold text-gray-400">
                       {index + 1}
                     </div>
                   </div>
-                </div>
 
-                {/* Contenu */}
-                <div className="text-center space-y-3">
-                  <h3 className={`text-lg font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>
-                    {step.title}
-                  </h3>
-                  <p className={`text-sm leading-relaxed ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-                    {step.description}
-                  </p>
-                </div>
-
-                {/* Flèche pour mobile */}
-                {index < steps.length - 1 && (
-                  <div className="md:hidden flex justify-center mt-6">
-                    <ArrowRight className="w-5 h-5 text-lime-500" />
+                  {/* Content Card */}
+                  <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group cursor-pointer">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{step.title}</h3>
+                      <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100" />
+                    </div>
+                    <p className="text-gray-400 text-sm leading-relaxed">
+                      {step.description}
+                    </p>
                   </div>
-                )}
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* CTA Section */}
-        <motion.div
-          className="text-center mt-16"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-        >
-          <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full ${darkMode ? "bg-lime-500/10 border border-lime-500/20" : "bg-lime-500/20 border border-lime-500/30"} backdrop-blur-sm`}>
-            <div className="w-2 h-2 bg-lime-500 rounded-full animate-pulse"></div>
-            <span className={`text-sm font-medium ${darkMode ? "text-lime-400" : "text-lime-600"}`}>
-              {t('landing.howItWorks.readyInMinutes')}
-            </span>
-          </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

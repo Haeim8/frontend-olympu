@@ -11,16 +11,15 @@ import WalletStats from '@/components/wallet/WalletStats';
 import NFTHoldings from '@/components/wallet/NFTHoldings';
 import TransactionHistory from '@/components/wallet/TransactionHistory';
 
-// Import des modals/dialogs si nécessaire
+// Import des modals/dialogs
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Wifi, WifiOff } from 'lucide-react';
 
 export default function Wallet() {
   const { address } = useAccount();
   const { t } = useTranslation();
-  
+
   // États principaux
   const [nftHoldings, setNftHoldings] = useState([]);
   const [walletInfo, setWalletInfo] = useState({
@@ -65,12 +64,12 @@ export default function Wallet() {
 
         return Math.floor(Date.now() / 1000);
       };
-      
+
       // Transformer les données pour le format attendu
       const nftData = [];
       const transactionData = [];
       const investmentsArray = Array.isArray(investments) ? investments : [];
-      
+
       investmentsArray.forEach(investment => {
         const investmentArray = Array.isArray(investment.investments) ? investment.investments : [];
         investmentArray.forEach((inv, index) => {
@@ -85,13 +84,13 @@ export default function Wallet() {
             txHash: investment.campaignAddress,
             dividends: '0.0000' // TODO: Récupérer les vraies données de dividendes
           };
-          
+
           nftData.push(nftItem);
-          
+
           // Créer une transaction correspondante
           transactionData.push({
             id: `${investment.campaignAddress}-${index}`,
-            type: t('wallet.investment'),
+            type: t('wallet.investment', 'Investissement'),
             project: investment.campaignName,
             amount: `${apiManager.formatEthValue(inv.amount)} ETH`,
             date: new Date(timestampSeconds * 1000).toLocaleDateString('fr-FR'),
@@ -102,7 +101,7 @@ export default function Wallet() {
 
       setNftHoldings(nftData);
       setTransactions(transactionData);
-      
+
       // Calculer les statistiques du portefeuille
       const nftDataArray = Array.isArray(nftData) ? nftData : [];
       const stats = {
@@ -111,7 +110,7 @@ export default function Wallet() {
         activeProjects: new Set(nftDataArray.map(nft => nft.campaign)).size,
         totalDividends: nftDataArray.reduce((acc, nft) => acc + parseFloat(nft.dividends || 0), 0).toFixed(4)
       };
-      
+
       setWalletInfo(stats);
 
       // Précharger les données des campagnes dans lesquelles l'utilisateur a investi
@@ -123,7 +122,7 @@ export default function Wallet() {
 
     } catch (error) {
       console.error('Erreur lors du chargement du portefeuille:', error);
-      setError(error.message || t('wallet.error.loadFailed'));
+      setError(error.message || t('wallet.error.loadFailed', 'Échec du chargement des données.'));
     } finally {
       setIsLoading(false);
     }
@@ -167,24 +166,31 @@ export default function Wallet() {
   if (!address) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center space-y-6 p-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl flex items-center justify-center mx-auto">
-            <WifiOff className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+        <div className="max-w-md mx-auto text-center space-y-8 p-8 bg-card border border-border rounded-3xl relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[60px] rounded-full -translate-y-1/2 translate-x-1/2" />
+
+          <div className="relative">
+            <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-glow border border-primary/20">
+              <WifiOff className="w-10 h-10 text-primary" />
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-3xl font-bold text-foreground">
+                {t('wallet.notConnected.title', 'Portefeuille Non Connecté')}
+              </h2>
+              <p className="text-muted-foreground font-medium">
+                {t('wallet.notConnected.description', 'Veuillez connecter votre portefeuille pour accéder à votre tableau de bord personnel.')}
+              </p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {t('wallet.notConnected.title')}
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              {t('wallet.notConnected.description')}
+
+          <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-start text-left gap-4">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Wifi className="h-5 w-5 text-primary flex-shrink-0" />
+            </div>
+            <p className="text-sm text-foreground/80 font-medium pt-1">
+              {t('wallet.notConnected.instruction', 'Utilisez le bouton de connexion en haut à droite pour commencer.')}
             </p>
           </div>
-          <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
-            <Wifi className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800 dark:text-blue-200">
-              {t('wallet.notConnected.instruction')}
-            </AlertDescription>
-          </Alert>
         </div>
       </div>
     );
@@ -192,8 +198,8 @@ export default function Wallet() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8 relative z-10">
-        
+      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8 relative z-10 animate-fade-in">
+
         {/* Header principal */}
         <WalletHeader
           address={address}
@@ -204,24 +210,26 @@ export default function Wallet() {
 
         {/* Message d'erreur global */}
         {error && (
-          <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800 dark:text-red-200">
-              <strong>{t('error')}:</strong> {error}
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-red-500 text-sm font-medium">
+                <strong>{t('error', 'Erreur')}:</strong> {error}
+              </p>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleRefresh}
-                className="ml-2 text-red-600 hover:text-red-700"
+                className="mt-2 text-red-500 hover:text-red-600 hover:bg-red-500/10 h-8 p-2"
               >
-                {t('wallet.error.retry')}
+                {t('wallet.error.retry', 'Réessayer')}
               </Button>
-            </AlertDescription>
-          </Alert>
+            </div>
+          </div>
         )}
 
         {/* Statistiques du portefeuille */}
-        <WalletStats 
+        <WalletStats
           walletInfo={walletInfo}
           isLoading={isLoading}
         />
@@ -242,68 +250,59 @@ export default function Wallet() {
         {/* Modal de détails NFT */}
         {selectedNFT && (
           <Dialog open={!!selectedNFT} onOpenChange={handleCloseNFTDetails}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="sm:max-w-md bg-card border-border text-foreground rounded-3xl shadow-2xl">
               <DialogHeader>
-                <DialogTitle>
-                  {t('wallet.nftDetails.title', { id: selectedNFT.id.split('-').pop() })}
+                <DialogTitle className="text-2xl font-bold text-foreground">
+                  {t('wallet.nftDetails.title', { id: selectedNFT.id.split('-').pop() }, `Token #${selectedNFT.id.split('-').pop()}`)}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wallet.nftDetails.campaign')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">
+              <div className="space-y-6 mt-4">
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-muted/50 border border-border/50">
+                    <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-1">{t('wallet.nftDetails.campaign', 'Campagne')}</p>
+                    <p className="font-bold text-foreground text-lg">
                       {selectedNFT.campaign}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wallet.nftDetails.shares')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">
-                      {selectedNFT.shares}
-                    </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-muted/50 border border-border/50">
+                      <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-1">{t('wallet.nftDetails.shares', 'Parts')}</p>
+                      <p className="font-bold text-foreground text-lg">
+                        {selectedNFT.shares}
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-muted/50 border border-border/50">
+                      <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-1">{t('wallet.nftDetails.invested', 'Investi')}</p>
+                      <p className="font-bold text-primary text-lg">
+                        {parseFloat(selectedNFT.amount).toFixed(4)} ETH
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wallet.nftDetails.invested')}</p>
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">
-                      {parseFloat(selectedNFT.amount).toFixed(4)} ETH
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('wallet.nftDetails.dividends')}</p>
-                    <p className="font-semibold text-green-600 dark:text-green-400">
+
+                  <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/20">
+                    <p className="text-xs uppercase tracking-wider font-bold text-green-600 dark:text-green-400 mb-1">{t('wallet.nftDetails.dividends', 'Dividendes Cumulés')}</p>
+                    <p className="font-bold text-green-600 dark:text-green-400 text-lg">
                       {selectedNFT.dividends} ETH
                     </p>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2">
+
+                <div className="flex justify-end space-x-3 pt-4 border-t border-border/50">
                   <Button
                     variant="outline"
                     onClick={() => window.open(`https://sepolia.basescan.org/address/${selectedNFT.txHash}`, '_blank')}
+                    className="border-border hover:bg-muted text-muted-foreground hover:text-foreground rounded-xl"
                   >
-                    {t('wallet.nftDetails.viewOnBasescan')}
+                    {t('wallet.nftDetails.viewOnBasescan', 'Voir sur Basescan')}
                   </Button>
-                  <Button onClick={handleCloseNFTDetails}>
-                    {t('close')}
+                  <Button onClick={handleCloseNFTDetails} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/25">
+                    {t('close', 'Fermer')}
                   </Button>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
-        )}
-
-        {/* Debug info en développement */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 p-4 bg-gray-100 dark:bg-neutral-900 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Debug Info (dev only)
-            </h3>
-            <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-              <p>Wallet Address: {address}</p>
-              <p>NFT Holdings: {nftHoldings.length}</p>
-              <p>Transactions: {transactions.length}</p>
-              <p>Cache stats: {JSON.stringify(apiManager.getCacheStats?.() ?? {}, null, 2)}</p>
-            </div>
-          </div>
         )}
       </div>
     </div>

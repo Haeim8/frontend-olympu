@@ -9,18 +9,18 @@ import { Star, ChevronRight, Zap, Diamond } from 'lucide-react';
 export default function ProjectCard({ project, isFavorite, toggleFavorite, onViewDetails }) {
   const { t } = useTranslation();
   const [promotion, setPromotion] = useState(null);
-  
+
   // Charger les données de promotion
   useEffect(() => {
     const checkPromotion = async () => {
       if (!project.address) return;
-      
+
       try {
         const promotionData = await apiManager.isCampaignBoosted(
-          project.address, 
+          project.address,
           project.currentRound || 1
         );
-        
+
         if (promotionData.isBoosted || promotionData.isBosted) {
           setPromotion(promotionData);
         }
@@ -47,7 +47,7 @@ export default function ProjectCard({ project, isFavorite, toggleFavorite, onVie
     const PromotionIcon = badge.icon;
 
     return (
-      <div className={`flex items-center space-x-1 px-2 py-1 rounded-full ${badge.color} text-white text-xs`}>
+      <div className={`flex items-center space-x-1 px-2 py-1 rounded-full ${badge.color} text-white text-xs shadow-lg`}>
         <PromotionIcon className="w-3 h-3" />
         <span>{badge.label}</span>
       </div>
@@ -55,10 +55,12 @@ export default function ProjectCard({ project, isFavorite, toggleFavorite, onVie
   };
 
   return (
-    <Card className={`bg-white dark:bg-neutral-900 shadow-md hover:shadow-lg transition-shadow duration-300 relative ${
-      promotion ? 'ring-2 ring-yellow-400/50' : ''
-    }`}>
-      <CardContent className="p-4">
+    <Card className={`glass-card border-white/10 hover:border-primary/50 transition-all duration-300 relative group overflow-hidden ${promotion ? 'ring-1 ring-primary/50' : ''
+      }`}>
+      {/* Hover glow effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+      <CardContent className="p-5 relative z-10">
         {/* Badge promotion */}
         {promotion && (
           <div className="absolute -top-2 -right-2 z-10">
@@ -69,50 +71,53 @@ export default function ProjectCard({ project, isFavorite, toggleFavorite, onVie
         <div className="md:hidden mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{project.name}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{project.sector}</p>
+              <h3 className="text-lg font-bold text-white">{project.name}</h3>
+              <p className="text-sm text-gray-400">{project.sector}</p>
             </div>
             {promotion && <div className="ml-2">{getPromotionBadge()}</div>}
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 items-center">
           <div className="hidden md:block">
             <div className="flex items-center gap-2">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{project.name}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{project.sector}</p>
+                <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors duration-300">{project.name}</h3>
+                <p className="text-sm text-gray-400">{project.sector}</p>
               </div>
               {promotion && <div className="ml-2">{getPromotionBadge()}</div>}
             </div>
           </div>
           <div className="text-center md:text-left">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('project.unit_price', 'Prix unitaire')}</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{project.unitPrice} USDC</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">{t('project.unit_price', 'Prix unitaire')}</p>
+            <p className="text-lg font-bold text-white">{project.unitPrice} USDC</p>
           </div>
           <div className="text-center md:text-left">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('project.current_raise', 'Levée en cours')}</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{project.currentRaise} USDC</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">{t('project.current_raise', 'Levée en cours')}</p>
+            <p className="text-lg font-bold text-white">{project.currentRaise} USDC</p>
           </div>
           <div className="text-center md:text-left">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('project.goal', 'Objectif')}</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{project.goal} USDC</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">{t('project.goal', 'Objectif')}</p>
+            <p className="text-lg font-bold text-white">{project.goal} USDC</p>
           </div>
           <div className="col-span-2 space-y-2">
-            <Progress value={progress} className="w-full" />
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-right">{t('project.progress', '{percent}% atteint', { percent: progress.toFixed(2) })}</p>
+            <Progress value={progress} className="w-full h-2 bg-white/5" indicatorClassName="bg-gradient-to-r from-primary to-secondary" />
+            <p className="text-xs text-gray-400 text-right font-medium">{t('project.progress', '{percent}% atteint', { percent: progress.toFixed(2) })}</p>
           </div>
-          <div className="flex justify-between items-center md:justify-end space-x-2">
+          <div className="flex justify-between items-center md:justify-end space-x-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => toggleFavorite(project.id)}
-              className={`${isFavorite ? 'text-yellow-500' : 'text-gray-400'} hover:text-yellow-600`}
+              className={`rounded-full hover:bg-white/10 ${isFavorite ? 'text-accent' : 'text-gray-500'} transition-colors`}
             >
-              <Star className="h-5 w-5" />
+              <Star className={`h-5 w-5 ${isFavorite ? 'fill-accent' : ''}`} />
             </Button>
-            <Button onClick={() => onViewDetails(project)} className="bg-lime-500 hover:bg-lime-600 text-white">
-              <span className="hidden md:inline">{t('project.view_details', 'Voir détails')}</span>
-              <ChevronRight className="h-5 w-5 md:ml-2" />
+            <Button
+              onClick={() => onViewDetails(project)}
+              className="bg-primary hover:bg-primary-dark text-white rounded-xl shadow-lg hover:shadow-primary/25 transition-all duration-300"
+            >
+              <span className="hidden md:inline font-semibold">{t('project.view_details', 'Voir détails')}</span>
+              <ChevronRight className="h-4 w-4 md:ml-2" />
             </Button>
           </div>
         </div>

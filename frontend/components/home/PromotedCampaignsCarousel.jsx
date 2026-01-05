@@ -14,24 +14,24 @@ const PROMOTION_TYPES = {
   featured: {
     icon: Star,
     labelKey: 'promoted.featured',
-    color: 'from-yellow-400 to-orange-500',
-    badge: 'bg-yellow-500',
+    color: 'from-orange-500 to-yellow-500',
+    badge: 'bg-orange-500',
   },
   trending: {
     icon: TrendingUp,
     labelKey: 'promoted.trending',
-    color: 'from-purple-400 to-pink-500',
-    badge: 'bg-purple-500',
+    color: 'from-primary to-secondary',
+    badge: 'bg-primary',
   },
   spotlight: {
     icon: Zap,
     labelKey: 'promoted.spotlight',
-    color: 'from-blue-400 to-cyan-500',
+    color: 'from-blue-500 to-cyan-400',
     badge: 'bg-blue-500',
   },
 };
 
-export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
+export function PromotedCampaignsCarousel({ onViewCampaign }) {
   const { t } = useTranslation();
   const [campaigns, setCampaigns] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -136,11 +136,11 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
 
   if (isLoading) {
     return (
-      <div className="w-full py-12">
+      <div className="w-full py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 dark:bg-neutral-800 rounded w-64 mb-4"></div>
-            <div className="h-64 bg-gray-200 dark:bg-neutral-800 rounded"></div>
+            <div className="h-8 bg-white/5 rounded w-64 mb-4"></div>
+            <div className="h-64 bg-white/5 rounded"></div>
           </div>
         </div>
       </div>
@@ -152,24 +152,26 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
   }
 
   const currentCampaign = campaigns[currentIndex];
+  // Safe access to promotion type in case of unknown type
   const promotionInfo = PROMOTION_TYPES[currentCampaign.promotion.type] || PROMOTION_TYPES.featured;
   const PromotionIcon = promotionInfo.icon;
 
   return (
-    <div className="w-full py-12 bg-gradient-to-b from-gray-50 to-white dark:from-neutral-900 dark:to-neutral-950">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="w-full py-8 relative">
+      <div className="absolute inset-0 bg-transparent pointer-events-none" />
+      <div className="max-w-7xl mx-auto px-4 relative z-10">
         {/* Titre */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-xl bg-gradient-to-r ${promotionInfo.color} text-white`}>
+            <div className={`p-3 rounded-xl bg-gradient-to-r ${promotionInfo.color} text-white shadow-lg`}>
               <PromotionIcon className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {t('promoted.trending')}
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
+                {t('promoted.trending', 'Tendance')}
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                {t('promoted.subtitle')}
+              <p className="text-gray-400 mt-1">
+                {t('promoted.subtitle', 'Les projets les plus prometteurs du moment')}
               </p>
             </div>
           </div>
@@ -181,7 +183,7 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
                 variant="outline"
                 size="icon"
                 onClick={handlePrevious}
-                className="rounded-full"
+                className="rounded-full bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-primary"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
@@ -189,7 +191,7 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
                 variant="outline"
                 size="icon"
                 onClick={handleNext}
-                className="rounded-full"
+                className="rounded-full bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-primary"
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
@@ -200,10 +202,12 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
         {/* Carousel */}
         <div
           ref={carouselRef}
-          className="relative overflow-hidden rounded-2xl"
+          className="relative overflow-hidden rounded-2xl ring-1 ring-white/10 shadow-2xl"
           onMouseEnter={() => setIsAutoPlaying(false)}
           onMouseLeave={() => setIsAutoPlaying(true)}
         >
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-xl z-0" />
+
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
@@ -211,14 +215,15 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.5 }}
+              className="relative z-10"
             >
-              <Card className={`border-0 bg-gradient-to-r ${promotionInfo.color} p-1 shadow-2xl`}>
-                <CardContent className="p-0">
-                  <div className="bg-white dark:bg-neutral-900 rounded-xl overflow-hidden">
-                    <div className="grid md:grid-cols-2 gap-8 p-8">
+              <Card className={`border-0 bg-gradient-to-r ${promotionInfo.color} p-[1px] shadow-2xl overflow-hidden`}>
+                <CardContent className="p-0 h-full">
+                  <div className="bg-[#050505] rounded-[inherit] overflow-hidden h-full">
+                    <div className="grid md:grid-cols-2 gap-8 p-8 items-center">
                       {/* Image/Logo */}
                       <div className="flex items-center justify-center">
-                        <div className="relative w-full aspect-square max-w-md rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-neutral-800 dark:to-neutral-900">
+                        <div className="relative w-full aspect-square max-w-sm rounded-2xl overflow-hidden bg-white/5 shadow-2xl">
                           {currentCampaign.logo && currentCampaign.logo.startsWith('http') ? (
                             <img
                               src={currentCampaign.logo}
@@ -233,7 +238,7 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
 
                           {/* Badge promotion */}
                           <div className="absolute top-4 right-4">
-                            <Badge className={`${promotionInfo.badge} text-white flex items-center gap-2 px-3 py-1.5`}>
+                            <Badge className={`${promotionInfo.badge} text-white flex items-center gap-2 px-3 py-1.5 border-none shadow-lg`}>
                               <PromotionIcon className="w-4 h-4" />
                               {t(promotionInfo.labelKey)}
                             </Badge>
@@ -243,56 +248,56 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
 
                       {/* Contenu */}
                       <div className="flex flex-col justify-center">
-                        <Badge className="w-fit mb-3 bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300">
+                        <Badge className="w-fit mb-4 bg-white/10 text-gray-300 border-none px-3 py-1">
                           {currentCampaign.category}
                         </Badge>
 
-                        <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                        <h3 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">
                           {currentCampaign.name}
                         </h3>
 
-                        <p className="text-gray-600 dark:text-gray-400 mb-6 line-clamp-3">
+                        <p className="text-gray-400 mb-8 line-clamp-3 leading-relaxed text-lg">
                           {currentCampaign.description || 'Description non disponible'}
                         </p>
 
                         {/* Stats */}
-                        <div className="grid grid-cols-3 gap-4 mb-6">
-                          <div>
-                            <div className="text-2xl font-bold text-lime-600 dark:text-lime-400">
+                        <div className="grid grid-cols-3 gap-4 mb-8">
+                          <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                            <div className="text-2xl font-bold text-primary shadow-glow">
                               {currentCampaign.progress.toFixed(0)}%
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">{t('promoted.progress')}</div>
+                            <div className="text-xs text-gray-500 uppercase font-semibold tracking-wider mt-1">{t('promoted.progress', 'Progression')}</div>
                           </div>
-                          <div>
-                            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                              {parseFloat(currentCampaign.raised).toFixed(4)} ETH
+                          <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                            <div className="text-2xl font-bold text-white">
+                              {parseFloat(currentCampaign.raised).toFixed(2)}
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">{t('promoted.raised')}</div>
+                            <div className="text-xs text-gray-500 uppercase font-semibold tracking-wider mt-1">{t('promoted.raised', 'Levés (ETH)')}</div>
                           </div>
-                          <div>
-                            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                          <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                            <div className="text-2xl font-bold text-white">
                               {currentCampaign.investors}
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">{t('promoted.investors')}</div>
+                            <div className="text-xs text-gray-500 uppercase font-semibold tracking-wider mt-1">{t('promoted.investors', 'Inv.')}</div>
                           </div>
                         </div>
 
                         {/* Progress bar */}
-                        <div className="w-full h-2 bg-gray-200 dark:bg-neutral-800 rounded-full overflow-hidden mb-6">
+                        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-8">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${currentCampaign.progress}%` }}
                             transition={{ duration: 1, delay: 0.3 }}
-                            className={`h-full bg-gradient-to-r ${promotionInfo.color}`}
+                            className={`h-full bg-gradient-to-r ${promotionInfo.color} shadow-[0_0_10px_rgba(255,255,255,0.3)]`}
                           />
                         </div>
 
                         {/* CTA */}
                         <Button
                           onClick={() => onViewCampaign?.(currentCampaign)}
-                          className={`w-full bg-gradient-to-r ${promotionInfo.color} hover:opacity-90 text-white font-semibold py-6 text-lg`}
+                          className={`w-full bg-gradient-to-r ${promotionInfo.color} hover:contrast-125 text-white font-bold py-6 text-lg rounded-xl shadow-lg transition-all`}
                         >
-                          {t('promoted.discover')}
+                          {t('promoted.discover', 'Découvrir le projet')}
                           <ExternalLink className="w-5 h-5 ml-2" />
                         </Button>
                       </div>
@@ -311,11 +316,10 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
               <button
                 key={index}
                 onClick={() => handleDotClick(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  index === currentIndex
+                className={`h-1.5 rounded-full transition-all duration-300 ${index === currentIndex
                     ? `w-8 bg-gradient-to-r ${promotionInfo.color}`
-                    : 'w-2 bg-gray-300 dark:bg-neutral-700'
-                }`}
+                    : 'w-2 bg-white/20'
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
@@ -324,8 +328,8 @@ export function PromotedCampaignsCarousel({ onViewCampaign, darkMode }) {
 
         {/* Campagnes count */}
         <div className="text-center mt-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {currentIndex + 1} / {campaigns.length} {t('promoted.count')}
+          <p className="text-xs text-gray-500">
+            {currentIndex + 1} / {campaigns.length} {t('promoted.count', 'Projets en une')}
           </p>
         </div>
       </div>

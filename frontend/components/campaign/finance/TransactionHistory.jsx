@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Search, Filter, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart, Search, Filter, ExternalLink, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
 
 export default function TransactionHistory({ campaignAddress, onPreloadHover }) {
@@ -23,14 +23,14 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
 
   const loadTransactions = useCallback(async () => {
     if (!campaignAddress) return;
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const transactionData = await apiManager.getCampaignTransactions(campaignAddress);
       setTransactions(transactionData || []);
-      
+
     } catch (err) {
       console.error('Erreur chargement transactions:', err);
       setError(t('transactionHistory.errorLoading'));
@@ -44,7 +44,6 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
   }, [loadTransactions]);
 
   const filteredAndSortedTransactions = () => {
-    // Vérifier que transactions est bien un array
     let filtered = Array.isArray(transactions) ? transactions : [];
 
     if (filter !== 'all') {
@@ -54,7 +53,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
     }
 
     if (searchTerm) {
-      filtered = filtered.filter(tx => 
+      filtered = filtered.filter(tx =>
         tx.investor.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -77,18 +76,14 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
 
   const getTransactionIcon = (type) => {
     return type === t('transactionHistory.buy') ?
-      <TrendingUp className="h-4 w-4 text-lime-500" /> :
-      <TrendingDown className="h-4 w-4 text-red-500" />;
+      <div className="bg-green-500/20 p-1.5 rounded-full text-green-500"><ArrowUpRight className="h-3.5 w-3.5" /></div> :
+      <div className="bg-red-500/20 p-1.5 rounded-full text-red-500"><ArrowDownLeft className="h-3.5 w-3.5" /></div>;
   };
 
   const getTransactionBadge = (type) => {
     return type === t('transactionHistory.buy') ?
-      <Badge className="bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-200">
-        {t('transactionHistory.buy')}
-      </Badge> :
-      <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-        {t('transactionHistory.refund')}
-      </Badge>;
+      <span className="text-green-400 font-bold text-xs uppercase tracking-wider">{t('transactionHistory.buy', 'ACHAT')}</span> :
+      <span className="text-red-400 font-bold text-xs uppercase tracking-wider">{t('transactionHistory.refund', 'REMBOURSEMENT')}</span>;
   };
 
   const formatAddress = (address) => {
@@ -96,7 +91,6 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
   };
 
   const getTransactionStats = () => {
-    // Vérifier que transactions est bien un array
     const txArray = Array.isArray(transactions) ? transactions : [];
 
     const totalTransactions = txArray.length;
@@ -111,12 +105,12 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
 
   if (error) {
     return (
-      <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
+      <Card className="glass-card border-red-500/20">
         <CardContent className="p-6">
           <div className="text-center">
-            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-            <Button onClick={loadTransactions} variant="outline">
-              {t('transactionHistory.retry')}
+            <p className="text-red-400 mb-4">{error}</p>
+            <Button onClick={loadTransactions} variant="outline" className="border-red-500/20 hover:bg-red-500/10 text-red-400">
+              {t('transactionHistory.retry', 'Réessayer')}
             </Button>
           </div>
         </CardContent>
@@ -125,159 +119,175 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
   }
 
   return (
-    <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <CardHeader>
-        <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BarChart className="h-5 w-5 text-lime-500" />
-            {t('transactionHistory.title')}
-          </div>
-          <Badge variant="outline" className="text-sm">
-            {stats.totalTransactions} {t('transactionHistory.transactions')}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Stats rapides */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-lime-600 dark:text-lime-400">{stats.purchases}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('transactionHistory.purchases')}</p>
-          </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.refunds}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('transactionHistory.refunds')}</p>
-          </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-lime-600 dark:text-lime-400">
-              {stats.totalVolume.toFixed(4)}
+    <Card className="glass-card border-border shadow-none">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <BarChart className="h-5 w-5 text-primary" />
+              {t('transactionHistory.title', 'Historique des Transactions')}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {t('transactionHistory.subtitle', 'Suivi en temps réel des mouvements financiers.')}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('transactionHistory.totalETH')}</p>
           </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-2xl font-bold text-lime-600 dark:text-lime-400">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 backdrop-blur-md">
+            {stats.totalTransactions} Txns
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {/* Stats rapides */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-green-500/20 transition-all group">
+            <p className="text-2xl font-bold text-white group-hover:text-green-400 transition-colors">
+              {stats.purchases}
+            </p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('transactionHistory.purchases', 'Achats')}</p>
+          </div>
+          <div className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-red-500/20 transition-all group">
+            <p className="text-2xl font-bold text-white group-hover:text-red-400 transition-colors">
+              {stats.refunds}
+            </p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('transactionHistory.refunds', 'Remboursements')}</p>
+          </div>
+          <div className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/20 transition-all group">
+            <p className="text-2xl font-bold text-white group-hover:text-primary transition-colors font-mono">
+              {stats.totalVolume.toFixed(4)} <span className="text-sm text-muted-foreground">ETH</span>
+            </p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('transactionHistory.totalETH', 'Volume Total')}</p>
+          </div>
+          <div className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-blue-500/20 transition-all group">
+            <p className="text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
               {Array.isArray(transactions) ? new Set(transactions.map(tx => tx.investor)).size : 0}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('transactionHistory.uniqueInvestors')}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">{t('transactionHistory.uniqueInvestors', 'Investisseurs Uniques')}</p>
           </div>
         </div>
 
         {/* Filtres */}
-        <div className="flex flex-col md:flex-row gap-4 mb-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={t('transactionHistory.searchPlaceholder')}
+              placeholder={t('transactionHistory.searchPlaceholder', 'Rechercher par adresse...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-gray-50 dark:bg-neutral-900"
+              className="pl-10 bg-muted/30 border-input/50 focus:border-primary/50 text-foreground placeholder:text-muted-foreground/50"
             />
           </div>
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-full md:w-48 bg-gray-50 dark:bg-neutral-900">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('transactionHistory.filterAll')}</SelectItem>
-              <SelectItem value="buy">{t('transactionHistory.filterBuy')}</SelectItem>
-              <SelectItem value="refund">{t('transactionHistory.filterRefund')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-48 bg-gray-50 dark:bg-neutral-900">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recent">{t('transactionHistory.sortRecent')}</SelectItem>
-              <SelectItem value="oldest">{t('transactionHistory.sortOldest')}</SelectItem>
-              <SelectItem value="amount_high">{t('transactionHistory.sortHighAmount')}</SelectItem>
-              <SelectItem value="amount_low">{t('transactionHistory.sortLowAmount')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-[140px] bg-muted/30 border-input/50 text-foreground">
+                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="glass-card border-border text-foreground">
+                <SelectItem value="all">{t('transactionHistory.filterAll', 'Tout')}</SelectItem>
+                <SelectItem value="buy">{t('transactionHistory.filterBuy', 'Achats')}</SelectItem>
+                <SelectItem value="refund">{t('transactionHistory.filterRefund', 'Remboursements')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[160px] bg-muted/30 border-input/50 text-foreground">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="glass-card border-border text-foreground">
+                <SelectItem value="recent">{t('transactionHistory.sortRecent', 'Plus récents')}</SelectItem>
+                <SelectItem value="oldest">{t('transactionHistory.sortOldest', 'Plus anciens')}</SelectItem>
+                <SelectItem value="amount_high">{t('transactionHistory.sortHighAmount', 'Montant: Haut')}</SelectItem>
+                <SelectItem value="amount_low">{t('transactionHistory.sortLowAmount', 'Montant: Bas')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Table des transactions */}
-        <ScrollArea className="h-[400px] rounded-lg border border-gray-200 dark:border-gray-700">
-          <Table>
-            <TableHeader className="sticky top-0 bg-gray-50 dark:bg-neutral-900">
-              <TableRow>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.type')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.investor')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.nfts')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.amount')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.block')}</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-300 font-medium">{t('transactionHistory.action')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                [...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                    <TableCell><div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div></TableCell>
-                  </TableRow>
-                ))
-              ) : filteredAndSortedTransactions().length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-gray-500 dark:text-gray-400 py-8">
-                    {searchTerm || filter !== 'all' ? t('transactionHistory.noTransactionsFiltered') : t('transactionHistory.noTransactions')}
-                  </TableCell>
+        <div className="rounded-xl border border-border/50 overflow-hidden bg-background/20 backdrop-blur-sm">
+          <ScrollArea className="h-[400px]">
+            <Table>
+              <TableHeader className="bg-muted/50 sticky top-0 backdrop-blur-md z-10">
+                <TableRow className="border-border/50 hover:bg-transparent">
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase w-[150px] pl-4">{t('transactionHistory.type', 'Type')}</TableHead>
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase">{t('transactionHistory.investor', 'Investisseur')}</TableHead>
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase text-right">{t('transactionHistory.nfts', 'Parts')}</TableHead>
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase text-right">{t('transactionHistory.amount', 'Montant (ETH)')}</TableHead>
+                  <TableHead className="text-muted-foreground font-bold text-xs uppercase text-right">{t('transactionHistory.block', 'Block #')}</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
-              ) : (
-                filteredAndSortedTransactions().map((tx, index) => (
-                  <TableRow 
-                    key={`${tx.id}-${index}`}
-                    className="hover:bg-gray-50 dark:hover:bg-neutral-900 transition-colors duration-150"
-                    onMouseEnter={() => onPreloadHover && onPreloadHover(tx.investor)}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getTransactionIcon(tx.type)}
-                        {getTransactionBadge(tx.type)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-gray-900 dark:text-gray-100 font-mono">
-                      {formatAddress(tx.investor)}
-                    </TableCell>
-                    <TableCell className="text-gray-900 dark:text-gray-100 font-semibold">
-                      {tx.nftCount}
-                    </TableCell>
-                    <TableCell className="text-gray-900 dark:text-gray-100 font-semibold">
-                      {parseFloat(tx.value).toFixed(6)} ETH
-                    </TableCell>
-                    <TableCell className="text-gray-500 dark:text-gray-400 font-mono text-sm">
-                      #{tx.id}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(`https://sepolia.basescan.org/tx/${tx.id}`, '_blank')}
-                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => (
+                    <TableRow key={i} className="border-border/30">
+                      <TableCell><div className="h-6 w-24 bg-muted/50 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-6 w-32 bg-muted/50 rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-6 w-12 bg-muted/50 rounded animate-pulse ml-auto"></div></TableCell>
+                      <TableCell><div className="h-6 w-20 bg-muted/50 rounded animate-pulse ml-auto"></div></TableCell>
+                      <TableCell><div className="h-6 w-16 bg-muted/50 rounded animate-pulse ml-auto"></div></TableCell>
+                      <TableCell><div className="h-8 w-8 bg-muted/50 rounded animate-pulse"></div></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredAndSortedTransactions().length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                      {searchTerm || filter !== 'all' ? t('transactionHistory.noTransactionsFiltered', 'Aucune transaction trouvée pour ces filtres') : t('transactionHistory.noTransactions', 'Aucune transaction enregistrée')}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+                ) : (
+                  filteredAndSortedTransactions().map((tx, index) => (
+                    <TableRow
+                      key={`${tx.id}-${index}`}
+                      className="hover:bg-muted/30 transition-colors border-border/30 group"
+                      onMouseEnter={() => onPreloadHover && onPreloadHover(tx.investor)}
+                    >
+                      <TableCell className="pl-4">
+                        <div className="flex items-center gap-3">
+                          {getTransactionIcon(tx.type)}
+                          {getTransactionBadge(tx.type)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm text-foreground opacity-80 group-hover:opacity-100 transition-opacity">
+                        {formatAddress(tx.investor)}
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-foreground">
+                        {tx.nftCount}
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-medium text-foreground">
+                        {parseFloat(tx.value).toFixed(6)}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground font-mono text-xs">
+                        #{tx.id}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => window.open(`https://sepolia.basescan.org/tx/${tx.id}`, '_blank')}
+                          className="h-8 w-8 hover:bg-blue-500/20 hover:text-blue-400 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all"
+                          title="Voir sur Etherscan"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </div>
 
         {filteredAndSortedTransactions().length > 0 && (
-          <div className="mt-4 text-center">
+          <div className="text-center pt-2">
             <Button
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={loadTransactions}
-              className="text-gray-600 dark:text-gray-400"
+              className="text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              {t('transactionHistory.refresh')}
+              {t('transactionHistory.refresh', 'Rafraîchir les données')}
             </Button>
           </div>
         )}

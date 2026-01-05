@@ -1,76 +1,16 @@
 "use client";
 
-import { motion } from "framer-motion";
-
-export function LandingBackground({ darkMode }) {
-  // Générer des cercles concentriques avec progression exponentielle
-  const generateCircles = (count, baseRadius, centerX, centerY) => {
-    return Array.from({ length: count }, (_, i) => {
-      const radius = baseRadius * Math.pow(1.5, i); // Progression exponentielle
-      return {
-        cx: centerX,
-        cy: centerY,
-        r: radius,
-      };
-    });
-  };
-
-  // Créer plusieurs groupes de cercles concentriques à différentes positions
-  const circleGroups = [
-    { circles: generateCircles(12, 50, 30, 20), opacity: 0.15 },
-    { circles: generateCircles(12, 50, 70, 60), opacity: 0.10 },
-    { circles: generateCircles(12, 50, 50, 90), opacity: 0.20 },
-  ];
-
+export function LandingBackground() {
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden">
-      {/* Background de base */}
-      <div className={`absolute inset-0 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'} transition-colors duration-300`} />
+    <div className="absolute inset-0 z-0 overflow-hidden bg-background">
+      {/* Professional subtle gradient background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background opacity-40" />
 
-      {/* SVG avec animation douce */}
-      <motion.svg
-        className="absolute inset-0 w-full h-full"
-        initial={{ scale: 1, opacity: 1 }}
-        animate={{
-          scale: 1.3,
-          x: 100,
-          opacity: 0.9,
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "linear",
-        }}
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        {circleGroups.map((group, groupIndex) => (
-          <g key={groupIndex} opacity={group.opacity}>
-            {group.circles.map((circle, i) => (
-              <circle
-                key={i}
-                cx={`${circle.cx}%`}
-                cy={`${circle.cy}%`}
-                r={`${circle.r}%`}
-                fill="none"
-                stroke={darkMode ? "#a3e635" : "#84cc16"} // Vert lime plus vif
-                strokeWidth="0.15"
-              />
-            ))}
-          </g>
-        ))}
-      </motion.svg>
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-      {/* Dégradé subtil par-dessus */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: darkMode
-            ? 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(17, 24, 39, 0.3) 100%)'
-            : 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(249, 250, 251, 0.3) 100%)',
-        }}
-      />
+      {/* Subtle Ambient Light */}
+      <div className="absolute top-0 left-1/4 w-1/2 h-1/2 bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
     </div>
   );
 }

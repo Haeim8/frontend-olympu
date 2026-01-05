@@ -1,170 +1,130 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from '@/hooks/useLanguage';
-import { 
-  Wallet, 
-  TrendingUp, 
-  Award, 
-  DollarSign,
+import { motion } from 'framer-motion';
+import {
+  Wallet,
+  TrendingUp,
+  Award,
+  Coins,
   Activity,
-  ArrowUpRight,
-  ArrowDownRight
+  ArrowUpRight
 } from 'lucide-react';
 
-const StatCard = ({ title, value, icon: Icon, trend, trendValue, color = "lime" }) => {
-  const { t } = useTranslation();
-  const colorClasses = {
-    lime: "from-lime-500 to-green-600",
-    blue: "from-blue-500 to-cyan-600", 
-    purple: "from-purple-500 to-pink-600",
-    orange: "from-orange-500 to-red-600"
-  };
-
-  const iconColorClasses = {
-    lime: "text-lime-600 bg-lime-100 dark:bg-lime-900/20",
-    blue: "text-blue-600 bg-blue-100 dark:bg-blue-900/20",
-    purple: "text-purple-600 bg-purple-100 dark:bg-purple-900/20", 
-    orange: "text-orange-600 bg-orange-100 dark:bg-orange-900/20"
-  };
-
+function StatCard({ title, value, icon: Icon, isLoading, index, colorClass }) {
   return (
-    <Card className="relative overflow-hidden bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 shadow-lg hover:shadow-xl transition-all duration-300 group">
-      {/* Background gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${colorClasses[color]} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-      
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-          {title}
-        </CardTitle>
-        <div className={`p-2 rounded-lg ${iconColorClasses[color]}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-2">
-        <div className="flex items-baseline space-x-2">
-          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {value}
+    <motion.div
+      className="group relative overflow-hidden rounded-2xl bg-card border border-border shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.4 }}
+    >
+      <div className="p-5">
+        <div className="flex items-start justify-between mb-4">
+          <div className={`p-3 rounded-xl bg-opacity-10 border border-opacity-20 ${colorClass.replace('text-', 'bg-').replace('text-', 'border-')}`}>
+            <Icon className={`h-5 w-5 ${colorClass}`} />
           </div>
-          {trend && (
-            <div className={`flex items-center text-xs font-medium ${
-              trend === 'up' ? 'text-green-600' : 'text-red-600'
-            }`}>
-              {trend === 'up' ? (
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-              ) : (
-                <ArrowDownRight className="h-3 w-3 mr-1" />
-              )}
-              {trendValue}
+          <div className="flex items-center gap-1 text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+            <ArrowUpRight className="h-3 w-3" />
+            <span>LIVE</span>
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          {isLoading ? (
+            <div className="h-8 w-24 bg-muted rounded-lg animate-pulse" />
+          ) : (
+            <div className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+              {value}
             </div>
           )}
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            {title}
+          </p>
         </div>
-        
-        {/* Progress bar pour certaines stats */}
-        {title === t('wallet.stats.nftCount') && parseInt(value) > 0 && (
-          <div className="w-full bg-gray-200 dark:bg-neutral-800 rounded-full h-1.5">
-            <div 
-              className={`h-1.5 rounded-full bg-gradient-to-r ${colorClasses[color]}`}
-              style={{ width: `${Math.min((parseInt(value) / 100) * 100, 100)}%` }}
-            />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </motion.div>
   );
-};
+}
 
 export default function WalletStats({ walletInfo, isLoading }) {
   const { t } = useTranslation();
-  
+
   const stats = [
     {
-      title: t('wallet.stats.nftCount'),
-      value: isLoading ? "..." : walletInfo.totalNFTs.toString(),
+      title: t('wallet.stats.nftCount', 'NFTs Détenus'),
+      value: walletInfo.totalNFTs.toString(),
       icon: Award,
-      color: "lime",
-      trend: walletInfo.totalNFTs > 0 ? "up" : null,
-      trendValue: walletInfo.totalNFTs > 0 ? "+12%" : null
+      colorClass: 'text-purple-500'
     },
     {
-      title: t('wallet.stats.invested'), 
-      value: isLoading ? "..." : `${walletInfo.totalInvested} ETH`,
+      title: t('wallet.stats.invested', 'Total Investi'),
+      value: `${walletInfo.totalInvested} Ξ`,
       icon: Wallet,
-      color: "blue",
-      trend: parseFloat(walletInfo.totalInvested) > 0 ? "up" : null,
-      trendValue: parseFloat(walletInfo.totalInvested) > 0 ? "+8%" : null
+      colorClass: 'text-blue-500'
     },
     {
-      title: t('wallet.stats.supportedProjects'),
-      value: isLoading ? "..." : walletInfo.activeProjects.toString(),
+      title: t('wallet.stats.supportedProjects', 'Projets Soutenus'),
+      value: walletInfo.activeProjects.toString(),
       icon: TrendingUp,
-      color: "purple",
-      trend: walletInfo.activeProjects > 0 ? "up" : null,
-      trendValue: walletInfo.activeProjects > 0 ? "+3" : null
+      colorClass: 'text-green-500'
     },
     {
-      title: t('wallet.stats.dividends'),
-      value: isLoading ? "..." : `${walletInfo.totalDividends} ETH`,
-      icon: DollarSign,
-      color: "orange",
-      trend: parseFloat(walletInfo.totalDividends) > 0 ? "up" : null,
-      trendValue: parseFloat(walletInfo.totalDividends) > 0 ? "+5%" : null
+      title: t('wallet.stats.dividends', 'Dividendes Reçus'),
+      value: `${walletInfo.totalDividends} Ξ`,
+      icon: Coins,
+      colorClass: 'text-yellow-500'
     }
   ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {t('wallet.stats.title')}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {t('wallet.stats.subtitle')}
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 ml-1 rounded-lg bg-primary/10">
+            <TrendingUp className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">
+              {t('wallet.stats.title', 'Statistiques')}
+            </h2>
+            <p className="text-sm text-muted-foreground font-medium">
+              {t('wallet.stats.subtitle', 'Aperçu global de vos performances')}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-          <Activity className="h-4 w-4" />
-          <span>{t('wallet.stats.updated')}</span>
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-lg border border-border/50">
+          <Activity className="h-3.5 w-3.5" />
+          <span>{t('wallet.stats.updated', 'Mis à jour en temps réel')}</span>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
-          <div
+          <StatCard
             key={stat.title}
-            className="animate-in fade-in slide-in-from-bottom-4"
-            style={{
-              animationDelay: `${index * 100}ms`,
-              animationDuration: '600ms',
-              animationFillMode: 'both'
-            }}
-          >
-            <StatCard {...stat} />
-          </div>
+            {...stat}
+            isLoading={isLoading}
+            index={index}
+          />
         ))}
       </div>
 
-      {/* Quick Actions */}
+      {/* Empty State CTA */}
       {!isLoading && walletInfo.totalNFTs === 0 && (
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-              <Wallet className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                {t('wallet.stats.startInvesting')}
-              </h3>
-              <p className="text-sm text-blue-700 dark:text-blue-200 mt-1">
-                {t('wallet.stats.noInvestmentsYet')}
-              </p>
-            </div>
+        <div className="rounded-2xl bg-card border border-border p-8 text-center shadow-lg">
+          <div className="inline-flex p-4 rounded-2xl bg-muted mb-4">
+            <Wallet className="h-8 w-8 text-muted-foreground" />
           </div>
+          <h3 className="font-bold text-foreground text-xl mb-2">
+            {t('wallet.stats.startInvesting', 'Commencez votre aventure')}
+          </h3>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            {t('wallet.stats.noInvestmentsYet', 'Vous n\'avez pas encore effectué d\'investissement. Explorez les projets disponibles pour commencer à construire votre portefeuille.')}
+          </p>
         </div>
       )}
     </div>

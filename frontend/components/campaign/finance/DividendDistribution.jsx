@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { DollarSign, Calculator } from 'lucide-react';
+import { DollarSign, Calculator, Info } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
 
 export default function DividendDistribution({ campaignData, campaignAddress, onDistributionComplete }) {
@@ -47,20 +47,20 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
 
     try {
       await apiManager.distributeDividends(
-        campaignAddress, 
-        distributeForm.amount, 
+        campaignAddress,
+        distributeForm.amount,
         distributeForm.message
       );
-      
+
       setDistributeForm({ amount: "", token: "ETH", message: "" });
-      
+
       if (onDistributionComplete) {
         onDistributionComplete();
       }
-      
+
       // Success notification
       alert(t('dividends.distributionSuccess'));
-      
+
     } catch (error) {
       console.error("Erreur lors de la distribution:", error);
       setError(error.message || t('dividends.distributionError'));
@@ -70,33 +70,38 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
   };
 
   const isFormValid = () => {
-    return distributeForm.amount && 
-           parseFloat(distributeForm.amount) > 0 && 
-           !isDistributing;
+    return distributeForm.amount &&
+      parseFloat(distributeForm.amount) > 0 &&
+      !isDistributing;
   };
 
   return (
-    <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <Card className="glass-card border-white/10 overflow-hidden relative group">
+      {/* Background Glow */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[60px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-primary/30 transition-colors" />
+
       <CardHeader>
-        <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-lime-500" />
+        <CardTitle className="text-white flex items-center gap-3 text-xl">
+          <div className="p-2 rounded-lg bg-white/5 border border-white/10 shadow-lg shadow-black/20">
+            <DollarSign className="h-5 w-5 text-secondary" />
+          </div>
           {t('dividends.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {error && (
-            <Alert className="bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-800">
-              <AlertTitle className="text-red-800 dark:text-red-200">{t('dividends.error')}</AlertTitle>
-              <AlertDescription className="text-red-700 dark:text-red-300">
+            <Alert className="bg-red-500/10 border-red-500/20">
+              <AlertTitle className="text-red-400 font-bold">{t('dividends.error')}</AlertTitle>
+              <AlertDescription className="text-red-300">
                 {error}
               </AlertDescription>
             </Alert>
           )}
 
           <div>
-            <Label htmlFor="distributeAmount" className="text-gray-700 dark:text-gray-300 text-sm font-medium">
-              {t('dividends.amountToDistribute')} *
+            <Label htmlFor="distributeAmount" className="text-gray-300 text-sm font-medium mb-2 block">
+              {t('dividends.amountToDistribute')} <span className="text-secondary">*</span>
             </Label>
             <div className="relative mt-1">
               <Input
@@ -107,35 +112,35 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
                 value={distributeForm.amount}
                 onChange={(e) => handleDistributeChange('amount', e.target.value)}
                 placeholder="0.000000"
-                className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 focus:border-lime-500 dark:focus:border-lime-400 pr-12"
+                className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-secondary/50 focus:ring-1 focus:ring-secondary/50 rounded-xl pr-12 transition-all"
                 disabled={isDistributing}
               />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">ETH</span>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                <span className="text-secondary font-bold text-sm">ETH</span>
               </div>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="distributeToken" className="text-gray-700 dark:text-gray-300 text-sm font-medium">
+            <Label htmlFor="distributeToken" className="text-gray-300 text-sm font-medium mb-2 block">
               {t('dividends.tokenToDistribute')}
             </Label>
-            <Select 
-              onValueChange={(value) => handleDistributeChange('token', value)} 
+            <Select
+              onValueChange={(value) => handleDistributeChange('token', value)}
               defaultValue={distributeForm.token}
               disabled={isDistributing}
             >
-              <SelectTrigger className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 mt-1">
+              <SelectTrigger className="bg-white/5 border-white/10 text-white rounded-xl focus:ring-secondary/50 mt-1">
                 <SelectValue placeholder={t('dividends.selectToken')} />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ETH">{t('dividends.ethToken')}</SelectItem>
+              <SelectContent className="bg-[#0a0a1a] border-white/10 text-white">
+                <SelectItem value="ETH" className="focus:bg-white/10 focus:text-white">{t('dividends.ethToken')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="distributeMessage" className="text-gray-700 dark:text-gray-300 text-sm font-medium">
+            <Label htmlFor="distributeMessage" className="text-gray-300 text-sm font-medium mb-2 block">
               {t('dividends.investorMessage')}
             </Label>
             <Input
@@ -143,45 +148,43 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
               value={distributeForm.message}
               onChange={(e) => handleDistributeChange('message', e.target.value)}
               placeholder={t('dividends.messagePlaceholder')}
-              className="bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 focus:border-lime-500 dark:focus:border-lime-400 mt-1"
+              className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus:border-secondary/50 focus:ring-1 focus:ring-secondary/50 rounded-xl mt-1 transition-all"
               disabled={isDistributing}
               maxLength={200}
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1.5 flex justify-end">
               {t('dividends.characterCount', { count: distributeForm.message.length })}
             </p>
           </div>
 
           {distributeForm.amount && parseFloat(distributeForm.amount) > 0 && (
-            <Alert className="bg-lime-50 dark:bg-lime-900/20 border-lime-200 dark:border-lime-800">
-              <Calculator className="h-4 w-4 text-lime-600 dark:text-lime-400" />
-              <AlertTitle className="text-lime-800 dark:text-lime-200">
+            <Alert className="bg-gradient-to-r from-primary/10 to-secondary/10 border-white/10 backdrop-blur-md">
+              <Calculator className="h-4 w-4 text-secondary" />
+              <AlertTitle className="text-white font-bold mb-2">
                 {t('dividends.distributionPreview')}
               </AlertTitle>
-              <AlertDescription className="text-lime-700 dark:text-lime-300 space-y-1">
+              <AlertDescription className="text-gray-300 space-y-2">
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">{t('dividends.perNFT')}:</span>
-                    <br />
-                    <span className="text-lg font-bold">{calculateDividendPerNFT()} ETH</span>
+                  <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                    <span className="block text-xs text-gray-400 mb-0.5">{t('dividends.perNFT')}</span>
+                    <span className="text-lg font-bold text-secondary shadow-glow">{calculateDividendPerNFT()} ETH</span>
                   </div>
-                  <div>
-                    <span className="font-medium">{t('dividends.totalRecipients')}:</span>
-                    <br />
-                    <span className="text-lg font-bold">{t('dividends.investorsCount', { count: calculateTotalRecipients() })}</span>
+                  <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                    <span className="block text-xs text-gray-400 mb-0.5">{t('dividends.totalRecipients')}</span>
+                    <span className="text-lg font-bold text-white">{t('dividends.investorsCount', { count: calculateTotalRecipients() })}</span>
                   </div>
                 </div>
-                <div className="pt-2 border-t border-lime-200 dark:border-lime-700">
-                  <span className="font-medium">{t('dividends.totalAmount')}: </span>
-                  <span className="text-lg font-bold">{distributeForm.amount} ETH</span>
+                <div className="pt-2 border-t border-white/10 flex justify-between items-center mt-2">
+                  <span className="font-medium text-gray-400">{t('dividends.totalAmount')}: </span>
+                  <span className="text-lg font-bold text-white">{distributeForm.amount} ETH</span>
                 </div>
               </AlertDescription>
             </Alert>
           )}
 
-          <Button 
-            onClick={handleDistributeDividends} 
-            className="w-full bg-lime-500 hover:bg-lime-600 text-white font-medium py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+          <Button
+            onClick={handleDistributeDividends}
+            className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark text-white font-bold py-6 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 border-0"
             disabled={!isFormValid()}
           >
             {isDistributing ? (
@@ -197,10 +200,14 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
             )}
           </Button>
 
-          <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-            <p>• {t('dividends.info1')}</p>
-            <p>• {t('dividends.info2')}</p>
-            <p>• {t('dividends.info3')}</p>
+          <div className="text-xs text-gray-500 space-y-2 bg-white/5 p-3 rounded-xl border border-white/5">
+            <div className="flex items-center gap-1 text-gray-400 mb-1">
+              <Info className="w-3 h-3" />
+              <span className="font-bold">Info</span>
+            </div>
+            <p className="ml-4">• {t('dividends.info1')}</p>
+            <p className="ml-4">• {t('dividends.info2')}</p>
+            <p className="ml-4">• {t('dividends.info3')}</p>
           </div>
         </div>
       </CardContent>

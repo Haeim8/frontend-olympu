@@ -4,58 +4,43 @@ import React from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Shield, Clock, TrendingUp, Users, Target } from "lucide-react";
 
 export default function CampaignHeader({ campaignData, isLoading, error }) {
   const { t } = useTranslation();
-  
+
   if (isLoading) {
     return (
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4"></div>
-        <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0">
-          <CardHeader>
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="mt-2 h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
-          </CardContent>
-        </Card>
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 bg-muted rounded w-48 mb-4"></div>
+        <div className="h-40 bg-muted rounded-xl"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 dark:bg-red-900 rounded-lg">
-        <p className="text-red-600 dark:text-red-200">{t('campaignHeader.error')}: {error}</p>
+      <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+        <p className="text-destructive">{t('campaignHeader.error')}: {error}</p>
       </div>
     );
   }
 
   if (!campaignData) {
     return (
-      <div className="p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
-        <p className="text-yellow-600 dark:text-yellow-200">{t('campaignHeader.noData')}</p>
+      <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+        <p className="text-yellow-600 dark:text-yellow-400">{t('campaignHeader.noData')}</p>
       </div>
     );
   }
 
   const progressPercentage = ((parseFloat(campaignData.raised) / parseFloat(campaignData.goal)) * 100) || 0;
-  
+
   const formatTimeRemaining = (timeRemaining) => {
     if (timeRemaining <= 0) return t('campaignHeader.ended');
     const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
     const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
+
     if (days > 0) {
       return t('campaignHeader.daysLeft', { count: days, plural: days > 1 ? 's' : '' });
     } else if (hours > 0) {
@@ -65,110 +50,113 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "En cours":
-      case "Ongoing":
-      case "En progreso":
-        return "text-green-600 dark:text-green-400";
-      case "Finalisée":
-      case "Finalized":
-      case "Finalizada":
-        return "text-blue-600 dark:text-blue-400";
-      default:
-        return "text-gray-600 dark:text-gray-400";
-    }
+  const statusConfig = {
+    "En cours": { color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/20", border: "border-blue-200 dark:border-blue-800" },
+    "Ongoing": { color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/20", border: "border-blue-200 dark:border-blue-800" },
+    "Finalisée": { color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-900/20", border: "border-green-200 dark:border-green-800" },
+    "Finalized": { color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-900/20", border: "border-green-200 dark:border-green-800" },
   };
+
+  const getStatusStyle = (status) => statusConfig[status] || { color: "text-muted-foreground", bg: "bg-muted", border: "border-border" };
+  const statusStyle = getStatusStyle(campaignData.status);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-        {t('campaignHeader.title')}
-      </h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          {t('campaignHeader.title')}
+        </h1>
+        <div className={`px-3 py-1 rounded-full text-sm font-semibold border ${statusStyle.bg} ${statusStyle.border} ${statusStyle.color}`}>
+          {campaignData.status}
+        </div>
+      </div>
 
-      <Card className="bg-white dark:bg-neutral-950 border-0 dark:border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
-        <CardHeader>
-          <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center justify-between">
-            <span>{campaignData.name}</span>
-            <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-              campaignData.status === "En cours" 
-                ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"
-                : "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
-            }`}>
-              {campaignData.status}
-            </span>
+      <Card className="border-border shadow-sm bg-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl font-bold flex items-center gap-3">
+            {campaignData.name}
+            {campaignData.lawyer && <Shield className="w-5 h-5 text-primary" />}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center md:text-left">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('campaignHeader.status')}</p>
-              <p className={`text-lg font-semibold ${getStatusColor(campaignData.status)}`}>
-                {campaignData.status}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-2">
+            <div className="p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground font-medium">{t('campaignHeader.raised')}</p>
+              </div>
+              <p className="text-xl font-bold text-foreground">
+                {parseFloat(campaignData.raised).toFixed(4)} <span className="text-sm font-normal text-muted-foreground">ETH</span>
+              </p>
+              <p className="text-xs text-primary mt-1 font-medium">
+                {progressPercentage.toFixed(1)}% {t('campaignHeader.ofGoal', { percent: '' })}
               </p>
             </div>
-            <div className="text-center md:text-left">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('campaignHeader.raised')}</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {parseFloat(campaignData.raised).toFixed(4)} ETH
-              </p>
-              <p className="text-xs text-gray-400">
-                {t('campaignHeader.ofGoal', { percent: progressPercentage.toFixed(1) })}
-              </p>
-            </div>
-            <div className="text-center md:text-left">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('campaignHeader.goal')}</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                {parseFloat(campaignData.goal).toFixed(4)} ETH
+
+            <div className="p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground font-medium">{t('campaignHeader.goal')}</p>
+              </div>
+              <p className="text-xl font-bold text-foreground">
+                {parseFloat(campaignData.goal).toFixed(4)} <span className="text-sm font-normal text-muted-foreground">ETH</span>
               </p>
             </div>
-            <div className="text-center md:text-left">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('campaignHeader.investors')}</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+
+            <div className="p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground font-medium">{t('campaignHeader.investors')}</p>
+              </div>
+              <p className="text-xl font-bold text-foreground">
                 {campaignData.investors}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground mt-1">
                 {t('campaignHeader.nftsMax', { count: campaignData.nftTotal })}
               </p>
             </div>
+
+            <div className="p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground font-medium">{t('campaignHeader.timeRemaining', 'Temps restant')}</p>
+              </div>
+              <p className="text-lg font-bold text-foreground">
+                {campaignData.status === "En cours" || campaignData.status === "Ongoing"
+                  ? formatTimeRemaining(campaignData.timeRemaining)
+                  : t('campaignHeader.ended')}
+              </p>
+            </div>
           </div>
-          
-          <div className="space-y-3">
+
+          <div className="space-y-3 bg-muted/30 p-4 rounded-xl border border-border">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-sm font-medium text-foreground">
                 {t('campaignHeader.progress')}
               </span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-sm font-bold text-primary">
                 {progressPercentage.toFixed(1)}%
               </span>
             </div>
-            <Progress 
-              value={progressPercentage} 
-              className="h-3 bg-gray-200 dark:bg-gray-700" 
+            <Progress
+              value={progressPercentage}
+              className="h-2.5 bg-muted"
+            // shadcn Progress uses bg-primary for indicator by default, no need for custom class
             />
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-              {campaignData.status === "En cours" || campaignData.status === "Ongoing" || campaignData.status === "En progreso"
-                ? formatTimeRemaining(campaignData.timeRemaining)
-                : t('campaignHeader.ended')}
-            </p>
           </div>
 
           {campaignData.lawyer && (
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    {t('campaignHeader.lawyerCertified')}
-                  </p>
-                  <p className="text-xs text-blue-600 dark:text-blue-300">
-                    Vérifiée par {campaignData.lawyer}
-                  </p>
-                </div>
+            <div className="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/10 flex items-start gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Shield className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-primary">
+                  {t('campaignHeader.lawyerCertified')}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Vérifiée par <span className="text-foreground font-medium">{campaignData.lawyer}</span>
+                </p>
               </div>
             </div>
           )}

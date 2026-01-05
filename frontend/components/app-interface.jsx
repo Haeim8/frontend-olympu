@@ -13,7 +13,6 @@ import ConnectPrompt from './app/ConnectPrompt';
 import { useDisconnect, useAccount } from 'wagmi';
 import { apiManager } from '@/lib/services/api-manager';
 import { useFavoritesAndInvestments } from '@/hooks/useFavoritesAndInvestments';
-import { BackgroundRippleEffect } from './ui/BackgroundRippleEffect';
 
 export default function AppInterface() {
   const { theme, setTheme } = useTheme();
@@ -59,7 +58,7 @@ export default function AppInterface() {
     try {
       const allCampaigns = await apiManager.getAllCampaigns();
       const campaignsData = [];
-      
+
       // Récupérer les données une par une
       for (const address of allCampaigns) {
         const campaignData = await apiManager.getCampaignData(address);
@@ -69,24 +68,24 @@ export default function AppInterface() {
           campaignsData.push(campaignData);
         }
       }
-      
+
       // Filtrer les campagnes de l'utilisateur
       const normalizedAddress = address?.toLowerCase?.() ?? '';
       const userOwnedCampaigns = campaignsData.filter(
         (campaign) => normalizedAddress && campaign.creator?.toLowerCase?.() === normalizedAddress
       );
-      
+
       // Stocker les campagnes utilisateur pour déterminer hasCampaign
       setProjects(campaignsData);
       setHasCampaign(userOwnedCampaigns.length > 0);
-      
+
       // Si l'utilisateur n'a pas de campagne et est sur la page campaign, rediriger
       if (userOwnedCampaigns.length === 0 && activePage === 'campaign') {
         setActivePage('home');
       }
-      
+
       // Pas de préchargement pour le moment (API simplifiée)
-      
+
     } catch (err) {
       console.error('Erreur lors du chargement des campagnes:', err);
       setError('Impossible de charger les données. Veuillez réessayer plus tard.');
@@ -112,12 +111,12 @@ export default function AppInterface() {
   const toggleDarkMode = useCallback(() => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   }, [theme, setTheme]);
-  
+
   // Gestionnaire de sélection de projet
   const handleSelectProject = useCallback(() => {
     // Pas de préchargement pour le moment (API simplifiée)
   }, []);
-  
+
   // Si aucun wallet n'est connecté, afficher simplement le prompt de connexion
   if (!address) {
     return <ConnectPrompt />;
@@ -153,16 +152,14 @@ export default function AppInterface() {
   };
 
   return (
-    <div className={`flex flex-col h-screen ${theme === 'dark' ? 'dark' : ''}`}>
+    <div className={`flex flex-col h-screen overflow-hidden bg-background text-foreground ${theme === 'dark' ? 'dark' : ''}`}>
       <Header
-        darkMode={theme === 'dark'}
-        toggleDarkMode={toggleDarkMode}
-        showMobileMenu={showMobileMenu}
         setShowMobileMenu={setShowMobileMenu}
-        username="Utilisateur"
-        disconnect={handleDisconnect}
+        userAddress={address}
+        onLogout={handleDisconnect}
+        notifications={[]}
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         <Sidebar
           activePage={activePage}
           setActivePage={setActivePage}
@@ -170,18 +167,15 @@ export default function AppInterface() {
           setShowMobileMenu={setShowMobileMenu}
           hasCampaign={hasCampaign}
         />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-neutral-950 transition-all duration-300 ease-in-out relative">
-          {/* Background grille ripple subtil */}
-          <BackgroundRippleEffect rows={8} cols={25} cellSize={40} />
-
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent relative scroll-smooth focus:scroll-auto">
           {/* Contenu des pages */}
-          <div className="relative z-10">
+          <div className="relative z-10 w-full min-h-full p-4 md:p-6 lg:p-8 animate-fade-in">
             {renderActivePage()}
           </div>
 
           {/* Debug info en développement */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="fixed bottom-4 right-4 p-2 bg-gray-800 text-white text-xs rounded max-w-xs">
+            <div className="fixed bottom-4 right-4 p-2 bg-card/80 backdrop-blur-md border border-white/10 text-xs rounded-lg max-w-xs shadow-lg z-50">
               <div>Cache Stats: {JSON.stringify(apiManager.getCacheStats?.() ?? {}, null, 2)}</div>
               <div>Projects: {projects.length}</div>
               <div>Has Campaign: {hasCampaign.toString()}</div>

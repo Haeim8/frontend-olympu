@@ -31,16 +31,17 @@ export default function Home({ onAccessInterface }) {
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? "dark" : ""} text-sm`}>
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200 relative overflow-hidden">
-        
-        <LandingBackground darkMode={darkMode} />
-        
-        <LandingHeader 
-          darkMode={darkMode} 
-          toggleDarkMode={toggleDarkMode} 
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 selection:text-white">
+
+      <div className="flex flex-col min-h-screen relative z-10">
+
+        <LandingBackground />
+
+        <LandingHeader
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
         />
-        
+
         <LandingHero
           darkMode={darkMode}
           address={address}
@@ -60,13 +61,13 @@ export default function Home({ onAccessInterface }) {
           stats={stats}
           statsLoading={statsLoading}
         />
-        
+
         <HowItWorks darkMode={darkMode} />
-        
+
         <ProjectsSection darkMode={darkMode} />
-        
+
         <LandingFooter darkMode={darkMode} />
-        
+
       </div>
     </div>
   );

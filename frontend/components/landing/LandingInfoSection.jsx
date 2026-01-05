@@ -2,9 +2,18 @@
 
 import { useMemo } from 'react';
 import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { useTranslation } from '@/hooks/useLanguage';
-import { Wallet, BarChart3, Trophy, Shield } from 'lucide-react';
+import {
+  Wallet,
+  BarChart3,
+  Shield,
+  Zap,
+  Globe,
+  Lock,
+  ArrowUpRight,
+  Activity
+} from 'lucide-react';
 
 const numberFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 0,
@@ -16,33 +25,6 @@ const raisedFormatter = new Intl.NumberFormat(undefined, {
 
 export function LandingInfoSection({ darkMode, stats, statsLoading }) {
   const { t } = useTranslation();
-  
-  const features = [
-    {
-      title: t('landing.features.decentralizedFunding.title'),
-      description: t('landing.features.decentralizedFunding.description'),
-      icon: Wallet,
-      gradient: "from-blue-500 to-cyan-500",
-    },
-    {
-      title: t('landing.features.realTimeInsights.title'),
-      description: t('landing.features.realTimeInsights.description'),
-      icon: BarChart3,
-      gradient: "from-purple-500 to-indigo-500",
-    },
-    {
-      title: t('landing.features.transparentRewards.title'),
-      description: t('landing.features.transparentRewards.description'),
-      icon: Trophy,
-      gradient: "from-yellow-500 to-orange-500",
-    },
-    {
-      title: t('landing.features.maxSecurity.title'),
-      description: t('landing.features.maxSecurity.description'),
-      icon: Shield,
-      gradient: "from-green-500 to-emerald-500",
-    },
-  ];
 
   const figures = useMemo(() => {
     const users = stats?.users ?? 0;
@@ -51,17 +33,17 @@ export function LandingInfoSection({ darkMode, stats, statsLoading }) {
 
     return [
       {
-        label: t('landing.cta.activeUsers', 'Utilisateurs actifs'),
+        label: t('landing.cta.activeUsers', 'Active Traders'),
         value: users,
         formatter: (value) => numberFormatter.format(Math.max(0, value)),
       },
       {
-        label: t('landing.cta.fundsRaised', 'Fonds levés'),
+        label: t('landing.cta.fundsRaised', 'Total Volume'),
         value: totalRaised,
         formatter: (value) => `${raisedFormatter.format(Math.max(0, value))} Ξ`,
       },
       {
-        label: t('landing.cta.projectsFunded', 'Projets financés'),
+        label: t('landing.cta.projectsFunded', 'Ventures'),
         value: campaigns,
         formatter: (value) => numberFormatter.format(Math.max(0, value)),
       },
@@ -69,97 +51,137 @@ export function LandingInfoSection({ darkMode, stats, statsLoading }) {
   }, [stats, t]);
 
   return (
-    <section id="fonctionnalites" className="relative z-10 py-16 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Titre principal */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
-            {t('landing.features.title')}
-          </h2>
-          <p className={`text-sm max-w-2xl mx-auto leading-relaxed ${
-            darkMode ? "text-gray-300" : "text-gray-700"
-          }`}>
-            {t('landing.features.subtitle')}
-          </p>
-        </motion.div>
+    <section id="features" className="relative z-10 py-24 px-4 bg-background">
+      <div className="max-w-7xl mx-auto space-y-16">
 
-        {/* Grille des fonctionnalités */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              whileHover={{ 
-                scale: 1.05,
-                rotateY: 5,
-                transition: { duration: 0.3 }
-              }}
-            >
-              <Card className={`h-full ${
-                darkMode
-                  ? "bg-white/5 border border-white/10"
-                  : "bg-white/80 border border-white/30"
-              } backdrop-blur-md shadow-2xl hover:shadow-lime-500/20 transition-all duration-300`}>
-                <CardContent className="p-6 text-center">
-                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${feature.gradient} flex items-center justify-center shadow-lg transform hover:rotate-12 transition-transform duration-300`}>
-                    <feature.icon className="w-8 h-8 text-white" strokeWidth={2} />
-                  </div>
-                  <h3 className={`text-lg font-bold mb-3 ${darkMode ? "text-white" : "text-gray-900"}`}>
-                    {feature.title}
-                  </h3>
-                  <p className={`text-sm leading-relaxed ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Section CTA finale */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-        >
-          <Card className={`${darkMode 
-            ? "bg-gradient-to-r from-lime-500/10 to-green-500/10 border-lime-500/20" 
-            : "bg-gradient-to-r from-lime-500/20 to-green-500/20 border-lime-500/30"
-          } backdrop-blur-md shadow-2xl`}>
-            <CardContent className="p-8 text-center">
-              <div className="max-w-3xl mx-auto">
-                <h3 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
-                  {t('landing.cta.title')}
-                </h3>
-                <p className={`text-base ${darkMode ? "text-gray-300" : "text-gray-700"} mb-6 leading-relaxed`}>
-                  {t('landing.cta.description')}
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                  {figures.map((figure) => (
-                    <div key={figure.label} className="space-y-1">
-                      <div className="text-2xl font-bold text-lime-500">
-                        {statsLoading ? '...' : figure.formatter(figure.value)}
-                      </div>
-                      <div className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-                        {figure.label}
-                      </div>
-                    </div>
-                  ))}
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-8">
+          <div className="space-y-4 max-w-2xl">
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white">
+              {t('landing.info.titlePrefix')} <span className="text-primary">{t('landing.info.titleSuffix')}</span>
+            </h2>
+            <p className="text-lg text-gray-400 leading-relaxed">
+              {t('landing.info.description')}
+            </p>
+          </div>
+          <div className="flex gap-4">
+            {figures.map((stat, i) => (
+              <div key={i} className="px-6 py-4 rounded-xl bg-white/5 border border-white/10 min-w-[140px]">
+                <div className="text-2xl font-mono font-bold text-white">
+                  {statsLoading ? '...' : stat.formatter(stat.value)}
+                </div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider font-bold mt-1">
+                  {stat.label}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bento Grid layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[minmax(180px,auto)]">
+
+          {/* Feature 1: Main Large Card */}
+          <motion.div
+            className="md:col-span-2 lg:col-span-2 row-span-2 rounded-3xl bg-card border border-white/10 p-8 relative overflow-hidden group"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Globe className="w-48 h-48 text-primary" />
+            </div>
+            <div className="relative z-10 h-full flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <Activity className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-white">{t('landing.info.realTimeTitle')}</h3>
+                <p className="text-gray-400 max-w-sm">
+                  {t('landing.info.realTimeDesc')}
+                </p>
+              </div>
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-black/40 border border-white/5">
+                  <div className="text-sm text-gray-500 mb-1">{t('landing.info.latency')}</div>
+                  <div className="text-xl font-mono text-primary font-bold">{"<"}50ms</div>
+                </div>
+                <div className="p-4 rounded-xl bg-black/40 border border-white/5">
+                  <div className="text-sm text-gray-500 mb-1">{t('landing.info.uptime')}</div>
+                  <div className="text-xl font-mono text-primary font-bold">99.99%</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Feature 2: Clean Card */}
+          <motion.div
+            className="md:col-span-1 lg:col-span-2 rounded-3xl bg-white/5 border border-white/10 p-8 hover:bg-white/10 transition-colors duration-300"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            viewport={{ once: true }}
+          >
+            <div className="flex items-start justify-between mb-6">
+              <Wallet className="w-8 h-8 text-white" />
+              <ArrowUpRight className="w-6 h-6 text-gray-500" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">{t('landing.info.decentralizedTitle')}</h3>
+            <p className="text-sm text-gray-400">
+              {t('landing.info.decentralizedDesc')}
+            </p>
+          </motion.div>
+
+          {/* Feature 3: Tall Vertical */}
+          <motion.div
+            className="md:col-span-1 row-span-2 rounded-3xl bg-gradient-to-b from-primary/10 to-transparent border border-primary/20 p-8 flex flex-col items-center text-center justify-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(101,163,13,0.3)] animate-pulse">
+              <Shield className="w-10 h-10 text-primary" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">{t('landing.info.securityTitle')}</h3>
+            <p className="text-sm text-gray-400">
+              {t('landing.info.securityDesc')}
+            </p>
+          </motion.div>
+
+          {/* Feature 4 */}
+          <motion.div
+            className="md:col-span-1 lg:col-span-1 rounded-3xl bg-white/5 border border-white/10 p-8 hover:border-primary/50 transition-colors group"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            viewport={{ once: true }}
+          >
+            <Zap className="w-8 h-8 text-gray-400 group-hover:text-primary transition-colors mb-4" />
+            <h3 className="text-lg font-bold text-white mb-2">{t('landing.info.executionTitle')}</h3>
+            <p className="text-xs text-gray-500">
+              {t('landing.info.executionDesc')}
+            </p>
+          </motion.div>
+
+          {/* Feature 5 */}
+          <motion.div
+            className="md:col-span-1 lg:col-span-2 rounded-3xl bg-white/5 border border-white/10 p-8 flex items-center justify-between hover:bg-white/10 transition-colors"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            viewport={{ once: true }}
+          >
+            <div>
+              <h3 className="text-xl font-bold text-white mb-1">{t('landing.info.rewardsTitle')}</h3>
+              <p className="text-sm text-gray-400">{t('landing.info.rewardsDesc')}</p>
+            </div>
+            <div className="h-12 w-12 rounded-full border border-white/20 flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+          </motion.div>
+
+        </div>
       </div>
     </section>
   );
