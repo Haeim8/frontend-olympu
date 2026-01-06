@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-
-import { supabaseAdmin } from '@/lib/supabase/server';
-import { mapCampaignRow } from '../utils';
+import { campaigns as dbCampaigns } from '@/backend/db';
+import { campaignCache } from '@/backend/redis';
 
 export const runtime = 'nodejs';
 export const revalidate = 60;
@@ -14,20 +13,27 @@ export async function GET(request, { params }) {
 
   const address = rawAddress.toLowerCase();
 
-  const { data, error } = await supabaseAdmin
-    .from('campaigns')
-    .select('*')
-    .eq('address', address)
-    .maybeSingle();
+  try {
+    // Vérifier le cache Redis
+    const cached = await campaignCache.getOne(address);
+    if (cached) {
+      console.log('[API] Cache hit:', address);
+      return NextResponse.json({ campaign: cached });
+    }
 
-  if (error) {
-    console.error('[API] campaign detail fetch error', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Récupérer depuis PostgreSQL
+    const campaign = await dbCampaigns.getByAddress(address);
+
+    if (!campaign) {
+      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
+    }
+
+    // Mettre en cache
+    await campaignCache.setOne(address, campaign);
+
+    return NextResponse.json({ campaign });
+  } catch (error) {
+    console.error('[API] Error fetching campaign detail:', error);
+    return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
-
-  if (!data) {
-    return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ campaign: mapCampaignRow(data) });
 }

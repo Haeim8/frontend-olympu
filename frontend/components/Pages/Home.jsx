@@ -177,7 +177,7 @@ export default function Home() {
 
     try {
       // 1️⃣ CHARGER LES CAMPAGNES DE LA DB UNIQUEMENT (instantané)
-      const campaigns = await apiManager.listCampaigns({}, { useCache: true });
+      const campaigns = await apiManager.getAllCampaigns({});
       const normalized = campaigns.map(normalizeCampaign).filter(Boolean);
 
       // 2️⃣ AFFICHER IMMÉDIATEMENT LES DONNÉES DE LA DB
@@ -190,7 +190,7 @@ export default function Home() {
       fetch('/api/campaigns/sync-now', { method: 'POST' })
         .then(() => {
           console.log('✅ Sync terminé - refresh silencieux');
-          return apiManager.listCampaigns({}, { useCache: false });
+          return apiManager.getAllCampaigns({});
         })
         .then(freshCampaigns => {
           const freshNormalized = freshCampaigns.map(normalizeCampaign).filter(Boolean);

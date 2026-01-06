@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PromotionService } from '@/lib/services/promotion-service';
+import { apiManager } from '@/lib/services/api-manager';
 import { useTranslation } from '@/hooks/useLanguage';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -270,7 +270,7 @@ export default function CampaignGrid({
   useEffect(() => {
     const loadPromotions = async () => {
       try {
-        const activePromotions = await PromotionService.getActivePromotions();
+        const activePromotions = await apiManager.getActivePromotions(true);
         setPromotions(activePromotions);
       } catch (error) {
         console.warn('Erreur chargement promotions:', error);

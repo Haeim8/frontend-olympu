@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Star, TrendingUp, Zap, ExternalLink } from "lucide-react";
 import { apiManager } from '@/lib/services/api-manager';
-import { PromotionService } from '@/lib/services/promotion-service';
+
 import { useTranslation } from '@/hooks/useLanguage';
 
 const PROMOTION_TYPES = {
@@ -45,7 +45,7 @@ export function PromotedCampaignsCarousel({ onViewCampaign }) {
   const loadPromotedCampaigns = useCallback(async () => {
     try {
       // Charger les promotions actives
-      const activePromotions = await PromotionService.getActivePromotions();
+      const activePromotions = await apiManager.getActivePromotions();
 
       if (!activePromotions || activePromotions.length === 0) {
         setCampaigns([]);

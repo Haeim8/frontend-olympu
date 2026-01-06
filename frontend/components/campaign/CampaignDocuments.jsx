@@ -9,12 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  FileText, 
-  Upload, 
-  Download, 
-  Eye, 
-  Plus, 
+import {
+  FileText,
+  Upload,
+  Download,
+  Eye,
+  Plus,
   Calendar,
   User,
   Shield,
@@ -41,14 +41,14 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
 
   const loadDocuments = useCallback(async () => {
     if (!campaignAddress) return;
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const documentData = await apiManager.getCampaignDocuments(campaignAddress);
       setDocuments(documentData || []);
-      
+
     } catch (err) {
       console.error('Erreur chargement documents:', err);
       setError(t('campaignDocuments.loadError'));
@@ -68,7 +68,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
         setError(t('campaignDocuments.fileSizeError'));
         return;
       }
-      
+
       setUploadForm(prev => ({
         ...prev,
         file,
@@ -90,7 +90,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
     try {
       // Simuler upload IPFS - à remplacer par votre service IPFS réel
       const mockIpfsHash = `Qm${Math.random().toString(36).substring(2, 15)}`;
-      
+
       await apiManager.addDocument(
         campaignAddress,
         mockIpfsHash,
@@ -105,16 +105,16 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
         category: 'legal',
         isPublic: true
       });
-      
+
       setShowUploadDialog(false);
       await loadDocuments();
-      
+
       if (onDocumentUpdate) {
         onDocumentUpdate();
       }
 
       alert(t('campaignDocuments.uploadSuccess'));
-      
+
     } catch (error) {
       console.error('Erreur upload document:', error);
       setError(t('campaignDocuments.uploadError'));
@@ -147,7 +147,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
       marketing: { label: t('campaignDocuments.categories.marketing'), color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
       other: { label: t('campaignDocuments.categories.other'), color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' }
     };
-    
+
     const cat = categories[category] || categories.other;
     return <Badge className={cat.color}>{cat.label}</Badge>;
   };
@@ -206,7 +206,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
             {stats.totalDocs} {t('campaignDocuments.documents')}
           </Badge>
         </CardTitle>
-        
+
         <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
           <DialogTrigger asChild>
             <Button className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -276,8 +276,8 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                 <Label htmlFor="doc-category" className="text-gray-700 dark:text-gray-300">
                   {t('campaignDocuments.category')}
                 </Label>
-                <Select 
-                  value={uploadForm.category} 
+                <Select
+                  value={uploadForm.category}
                   onValueChange={(value) => setUploadForm(prev => ({ ...prev, category: value }))}
                   disabled={isUploading}
                 >
@@ -337,9 +337,9 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                 marketing: { label: t('campaignDocuments.categoriesPlural.marketing'), color: 'text-orange-600 dark:text-orange-400' },
                 other: { label: t('campaignDocuments.categoriesPlural.other'), color: 'text-gray-600 dark:text-gray-400' }
               };
-              
+
               const info = categoryInfo[category] || categoryInfo.other;
-              
+
               return (
                 <div key={category} className="text-center p-2 bg-gray-50 dark:bg-neutral-900 rounded-lg">
                   <p className={`text-xl font-bold ${info.color}`}>{count}</p>

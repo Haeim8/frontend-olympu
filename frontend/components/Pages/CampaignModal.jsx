@@ -418,47 +418,83 @@ export default function CampaignModal({
     setCurrentStep(prev => Math.max(prev - 1, 1));
   }, []);
 
-  // IPFS Upload logic (similaire à l'original, mais nettoyé)
-  const uploadToIPFS = useCallback(async (campaignData) => {
-    // ... existing W3UP implementation ...
-    // For brevity in this refactor, implying the same logic is used or imported
-    // In a real scenario, this should probably be moved to a utility service to keep component clean
-    // Placeholder:
-    return { success: true, ipfsHash: "QmPlaceholder", campaignFolderName: "campaign_test" };
-  }, []);
-
-
   const handleSubmit = useCallback(async () => {
     if (!validateStep(5)) return;
 
-    // Safety check for wallet
     if (!address) {
-      setErrors({ general: "Wallet not connected" });
+      setErrors({ general: t('campaign.errors.walletNotConnected', "Wallet non connecté") });
       return;
     }
 
     setStatus('loading');
 
     try {
-      // 1. Upload IPFS (Simulated/Real call)
-      // const ipfsResult = await uploadToIPFS(formData);
+      // 1. Initialiser le provider et le signer
+      if (!window.ethereum) throw new Error("Fournisseur Ethereum introuvable");
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = await provider.getSigner();
 
-      // 2. Blockchain Transaction
-      // ... Logic to call createCampaign on contract ...
+      // 2. Uploader les documents vers le serveur local (Remplace IPFS)
+      const uploadedDocs = {};
+      for (const [type, files] of Object.entries(formData.documents)) {
+        uploadedDocs[type] = [];
+        for (const file of files) {
+          const uploadFd = new FormData();
+          uploadFd.append('file', file);
 
-      // Simulation for UI testing
-      await new Promise(r => setTimeout(r, 2000));
-      setStatus('success');
-      setTransactionHash("0x123456789abcdef");
+          const res = await fetch('/api/upload', { method: 'POST', body: uploadFd });
+          const uploadResult = await res.json();
 
-      if (onCampaignCreated) onCampaignCreated("0xNewCampaignAddress");
+          if (uploadResult.success) {
+            uploadedDocs[type].push({
+              name: file.name,
+              url: uploadResult.url,
+              category: type
+            });
+          }
+        }
+      }
+
+      // 3. Préparer les données pour le contrat et PostgreSQL
+      const dataToSubmit = {
+        ...formData,
+        projectName: formData.name,
+        tokenSymbol: formData.symbol,
+        fundingGoal: formData.sharePrice * formData.numberOfShares,
+        metadataUri: JSON.stringify({
+          sector: formData.sector === 'Autre' ? formData.otherSector : formData.sector,
+          socials: formData.socials,
+          team: formData.teamMembers,
+          docs_v2: uploadedDocs // Références aux fichiers uploadés localement
+        })
+      };
+
+      // 4. Appel au contrat via apiManager (Sauvegarde DB initiale incluse)
+      const result = await apiManager.createCampaign(dataToSubmit, signer);
+
+      if (result.success && result.address) {
+        // 5. Enregistrer chaque document individuellement dans la table campaign_documents pour PostgreSQL
+        for (const type in uploadedDocs) {
+          for (const doc of uploadedDocs[type]) {
+            await apiManager.addDocument(result.address, doc.url, doc.name, doc.category);
+          }
+        }
+
+        setStatus('success');
+        setTransactionHash(result.txHash);
+        if (onCampaignCreated) onCampaignCreated(result.address);
+      } else {
+        throw new Error("La création a échoué sans adresse de contrat valide");
+      }
 
     } catch (e) {
-      console.error(e);
+      console.error("[Submit] Error:", e);
       setStatus('error');
-      setErrors({ general: e.message });
+      // Traduire les erreurs courantes si nécessaire
+      const errorMsg = e.reason || e.message || t('campaign.errors.generic');
+      setErrors({ general: errorMsg });
     }
-  }, [validateStep, address, onCampaignCreated]);
+  }, [validateStep, address, formData, onCampaignCreated, t]);
 
 
   // RENDERERS

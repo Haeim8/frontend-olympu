@@ -52,28 +52,14 @@ const DocumentLink = ({ title, url, type = 'document', t, onPreview }) => {
     }
   };
 
-  // Convertir IPFS URI en URL HTTP gateway
-  const getHttpUrl = (ipfsUrl) => {
-    if (!ipfsUrl) return '';
+  // Convertir l'URL du document
+  const getHttpUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/uploads/')) return url; // Support local storage
 
-    // Si c'est déjà une URL HTTP, la retourner telle quelle
-    if (ipfsUrl.startsWith('http://') || ipfsUrl.startsWith('https://')) {
-      return ipfsUrl;
-    }
-
-    // Extraire le hash IPFS
-    let hash = ipfsUrl;
-    if (ipfsUrl.startsWith('ipfs://')) {
-      hash = ipfsUrl.replace('ipfs://', '');
-    } else if (ipfsUrl.includes('/ipfs/')) {
-      hash = ipfsUrl.split('/ipfs/')[1];
-    }
-
-    // Nettoyer le hash
-    hash = hash.replace(/^\/+/, '');
-
-    // Utiliser la gateway Web3.Storage (la plus rapide d'après le diagnostic)
-    return `https://w3s.link/ipfs/${hash}`;
+    const hash = url.replace('ipfs://', '').split('/ipfs/').pop().replace(/^\/+/, '');
+    return `https://ipfs.io/ipfs/${hash}`;
   };
 
   const httpUrl = getHttpUrl(url);
@@ -109,28 +95,14 @@ const DocumentLink = ({ title, url, type = 'document', t, onPreview }) => {
 };
 
 const MediaGallery = ({ media = [], t, onPreview }) => {
-  // Convertir IPFS URI en URL HTTP gateway
-  const getHttpUrl = (ipfsUrl) => {
-    if (!ipfsUrl) return '';
+  // Résoudre l'URL du média
+  const getHttpUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/uploads/')) return url; // Support local storage
 
-    // Si c'est déjà une URL HTTP, la retourner telle quelle
-    if (ipfsUrl.startsWith('http://') || ipfsUrl.startsWith('https://')) {
-      return ipfsUrl;
-    }
-
-    // Extraire le hash IPFS
-    let hash = ipfsUrl;
-    if (ipfsUrl.startsWith('ipfs://')) {
-      hash = ipfsUrl.replace('ipfs://', '');
-    } else if (ipfsUrl.includes('/ipfs/')) {
-      hash = ipfsUrl.split('/ipfs/')[1];
-    }
-
-    // Nettoyer le hash
-    hash = hash.replace(/^\/+/, '');
-
-    // Utiliser la gateway Web3.Storage (la plus rapide d'après le diagnostic)
-    return `https://w3s.link/ipfs/${hash}`;
+    const hash = url.replace('ipfs://', '').split('/ipfs/').pop().replace(/^\/+/, '');
+    return `https://ipfs.io/ipfs/${hash}`;
   };
 
   if (!media || media.length === 0) {
@@ -426,13 +398,13 @@ export default function ProjectDetailsTab({ projectData }) {
                 (!ipfs.documents.pitchDeck?.length) &&
                 (!ipfs.documents.legalDocuments?.length)
               )) && (
-                <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {t('projectDetailsTab.noDocuments')}
-                  </p>
-                </div>
-              )}
+                  <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {t('projectDetailsTab.noDocuments')}
+                    </p>
+                  </div>
+                )}
             </div>
           </CardContent>
         </Card>
@@ -524,42 +496,42 @@ export default function ProjectDetailsTab({ projectData }) {
               <div className="flex flex-wrap gap-3">
                 {ipfs.socials.website && (
                   <a href={getSocialUrl('website', ipfs.socials.website)} target="_blank" rel="noopener noreferrer"
-                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <Globe className="h-4 w-4 text-lime-600" />
                     <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.website')}</span>
                   </a>
                 )}
                 {ipfs.socials.twitter && (
                   <a href={getSocialUrl('twitter', ipfs.socials.twitter)} target="_blank" rel="noopener noreferrer"
-                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <Twitter className="h-4 w-4 text-lime-600" />
                     <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.twitter')}</span>
                   </a>
                 )}
                 {ipfs.socials.github && (
                   <a href={getSocialUrl('github', ipfs.socials.github)} target="_blank" rel="noopener noreferrer"
-                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <Github className="h-4 w-4 text-lime-600" />
                     <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.github')}</span>
                   </a>
                 )}
                 {ipfs.socials.discord && (
                   <a href={getSocialUrl('discord', ipfs.socials.discord)} target="_blank" rel="noopener noreferrer"
-                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <MessageCircle className="h-4 w-4 text-lime-600" />
                     <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.discord')}</span>
                   </a>
                 )}
                 {ipfs.socials.telegram && (
                   <a href={getSocialUrl('telegram', ipfs.socials.telegram)} target="_blank" rel="noopener noreferrer"
-                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <Send className="h-4 w-4 text-lime-600" />
                     <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.telegram')}</span>
                   </a>
                 )}
                 {ipfs.socials.medium && (
                   <a href={getSocialUrl('medium', ipfs.socials.medium)} target="_blank" rel="noopener noreferrer"
-                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <FileText className="h-4 w-4 text-lime-600" />
                     <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.medium')}</span>
                   </a>

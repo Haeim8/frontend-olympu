@@ -35,7 +35,7 @@ const translations = {
     'campaign.errors.userRejected': 'Transaction annulée par l’utilisateur.',
     'campaign.errors.walletUnknownAccount': 'Wallet Coinbase non initialisé. Rouvrez l’extension et reconnectez-vous.',
     'campaign.errors.walletNotConnected': 'Veuillez connecter votre portefeuille.',
-    'campaign.errors.w3upExpired': 'Session Web3.Storage expirée. Merci de réauthentifier l’accès.',
+
     'campaign.errors.generic': 'Erreur : {reason}',
     'campaign.errors.unknown': 'Erreur inconnue',
     'campaign.errors.wrongChain': 'Wallet sur une mauvaise blockchain. Passez sur Base Sepolia.',
@@ -1048,7 +1048,7 @@ const translations = {
     'campaign.errors.providerUnavailable': 'Wallet provider indisponible',
     'campaign.errors.loadFailed': 'Erreur campagne',
     'campaign.nft.captureError': 'Erreur lors de la capture de la carte:',
-    'campaign.ipfs.noSpaceAvailable': 'Aucun espace W3UP disponible',
+
     'campaign.ipfs.uploadFailed': 'Échec upload IPFS',
     'campaign.creation.inProgress': 'Création de la campagne en cours...',
     'campaign.creation.uploadingBlockchain': 'Upload IPFS et transaction blockchain en cours',
@@ -1344,7 +1344,7 @@ const translations = {
     'campaign.errors.userRejected': 'Transaction cancelled by the user.',
     'campaign.errors.walletUnknownAccount': 'Coinbase Wallet not initialised. Reopen the extension and reconnect.',
     'campaign.errors.walletNotConnected': 'Please connect your wallet.',
-    'campaign.errors.w3upExpired': 'Web3.Storage session expired. Please re-authenticate the access.',
+
     'campaign.errors.generic': 'Error: {reason}',
     'campaign.errors.unknown': 'Unknown error',
     'campaign.errors.wrongChain': 'Wallet on the wrong network. Please switch to Base Sepolia.',
@@ -2296,7 +2296,7 @@ const translations = {
     'campaign.errors.providerUnavailable': 'Wallet provider unavailable',
     'campaign.errors.loadFailed': 'Campaign error',
     'campaign.nft.captureError': 'Error capturing card:',
-    'campaign.ipfs.noSpaceAvailable': 'No W3UP space available',
+
     'campaign.ipfs.uploadFailed': 'IPFS upload failed',
     'campaign.creation.inProgress': 'Campaign creation in progress...',
     'campaign.creation.uploadingBlockchain': 'IPFS upload and blockchain transaction in progress',
@@ -2585,7 +2585,7 @@ const translations = {
     'campaign.errors.userRejected': 'Transacción cancelada por el usuario.',
     'campaign.errors.walletUnknownAccount': 'Coinbase Wallet no está inicializado. Reabre la extensión y reconéctate.',
     'campaign.errors.walletNotConnected': 'Por favor conecta tu billetera.',
-    'campaign.errors.w3upExpired': 'Sesión de Web3.Storage expirada. Reautentica el acceso.',
+
     'campaign.errors.generic': 'Error: {reason}',
     'campaign.errors.unknown': 'Error desconocido',
     'campaign.errors.wrongChain': 'Wallet en la red incorrecta. Cambia a Base Sepolia.',
@@ -3495,7 +3495,7 @@ const translations = {
     'campaign.errors.providerUnavailable': 'Proveedor de wallet no disponible',
     'campaign.errors.loadFailed': 'Error de campaña',
     'campaign.nft.captureError': 'Error al capturar la tarjeta:',
-    'campaign.ipfs.noSpaceAvailable': 'No hay espacio W3UP disponible',
+
     'campaign.ipfs.uploadFailed': 'Error en carga IPFS',
     'campaign.creation.inProgress': 'Creación de campaña en progreso...',
     'campaign.creation.uploadingBlockchain': 'Carga IPFS y transacción blockchain en progreso',
@@ -3825,7 +3825,7 @@ export const LanguageProvider = ({ children }) => {
     }
   }, []);
 
-  // Fonction de traduction
+  // Fonction de traduction avec fallback sur FR si cle non trouvee
   const t = useCallback((key, arg1, arg2) => {
     let fallback = key;
     let params = {};
@@ -3852,27 +3852,30 @@ export const LanguageProvider = ({ children }) => {
       fallback = key;
     }
 
+    // Helper pour chercher une traduction
+    const findInTranslations = (langObj, searchKey) => {
+      if (!langObj) return undefined;
+      if (typeof langObj[searchKey] !== 'undefined') return langObj[searchKey];
+      const keys = searchKey.split('.');
+      let value = langObj;
+      for (const k of keys) {
+        value = value?.[k];
+      }
+      return value;
+    };
+
     try {
-      const currentTranslations = translations[currentLanguage];
       let template;
 
-      if (currentTranslations) {
-        if (typeof currentTranslations[key] !== 'undefined') {
-          template = currentTranslations[key];
-        } else {
-          const keys = key.split('.');
-          let value = currentTranslations;
+      // 1. Chercher dans la langue courante
+      template = findInTranslations(translations[currentLanguage], key);
 
-          for (const k of keys) {
-            value = value?.[k];
-          }
-
-          template = value;
-        }
+      // 2. Si pas trouve, fallback sur FR
+      if (typeof template !== 'string' && currentLanguage !== 'fr') {
+        template = findInTranslations(translations['fr'], key);
       }
 
       if (typeof template === 'object' && template !== null) {
-        // Protéger contre un objet passé par erreur
         template = undefined;
       }
 

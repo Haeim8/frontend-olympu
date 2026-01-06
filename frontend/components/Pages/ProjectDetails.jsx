@@ -58,10 +58,7 @@ export default function ProjectDetails({ selectedProject, onClose }) {
       ]);
       if (projectDetails) {
         setProjectData({ ...projectDetails, ipfs: null });
-        const { getCampaignMetadata } = await import('@/lib/services/ipfs-fetcher.js');
-        getCampaignMetadata(projectDetails)
-          .then(metadata => setProjectData(prev => ({ ...prev, ...metadata.ipfs, ipfs: metadata.ipfs, documents: metadata.documents })))
-          .catch(err => console.warn('IPFS failed:', err));
+        // IPFS metadata fetching removed - all data now comes from PostgreSQL
       }
       if (txData?.transactions) setTransactions(txData.transactions);
     } catch (err) { console.error('Error:', err); }

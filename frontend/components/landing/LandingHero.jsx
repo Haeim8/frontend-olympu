@@ -22,7 +22,7 @@ export function LandingHero({
   useEffect(() => {
     const fetchRealData = async () => {
       try {
-        const campaigns = await apiManager.listCampaigns({}, { useCache: true });
+        const campaigns = await apiManager.getAllCampaigns({});
         // Format for terminal view
         const formatted = campaigns.slice(0, 5).map(c => ({
           name: c.name || 'Unknown Project',

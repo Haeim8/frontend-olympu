@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { ExternalLink, Users, Clock, CheckCircle, Zap, Star, Diamond, Wallet, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
 import { apiManager } from '@/lib/services/api-manager';
-import { PromotionService } from '@/lib/services/promotion-service';
+
 import { useTranslation } from '@/hooks/useLanguage';
 
 // Simple deterministic gradient generator for fallback avatars
@@ -46,7 +46,7 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
     try {
       setIsLoading(true);
       const campaignAddresses = await apiManager.getAllCampaigns();
-      const activePromotions = await PromotionService.getActivePromotions();
+      const activePromotions = await apiManager.getActivePromotions();
       const projectsData = [];
 
       for (const campaignAddress of campaignAddresses.slice(0, 20)) {

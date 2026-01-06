@@ -2,14 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiManager } from '@/lib/services/api-manager';
-import { supabase } from '@/lib/supabase/client';
 import { useTranslation } from '@/hooks/useLanguage';
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
   // Récupérer l'adresse du wallet (comme Campaign.jsx)
   const [address, setAddress] = useState(null);
-  
+
   useEffect(() => {
     // Récupérer l'adresse du wallet connecté
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -22,7 +21,7 @@ export default function AdminDashboard() {
         .catch(console.error);
     }
   }, []);
-  
+
   const [promotions, setPromotions] = useState([]);
   const [stats, setStats] = useState({
     totalRevenue: 0,
@@ -32,20 +31,16 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
 
   // Adresse treasury autorisée (à remplacer par la vraie adresse)
-  const TREASURY_ADDRESS = '0x...'; // Remplacer par l'adresse treasury
+  const TREASURY_ADDRESS = config.contracts?.Treasury || process.env.NEXT_PUBLIC_TREASURY_ADDRESS || '0x0000000000000000000000000000000000000000';
 
   const isAuthorized = address && address.toLowerCase() === TREASURY_ADDRESS.toLowerCase();
 
   const fetchPromotions = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('campaign_promotions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPromotions(data || []);
+      // Utiliser apiManager au lieu de supabase direct
+      const promoData = await apiManager.getActivePromotions(true);
+      setPromotions(promoData || []);
     } catch (error) {
       console.error(t('admin.error.promotions'), error);
     } finally {
@@ -55,15 +50,10 @@ export default function AdminDashboard() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('campaign_promotions')
-        .select('eth_amount, is_active');
-
-      if (error) throw error;
-
-      const totalRevenue = data?.reduce((sum, promo) => sum + parseFloat(promo.eth_amount || 0), 0) || 0;
-      const activePromotions = data?.filter(p => p.is_active)?.length || 0;
-      const totalPromotions = data?.length || 0;
+      // Calculer les stats depuis les promotions récupérées
+      const totalRevenue = promotions.reduce((sum, promo) => sum + parseFloat(promo.eth_amount || 0), 0) || 0;
+      const activePromotions = promotions.filter(p => p.is_active)?.length || 0;
+      const totalPromotions = promotions.length || 0;
 
       setStats({
         totalRevenue,
@@ -73,7 +63,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(t('admin.error.stats'), error);
     }
-  }, [t]);
+  }, [t, promotions]);
 
   useEffect(() => {
     if (isAuthorized) {
@@ -229,7 +219,7 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gray-50">
@@ -270,7 +260,7 @@ export default function AdminDashboard() {
                 })}
               </tbody>
             </table>
-            
+
             {promotions.length === 0 && !loading && (
               <div className="text-center py-8 text-gray-500">
                 Aucune promotion trouvée

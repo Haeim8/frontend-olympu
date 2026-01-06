@@ -1,75 +1,59 @@
 import { NextResponse } from 'next/server';
-
-import { supabaseAdmin } from '@/lib/supabase/server';
-import { mapCampaignRow } from './utils';
+import { campaigns as dbCampaigns } from '@/backend/db';
+import { campaignCache } from '@/backend/redis';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const creator = searchParams.get('creator');
   const status = searchParams.get('status');
+  const category = searchParams.get('category');
+  const creator = searchParams.get('creator');
 
   try {
-    // Vérifier que Supabase est configuré
-    if (!supabaseAdmin) {
-      console.error('[API] ⚠️ Supabase client non initialisé');
-      return NextResponse.json(
-        { campaigns: [], error: 'Database non configurée' },
-        { status: 200 }
-      );
+    // Tenter de récupérer depuis le cache Redis
+    const cached = await campaignCache.getList();
+    if (cached) {
+      console.log('[API] Cache hit: campaigns list');
+      let filtered = cached;
+
+      if (status) filtered = filtered.filter(c => c.status === status);
+      if (category) filtered = filtered.filter(c => c.category === category);
+      if (creator) filtered = filtered.filter(c => c.creator?.toLowerCase() === creator.toLowerCase());
+
+      return NextResponse.json({ campaigns: filtered });
     }
 
-    let query = supabaseAdmin
-      .from('campaigns')
-      .select('*')
-      .order('updated_at', { ascending: false });
+    // Récupérer depuis PostgreSQL
+    const campaignList = await dbCampaigns.getAll({ status, category });
 
+    // Filtrage supplémentaire par créateur si présent
+    let results = campaignList;
     if (creator) {
-      query = query.eq('creator', creator.toLowerCase());
+      results = results.filter(c => c.creator?.toLowerCase() === creator.toLowerCase());
     }
 
-    if (status) {
-      query = query.eq('status', status);
-    }
+    // Mettre en cache la liste complète pour les futurs appels (Redis gère le TTL)
+    await campaignCache.setList(campaignList);
 
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('[API] campaigns fetch error', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      throw error;
-    }
-
-    const campaigns = (data ?? []).map(mapCampaignRow);
-
-    console.log(`[API] ✅ ${campaigns.length} campagnes récupérées`);
+    console.log(`[API] ✅ ${results.length} campagnes récupérées depuis PostgreSQL`);
 
     return NextResponse.json(
-      { campaigns },
+      { campaigns: results },
       {
         headers: {
-          'Cache-Control': 's-maxage=30, stale-while-revalidate=60',
+          'Cache-Control': 's-maxage=60, stale-while-revalidate=120',
         },
       },
     );
   } catch (error) {
-    console.error('[API] campaigns fetch error', {
-      message: error?.message || 'Unknown error',
-      details: error?.details || error?.toString(),
-      hint: error?.hint || '',
-      code: error?.code || ''
-    });
+    console.error('[API] Error fetching campaigns:', error);
 
     return NextResponse.json(
       {
         campaigns: [],
-        error: 'Impossible de récupérer les campagnes pour le moment.',
+        error: 'Impossible de récupérer les campagnes.',
       },
       { status: 200 },
     );

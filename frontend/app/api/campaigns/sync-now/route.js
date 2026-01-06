@@ -1,88 +1,41 @@
 import { NextResponse } from 'next/server';
-import smartSyncManager from '@/lib/services/smart-sync-manager';
+import indexer from '@/lib/services/blockchain-indexer';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
- * API pour synchronisation INTELLIGENTE des campagnes
- * Ne synchronise QUE si des changements sont détectés
+ * POST /api/campaigns/sync-now
+ * Declenche une synchronisation manuelle des campagnes blockchain -> PostgreSQL
  */
 export async function POST(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const force = searchParams.get('force') === 'true';
+    try {
+        console.log('[API Sync-Now] Declenchement synchronisation...');
 
-    console.log(`[API] 🧠 Sync ${force ? 'FORCÉE' : 'intelligente'} déclenchée...`);
+        // Synchroniser les campagnes, transactions et promotions
+        await indexer.syncNewCampaigns();
+        await indexer.syncAllTransactions();
+        await indexer.syncPromotions();
 
-    // Utiliser la sync intelligente
-    const results = force
-      ? await smartSyncManager.forceSync()
-      : await smartSyncManager.sync();
+        return NextResponse.json({
+            success: true,
+            message: 'Synchronisation terminee',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('[API Sync-Now] Erreur:', error);
 
-    // Si skip, retourner immédiatement
-    if (results.skipped) {
-      return NextResponse.json({
-        success: true,
-        skipped: true,
-        reason: results.reason,
-        message: 'Aucune synchronisation nécessaire'
-      });
+        // En cas d'erreur, on retourne quand meme un succes pour ne pas bloquer l'UI
+        // L'erreur est loguee cote serveur
+        return NextResponse.json({
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+        }, { status: 200 }); // Status 200 pour eviter les erreurs cote client
     }
-
-    return NextResponse.json({
-      success: true,
-      skipped: false,
-      message: `Synchronisation terminée: ${results.processed} campagnes traitées`,
-      results
-    });
-
-  } catch (error) {
-    console.error('[API] ❌ Erreur sync-now:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Erreur de synchronisation',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      },
-      { status: 500 }
-    );
-  }
 }
 
-/**
- * GET pour obtenir le statut de synchronisation
- */
-export async function GET() {
-  try {
-    const stats = await smartSyncManager.getStats();
-
-    const { supabaseAdmin } = await import('@/lib/supabase/server.js');
-
-    const { count: campaignCount } = await supabaseAdmin
-      .from('campaigns')
-      .select('*', { count: 'exact', head: true });
-
-    const { count: txCount } = await supabaseAdmin
-      .from('campaign_transactions')
-      .select('*', { count: 'exact', head: true });
-
-    return NextResponse.json({
-      success: true,
-      stats: {
-        totalCampaigns: campaignCount || 0,
-        totalTransactions: txCount || 0,
-        sync: stats
-      }
-    });
-
-  } catch (error) {
-    console.error('[API] ❌ Erreur GET sync-now:', error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Erreur de récupération du statut'
-      },
-      { status: 500 }
-    );
-  }
+// Support GET aussi pour les tests manuels
+export async function GET(request) {
+    return POST(request);
 }

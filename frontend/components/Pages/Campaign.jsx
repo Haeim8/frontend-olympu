@@ -66,7 +66,7 @@ export default function Campaign() {
         setIsLoading(true);
         setError(null);
 
-        const campaigns = await apiManager.listCampaigns({ creator: address }, { useCache: false });
+        const campaigns = await apiManager.getAllCampaigns({ creator: address });
         if (cancelled) return;
 
         if (Array.isArray(campaigns) && campaigns.length > 0) {

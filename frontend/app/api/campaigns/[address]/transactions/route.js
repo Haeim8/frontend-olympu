@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { transactions as dbTransactions } from '@/backend/db';
+import { transactionCache } from '@/backend/redis';
 
 export const runtime = 'nodejs';
 export const revalidate = 30;
@@ -9,17 +9,13 @@ export async function GET(request, { params }) {
   const rawAddress = params?.address;
 
   if (!rawAddress) {
-    return NextResponse.json(
-      { error: 'Missing campaign address' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Missing campaign address' }, { status: 400 });
   }
 
   const address = rawAddress.toLowerCase();
-
   const { searchParams } = new URL(request.url);
   const limitParam = searchParams.get('limit');
-  const investorParam = searchParams.get('investor');
+  const offsetParam = searchParams.get('offset');
 
   let limit = 100;
   if (limitParam) {
@@ -29,31 +25,35 @@ export async function GET(request, { params }) {
     }
   }
 
+  let offset = 0;
+  if (offsetParam) {
+    const parsed = Number.parseInt(offsetParam, 10);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      offset = parsed;
+    }
+  }
+
   try {
-    let query = supabaseAdmin
-      .from('campaign_transactions')
-      .select('*')
-      .eq('campaign_address', address)
-      .order('block_number', { ascending: false })
-      .limit(limit);
-
-    if (investorParam) {
-      query = query.eq('investor', investorParam.toLowerCase());
+    // Vérifier le cache Redis (uniquement si pas d'offset pour simplifier)
+    if (offset === 0) {
+      const cached = await transactionCache.get(address);
+      if (cached) {
+        console.log('[API] Cache hit: transactions', address);
+        return NextResponse.json({ transactions: cached.slice(0, limit) });
+      }
     }
 
-    const { data, error } = await query;
+    // Récupérer depuis PostgreSQL
+    const txList = await dbTransactions.getByCampaign(address, { limit, offset });
 
-    if (error) {
-      console.error('[API] campaign transaction fetch error', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // Mettre en cache (si c'est la première page)
+    if (offset === 0 && txList.length > 0) {
+      await transactionCache.set(address, txList);
     }
 
-    return NextResponse.json({ transactions: data ?? [] });
+    return NextResponse.json({ transactions: txList });
   } catch (error) {
-    console.error('[API] campaign transaction unexpected error', error);
-    return NextResponse.json(
-      { error: 'Unable to load transactions' },
-      { status: 500 },
-    );
+    console.error('[API] Error fetching transactions:', error);
+    return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }
