@@ -28,7 +28,7 @@ export default function ConnectPrompt() {
               Bienvenue sur Livar
             </h1>
             <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-              Plateforme d'investissement crypto sécurisée et transparente.
+              Plateforme d&apos;investissement crypto sécurisée et transparente.
             </p>
           </div>
         </div>
@@ -43,7 +43,7 @@ export default function ConnectPrompt() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-muted/50 p-4 rounded-lg text-xs text-muted-foreground border border-border/50 text-center">
-              En vous connectant, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.
+              En vous connectant, vous acceptez nos conditions d&apos;utilisation et notre politique de confidentialité.
             </div>
 
             <div className="flex justify-center pt-2">

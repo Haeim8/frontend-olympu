@@ -1,6 +1,7 @@
 "use client";
 
 import React, { forwardRef } from 'react';
+import Image from 'next/image';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -167,7 +168,7 @@ const CampaignNFTPreview = forwardRef(({
                 <div className="relative w-20 h-20 bg-muted/30 border border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
                   {formData.nftCustomization.logo ? (
                     <div className="w-full h-full relative group">
-                      <img src={URL.createObjectURL(formData.nftCustomization.logo)} alt="Logo Preview" className="w-full h-full object-cover" />
+                      <Image src={URL.createObjectURL(formData.nftCustomization.logo)} alt="Logo Preview" fill className="object-cover" unoptimized />
                       <div className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center">
                         <label className="cursor-pointer text-white text-xs text-center p-1">
                           Change

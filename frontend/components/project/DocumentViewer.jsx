@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Download, ExternalLink, FileText, Image as ImageIcon, Film, Loader2 } from 'lucide-react';
@@ -77,10 +78,12 @@ export default function DocumentViewer({ document, isOpen, onClose }) {
                 </div>
               </div>
             )}
-            <img
+            <Image
               src={fileUrl}
               alt={fileName}
-              className="max-w-full max-h-[70vh] object-contain"
+              fill
+              className="object-contain"
+              unoptimized
               onLoad={() => setLoading(false)}
               onError={() => {
                 setError(true);

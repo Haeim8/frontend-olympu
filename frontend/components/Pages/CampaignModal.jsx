@@ -458,7 +458,7 @@ export default function CampaignModal({
       setStatus('error');
       setErrors({ general: e.message });
     }
-  }, [formData, validateStep, address, onCampaignCreated]);
+  }, [validateStep, address, onCampaignCreated]);
 
 
   // RENDERERS

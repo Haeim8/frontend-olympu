@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { ExternalLink, Users, Clock, CheckCircle, Zap, Star, Diamond, Wallet, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
 import { apiManager } from '@/lib/services/api-manager';
 import { PromotionService } from '@/lib/services/promotion-service';
@@ -183,7 +184,14 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
                         {(!project.image || project.image.length > 200 || project.image.includes('example')) ? (
                           <span>🏛️</span>
                         ) : (
-                          <img src={project.image} alt={project.title} className="w-full h-full object-cover rounded-lg" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerText = '🏛️' }} />
+                          <Image
+                            src={project.image}
+                            alt={project.title}
+                            fill
+                            className="object-cover rounded-lg"
+                            unoptimized
+                            onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerText = '🏛️' }}
+                          />
                         )}
                       </div>
                     </div>

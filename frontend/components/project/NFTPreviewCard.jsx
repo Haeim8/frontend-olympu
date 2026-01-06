@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
@@ -44,10 +45,12 @@ export default function NFTPreviewCard({ projectData, project }) {
             {/* Image du NFT */}
             <div className="relative w-full aspect-square max-w-xs rounded-xl overflow-hidden bg-white/10 backdrop-blur-sm">
               {imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('http') ? (
-                <img
+                <Image
                   src={imageUrl}
                   alt={name}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

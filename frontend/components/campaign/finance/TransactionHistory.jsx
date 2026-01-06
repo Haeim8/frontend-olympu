@@ -37,7 +37,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
     } finally {
       setIsLoading(false);
     }
-  }, [campaignAddress]);
+  }, [campaignAddress, t]);
 
   useEffect(() => {
     loadTransactions();

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -225,10 +226,12 @@ export function PromotedCampaignsCarousel({ onViewCampaign }) {
                       <div className="flex items-center justify-center">
                         <div className="relative w-full aspect-square max-w-sm rounded-2xl overflow-hidden bg-white/5 shadow-2xl">
                           {currentCampaign.logo && currentCampaign.logo.startsWith('http') ? (
-                            <img
+                            <Image
                               src={currentCampaign.logo}
                               alt={currentCampaign.name}
-                              className="w-full h-full object-cover"
+                              fill
+                              className="object-cover"
+                              unoptimized
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-8xl">
@@ -317,8 +320,8 @@ export function PromotedCampaignsCarousel({ onViewCampaign }) {
                 key={index}
                 onClick={() => handleDotClick(index)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${index === currentIndex
-                    ? `w-8 bg-gradient-to-r ${promotionInfo.color}`
-                    : 'w-2 bg-white/20'
+                  ? `w-8 bg-gradient-to-r ${promotionInfo.color}`
+                  : 'w-2 bg-white/20'
                   }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
