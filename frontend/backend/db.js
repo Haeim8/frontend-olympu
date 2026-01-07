@@ -10,17 +10,23 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Configuration Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// Client Supabase (lazy initialization)
+let supabase = null;
 
-if (!supabaseUrl || !supabaseKey) {
-    console.warn('[Supabase] Variables manquantes: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_ANON_KEY');
+function getSupabase() {
+    if (supabase) return supabase;
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error('[Supabase] Variables manquantes: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_ANON_KEY');
+    }
+
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('[Supabase] Client initialisé');
+    return supabase;
 }
-
-const supabase = createClient(supabaseUrl || '', supabaseKey || '');
-
-console.log('[Supabase] Client initialisé');
 
 /**
  * Exécuter une requête SQL brute via RPC (pour compatibilité)
@@ -30,7 +36,7 @@ export async function query(text, params = []) {
     try {
         // Pour les requêtes SELECT simples, on parse et utilise l'API Supabase
         // Pour les requêtes complexes, on utilise la fonction RPC
-        const { data, error } = await supabase.rpc('execute_sql', {
+        const { data, error } = await getSupabase().rpc('execute_sql', {
             query_text: text,
             query_params: params
         });
@@ -54,7 +60,7 @@ export async function query(text, params = []) {
  * Obtenir un client (pour compatibilité)
  */
 export async function getClient() {
-    return supabase;
+    return getSupabase();
 }
 
 /**
@@ -75,7 +81,7 @@ export const campaigns = {
     async getAll(options = {}) {
         const { limit = 50, offset = 0, status, category } = options;
 
-        let query = supabase
+        let query = getSupabase()
             .from('campaigns')
             .select('*')
             .order('created_at', { ascending: false })
@@ -103,7 +109,7 @@ export const campaigns = {
      * Récupérer une campagne par adresse
      */
     async getByAddress(address) {
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('campaigns')
             .select('*')
             .eq('address', address.toLowerCase())
@@ -145,7 +151,7 @@ export const campaigns = {
             nft_sector,
         } = campaignData;
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('campaigns')
             .upsert({
                 address: address.toLowerCase(),
@@ -186,7 +192,7 @@ export const campaigns = {
      * Supprimer une campagne
      */
     async delete(address) {
-        const { error } = await supabase
+        const { error } = await getSupabase()
             .from('campaigns')
             .delete()
             .eq('address', address.toLowerCase());
@@ -209,7 +215,7 @@ export const transactions = {
     async getByCampaign(campaignAddress, options = {}) {
         const { limit = 100, offset = 0 } = options;
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('campaign_transactions')
             .select('*')
             .eq('campaign_address', campaignAddress.toLowerCase())
@@ -242,7 +248,7 @@ export const transactions = {
             net_amount,
         } = txData;
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('campaign_transactions')
             .upsert({
                 tx_hash,
@@ -278,7 +284,7 @@ export const promotions = {
      * Récupérer les promotions actives
      */
     async getActivePromotions(includeExpired = false) {
-        let query = supabase
+        let query = getSupabase()
             .from('campaign_promotions')
             .select('*')
             .order('boost_type')
@@ -304,7 +310,7 @@ export const promotions = {
      * Vérifier si une campagne est promue
      */
     async isCampaignBoosted(campaignAddress) {
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('campaign_promotions')
             .select('*')
             .eq('campaign_address', campaignAddress.toLowerCase())
@@ -335,7 +341,7 @@ export const promotions = {
             block_number,
         } = promoData;
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('campaign_promotions')
             .insert({
                 campaign_address: campaign_address.toLowerCase(),
@@ -364,7 +370,7 @@ export const promotions = {
      * Expirer une promotion
      */
     async expire(campaignAddress, roundNumber, boostType) {
-        const { error } = await supabase
+        const { error } = await getSupabase()
             .from('campaign_promotions')
             .update({ is_active: false })
             .eq('campaign_address', campaignAddress.toLowerCase())
@@ -387,7 +393,7 @@ export const documents = {
      * Récupérer les documents d'une campagne
      */
     async getByCampaign(campaignAddress) {
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('campaign_documents')
             .select('*')
             .eq('campaign_address', campaignAddress.toLowerCase())
@@ -407,7 +413,7 @@ export const documents = {
     async insert(docData) {
         const { campaign_address, ipfs_hash, name, category, is_public } = docData;
 
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('campaign_documents')
             .insert({
                 campaign_address: campaign_address.toLowerCase(),
@@ -435,7 +441,7 @@ export const documents = {
 
 export const syncState = {
     async get(id) {
-        const { data, error } = await supabase
+        const { data, error } = await getSupabase()
             .from('sync_state')
             .select('*')
             .eq('id', id)
@@ -450,7 +456,7 @@ export const syncState = {
     },
 
     async upsert(id, lastBlock) {
-        const { error } = await supabase
+        const { error } = await getSupabase()
             .from('sync_state')
             .upsert({
                 id,
