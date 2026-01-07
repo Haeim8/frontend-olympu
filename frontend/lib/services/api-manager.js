@@ -148,7 +148,7 @@ class ApiManager {
    * Récupérer les détails d'une campagne (via API)
    */
   async getCampaignData(address, forceFresh = false) {
-    if (!address) return null;
+    if (!address || typeof address !== 'string') return null;
     try {
       const res = await fetch(`/api/campaigns/${address.toLowerCase()}`);
       const data = await res.json();
@@ -157,6 +157,13 @@ class ApiManager {
       console.error(`[ApiManager] getCampaignData error for ${address}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Alias pour getCampaignData (compatibilité)
+   */
+  async getCampaignSummary(address, options = {}) {
+    return this.getCampaignData(address, options.forceFresh || false);
   }
 
   /**
