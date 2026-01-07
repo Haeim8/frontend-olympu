@@ -1,64 +1,67 @@
 /**
  * =============================================================================
- * CLIENT POSTGRESQL - LIVAR
+ * CLIENT SUPABASE - LIVAR
  * =============================================================================
- * 
- * Client PostgreSQL pour remplacer Supabase
- * Utilise pg (node-postgres) pour la connexion
+ *
+ * Client Supabase utilisant l'API REST (IPv4 compatible)
+ * Remplace la connexion PostgreSQL directe pour Vercel
  * =============================================================================
  */
 
-import { Pool } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
-// Configuration depuis les variables d'environnement avec fallback local
-const dbConfig = {
-    connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/livar',
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-};
+// Configuration Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-const pool = new Pool(dbConfig);
+if (!supabaseUrl || !supabaseKey) {
+    console.warn('[Supabase] Variables manquantes: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_ANON_KEY');
+}
 
-// Vérification de la connexion au démarrage
-pool.on('connect', () => {
-    console.log('[PostgreSQL] ✅ Connexion établie');
-});
+const supabase = createClient(supabaseUrl || '', supabaseKey || '');
 
-pool.on('error', (err) => {
-    console.error('[PostgreSQL] ❌ Erreur de connexion:', err.message);
-});
+console.log('[Supabase] Client initialisé');
 
 /**
- * Exécuter une requête SQL
+ * Exécuter une requête SQL brute via RPC (pour compatibilité)
  */
-export async function query(text, params) {
+export async function query(text, params = []) {
     const start = Date.now();
     try {
-        const result = await pool.query(text, params);
+        // Pour les requêtes SELECT simples, on parse et utilise l'API Supabase
+        // Pour les requêtes complexes, on utilise la fonction RPC
+        const { data, error } = await supabase.rpc('execute_sql', {
+            query_text: text,
+            query_params: params
+        });
+
+        if (error) {
+            // Fallback: essayer d'interpréter la requête
+            console.error('[Supabase] Erreur RPC:', error.message);
+            throw error;
+        }
+
         const duration = Date.now() - start;
-        console.log(`[PostgreSQL] Requête exécutée en ${duration}ms`);
-        return result;
+        console.log(`[Supabase] Requête exécutée en ${duration}ms`);
+        return { rows: data || [] };
     } catch (error) {
-        console.error('[PostgreSQL] Erreur requête:', error.message);
+        console.error('[Supabase] Erreur requête:', error.message);
         throw error;
     }
 }
 
 /**
- * Obtenir un client pour les transactions
+ * Obtenir un client (pour compatibilité)
  */
 export async function getClient() {
-    const client = await pool.connect();
-    return client;
+    return supabase;
 }
 
 /**
- * Fermer le pool de connexions
+ * Fermer le client (no-op pour Supabase)
  */
 export async function closePool() {
-    await pool.end();
+    // Pas nécessaire pour Supabase REST API
 }
 
 // =============================================================================
@@ -72,36 +75,46 @@ export const campaigns = {
     async getAll(options = {}) {
         const { limit = 50, offset = 0, status, category } = options;
 
-        let sql = 'SELECT * FROM campaigns WHERE 1=1';
-        const params = [];
-        let paramIndex = 1;
+        let query = supabase
+            .from('campaigns')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
 
         if (status) {
-            sql += ` AND status = $${paramIndex++}`;
-            params.push(status);
+            query = query.eq('status', status);
         }
 
         if (category) {
-            sql += ` AND category = $${paramIndex++}`;
-            params.push(category);
+            query = query.eq('category', category);
         }
 
-        sql += ` ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
-        params.push(limit, offset);
+        const { data, error } = await query;
 
-        const result = await query(sql, params);
-        return result.rows;
+        if (error) {
+            console.error('[Supabase] campaigns.getAll error:', error.message);
+            throw error;
+        }
+
+        return data || [];
     },
 
     /**
      * Récupérer une campagne par adresse
      */
     async getByAddress(address) {
-        const result = await query(
-            'SELECT * FROM campaigns WHERE address = $1',
-            [address.toLowerCase()]
-        );
-        return result.rows[0] || null;
+        const { data, error } = await supabase
+            .from('campaigns')
+            .select('*')
+            .eq('address', address.toLowerCase())
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            console.error('[Supabase] campaigns.getByAddress error:', error.message);
+            throw error;
+        }
+
+        return data || null;
     },
 
     /**
@@ -132,57 +145,56 @@ export const campaigns = {
             nft_sector,
         } = campaignData;
 
-        const sql = `
-      INSERT INTO campaigns (
-        address, creator, name, symbol, goal, raised, share_price,
-        shares_sold, total_shares, status, is_active, is_finalized,
-        end_date, metadata_uri, category, logo, current_round,
-        nft_background_color, nft_text_color, nft_logo_url, nft_sector,
-        updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-        $15, $16, $17, $18, $19, $20, $21, NOW()
-      )
-      ON CONFLICT (address) DO UPDATE SET
-        creator = EXCLUDED.creator,
-        name = EXCLUDED.name,
-        symbol = EXCLUDED.symbol,
-        goal = EXCLUDED.goal,
-        raised = EXCLUDED.raised,
-        share_price = EXCLUDED.share_price,
-        shares_sold = EXCLUDED.shares_sold,
-        total_shares = EXCLUDED.total_shares,
-        status = EXCLUDED.status,
-        is_active = EXCLUDED.is_active,
-        is_finalized = EXCLUDED.is_finalized,
-        end_date = EXCLUDED.end_date,
-        metadata_uri = EXCLUDED.metadata_uri,
-        category = EXCLUDED.category,
-        logo = EXCLUDED.logo,
-        current_round = EXCLUDED.current_round,
-        nft_background_color = EXCLUDED.nft_background_color,
-        nft_text_color = EXCLUDED.nft_text_color,
-        nft_logo_url = EXCLUDED.nft_logo_url,
-        nft_sector = EXCLUDED.nft_sector,
-        updated_at = NOW()
-      RETURNING *
-    `;
+        const { data, error } = await supabase
+            .from('campaigns')
+            .upsert({
+                address: address.toLowerCase(),
+                creator: creator?.toLowerCase(),
+                name,
+                symbol,
+                goal,
+                raised,
+                share_price,
+                shares_sold,
+                total_shares,
+                status,
+                is_active,
+                is_finalized,
+                end_date,
+                metadata_uri,
+                category,
+                logo,
+                current_round,
+                nft_background_color,
+                nft_text_color,
+                nft_logo_url,
+                nft_sector,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'address' })
+            .select()
+            .single();
 
-        const result = await query(sql, [
-            address.toLowerCase(), creator?.toLowerCase(), name, symbol, goal, raised,
-            share_price, shares_sold, total_shares, status, is_active, is_finalized,
-            end_date, metadata_uri, category, logo, current_round,
-            nft_background_color, nft_text_color, nft_logo_url, nft_sector
-        ]);
+        if (error) {
+            console.error('[Supabase] campaigns.upsert error:', error.message);
+            throw error;
+        }
 
-        return result.rows[0];
+        return data;
     },
 
     /**
      * Supprimer une campagne
      */
     async delete(address) {
-        await query('DELETE FROM campaigns WHERE address = $1', [address.toLowerCase()]);
+        const { error } = await supabase
+            .from('campaigns')
+            .delete()
+            .eq('address', address.toLowerCase());
+
+        if (error) {
+            console.error('[Supabase] campaigns.delete error:', error.message);
+            throw error;
+        }
     }
 };
 
@@ -197,14 +209,19 @@ export const transactions = {
     async getByCampaign(campaignAddress, options = {}) {
         const { limit = 100, offset = 0 } = options;
 
-        const result = await query(
-            `SELECT * FROM campaign_transactions 
-       WHERE campaign_address = $1 
-       ORDER BY timestamp DESC 
-       LIMIT $2 OFFSET $3`,
-            [campaignAddress.toLowerCase(), limit, offset]
-        );
-        return result.rows;
+        const { data, error } = await supabase
+            .from('campaign_transactions')
+            .select('*')
+            .eq('campaign_address', campaignAddress.toLowerCase())
+            .order('timestamp', { ascending: false })
+            .range(offset, offset + limit - 1);
+
+        if (error) {
+            console.error('[Supabase] transactions.getByCampaign error:', error.message);
+            throw error;
+        }
+
+        return data || [];
     },
 
     /**
@@ -225,22 +242,30 @@ export const transactions = {
             net_amount,
         } = txData;
 
-        const sql = `
-      INSERT INTO campaign_transactions (
-        tx_hash, campaign_address, investor, amount, shares,
-        round_number, type, block_number, timestamp, commission, net_amount
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      ON CONFLICT (tx_hash) DO NOTHING
-      RETURNING *
-    `;
+        const { data, error } = await supabase
+            .from('campaign_transactions')
+            .upsert({
+                tx_hash,
+                campaign_address: campaign_address.toLowerCase(),
+                investor: investor?.toLowerCase(),
+                amount,
+                shares,
+                round_number,
+                type,
+                block_number,
+                timestamp,
+                commission,
+                net_amount
+            }, { onConflict: 'tx_hash', ignoreDuplicates: true })
+            .select()
+            .single();
 
-        const result = await query(sql, [
-            tx_hash, campaign_address.toLowerCase(), investor?.toLowerCase(),
-            amount, shares, round_number, type, block_number, timestamp,
-            commission, net_amount
-        ]);
+        if (error && error.code !== 'PGRST116') {
+            console.error('[Supabase] transactions.insert error:', error.message);
+            throw error;
+        }
 
-        return result.rows[0];
+        return data;
     }
 };
 
@@ -253,28 +278,45 @@ export const promotions = {
      * Récupérer les promotions actives
      */
     async getActivePromotions(includeExpired = false) {
-        let sql = 'SELECT * FROM campaign_promotions WHERE 1=1';
-        if (!includeExpired) {
-            sql += ' AND is_active = true AND end_timestamp > NOW()';
-        }
-        sql += ' ORDER BY boost_type, created_at DESC';
+        let query = supabase
+            .from('campaign_promotions')
+            .select('*')
+            .order('boost_type')
+            .order('created_at', { ascending: false });
 
-        const result = await query(sql);
-        return result.rows;
+        if (!includeExpired) {
+            query = query
+                .eq('is_active', true)
+                .gt('end_timestamp', new Date().toISOString());
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('[Supabase] promotions.getActivePromotions error:', error.message);
+            throw error;
+        }
+
+        return data || [];
     },
 
     /**
      * Vérifier si une campagne est promue
      */
     async isCampaignBoosted(campaignAddress) {
-        const result = await query(
-            `SELECT * FROM campaign_promotions 
-       WHERE campaign_address = $1 
-       AND is_active = true 
-       AND end_timestamp > NOW()`,
-            [campaignAddress.toLowerCase()]
-        );
-        return result.rows.length > 0;
+        const { data, error } = await supabase
+            .from('campaign_promotions')
+            .select('*')
+            .eq('campaign_address', campaignAddress.toLowerCase())
+            .eq('is_active', true)
+            .gt('end_timestamp', new Date().toISOString());
+
+        if (error) {
+            console.error('[Supabase] promotions.isCampaignBoosted error:', error.message);
+            throw error;
+        }
+
+        return (data || []).length > 0;
     },
 
     /**
@@ -293,35 +335,46 @@ export const promotions = {
             block_number,
         } = promoData;
 
-        const sql = `
-      INSERT INTO campaign_promotions (
-        campaign_address, creator, boost_type, round_number, eth_amount,
-        start_timestamp, end_timestamp, is_active, tx_hash, block_number
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8, $9)
-      RETURNING *
-    `;
+        const { data, error } = await supabase
+            .from('campaign_promotions')
+            .insert({
+                campaign_address: campaign_address.toLowerCase(),
+                creator: creator?.toLowerCase(),
+                boost_type,
+                round_number,
+                eth_amount,
+                start_timestamp,
+                end_timestamp,
+                is_active: true,
+                tx_hash,
+                block_number
+            })
+            .select()
+            .single();
 
-        const result = await query(sql, [
-            campaign_address.toLowerCase(), creator?.toLowerCase(), boost_type,
-            round_number, eth_amount, start_timestamp, end_timestamp,
-            tx_hash, block_number
-        ]);
+        if (error) {
+            console.error('[Supabase] promotions.insert error:', error.message);
+            throw error;
+        }
 
-        return result.rows[0];
+        return data;
     },
 
     /**
      * Expirer une promotion
      */
     async expire(campaignAddress, roundNumber, boostType) {
-        await query(
-            `UPDATE campaign_promotions
-       SET is_active = false
-       WHERE campaign_address = $1
-       AND round_number = $2
-       AND boost_type = $3`,
-            [campaignAddress.toLowerCase(), roundNumber, boostType]
-        );
+        const { error } = await supabase
+            .from('campaign_promotions')
+            .update({ is_active: false })
+            .eq('campaign_address', campaignAddress.toLowerCase())
+            .eq('round_number', roundNumber)
+            .eq('boost_type', boostType);
+
+        if (error) {
+            console.error('[Supabase] promotions.expire error:', error.message);
+            throw error;
+        }
     }
 };
 
@@ -334,13 +387,18 @@ export const documents = {
      * Récupérer les documents d'une campagne
      */
     async getByCampaign(campaignAddress) {
-        const result = await query(
-            `SELECT * FROM campaign_documents 
-       WHERE campaign_address = $1 
-       ORDER BY created_at DESC`,
-            [campaignAddress.toLowerCase()]
-        );
-        return result.rows;
+        const { data, error } = await supabase
+            .from('campaign_documents')
+            .select('*')
+            .eq('campaign_address', campaignAddress.toLowerCase())
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('[Supabase] documents.getByCampaign error:', error.message);
+            throw error;
+        }
+
+        return data || [];
     },
 
     /**
@@ -349,18 +407,25 @@ export const documents = {
     async insert(docData) {
         const { campaign_address, ipfs_hash, name, category, is_public } = docData;
 
-        const sql = `
-      INSERT INTO campaign_documents (
-        campaign_address, ipfs_hash, name, category, is_public, created_at
-      ) VALUES ($1, $2, $3, $4, $5, NOW())
-      RETURNING *
-    `;
+        const { data, error } = await supabase
+            .from('campaign_documents')
+            .insert({
+                campaign_address: campaign_address.toLowerCase(),
+                ipfs_hash,
+                name,
+                category: category || 'other',
+                is_public: is_public ?? true,
+                created_at: new Date().toISOString()
+            })
+            .select()
+            .single();
 
-        const result = await query(sql, [
-            campaign_address.toLowerCase(), ipfs_hash, name, category || 'other', is_public ?? true
-        ]);
+        if (error) {
+            console.error('[Supabase] documents.insert error:', error.message);
+            throw error;
+        }
 
-        return result.rows[0];
+        return data;
     }
 };
 
@@ -370,22 +435,33 @@ export const documents = {
 
 export const syncState = {
     async get(id) {
-        const result = await query(
-            'SELECT * FROM sync_state WHERE id = $1',
-            [id]
-        );
-        return result.rows[0];
+        const { data, error } = await supabase
+            .from('sync_state')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            console.error('[Supabase] syncState.get error:', error.message);
+            throw error;
+        }
+
+        return data || null;
     },
 
     async upsert(id, lastBlock) {
-        await query(
-            `INSERT INTO sync_state (id, last_block, updated_at)
-       VALUES ($1, $2, NOW())
-       ON CONFLICT (id) DO UPDATE SET
-         last_block = EXCLUDED.last_block,
-         updated_at = NOW()`,
-            [id, lastBlock]
-        );
+        const { error } = await supabase
+            .from('sync_state')
+            .upsert({
+                id,
+                last_block: lastBlock,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+
+        if (error) {
+            console.error('[Supabase] syncState.upsert error:', error.message);
+            throw error;
+        }
     }
 };
 
