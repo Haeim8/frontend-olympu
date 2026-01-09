@@ -554,7 +554,7 @@ export default function CampaignModal({
 
     switch (currentStep) {
       case 1:
-        return <CampaignBasicInfo formData={formData} handleInputChange={handleInputChange} handleSelectChange={handleSelectChange} errors={errors} />;
+        return <CampaignBasicInfo formData={formData} onInputChange={handleInputChange} onSelectChange={handleSelectChange} error={errors} />;
       case 2:
         return <CampaignDocuments formData={formData} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} errors={errors} />;
       case 3:
