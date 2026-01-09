@@ -434,23 +434,34 @@ export default function CampaignModal({
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = await provider.getSigner();
 
-      // 2. Uploader les documents vers le serveur local (Remplace IPFS)
+      // 2. Uploader les documents vers Supabase Storage (compressés)
       const uploadedDocs = {};
+      const tempCampaignId = `temp_${Date.now()}_${address.substring(0, 8)}`;
+
       for (const [type, files] of Object.entries(formData.documents)) {
         uploadedDocs[type] = [];
         for (const file of files) {
           const uploadFd = new FormData();
           uploadFd.append('file', file);
+          uploadFd.append('category', type);
+          uploadFd.append('campaignAddress', tempCampaignId); // Temporaire avant déploiement
 
-          const res = await fetch('/api/upload', { method: 'POST', body: uploadFd });
+          const res = await fetch('/api/documents/upload', { method: 'POST', body: uploadFd });
           const uploadResult = await res.json();
 
           if (uploadResult.success) {
             uploadedDocs[type].push({
               name: file.name,
               url: uploadResult.url,
-              category: type
+              category: type,
+              originalSize: uploadResult.originalSize,
+              compressedSize: uploadResult.compressedSize,
+              compressionRatio: uploadResult.compressionRatio
             });
+            console.log(`[Upload] ${file.name}: ${uploadResult.compressionRatio} compression`);
+          } else {
+            console.error(`[Upload] Échec pour ${file.name}:`, uploadResult.error);
+            throw new Error(uploadResult.error || 'Upload échoué');
           }
         }
       }
@@ -473,10 +484,24 @@ export default function CampaignModal({
       const result = await apiManager.createCampaign(dataToSubmit, signer);
 
       if (result.success && result.address) {
-        // 5. Enregistrer chaque document individuellement dans la table campaign_documents pour PostgreSQL
+        // 5. Déplacer les documents vers le bon dossier avec l'adresse réelle
+        const realCampaignAddress = result.address.toLowerCase();
+
+        // Note: Les documents sont déjà uploadés dans Supabase avec un ID temporaire
+        // On met à jour juste la référence dans campaign_documents avec la vraie adresse
         for (const type in uploadedDocs) {
           for (const doc of uploadedDocs[type]) {
-            await apiManager.addDocument(result.address, doc.url, doc.name, doc.category);
+            // Enregistrer le document avec la vraie adresse de campagne
+            await fetch('/api/documents', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                campaignAddress: realCampaignAddress,
+                url: doc.url, // URL Supabase déjà uploadée
+                name: doc.name,
+                category: doc.category
+              })
+            });
           }
         }
 
