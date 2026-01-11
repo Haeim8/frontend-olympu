@@ -1,8 +1,8 @@
 const ogImage = {
-  url: 'https://www.livarhub.xyz/assets/miniapp-embed.png',
+  url: 'https://www.livarhub.xyz/og.png',
   width: 1200,
-  height: 800,
-  alt: 'Livar mini app preview',
+  height: 630,
+  alt: 'Livar - Decentralized Finance',
 };
 
 export const viewport = {
