@@ -1,9 +1,12 @@
 "use client";
 
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 
 // Contexte pour la gestion des langues
 export const LanguageContext = createContext();
+
+// Hook personnalisé pour utiliser le contexte de langue
+export const useLanguage = () => useContext(LanguageContext);
 
 // Traductions de base pour commencer
 const translations = {
