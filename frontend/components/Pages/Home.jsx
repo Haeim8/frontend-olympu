@@ -87,11 +87,21 @@ export default function Home({ toggleFavorite, isFavorite }) {
 
   const calculateStats = useCallback((campaigns) => {
     const list = Array.isArray(campaigns) ? campaigns : [];
+    const now = Date.now();
     const totalRaised = list.reduce((acc, campaign) => acc + parseFloat(campaign.raised || 0), 0);
+
     const stats = {
       total: list.length,
-      active: list.filter((campaign) => campaign.isActive && !campaign.isFinalized).length,
-      finalized: list.filter((campaign) => campaign.isFinalized).length,
+      active: list.filter((campaign) => {
+        const endDate = campaign.endDate ? new Date(campaign.endDate).getTime() : null;
+        const isExpired = endDate && endDate < now;
+        return campaign.isActive && !campaign.isFinalized && !isExpired;
+      }).length,
+      finalized: list.filter((campaign) => {
+        const endDate = campaign.endDate ? new Date(campaign.endDate).getTime() : null;
+        const isExpired = endDate && endDate < now;
+        return campaign.isFinalized || isExpired;
+      }).length,
       totalRaised,
     };
     setCampaignStats(stats);
@@ -100,9 +110,21 @@ export default function Home({ toggleFavorite, isFavorite }) {
 
   const applyFilters = useCallback((campaigns, currentFilters, includeFinalized) => {
     const list = Array.isArray(campaigns) ? campaigns : [];
-    let filtered = list.filter((project) =>
-      includeFinalized ? project.isFinalized : (!project.isFinalized && project.isActive)
-    );
+    const now = Date.now();
+
+    let filtered = list.filter((project) => {
+      const endDate = project.endDate ? new Date(project.endDate).getTime() : null;
+      const isExpired = endDate && endDate < now;
+      const isEnded = project.isFinalized || isExpired;
+
+      if (includeFinalized) {
+        // Onglet "finalisées": campagnes finalisées OU expirées
+        return isEnded;
+      } else {
+        // Onglet "en cours": campagnes actives ET non finalisées ET non expirées
+        return project.isActive && !project.isFinalized && !isExpired;
+      }
+    });
 
     if (currentFilters.search) {
       const searchTerm = currentFilters.search.toLowerCase();
