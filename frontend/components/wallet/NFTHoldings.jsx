@@ -42,7 +42,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
           </div>
           <div>
             <h4 className="font-bold text-foreground text-sm">
-              Token #{nft.id.split('-').pop()}
+              {t('wallet.nft.token', { id: nft.id.split('-').pop() }, `Token #${nft.id.split('-').pop()}`)}
             </h4>
             <p className="text-xs text-muted-foreground font-medium truncate max-w-[120px]">
               {nft.campaign}
@@ -50,7 +50,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
           </div>
         </div>
         <Badge variant="outline" className="bg-muted/50 border-border text-muted-foreground">
-          {nft.shares} shares
+          {t('wallet.nft.shares_count', { count: nft.shares }, `${nft.shares} shares`)}
         </Badge>
       </div>
 
@@ -79,7 +79,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
         {/* Progress bar for ROI */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">ROI Progress</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('wallet.nft.roi_progress', 'ROI Progress')}</span>
             <span className="text-xs font-bold text-primary">
               {progressPercentage.toFixed(1)}%
             </span>

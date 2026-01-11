@@ -88,32 +88,32 @@ function CampaignRow({ project, index, onViewDetails, promotion }) {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Status */}
-      <td className="py-4 px-4 w-12 text-center">
+      <td className="py-4 px-1 sm:px-4 w-8 sm:w-12 text-center">
         <div className="flex items-center justify-center">
           <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_8px] ${project.isActive ? 'bg-green-500 shadow-green-500/50 animate-pulse' : 'bg-muted-foreground/30'}`} />
         </div>
       </td>
 
       {/* Name & Badges */}
-      <td className="py-4 px-4">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center border border-primary/10">
-            <span className="font-bold text-primary text-xs">{project.name.substring(0, 2).toUpperCase()}</span>
+      <td className="py-4 px-1 sm:px-4 max-w-[120px] sm:max-w-none">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center border border-primary/10 flex-shrink-0">
+            <span className="font-bold text-primary text-[10px] sm:text-xs">{project.name.substring(0, 2).toUpperCase()}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-foreground text-base truncate group-hover:text-primary transition-colors duration-300">
+            <div className="flex items-center gap-1 sm:gap-2 mb-0.5 sm:mb-1">
+              <h3 className="font-bold text-foreground text-sm sm:text-base truncate group-hover:text-primary transition-colors duration-300">
                 {project.name}
               </h3>
               {project.isCertified && (
-                <Shield className="w-4 h-4 text-blue-500 flex-shrink-0 fill-current/20" />
+                <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0 fill-current/20" />
               )}
               {isHotProject && !promotion && (
-                <Flame className="w-4 h-4 text-orange-500 flex-shrink-0 animate-pulse fill-current/20" />
+                <Flame className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0 animate-pulse fill-current/20" />
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] font-bold bg-muted/50 border-border text-muted-foreground uppercase tracking-wider">
+            <div className="flex items-center gap-1 sm:gap-2 overflow-hidden">
+              <Badge variant="outline" className="text-[9px] sm:text-[10px] font-bold bg-muted/50 border-border text-muted-foreground uppercase tracking-wider px-1 py-0 truncate">
                 {project.sector}
               </Badge>
               {getPromotionBadge()}
@@ -389,10 +389,10 @@ export default function CampaignGrid({
           <table className="w-full">
             <thead className="bg-muted/30 border-b border-border">
               <tr>
-                <th className="py-4 px-4 w-12 text-center">
+                <th className="py-4 px-1 sm:px-4 w-8 sm:w-12 text-center">
                   <span className="sr-only">Status</span>
                 </th>
-                <th className="py-4 px-4 text-left">
+                <th className="py-4 px-1 sm:px-4 text-left">
                   <button className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors group">
                     {t('project', 'Projet')}
                     <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -410,7 +410,7 @@ export default function CampaignGrid({
                 <th className="py-4 px-4 text-left hidden lg:table-cell">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('landing.projects.timeRemaining', 'Temps restant')}</span>
                 </th>
-                <th className="py-4 px-4">
+                <th className="py-4 px-1 sm:px-4 w-12 sm:w-auto">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>

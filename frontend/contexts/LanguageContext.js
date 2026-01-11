@@ -429,6 +429,9 @@ const translations = {
     'wallet.nft.investment': 'Investissement',
     'wallet.nft.dividends': 'Dividendes',
     'wallet.nft.details': 'Détails',
+    'wallet.nft.shares_count': '{count} parts',
+    'wallet.nft.roi_progress': 'Progression ROI',
+    'wallet.nft.token': 'Jeton #{id}',
     'wallet.nft.totalValue': 'Valeur totale: {value} ETH • Dividendes: {dividends} ETH',
     'wallet.nft.search': 'Rechercher...',
     'wallet.nft.sortDate': 'Date',
@@ -2562,6 +2565,25 @@ const translations = {
     'transactionHistory.retry': 'Retry',
     'transactionHistory.refresh': 'Refresh data',
 
+    // Wallet NFT
+    'wallet.nft.title': 'Your Assets',
+    'wallet.nft.shares': 'shares',
+    'wallet.nft.investment': 'Investment',
+    'wallet.nft.dividends': 'Dividends',
+    'wallet.nft.details': 'Details',
+    'wallet.nft.totalValue': 'Total Value: {value} ETH • Dividends: {dividends} ETH',
+    'wallet.nft.search': 'Search...',
+    'wallet.nft.sortDate': 'Date',
+    'wallet.nft.sortAmount': 'Amount',
+    'wallet.nft.sortDividends': 'Dividends',
+    'wallet.nft.noResults': 'No NFTs found',
+    'wallet.nft.noNFTs': 'Empty Wallet',
+    'wallet.nft.trySearch': 'Try modifying your search',
+    'wallet.nft.startInvesting': 'You have no assets yet. Explore campaigns to start.',
+    'wallet.nft.roi_progress': 'ROI Progress',
+    'wallet.nft.shares_count': '{{count}} shares',
+    'wallet.nft.token': 'Token #{{id}}',
+
     // Wallet Transaction History
     'wallet.transaction.title': 'Transaction History',
     'wallet.transaction.campaign': 'Campaign',
@@ -3093,6 +3115,11 @@ const translations = {
     'wallet.stats.dividends': 'Dividendos recibidos',
     'wallet.stats.startInvesting': '¡Comience a invertir!',
     'wallet.stats.noInvestmentsYet': 'Aún no tiene inversiones. Descubra proyectos disponibles para comenzar.',
+    'wallet.nft.noNFTs': 'Billetera vacía',
+    'wallet.nftDetails.details': 'Detalles',
+    'wallet.nft.roi_progress': 'Progreso ROI',
+    'wallet.nft.shares_count': '{{count}} participaciones',
+    'wallet.nft.token': 'Ficha #{{id}}',
 
     // Wallet NFT
     'wallet.nft.title': 'Sus NFTs',

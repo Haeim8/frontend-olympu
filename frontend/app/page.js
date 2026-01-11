@@ -1,14 +1,21 @@
 //frontend/app/page.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import Home from '@/components/landing';
 import AppInterface from '@/components/app-interface';
 
 export default function Page() {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
   const [showInterface, setShowInterface] = useState(false);
+
+  // Check existing connection on mount
+  useEffect(() => {
+    if (isConnected && address) {
+      setShowInterface(true);
+    }
+  }, [isConnected, address]);
 
   // Pas de loading screen, afficher directement la landing
 
