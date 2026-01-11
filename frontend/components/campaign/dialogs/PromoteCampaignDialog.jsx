@@ -10,7 +10,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useLanguage';
+import { useWalletClient } from 'wagmi';
+import { ethers } from 'ethers';
 import { Megaphone, Target, Calendar, DollarSign, Users, TrendingUp, Zap } from 'lucide-react';
+import { apiManager } from '@/lib/services/api-manager';
+
+// Convertir WalletClient de wagmi en ethers Signer
+function walletClientToSigner(walletClient) {
+  const { account, chain, transport } = walletClient;
+  const network = {
+    chainId: chain.id,
+    name: chain.name,
+    ensAddress: chain.contracts?.ensRegistry?.address,
+  };
+  const provider = new ethers.providers.Web3Provider(transport, network);
+  return provider.getSigner(account.address);
+}
+
+// Mapping des types de boost vers les indices du contrat
+const BOOST_TYPES = {
+  'boost': 0,      // Featured
+  'premium': 1,    // Trending
+  'ultimate': 2    // Spotlight
+};
 
 export default function PromoteCampaignDialog({
   isOpen,
@@ -20,6 +42,7 @@ export default function PromoteCampaignDialog({
   onSuccess
 }) {
   const { t } = useTranslation();
+  const { data: walletClient } = useWalletClient();
   const [promotionForm, setPromotionForm] = useState({
     type: 'boost',
     budget: '',
@@ -30,12 +53,13 @@ export default function PromoteCampaignDialog({
   });
   const [isPromoting, setIsPromoting] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [error, setError] = useState(null);
 
   const promotionPackages = [
     {
       id: 'boost',
       name: t('promote.boost.name'),
-      price: '0.1',
+      price: '~0.001', // Prix dynamique depuis le contrat
       duration: t('promote.boost.duration'),
       features: [
         t('promote.boost.feature1'),
@@ -50,7 +74,7 @@ export default function PromoteCampaignDialog({
     {
       id: 'premium',
       name: t('promote.premium.name'),
-      price: '0.25',
+      price: '~0.003',
       duration: t('promote.premium.duration'),
       features: [
         t('promote.premium.feature1'),
@@ -66,7 +90,7 @@ export default function PromoteCampaignDialog({
     {
       id: 'ultimate',
       name: t('promote.ultimate.name'),
-      price: '0.5',
+      price: '~0.005',
       duration: t('promote.ultimate.duration'),
       features: [
         t('promote.ultimate.feature1'),
@@ -101,14 +125,28 @@ export default function PromoteCampaignDialog({
       budget: packageData.price,
       duration: packageData.duration.split(' ')[0]
     }));
+    setError(null);
   };
 
   const handlePromoteCampaign = async () => {
+    if (!walletClient) {
+      setError(t('promote.walletNotConnected', 'Portefeuille non connecté'));
+      return;
+    }
+
+    if (!selectedPackage) {
+      setError(t('promote.selectPackage', 'Sélectionnez un package'));
+      return;
+    }
+
     setIsPromoting(true);
+    setError(null);
 
     try {
-      // Simulation de l'API call pour promouvoir la campagne
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const signer = walletClientToSigner(walletClient);
+      const boostType = BOOST_TYPES[selectedPackage.id] ?? 0;
+
+      await apiManager.promoteCampaign(campaignAddress, boostType, signer);
 
       if (onSuccess) {
         onSuccess(promotionForm);
@@ -119,7 +157,7 @@ export default function PromoteCampaignDialog({
 
     } catch (error) {
       console.error("Erreur lors de la promotion:", error);
-      alert(t('promote.error'));
+      setError(error.message || t('promote.error'));
     } finally {
       setIsPromoting(false);
     }
@@ -193,9 +231,8 @@ export default function PromoteCampaignDialog({
                 return (
                   <Card
                     key={pkg.id}
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                      isSelected ? 'ring-2 ring-lime-500 shadow-lg' : ''
-                    } ${colors.bg} ${colors.border}`}
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${isSelected ? 'ring-2 ring-lime-500 shadow-lg' : ''
+                      } ${colors.bg} ${colors.border}`}
                     onClick={() => handlePackageSelect(pkg)}
                   >
                     <CardContent className="p-4">

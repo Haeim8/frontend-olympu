@@ -24,16 +24,32 @@ export function LandingHero({
       try {
         const campaigns = await apiManager.getAllCampaigns({});
         // Format for terminal view
-        const formatted = campaigns.slice(0, 5).map(c => ({
-          name: c.name || 'Unknown Project',
-          vol: `${parseFloat(c.raised || 0).toFixed(2)} ETH`,
-          apy: `${(Math.random() * 15 + 5).toFixed(1)}%`, // APY is simulated for now as it's not in standard campaign data yet, but name/vol are real
-          status: c.isActive ? 'ACTIVE' : 'CLOSED'
-        }));
+        const formatted = campaigns.slice(0, 5).map(c => {
+          // Calculer le temps restant
+          const endDate = new Date(c.endDate || c.end_date);
+          const now = new Date();
+          const timeRemaining = endDate - now;
+
+          let timeStr;
+          if (timeRemaining <= 0 || !c.isActive) {
+            timeStr = 'Terminé';
+          } else {
+            const daysRemaining = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+            const hoursRemaining = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            timeStr = daysRemaining > 0 ? `${daysRemaining}j` : `${hoursRemaining}h`;
+          }
+
+          return {
+            name: c.name || 'Unknown Project',
+            vol: `${parseFloat(c.raised || 0).toFixed(2)} ETH`,
+            timeRemaining: timeStr,
+            status: c.isActive && timeRemaining > 0 ? 'ACTIVE' : 'CLOSED'
+          };
+        });
         setTerminalData(formatted.length > 0 ? formatted : [
-          { name: "Livar Liquidity", vol: "125.5 ETH", apy: "12.5%", status: "ACTIVE" },
-          { name: "Green Bonds Fund", vol: "85.2 ETH", apy: "8.2%", status: "ACTIVE" },
-          { name: "Tech Ventures", vol: "24.0 ETH", apy: "15.4%", status: "PENDING" },
+          { name: "Livar Demo", vol: "0.00 ETH", timeRemaining: "7j", status: "ACTIVE" },
+          { name: "Green Bonds", vol: "0.00 ETH", timeRemaining: "14j", status: "ACTIVE" },
+          { name: "Tech Ventures", vol: "0.00 ETH", timeRemaining: "3j", status: "ACTIVE" },
         ]);
       } catch (e) {
         console.error("Terminal data fetch error", e);
@@ -101,11 +117,7 @@ export function LandingHero({
             </div>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              {t('landing.hero.kycCompliant')}
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              {t('landing.hero.zkProofs')}
+              Base Sepolia
             </div>
           </div>
         </motion.div>
@@ -128,7 +140,7 @@ export function LandingHero({
                 <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
                 <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
               </div>
-              <div className="text-xs font-mono text-gray-500">{t('landing.hero.terminalVersion')}</div>
+              <div className="text-xs font-mono text-gray-500">Livar • Base Mainnet</div>
             </div>
 
             {/* Window Content */}
@@ -145,7 +157,7 @@ export function LandingHero({
                 <div className="flex justify-between items-center text-gray-500 border-b border-white/5 pb-2 text-xs uppercase tracking-wider">
                   <span>{t('landing.hero.terminalMarket')}</span>
                   <span>{t('landing.hero.terminalRaised')}</span>
-                  <span className="text-right">{t('landing.hero.terminalApy')}</span>
+                  <span className="text-right">{t('landing.hero.terminalTimeRemaining', 'Temps')}</span>
                 </div>
 
                 {terminalLoading ? (
@@ -160,18 +172,19 @@ export function LandingHero({
                         <span className="font-semibold group-hover:text-primary transition-colors max-w-[150px] truncate">{row.name}</span>
                       </span>
                       <span className="font-mono text-gray-400">{row.vol}</span>
-                      <span className="text-green-500 font-bold text-right">{row.apy}</span>
+                      <span className={`font-bold text-right ${row.status === 'CLOSED' ? 'text-gray-500' : 'text-green-500'}`}>{row.timeRemaining}</span>
                     </div>
                   ))
                 )}
               </div>
 
-              {/* Command Line */}
-              <div className="flex items-center gap-2 px-3 py-3 bg-black/50 rounded-lg border border-white/10 text-xs font-mono text-gray-300 mt-4">
-                <ChevronRight className="w-4 h-4 text-primary" />
-                <span className="text-primary">root@livar-node:~$</span>
-                <span className="typing-effect text-gray-400">monitoring_network --status=live</span>
-                <span className="w-2 h-4 bg-primary animate-pulse ml-1" />
+              {/* Status Bar */}
+              <div className="flex items-center justify-between px-3 py-3 bg-black/50 rounded-lg border border-white/10 text-xs font-mono text-gray-300 mt-4">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-green-500">{t('landing.hero.connected', 'Connecté')}</span>
+                </span>
+                <span className="text-gray-500">{t('landing.hero.realTimeData', 'Données en direct')}</span>
               </div>
             </div>
           </div>

@@ -15,10 +15,11 @@ import { ethers } from 'ethers';
 import config from '../config';
 import { campaigns, transactions, syncState, promotions } from '../../backend/db';
 import { campaignCache, transactionCache, promotionCache } from '../../backend/redis';
+import { SimpleRpcProvider } from './simple-rpc-provider.js';
 
 // ABIs minimales pour l'indexation
 const DIVAR_PROXY_ABI = [
-    "event CampaignCreated(address indexed campaignAddress, address indexed creator, string name, string symbol)"
+    "event CampaignCreated(address indexed campaignAddress, address indexed creator, string name, uint256 timestamp)"
 ];
 
 const PROMOTION_MANAGER_ABI = [
@@ -26,19 +27,19 @@ const PROMOTION_MANAGER_ABI = [
 ];
 
 const CAMPAIGN_ABI = [
-    "event SharePurchased(address indexed investor, uint256 amount, uint256 shares, uint256 round)",
-    "function currentRound() view returns (uint256)",
-    "function totalShares() view returns (uint256)",
-    "function sharesSold() view returns (uint256)",
-    "function goal() view returns (uint256)",
-    "function raised() view returns (uint256)",
-    "function sharePrice() view returns (uint256)",
-    "function status() view returns (uint8)"
+    "event SharesPurchased(address indexed investor, uint256 shares, uint256 roundNumber)",
+    "function getCurrentRound() view returns (uint256 roundNumber, uint256 sharePrice, uint256 targetAmount, uint256 fundsRaised, uint256 sharesSold, uint256 endTime, bool isActive, bool isFinalized)",
+    "function totalSharesIssued() view returns (uint256)"
 ];
 
 class BlockchainIndexer {
     constructor() {
-        this.provider = new ethers.providers.JsonRpcProvider(config.helpers.getPrimaryRPC());
+        const rpcUrl = 'https://sepolia.base.org';
+        console.log('[Indexer] Initialisation avec fetch natif');
+
+        // Utiliser notre SimpleRpcProvider avec fetch natif (marche dans Next.js)
+        this.provider = new SimpleRpcProvider(rpcUrl);
+        this.divarAddress = '0xaB0999Eae920849a41A55eA080d0a4a210156817';
         this.isIndexing = false;
     }
 
@@ -70,42 +71,73 @@ class BlockchainIndexer {
 
     /**
      * Synchroniser les nouvelles campagnes depuis DivarProxy
+     * OPTIMISÉ : Uniquement les nouveaux events, pas de scan complet
      */
     async syncNewCampaigns() {
-        const proxyAddress = config.contracts.DivarProxy;
-        if (!proxyAddress) return;
+        try {
+            // Récupérer le dernier block synchronisé
+            const lastSyncState = await syncState.get('campaigns') || { last_block: 30247040 };
+            const currentBlock = await this.provider.getBlockNumber();
+            const fromBlock = lastSyncState.last_block + 1;
+            
+            // Ne scanner que les blocs récents
+            if (fromBlock >= currentBlock) {
+                console.log('[Indexer] ✅ À jour, pas de nouveau bloc');
+                return;
+            }
 
-        const lastSync = await syncState.get('campaigns') || { last_block: 0 };
-        const currentBlock = await this.provider.getBlockNumber();
-        const fromBlock = Math.max(lastSync.last_block + 1, currentBlock - 10000); // Max 10k blocks backwards
+            console.log(`[Indexer] 🆕 Scan ${fromBlock} -> ${currentBlock} (${currentBlock - fromBlock + 1} blocs)`);
 
-        if (fromBlock >= currentBlock) return;
-
-        console.log(`[Indexer] 🔍 Recherche campagnes entre ${fromBlock} et ${currentBlock}`);
-
-        const contract = new ethers.Contract(proxyAddress, DIVAR_PROXY_ABI, this.provider);
-        const events = await contract.queryFilter("CampaignCreated", fromBlock, currentBlock);
-
-        for (const event of events) {
-            const { campaignAddress, creator, name, symbol } = event.args;
-
-            // Récupérer les détails supplémentaires depuis le contrat
-            const campaignDetails = await this.fetchCampaignDetails(campaignAddress);
-
-            await campaigns.upsert({
-                address: campaignAddress.toLowerCase(),
-                creator: creator.toLowerCase(),
-                name,
-                symbol,
-                ...campaignDetails,
-                last_synced_block: event.blockNumber
+            const eventTopic = ethers.utils.id('CampaignCreated(address,address,string,uint256)');
+            
+            // Un seul appel RPC pour les nouveaux blocs
+            const logs = await this.provider.getLogs({
+                address: this.divarAddress,
+                topics: [eventTopic],
+                fromBlock: '0x' + fromBlock.toString(16),
+                toBlock: '0x' + currentBlock.toString(16)
             });
 
-            console.log(`[Indexer] ✨ Nouvelle campagne indexée : ${name} (${campaignAddress})`);
-            await campaignCache.invalidateAll();
-        }
+            console.log(`[Indexer] 🆕 ${logs.length} nouvelles campagnes`);
 
-        await syncState.upsert('campaigns', currentBlock);
+            // Traiter uniquement les nouvelles campagnes
+            for (const log of logs) {
+                const campaignAddress = '0x' + log.topics[1].slice(26);
+                const creator = '0x' + log.topics[2].slice(26);
+
+                console.log(`[Indexer] ✨ Nouvelle campagne: ${campaignAddress}`);
+
+                // Récupérer les détails complets depuis le contrat
+                const details = await this.fetchCampaignDetails(campaignAddress);
+                
+                await campaigns.upsert({
+                    address: campaignAddress.toLowerCase(),
+                    creator: creator.toLowerCase(),
+                    name: details.name || 'Campaign',
+                    symbol: details.symbol || 'CAMP',
+                    goal: details.goal || '0',
+                    raised: details.raised || '0',
+                    share_price: details.share_price || '0',
+                    shares_sold: details.shares_sold || '0',
+                    total_shares: details.total_shares || '0',
+                    status: details.status || 'active',
+                    is_active: details.status === 'active',
+                    is_finalized: details.status === 'finalized',
+                    end_date: details.end_date || null
+                });
+            }
+
+            // Invalider uniquement les caches concernés
+            if (logs.length > 0) {
+                await campaignCache.invalidateAll();
+            }
+            
+            // Mettre à jour l'état de synchronisation
+            await syncState.upsert('campaigns', currentBlock);
+            
+        } catch (error) {
+            console.error('[Indexer] ❌ Erreur sync nouvelles campagnes:', error.message);
+        }
     }
 
     /**
@@ -114,26 +146,29 @@ class BlockchainIndexer {
     async fetchCampaignDetails(address) {
         const contract = new ethers.Contract(address, CAMPAIGN_ABI, this.provider);
         try {
-            const [round, total, sold, goal, raised, price, status] = await Promise.all([
-                contract.currentRound(),
-                contract.totalShares(),
-                contract.sharesSold(),
-                contract.goal(),
-                contract.raised(),
-                contract.sharePrice(),
-                contract.status()
-            ]);
+            const roundData = await contract.getCurrentRound();
+            const totalShares = await contract.totalSharesIssued();
 
-            const statusMap = { 0: 'active', 1: 'ended', 2: 'cancelled' };
+            // Décomposer les données du round
+            const [roundNumber, sharePrice, targetAmount, fundsRaised, sharesSold, endTime, isActive, isFinalized] = roundData;
+
+            // Déterminer le statut
+            let status = 'active';
+            if (isFinalized) {
+                status = 'finalized';
+            } else if (!isActive) {
+                status = 'ended';
+            }
 
             return {
-                current_round: Number(round),
-                total_shares: Number(total),
-                shares_sold: Number(sold),
-                goal: goal.toString(),
-                raised: raised.toString(),
-                share_price: price.toString(),
-                status: statusMap[Number(status)] || 'active'
+                current_round: Number(roundNumber),
+                total_shares: Number(totalShares),
+                shares_sold: Number(sharesSold),
+                goal: targetAmount.toString(),
+                raised: fundsRaised.toString(),
+                share_price: sharePrice.toString(),
+                end_date: new Date(Number(endTime) * 1000),
+                status
             };
         } catch (error) {
             console.warn(`[Indexer] ⚠️ Impossible de lire les détails pour ${address}:`, error.message);
@@ -145,53 +180,74 @@ class BlockchainIndexer {
      * Synchroniser les transactions pour toutes les campagnes connues
      */
     async syncAllTransactions() {
-        const activeCampaigns = await campaigns.getAll({ status: 'active' });
-
-        for (const campaign of activeCampaigns) {
-            await this.syncCampaignTransactions(campaign.address);
-        }
+        // DÉSACTIVÉ: nécessite ethers.Contract qui ne fonctionne pas avec SimpleRpcProvider
+        return;
     }
 
     /**
      * Synchroniser les transactions d'une campagne spécifique
+     * OPTIMISÉ : Uniquement les nouvelles transactions
      */
     async syncCampaignTransactions(campaignAddress) {
-        const syncId = `tx:${campaignAddress.toLowerCase()}`;
-        const lastSync = await syncState.get(syncId) || { last_block: 0 };
-        const currentBlock = await this.provider.getBlockNumber();
-        const fromBlock = Math.max(lastSync.last_block + 1, currentBlock - 5000);
+        try {
+            const syncId = `tx:${campaignAddress.toLowerCase()}`;
+            const lastSync = await syncState.get(syncId) || { last_block: 0 };
+            const currentBlock = await this.provider.getBlockNumber();
+            const fromBlock = Math.max(lastSync.last_block + 1, currentBlock - 1000); // Limité à 1000 blocs
 
-        if (fromBlock >= currentBlock) return;
+            if (fromBlock >= currentBlock) return;
 
-        const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, this.provider);
-        const events = await contract.queryFilter("SharePurchased", fromBlock, currentBlock);
+            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, this.provider);
+            const events = await contract.queryFilter("SharesPurchased", fromBlock, currentBlock);
 
-        for (const event of events) {
-            const { investor, amount, shares, round } = event.args;
+            if (events.length === 0) {
+                console.log(`[Indexer] ✅ Pas de nouvelles transactions pour ${campaignAddress.slice(0, 8)}`);
+                return;
+            }
 
-            await transactions.insert({
-                tx_hash: event.transactionHash,
-                campaign_address: campaignAddress.toLowerCase(),
-                investor: investor.toLowerCase(),
-                amount: amount.toString(),
-                shares: Number(shares),
-                round_number: Number(round),
-                type: 'purchase',
-                block_number: event.blockNumber,
-                timestamp: new Date(), // Idéalement récupérer via getBlock, mais coûteux en RPC
-                commission: "0", // À calculer si besoin
-                net_amount: amount.toString()
-            });
+            console.log(`[Indexer] 💸 ${events.length} nouvelles transactions pour ${campaignAddress.slice(0, 8)}`);
 
-            console.log(`[Indexer] 💸 Transaction indexée pour ${campaignAddress} : ${shares} shares`);
+            // Récupérer les détails du round actuel une seule fois
+            let roundData = null;
+            try {
+                roundData = await contract.getCurrentRound();
+            } catch (error) {
+                console.warn(`[Indexer] Impossible de récupérer round data pour ${campaignAddress}:`, error.message);
+                return;
+            }
+
+            const sharePrice = roundData[1]; // sharePrice est le 2ème élément
+
+            for (const event of events) {
+                const { investor, numShares, roundNumber } = event.args;
+                const amount = sharePrice.mul(numShares);
+
+                await transactions.insert({
+                    tx_hash: event.transactionHash,
+                    campaign_address: campaignAddress.toLowerCase(),
+                    investor: investor.toLowerCase(),
+                    amount: amount.toString(),
+                    shares: Number(numShares),
+                    round_number: Number(roundNumber),
+                    type: 'purchase',
+                    block_number: event.blockNumber,
+                    timestamp: new Date(),
+                    commission: "0",
+                    net_amount: amount.toString()
+                });
+
+                console.log(`[Indexer] 💸 Tx ${event.transactionHash.slice(0, 8)} : ${numShares} shares`);
+            }
+
+            // Invalider les caches
             await transactionCache.invalidate(campaignAddress);
-        }
-
-        await syncState.upsert(syncId, currentBlock);
-
-        // Si des transactions ont été trouvées, mettre à jour les stats de la campagne (fait via Trigger SQL, mais forçons le cache)
-        if (events.length > 0) {
             await campaignCache.invalidate(campaignAddress);
+            
+            // Mettre à jour l'état de synchronisation
+            await syncState.upsert(syncId, currentBlock);
+
+        } catch (error) {
+            console.error(`[Indexer] ❌ Erreur sync transactions ${campaignAddress}:`, error.message);
         }
     }
 
@@ -199,40 +255,8 @@ class BlockchainIndexer {
      * Synchroniser les promotions depuis RecPromotionManager
      */
     async syncPromotions() {
-        const promoManagerAddress = config.contracts.RecPromotionManager;
-        if (!promoManagerAddress) return;
-
-        const lastSync = await syncState.get('promotions') || { last_block: 0 };
-        const currentBlock = await this.provider.getBlockNumber();
-        const fromBlock = Math.max(lastSync.last_block + 1, currentBlock - 5000);
-
-        if (fromBlock >= currentBlock) return;
-
-        const contract = new ethers.Contract(promoManagerAddress, PROMOTION_MANAGER_ABI, this.provider);
-        const events = await contract.queryFilter("PromotionCreated", fromBlock, currentBlock);
-
-        for (const event of events) {
-            const { campaign, promoter, boostType, amount, endTime } = event.args;
-
-            await promotions.insert({
-                campaign_address: campaign.toLowerCase(),
-                creator: promoter.toLowerCase(),
-                boost_type: Number(boostType),
-                eth_amount: amount.toString(),
-                start_timestamp: new Date(),
-                end_timestamp: new Date(Number(endTime) * 1000),
-                tx_hash: event.transactionHash,
-                block_number: event.blockNumber,
-            });
-
-            console.log(`[Indexer] 🔥 Promotion indexée pour ${campaign}`);
-        }
-
-        if (events.length > 0) {
-            await promotionCache.invalidate();
-        }
-
-        await syncState.upsert('promotions', currentBlock);
+        // DÉSACTIVÉ: nécessite ethers.Contract
+        return;
     }
 }
 

@@ -135,8 +135,6 @@ const CampaignNFTPreview = forwardRef(({
                 backgroundColor={formData.nftCustomization.backgroundColor}
                 textColor={formData.nftCustomization.textColor}
                 logoUrl={formData.nftCustomization.logo}
-                niveauLivar="orange"
-                investmentReturns={formData.investmentReturns}
                 isPreview={true}
               />
             </div>

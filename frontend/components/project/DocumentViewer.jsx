@@ -129,7 +129,7 @@ export default function DocumentViewer({ document, isOpen, onClose }) {
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="h-12 w-12 text-lime-600 animate-spin" />
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('documentViewer.loadingPdf') || 'Chargement du PDF depuis IPFS...'}
+                    {t('documentViewer.loadingPdf') || 'Chargement du PDF...'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-500">
                     {t('documentViewer.loadingPdfHint') || 'Cela peut prendre quelques secondes'}

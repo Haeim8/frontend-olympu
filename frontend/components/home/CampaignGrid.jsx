@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiManager } from '@/lib/services/api-manager';
+import { formatSmallNumber } from '@/lib/utils/formatNumber';
 import { useTranslation } from '@/hooks/useLanguage';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -124,7 +125,7 @@ function CampaignRow({ project, index, onViewDetails, promotion }) {
       {/* Price */}
       <td className="py-4 px-4 text-right hidden sm:table-cell">
         <div className="font-bold text-foreground font-mono tabular-nums">
-          {parseFloat(project.sharePrice).toFixed(3)} <span className="text-muted-foreground">Ξ</span>
+          {formatSmallNumber(project.sharePrice)} <span className="text-muted-foreground">Ξ</span>
         </div>
         <div className="text-[10px] uppercase font-semibold text-muted-foreground">{t('projectOverview.stats.perShare', 'par part')}</div>
       </td>
@@ -133,7 +134,7 @@ function CampaignRow({ project, index, onViewDetails, promotion }) {
       <td className="py-4 px-4 hidden md:table-cell">
         <div className="w-36">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="font-bold text-foreground tabular-nums">{parseFloat(project.raised).toFixed(2)} Ξ</span>
+            <span className="font-bold text-foreground tabular-nums">{formatSmallNumber(project.raised)} Ξ</span>
             <span className={`font-mono font-bold ${isComplete ? 'text-green-500' : 'text-primary'}`}>{progressPercentage.toFixed(0)}%</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -315,11 +316,11 @@ export default function CampaignGrid({
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <th className="py-4 px-4 w-12"></th>
-              <th className="py-4 px-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Projet</th>
-              <th className="py-4 px-4 text-right text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Prix</th>
-              <th className="py-4 px-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Progression</th>
-              <th className="py-4 px-4 text-center text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Investisseurs</th>
-              <th className="py-4 px-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Temps</th>
+              <th className="py-4 px-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('campaignGrid.project', 'Projet')}</th>
+              <th className="py-4 px-4 text-right text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">{t('campaignGrid.price', 'Prix')}</th>
+              <th className="py-4 px-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">{t('campaignGrid.progress', 'Progression')}</th>
+              <th className="py-4 px-4 text-center text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">{t('campaignGrid.investors', 'Investisseurs')}</th>
+              <th className="py-4 px-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">{t('campaignGrid.time', 'Temps')}</th>
               <th className="py-4 px-4"></th>
             </tr>
           </thead>

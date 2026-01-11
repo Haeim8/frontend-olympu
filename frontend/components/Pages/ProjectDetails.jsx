@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiManager } from '@/lib/services/api-manager';
 import { useTranslation } from '@/hooks/useLanguage';
+import { useCampaignDocuments } from '@/hooks/useCampaignDocuments';
 import { motion } from 'framer-motion';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import {
@@ -25,11 +26,11 @@ const DEFAULT_PROJECT = {
   isFinalized: false,
 };
 
-export default function ProjectDetails({ selectedProject, onClose }) {
+export default function ProjectDetails({ selectedProject, onClose, toggleFavorite, isFavorite }) {
   const { t } = useTranslation();
   const project = { ...DEFAULT_PROJECT, ...selectedProject };
   const [showProjectDetails, setShowProjectDetails] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const isFav = isFavorite ? isFavorite(project.address || project.id) : false;
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [projectData, setProjectData] = useState({ ipfs: null });
@@ -37,6 +38,9 @@ export default function ProjectDetails({ selectedProject, onClose }) {
   const [shareCount, setShareCount] = useState(1);
   const [copied, setCopied] = useState(false);
   const [userAddress, setUserAddress] = useState(null);
+
+  // Charger les documents depuis Supabase
+  const { documents: campaignDocuments } = useCampaignDocuments(project?.id || project?.address);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -57,8 +61,8 @@ export default function ProjectDetails({ selectedProject, onClose }) {
         fetch(`/api/campaigns/${project.id}/transactions`).then(r => r.json()).catch(() => ({ transactions: [] }))
       ]);
       if (projectDetails) {
-        setProjectData({ ...projectDetails, ipfs: null });
-        // IPFS metadata fetching removed - all data now comes from PostgreSQL
+        setProjectData(projectDetails);
+        // Metadata comes from blockchain or Supabase
       }
       if (txData?.transactions) setTransactions(txData.transactions);
     } catch (err) { console.error('Error:', err); }
@@ -186,8 +190,8 @@ export default function ProjectDetails({ selectedProject, onClose }) {
 
             {/* Actions */}
             <div className="flex items-center gap-1 flex-shrink-0">
-              <Button variant="ghost" size="icon" onClick={() => setIsFavorite(!isFavorite)} className="w-8 h-8 rounded-lg hover:bg-neutral-800">
-                <Star className={`w-4 h-4 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-neutral-500'}`} />
+              <Button variant="ghost" size="icon" onClick={() => toggleFavorite && toggleFavorite(project.address || project.id)} className="w-8 h-8 rounded-lg hover:bg-neutral-800">
+                <Star className={`w-4 h-4 ${isFav ? 'fill-yellow-400 text-yellow-400' : 'text-neutral-500'}`} />
               </Button>
               <Button variant="ghost" size="icon" onClick={() => navigator.clipboard.writeText(window.location.href)} className="w-8 h-8 rounded-lg hover:bg-neutral-800">
                 <Share2 className="w-4 h-4 text-neutral-500" />
@@ -268,6 +272,24 @@ export default function ProjectDetails({ selectedProject, onClose }) {
                     {projectData.description || project.description || t('projectDetails.noDescription')}
                   </p>
                 </div>
+
+                {/* Documents */}
+                {campaignDocuments && campaignDocuments.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">{t('projectDetails.documents', 'Documents')}</h3>
+                    <div className="space-y-2">
+                      {campaignDocuments.map((doc) => (
+                        <a key={doc.id} href={doc.url || doc.ipfs_hash} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-sm">
+                          <FileText className="w-4 h-4" />
+                          <span className="flex-1">{doc.name}</span>
+                          <Badge className="text-xs">{doc.category}</Badge>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Links */}
                 {(projectData.socials || projectData.ipfs?.socials) && (

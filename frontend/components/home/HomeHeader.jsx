@@ -50,7 +50,7 @@ export default function HomeHeader({
             {t('dashboard.title', 'Tableau de bord')}
             <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary),0.2)]">
               <span className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
-              Live Market
+              {t('dashboard.liveMarket', 'Live Market')}
             </Badge>
           </h1>
           <p className="text-muted-foreground mt-1 font-medium">

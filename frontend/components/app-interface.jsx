@@ -57,23 +57,21 @@ export default function AppInterface() {
 
     try {
       const allCampaigns = await apiManager.getAllCampaigns();
-      const campaignsData = [];
 
-      // Récupérer les données une par une
-      for (const address of allCampaigns) {
-        const campaignData = await apiManager.getCampaignData(address);
-        if (campaignData) {
-          // Ajouter l'id qui correspond à l'adresse pour les favoris
-          campaignData.id = address;
-          campaignsData.push(campaignData);
-        }
-      }
+      // getAllCampaigns retourne déjà les données complètes, pas besoin de reboucler
+      const campaignsData = allCampaigns.map(campaign => ({
+        ...campaign,
+        id: campaign.address // Ajouter l'id pour les favoris
+      }));
 
       // Filtrer les campagnes de l'utilisateur
       const normalizedAddress = address?.toLowerCase?.() ?? '';
       const userOwnedCampaigns = campaignsData.filter(
         (campaign) => normalizedAddress && campaign.creator?.toLowerCase?.() === normalizedAddress
       );
+
+      console.log(`[AppInterface] Wallet: ${normalizedAddress}`);
+      console.log(`[AppInterface] Mes campagnes: ${userOwnedCampaigns.length}`, userOwnedCampaigns.map(c => c.address));
 
       // Stocker les campagnes utilisateur pour déterminer hasCampaign
       setProjects(campaignsData);

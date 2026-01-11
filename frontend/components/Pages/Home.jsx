@@ -15,9 +15,20 @@ import ProjectDetails from './ProjectDetails';
 const normalizeCampaign = (campaign) => {
   if (!campaign) return null;
 
-  const sharePriceValue = parseFloat(campaign.sharePrice ?? campaign.share_price ?? '0');
-  const goalValue = parseFloat(campaign.goal ?? '0');
-  const raisedValue = parseFloat(campaign.raised ?? '0');
+  // Convertir le prix de wei en ETH si c'est un grand nombre
+  const rawSharePrice = campaign.sharePrice ?? campaign.share_price ?? '0';
+  const sharePriceNum = parseFloat(rawSharePrice);
+  // Si le prix est supérieur à 1000, c'est probablement en wei
+  const sharePriceInEth = sharePriceNum > 1000 ? sharePriceNum / 1e18 : sharePriceNum;
+
+  const goalRaw = campaign.goal ?? '0';
+  const goalNum = parseFloat(goalRaw);
+  const goalValue = goalNum > 1000 ? goalNum / 1e18 : goalNum;
+
+  const raisedRaw = campaign.raised ?? '0';
+  const raisedNum = parseFloat(raisedRaw);
+  const raisedValue = raisedNum > 1000 ? raisedNum / 1e18 : raisedNum;
+
   const status = campaign.status ?? null;
   const isActive = campaign.isActive ?? (status ? status === 'active' : false);
   const isFinalized = campaign.isFinalized ?? (status ? status === 'finalized' : false);
@@ -34,9 +45,9 @@ const normalizeCampaign = (campaign) => {
     address: campaign.address,
     name: campaign.name,
     sector: campaign.sector ?? campaign.category ?? 'General',
-    sharePrice: (campaign.sharePrice ?? campaign.share_price ?? '0').toString(),
-    goal: (campaign.goal ?? '0').toString(),
-    raised: (campaign.raised ?? '0').toString(),
+    sharePrice: sharePriceInEth.toString(),
+    goal: goalValue.toString(),
+    raised: raisedValue.toString(),
     status: status ?? (isActive ? 'active' : isFinalized ? 'finalized' : 'pending'),
     isActive,
     isFinalized,
@@ -49,13 +60,13 @@ const normalizeCampaign = (campaign) => {
     progressPercentage: progress,
     isNearCompletion: progress >= 80,
     isHotProject: progress > 50 && isActive,
-    nftPrice: (campaign.sharePrice ?? campaign.share_price ?? '0').toString(),
-    nftTotal: sharePriceValue > 0 ? Math.floor(goalValue / sharePriceValue) : 0,
+    nftPrice: sharePriceInEth.toString(),
+    nftTotal: sharePriceInEth > 0 ? Math.floor(goalValue / sharePriceInEth) : 0,
     timeRemaining: endTimestamp ? Math.max(0, endTimestamp - Date.now()) : 0,
   };
 };
 
-export default function Home() {
+export default function Home({ toggleFavorite, isFavorite }) {
   const { t } = useTranslation();
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
@@ -186,19 +197,8 @@ export default function Home() {
         setIsLoading(false); // Arrêter le loading MAINTENANT
       }
 
-      // 3️⃣ SYNC EN BACKGROUND SANS BLOQUER L'UI
-      fetch('/api/campaigns/sync-now', { method: 'POST' })
-        .then(() => {
-          console.log('✅ Sync terminé - refresh silencieux');
-          return apiManager.getAllCampaigns({});
-        })
-        .then(freshCampaigns => {
-          const freshNormalized = freshCampaigns.map(normalizeCampaign).filter(Boolean);
-          if (freshNormalized.length > 0) {
-            applyCampaigns(freshNormalized); // Mise à jour silencieuse
-          }
-        })
-        .catch(err => console.warn('Sync background error:', err));
+      // Mode Web3 : lecture directe blockchain, pas de sync nécessaire
+      console.log('✅ Lecture blockchain directe');
 
       // Si aucune campagne DB, fallback onchain
       if (normalized.length === 0) {
@@ -328,6 +328,8 @@ export default function Home() {
           <ProjectDetails
             selectedProject={selectedProject}
             onClose={handleCloseDetails}
+            toggleFavorite={toggleFavorite}
+            isFavorite={isFavorite}
           />
         )}
 

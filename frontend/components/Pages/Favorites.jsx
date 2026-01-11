@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useLanguage';
 import ProjectCard from '../shared/ProjectCard';
+import ProjectDetails from './ProjectDetails';
 import { Heart, TrendingUp, Loader2 } from 'lucide-react';
 
 export default function Favorites({
@@ -12,10 +13,10 @@ export default function Favorites({
   toggleFavorite,
   isFavorite,
   hasInvested,
-  setSelectedProject,
   isLoading = false
 }) {
   const { t } = useTranslation();
+  const [selectedProject, setSelectedProject] = useState(null);
 
   // Combiner favoris + investissements (sans doublons)
   const trackedCampaignIds = useMemo(() => {
@@ -49,6 +50,10 @@ export default function Favorites({
       !investments.includes(p.id?.toLowerCase())
     ).length,
   }), [trackedProjects, favorites, investments]);
+
+  const handleCloseDetails = () => {
+    setSelectedProject(null);
+  };
 
   return (
     <div className="min-h-screen">
@@ -129,6 +134,16 @@ export default function Favorites({
           </div>
         )}
       </div>
+
+      {/* Modal ProjectDetails */}
+      {selectedProject && (
+        <ProjectDetails
+          selectedProject={selectedProject}
+          onClose={handleCloseDetails}
+          toggleFavorite={toggleFavorite}
+          isFavorite={isFavorite}
+        />
+      )}
     </div>
   );
 }

@@ -88,14 +88,24 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
     setError(null);
 
     try {
-      // Simuler upload IPFS - à remplacer par votre service IPFS réel
-      const mockIpfsHash = `Qm${Math.random().toString(36).substring(2, 15)}`;
+      // Upload vers Supabase Storage
+      const formData = new FormData();
+      formData.append('file', uploadForm.file);
+      formData.append('category', uploadForm.category);
+      formData.append('campaignAddress', campaignAddress);
 
-      await apiManager.addDocument(
-        campaignAddress,
-        mockIpfsHash,
-        uploadForm.name
-      );
+      const response = await fetch('/api/documents/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+      console.log('[CampaignDocuments] Upload success:', result);
 
       // Réinitialiser le form
       setUploadForm({

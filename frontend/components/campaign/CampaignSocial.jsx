@@ -36,15 +36,13 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
     discord: '',
     telegram: '',
     medium: '',
-    website: ''
+    website: '',
+    farcaster: '',
+    base: ''
   });
 
-  const [socialStats, setSocialStats] = useState({
-    followers: 1240, // Simulated data
-    engagement: 8.5,
-    mentions: 432,
-    shares: 156
-  });
+  // Note: Les métriques sociales (followers, engagement) ne sont pas disponibles
+  // car nous n'avons pas accès aux vrais APIs des réseaux sociaux
 
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -136,6 +134,33 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
       hoverBg: 'hover:bg-cyan-500/10'
     },
     {
+      id: 'farcaster',
+      name: 'Farcaster',
+      icon: (
+        <svg className="w-5 h-5" viewBox="0 0 1000 1000" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M257.778 155.556H742.222V844.445H671.111V528.889H670.414C662.554 441.677 589.258 373.333 500 373.333C410.742 373.333 337.446 441.677 329.586 528.889H328.889V844.445H257.778V155.556Z" />
+          <path d="M128.889 253.333L157.778 351.111H182.222V746.667C169.949 746.667 160 756.616 160 768.889V795.556H155.556C143.283 795.556 133.333 805.505 133.333 817.778V844.445H382.222V817.778C382.222 805.505 372.273 795.556 360 795.556H355.556V768.889C355.556 756.616 345.606 746.667 333.333 746.667H306.667V253.333H128.889Z" />
+          <path d="M675.556 746.667C663.283 746.667 653.333 756.616 653.333 768.889V795.556H648.889C636.616 795.556 626.667 805.505 626.667 817.778V844.445H875.556V817.778C875.556 805.505 865.606 795.556 853.333 795.556H848.889V768.889C848.889 756.616 838.94 746.667 826.667 746.667V351.111H851.111L880 253.333H702.222V746.667H675.556Z" />
+        </svg>
+      ),
+      color: 'text-purple-400',
+      borderColor: 'border-purple-500/20',
+      hoverBg: 'hover:bg-purple-500/10'
+    },
+    {
+      id: 'base',
+      name: 'Base',
+      icon: (
+        <svg className="w-5 h-5" viewBox="0 0 111 111" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M55.5 111C86.1518 111 111 86.1518 111 55.5C111 24.8482 86.1518 0 55.5 0C24.8482 0 0 24.8482 0 55.5C0 86.1518 24.8482 111 55.5 111Z" />
+          <path d="M54.9995 91.6667C75.4605 91.6667 92.0828 75.2507 92.0828 55.0417C92.0828 34.8327 75.4605 18.4167 54.9995 18.4167C35.5765 18.4167 19.6286 33.3084 18.0245 52.0833H62.8328V58.0001H18.0245C19.6286 76.7749 35.5765 91.6667 54.9995 91.6667Z" fill="white" />
+        </svg>
+      ),
+      color: 'text-blue-500',
+      borderColor: 'border-blue-500/20',
+      hoverBg: 'hover:bg-blue-500/10'
+    },
+    {
       id: 'website',
       name: 'Website',
       icon: <Globe className="w-5 h-5" />,
@@ -216,6 +241,45 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="telegram-link" className="text-foreground/80">Telegram</Label>
+                  <div className="relative">
+                    <Send className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="telegram-link"
+                      value={socialLinks.telegram}
+                      onChange={(e) => handleSocialLinkChange('telegram', e.target.value)}
+                      placeholder="https://t.me/..."
+                      className="pl-9 bg-muted/50 border-input/50 focus:border-primary/50 text-foreground placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="farcaster-link" className="text-foreground/80">Farcaster</Label>
+                  <div className="relative">
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-400" />
+                    <Input
+                      id="farcaster-link"
+                      value={socialLinks.farcaster}
+                      onChange={(e) => handleSocialLinkChange('farcaster', e.target.value)}
+                      placeholder="https://warpcast.com/..."
+                      className="pl-9 bg-muted/50 border-input/50 focus:border-primary/50 text-foreground placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="base-link" className="text-foreground/80">Base</Label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500" />
+                    <Input
+                      id="base-link"
+                      value={socialLinks.base}
+                      onChange={(e) => handleSocialLinkChange('base', e.target.value)}
+                      placeholder="https://base.org/..."
+                      className="pl-9 bg-muted/50 border-input/50 focus:border-primary/50 text-foreground placeholder:text-muted-foreground/50"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="website-link" className="text-foreground/80">{t('campaignSocial.website', 'Site Web')}</Label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -260,40 +324,7 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
       </CardHeader>
 
       <CardContent className="space-y-8">
-        {/* Social Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-muted/30 border border-purple-500/20 relative group hover:bg-purple-500/10 transition-colors">
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-bold text-purple-400 tabular-nums mb-1">{socialStats.followers.toLocaleString()}</span>
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t('campaignSocial.followers', 'Abonnés')}</span>
-            </div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
-          </div>
-
-          <div className="p-4 rounded-xl bg-muted/30 border border-green-500/20 relative group hover:bg-green-500/10 transition-colors">
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-bold text-green-400 tabular-nums mb-1">{socialStats.engagement}%</span>
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t('campaignSocial.engagement', 'Engagement')}</span>
-            </div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
-          </div>
-
-          <div className="p-4 rounded-xl bg-muted/30 border border-blue-500/20 relative group hover:bg-blue-500/10 transition-colors">
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-bold text-blue-400 tabular-nums mb-1">{socialStats.mentions}</span>
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t('campaignSocial.mentions', 'Mentions')}</span>
-            </div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
-          </div>
-
-          <div className="p-4 rounded-xl bg-muted/30 border border-orange-500/20 relative group hover:bg-orange-500/10 transition-colors">
-            <div className="flex flex-col items-center">
-              <span className="text-2xl font-bold text-orange-400 tabular-nums mb-1">{socialStats.shares}</span>
-              <span className="text-xs uppercase tracking-wider text-muted-foreground font-bold">{t('campaignSocial.shares', 'Partages')}</span>
-            </div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-orange-500/5 to-transparent pointer-events-none" />
-          </div>
-        </div>
+        {/* Liens sociaux - pas de métriques car les APIs ne sont pas disponibles */}
 
         {/* Links Grid */}
         <div>

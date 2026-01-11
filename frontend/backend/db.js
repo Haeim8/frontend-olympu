@@ -13,7 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 // Client Supabase (lazy initialization)
 let supabase = null;
 
-function getSupabase() {
+export function getSupabase() {
     if (supabase) return supabase;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

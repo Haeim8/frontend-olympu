@@ -61,7 +61,9 @@ const INITIAL_FORM_DATA = {
     github: '',
     discord: '',
     telegram: '',
-    medium: ''
+    medium: '',
+    farcaster: '',
+    base: ''
   },
   nftCustomization: {
     backgroundColor: '#ffffff',
@@ -87,6 +89,8 @@ export default function CampaignModal({
   const [cardImage, setCardImage] = useState(null);
 
   const cardRef = useRef(null);
+  const submitRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { address, connector } = useAccount();
   const [writeLoading, setWriteLoading] = useState(false);
@@ -419,10 +423,24 @@ export default function CampaignModal({
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (!validateStep(5)) return;
+    // Protection contre double-clic et React StrictMode
+    if (isSubmitting || submitRef.current) {
+      console.log('[Campaign] Soumission déjà en cours, ignorée');
+      return;
+    }
+    submitRef.current = true;
+    setIsSubmitting(true);
+
+    if (!validateStep(5)) {
+      submitRef.current = false;
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!address) {
       setErrors({ general: t('campaign.errors.walletNotConnected', "Wallet non connecté") });
+      submitRef.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -434,39 +452,7 @@ export default function CampaignModal({
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = await provider.getSigner();
 
-      // 2. Uploader les documents vers Supabase Storage (compressés)
-      const uploadedDocs = {};
-      const tempCampaignId = `temp_${Date.now()}_${address.substring(0, 8)}`;
-
-      for (const [type, files] of Object.entries(formData.documents)) {
-        uploadedDocs[type] = [];
-        for (const file of files) {
-          const uploadFd = new FormData();
-          uploadFd.append('file', file);
-          uploadFd.append('category', type);
-          uploadFd.append('campaignAddress', tempCampaignId); // Temporaire avant déploiement
-
-          const res = await fetch('/api/documents/upload', { method: 'POST', body: uploadFd });
-          const uploadResult = await res.json();
-
-          if (uploadResult.success) {
-            uploadedDocs[type].push({
-              name: file.name,
-              url: uploadResult.url,
-              category: type,
-              originalSize: uploadResult.originalSize,
-              compressedSize: uploadResult.compressedSize,
-              compressionRatio: uploadResult.compressionRatio
-            });
-            console.log(`[Upload] ${file.name}: ${uploadResult.compressionRatio} compression`);
-          } else {
-            console.error(`[Upload] Échec pour ${file.name}:`, uploadResult.error);
-            throw new Error(uploadResult.error || 'Upload échoué');
-          }
-        }
-      }
-
-      // 3. Préparer les données pour le contrat et PostgreSQL
+      // 2. Préparer les données pour le contrat (SANS uploader les documents)
       const dataToSubmit = {
         ...formData,
         projectName: formData.name,
@@ -475,42 +461,88 @@ export default function CampaignModal({
         metadataUri: JSON.stringify({
           sector: formData.sector === 'Autre' ? formData.otherSector : formData.sector,
           socials: formData.socials,
-          team: formData.teamMembers,
-          docs_v2: uploadedDocs // Références aux fichiers uploadés localement
+          team: formData.teamMembers
         })
       };
 
-      // 4. Appel au contrat via apiManager (Sauvegarde DB initiale incluse)
+      // 3. CRÉER LA CAMPAGNE ON-CHAIN D'ABORD (transaction blockchain)
+      console.log('[Campaign] Création de la campagne on-chain...');
       const result = await apiManager.createCampaign(dataToSubmit, signer);
 
-      if (result.success && result.address) {
-        // 5. Déplacer les documents vers le bon dossier avec l'adresse réelle
-        const realCampaignAddress = result.address.toLowerCase();
-
-        // Note: Les documents sont déjà uploadés dans Supabase avec un ID temporaire
-        // On met à jour juste la référence dans campaign_documents avec la vraie adresse
-        for (const type in uploadedDocs) {
-          for (const doc of uploadedDocs[type]) {
-            // Enregistrer le document avec la vraie adresse de campagne
-            await fetch('/api/documents', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                campaignAddress: realCampaignAddress,
-                url: doc.url, // URL Supabase déjà uploadée
-                name: doc.name,
-                category: doc.category
-              })
-            });
-          }
-        }
-
-        setStatus('success');
-        setTransactionHash(result.txHash);
-        if (onCampaignCreated) onCampaignCreated(result.address);
-      } else {
+      if (!result.success || !result.address) {
         throw new Error("La création a échoué sans adresse de contrat valide");
       }
+
+
+      const realCampaignAddress = result.address.toLowerCase();
+      console.log('[Campaign] Campagne créée:', realCampaignAddress);
+
+      // Note: L'upsert Supabase est déjà fait dans apiManager.createCampaign()
+      // Pas besoin de le refaire ici
+
+      // 4. SEULEMENT MAINTENANT, uploader les documents (la campagne existe on-chain ET dans Supabase)
+      const uploadedDocs = {};
+
+      // Mapping des catégories frontend → catégories Supabase (CHECK constraint)
+      const categoryMapping = {
+        whitepaper: 'whitepaper',
+        pitchDeck: 'marketing',    // pitchDeck → marketing
+        legalDocuments: 'legal',   // legalDocuments → legal  
+        media: 'other'             // media → other
+      };
+
+      for (const [type, files] of Object.entries(formData.documents)) {
+        if (!files || files.length === 0) continue;
+
+        const dbCategory = categoryMapping[type] || 'other';
+        uploadedDocs[type] = [];
+        for (const file of files) {
+          try {
+            const uploadFd = new FormData();
+            uploadFd.append('file', file);
+            uploadFd.append('category', dbCategory);
+            uploadFd.append('campaignAddress', realCampaignAddress);
+
+            const res = await fetch('/api/documents/upload', { method: 'POST', body: uploadFd });
+            const uploadResult = await res.json();
+
+            if (uploadResult.success) {
+              uploadedDocs[type].push({
+                name: file.name,
+                url: uploadResult.url,
+                category: type,
+                originalSize: uploadResult.originalSize,
+                compressedSize: uploadResult.compressedSize,
+                compressionRatio: uploadResult.compressionRatio
+              });
+
+              // 5. Enregistrer le document dans la DB avec la vraie adresse
+              await fetch('/api/documents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  campaignAddress: realCampaignAddress,
+                  url: uploadResult.url,
+                  name: file.name,
+                  category: dbCategory
+                })
+              });
+
+              console.log(`[Upload] ${file.name}: ${uploadResult.compressionRatio} compression`);
+            } else {
+              console.error(`[Upload] Échec pour ${file.name}:`, uploadResult.error);
+              // On continue même si un document échoue, la campagne est déjà créée
+            }
+          } catch (uploadError) {
+            console.error(`[Upload] Erreur pour ${file.name}:`, uploadError);
+            // On continue même si un document échoue
+          }
+        }
+      }
+
+      setStatus('success');
+      setTransactionHash(result.txHash);
+      if (onCampaignCreated) onCampaignCreated(result.address);
 
     } catch (e) {
       console.error("[Submit] Error:", e);
@@ -518,8 +550,14 @@ export default function CampaignModal({
       // Traduire les erreurs courantes si nécessaire
       const errorMsg = e.reason || e.message || t('campaign.errors.generic');
       setErrors({ general: errorMsg });
+    } finally {
+      // Reset des flags en cas d'erreur (mais pas en cas de succès car la modal se ferme)
+      if (status !== 'success') {
+        submitRef.current = false;
+        setIsSubmitting(false);
+      }
     }
-  }, [validateStep, address, formData, onCampaignCreated, t]);
+  }, [validateStep, address, formData, onCampaignCreated, t, isSubmitting, status]);
 
 
   // RENDERERS
@@ -581,13 +619,13 @@ export default function CampaignModal({
       case 1:
         return <CampaignBasicInfo formData={formData} onInputChange={handleInputChange} onSelectChange={handleSelectChange} error={errors} />;
       case 2:
-        return <CampaignDocuments formData={formData} handleFileChange={handleFileChange} handleRemoveFile={handleRemoveFile} errors={errors} />;
+        return <CampaignDocuments formData={formData} onFileChange={handleFileChange} onRemoveFile={handleRemoveFile} error={errors} />;
       case 3:
-        return <CampaignTeamSocials formData={formData} handleTeamMemberChange={handleTeamMemberChange} handleAddTeamMember={handleAddTeamMember} handleRemoveTeamMember={handleRemoveTeamMember} handleInputChange={handleInputChange} errors={errors} />;
+        return <CampaignTeamSocials formData={formData} onTeamMemberChange={handleTeamMemberChange} onAddTeamMember={handleAddTeamMember} onRemoveTeamMember={handleRemoveTeamMember} onInputChange={handleInputChange} error={errors} />;
       case 4:
-        return <CampaignNFTPreview formData={formData} handleCustomizationChange={handleNFTCustomizationChange} cardRef={cardRef} />;
+        return <CampaignNFTPreview formData={formData} onCustomizationChange={handleNFTCustomizationChange} ref={cardRef} />;
       case 5:
-        return <CampaignReview formData={formData} cardImage={cardImage} handleAcceptTerms={handleAcceptTerms} errors={errors} />;
+        return <CampaignReview formData={formData} cardImage={cardImage} onAcceptTerms={handleAcceptTerms} error={errors} />;
       default:
         return null;
     }
@@ -662,10 +700,11 @@ export default function CampaignModal({
             ) : (
               <Button
                 onClick={handleSubmit}
-                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white font-bold px-8 shadow-lg shadow-primary/25"
+                disabled={isSubmitting}
+                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white font-bold px-8 shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('campaign.submit', 'Lancer la Campagne')}
-                <Sparkles className="w-4 h-4 ml-2" />
+                {isSubmitting ? t('campaign.submitting', 'Création en cours...') : t('campaign.submit', 'Lancer la Campagne')}
+                {isSubmitting ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
               </Button>
             )}
           </div>

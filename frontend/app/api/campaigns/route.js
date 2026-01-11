@@ -12,20 +12,7 @@ export async function GET(request) {
   const creator = searchParams.get('creator');
 
   try {
-    // Tenter de récupérer depuis le cache Redis
-    const cached = await campaignCache.getList();
-    if (cached) {
-      console.log('[API] Cache hit: campaigns list');
-      let filtered = cached;
-
-      if (status) filtered = filtered.filter(c => c.status === status);
-      if (category) filtered = filtered.filter(c => c.category === category);
-      if (creator) filtered = filtered.filter(c => c.creator?.toLowerCase() === creator.toLowerCase());
-
-      return NextResponse.json({ campaigns: filtered });
-    }
-
-    // Récupérer depuis PostgreSQL
+    // Récupérer depuis PostgreSQL/Supabase (cache)
     const campaignList = await dbCampaigns.getAll({ status, category });
 
     // Filtrage supplémentaire par créateur si présent
@@ -34,16 +21,13 @@ export async function GET(request) {
       results = results.filter(c => c.creator?.toLowerCase() === creator.toLowerCase());
     }
 
-    // Mettre en cache la liste complète pour les futurs appels (Redis gère le TTL)
-    await campaignCache.setList(campaignList);
-
-    console.log(`[API] ✅ ${results.length} campagnes récupérées depuis PostgreSQL`);
+    console.log(`[API] ✅ ${results.length} campagnes depuis cache`);
 
     return NextResponse.json(
       { campaigns: results },
       {
         headers: {
-          'Cache-Control': 's-maxage=60, stale-while-revalidate=120',
+          'Cache-Control': 's-maxage=10, stale-while-revalidate=30',
         },
       },
     );

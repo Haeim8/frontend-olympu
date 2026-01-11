@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from '@/hooks/useLanguage';
+import { useCampaignDocuments, groupDocumentsByCategory } from '@/hooks/useCampaignDocuments';
 import DocumentViewer from './DocumentViewer';
 import {
   FileText,
@@ -52,17 +53,8 @@ const DocumentLink = ({ title, url, type = 'document', t, onPreview }) => {
     }
   };
 
-  // Convertir l'URL du document
-  const getHttpUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (url.startsWith('/uploads/')) return url; // Support local storage
-
-    const hash = url.replace('ipfs://', '').split('/ipfs/').pop().replace(/^\/+/, '');
-    return `https://ipfs.io/ipfs/${hash}`;
-  };
-
-  const httpUrl = getHttpUrl(url);
+  // Les URLs viennent directement de Supabase maintenant, pas besoin de conversion IPFS
+  const httpUrl = url || '';
 
   return (
     <div className="group flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-neutral-800 dark:to-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-700 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-lg transition-all duration-300">
@@ -95,14 +87,10 @@ const DocumentLink = ({ title, url, type = 'document', t, onPreview }) => {
 };
 
 const MediaGallery = ({ media = [], t, onPreview }) => {
-  // Résoudre l'URL du média
+  // Les URLs viennent directement de Supabase, pas besoin de conversion
   const getHttpUrl = (url) => {
     if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (url.startsWith('/uploads/')) return url; // Support local storage
-
-    const hash = url.replace('ipfs://', '').split('/ipfs/').pop().replace(/^\/+/, '');
-    return `https://ipfs.io/ipfs/${hash}`;
+    return url; // URL Supabase déjà complète
   };
 
   if (!media || media.length === 0) {
@@ -231,6 +219,16 @@ export default function ProjectDetailsTab({ projectData }) {
   const { t } = useTranslation();
   const [viewerDocument, setViewerDocument] = useState(null);
 
+  console.log('[ProjectDetailsTab] projectData:', projectData);
+  console.log('[ProjectDetailsTab] ipfs:', projectData?.ipfs);
+  console.log('[ProjectDetailsTab] description:', projectData?.description);
+
+  // Charger les documents depuis Supabase
+  const { documents: supabaseDocuments, loading: docsLoading } = useCampaignDocuments(projectData?.address || projectData?.id);
+  const documentsByCategory = groupDocumentsByCategory(supabaseDocuments);
+
+  console.log('[ProjectDetailsTab] documents:', supabaseDocuments);
+
   const handlePreview = (document) => {
     setViewerDocument(document);
   };
@@ -346,65 +344,80 @@ export default function ProjectDetailsTab({ projectData }) {
               </div>
               <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
                 {t('projectDetailsTab.documentsCount', {
-                  count: [
-                    ...(ipfs?.documents?.whitepaper || []),
-                    ...(ipfs?.documents?.pitchDeck || []),
-                    ...(ipfs?.documents?.legalDocuments || [])
-                  ].length
+                  count: (documentsByCategory.whitepaper?.length || 0) +
+                    (documentsByCategory.pitchDeck?.length || 0) +
+                    (documentsByCategory.legalDocuments?.length || 0) +
+                    (documentsByCategory.other?.length || 0)
                 })}
               </Badge>
             </div>
 
             <div className="space-y-3">
-              {/* Whitepaper */}
-              {ipfs?.documents?.whitepaper?.map((doc, index) => (
-                <DocumentLink
-                  key={`whitepaper-${index}`}
-                  title={doc.name || t('projectDetailsTab.whitepaper')}
-                  url={doc.url}
-                  type={doc.type?.startsWith('image') ? 'image' : 'document'}
-                  t={t}
-                  onPreview={handlePreview}
-                />
-              ))}
+              {docsLoading ? (
+                <div className="text-center py-12">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {t('projectDetailsTab.loadingDocuments') || 'Chargement des documents...'}
+                  </p>
+                </div>
+              ) : supabaseDocuments.length > 0 ? (
+                <>
+                  {/* Whitepaper depuis Supabase */}
+                  {documentsByCategory.whitepaper?.map((doc, index) => (
+                    <DocumentLink
+                      key={`whitepaper-${doc.id || index}`}
+                      title={doc.name || t('projectDetailsTab.whitepaper')}
+                      url={doc.url}
+                      type={doc.type}
+                      t={t}
+                      onPreview={handlePreview}
+                    />
+                  ))}
 
-              {/* Pitch Deck */}
-              {ipfs?.documents?.pitchDeck?.map((doc, index) => (
-                <DocumentLink
-                  key={`pitchDeck-${index}`}
-                  title={doc.name || t('projectDetailsTab.pitchDeck')}
-                  url={doc.url}
-                  type={doc.type?.startsWith('image') ? 'image' : 'document'}
-                  t={t}
-                  onPreview={handlePreview}
-                />
-              ))}
+                  {/* Pitch Deck depuis Supabase */}
+                  {documentsByCategory.pitchDeck?.map((doc, index) => (
+                    <DocumentLink
+                      key={`pitchDeck-${doc.id || index}`}
+                      title={doc.name || t('projectDetailsTab.pitchDeck')}
+                      url={doc.url}
+                      type={doc.type}
+                      t={t}
+                      onPreview={handlePreview}
+                    />
+                  ))}
 
-              {/* Documents légaux */}
-              {ipfs?.documents?.legalDocuments?.map((doc, index) => (
-                <DocumentLink
-                  key={`legal-${index}`}
-                  title={doc.name || t('projectDetailsTab.legalDocument', { index: index + 1 })}
-                  url={doc.url}
-                  type={doc.type?.startsWith('image') ? 'image' : 'document'}
-                  t={t}
-                  onPreview={handlePreview}
-                />
-              ))}
+                  {/* Documents légaux depuis Supabase */}
+                  {documentsByCategory.legalDocuments?.map((doc, index) => (
+                    <DocumentLink
+                      key={`legal-${doc.id || index}`}
+                      title={doc.name || t('projectDetailsTab.legalDocument', { index: index + 1 })}
+                      url={doc.url}
+                      type={doc.type}
+                      t={t}
+                      onPreview={handlePreview}
+                    />
+                  ))}
 
-              {/* Message si aucun document */}
-              {(!ipfs?.documents || (
-                (!ipfs.documents.whitepaper?.length) &&
-                (!ipfs.documents.pitchDeck?.length) &&
-                (!ipfs.documents.legalDocuments?.length)
-              )) && (
-                  <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {t('projectDetailsTab.noDocuments')}
-                    </p>
-                  </div>
-                )}
+                  {/* Autres documents */}
+                  {documentsByCategory.other?.map((doc, index) => (
+                    <DocumentLink
+                      key={`other-${doc.id || index}`}
+                      title={doc.name}
+                      url={doc.url}
+                      type={doc.type}
+                      t={t}
+                      onPreview={handlePreview}
+                    />
+                  ))}
+                </>
+              ) : (
+                <div className="text-center py-12 bg-gray-50 dark:bg-neutral-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-neutral-700">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {t('projectDetailsTab.noDocuments')}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -422,11 +435,11 @@ export default function ProjectDetailsTab({ projectData }) {
                 </h3>
               </div>
               <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
-                {t('projectDetailsTab.mediaCount', { count: ipfs?.documents?.media?.length || 0 })}
+                {t('projectDetailsTab.mediaCount', { count: documentsByCategory.media?.length || 0 })}
               </Badge>
             </div>
 
-            <MediaGallery media={ipfs?.documents?.media} t={t} onPreview={handlePreview} />
+            <MediaGallery media={documentsByCategory.media} t={t} onPreview={handlePreview} />
           </CardContent>
         </Card>
 

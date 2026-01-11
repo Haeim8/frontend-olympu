@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
+import { useWalletClient } from 'wagmi';
+import { ethers } from 'ethers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +13,21 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DollarSign, Calculator, Info } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
 
+// Convertir WalletClient de wagmi en ethers Signer
+function walletClientToSigner(walletClient) {
+  const { account, chain, transport } = walletClient;
+  const network = {
+    chainId: chain.id,
+    name: chain.name,
+    ensAddress: chain.contracts?.ensRegistry?.address,
+  };
+  const provider = new ethers.providers.Web3Provider(transport, network);
+  return provider.getSigner(account.address);
+}
+
 export default function DividendDistribution({ campaignData, campaignAddress, onDistributionComplete }) {
   const { t } = useTranslation();
+  const { data: walletClient } = useWalletClient();
   const [distributeForm, setDistributeForm] = useState({
     amount: "",
     token: "ETH",
@@ -42,14 +57,20 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
       return;
     }
 
+    if (!walletClient) {
+      setError(t('dividends.walletNotConnected', 'Portefeuille non connecté'));
+      return;
+    }
+
     setIsDistributing(true);
     setError(null);
 
     try {
+      const signer = walletClientToSigner(walletClient);
       await apiManager.distributeDividends(
         campaignAddress,
         distributeForm.amount,
-        distributeForm.message
+        signer
       );
 
       setDistributeForm({ amount: "", token: "ETH", message: "" });

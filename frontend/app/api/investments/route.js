@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/backend/db';
+import { getSupabase } from '@/backend/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,42 +17,71 @@ export async function GET(request) {
     }
 
     try {
-        // Recuperer toutes les transactions de cet investisseur groupees par campagne
-        const sql = `
-            SELECT
-                ct.campaign_address,
-                c.name as campaign_name,
-                c.symbol as campaign_symbol,
-                c.logo as campaign_logo,
-                c.category as campaign_category,
-                json_agg(
-                    json_build_object(
-                        'tx_hash', ct.tx_hash,
-                        'amount', ct.amount,
-                        'shares', ct.shares,
-                        'round_number', ct.round_number,
-                        'timestamp', extract(epoch from ct.timestamp)::bigint,
-                        'type', ct.type
-                    ) ORDER BY ct.timestamp DESC
-                ) as investments
-            FROM campaign_transactions ct
-            JOIN campaigns c ON c.address = ct.campaign_address
-            WHERE ct.investor = $1
-            GROUP BY ct.campaign_address, c.name, c.symbol, c.logo, c.category
-            ORDER BY MAX(ct.timestamp) DESC
-        `;
+        const supabase = getSupabase();
 
-        const result = await query(sql, [investorAddress.toLowerCase()]);
+        // Récupérer les transactions de l'investisseur
+        const { data: transactions, error: txError } = await supabase
+            .from('campaign_transactions')
+            .select('*')
+            .eq('investor', investorAddress.toLowerCase())
+            .order('timestamp', { ascending: false });
 
-        // Transformer pour le format attendu par le frontend
-        const investments = result.rows.map(row => ({
-            campaignAddress: row.campaign_address,
-            campaignName: row.campaign_name,
-            campaignSymbol: row.campaign_symbol,
-            campaignLogo: row.campaign_logo,
-            campaignCategory: row.campaign_category,
-            investments: row.investments || []
-        }));
+        if (txError) {
+            console.error('[API Investments] Transactions error:', txError);
+            return NextResponse.json({ investments: [], error: txError.message }, { status: 200 });
+        }
+
+        if (!transactions || transactions.length === 0) {
+            return NextResponse.json({ investments: [] });
+        }
+
+        // Grouper par campagne
+        const campaignAddresses = [...new Set(transactions.map(t => t.campaign_address))];
+
+        // Récupérer les infos des campagnes
+        const { data: campaigns, error: campError } = await supabase
+            .from('campaigns')
+            .select('address, name, symbol, logo, category')
+            .in('address', campaignAddresses);
+
+        if (campError) {
+            console.error('[API Investments] Campaigns error:', campError);
+        }
+
+        const campaignMap = {};
+        (campaigns || []).forEach(c => {
+            campaignMap[c.address] = c;
+        });
+
+        // Grouper les transactions par campagne
+        const investmentsByAddress = {};
+        transactions.forEach(tx => {
+            const addr = tx.campaign_address;
+            if (!investmentsByAddress[addr]) {
+                investmentsByAddress[addr] = [];
+            }
+            investmentsByAddress[addr].push({
+                tx_hash: tx.tx_hash,
+                amount: tx.amount,
+                shares: tx.shares,
+                round_number: tx.round_number,
+                timestamp: tx.timestamp ? new Date(tx.timestamp).getTime() / 1000 : 0,
+                type: tx.type
+            });
+        });
+
+        // Formatter pour le frontend
+        const investments = Object.entries(investmentsByAddress).map(([addr, txs]) => {
+            const campaign = campaignMap[addr] || {};
+            return {
+                campaignAddress: addr,
+                campaignName: campaign.name || 'Unknown',
+                campaignSymbol: campaign.symbol || '???',
+                campaignLogo: campaign.logo || '',
+                campaignCategory: campaign.category || 'Other',
+                investments: txs
+            };
+        });
 
         return NextResponse.json({ investments });
     } catch (error) {

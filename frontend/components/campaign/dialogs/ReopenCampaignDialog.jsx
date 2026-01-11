@@ -8,17 +8,32 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from '@/hooks/useLanguage';
+import { useWalletClient } from 'wagmi';
+import { ethers } from 'ethers';
 import { Calendar, DollarSign, Repeat, AlertTriangle, Info } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
 
-export default function ReopenCampaignDialog({ 
-  isOpen, 
-  onClose, 
-  campaignData, 
-  campaignAddress, 
-  onSuccess 
+// Convertir WalletClient de wagmi en ethers Signer
+function walletClientToSigner(walletClient) {
+  const { account, chain, transport } = walletClient;
+  const network = {
+    chainId: chain.id,
+    name: chain.name,
+    ensAddress: chain.contracts?.ensRegistry?.address,
+  };
+  const provider = new ethers.providers.Web3Provider(transport, network);
+  return provider.getSigner(account.address);
+}
+
+export default function ReopenCampaignDialog({
+  isOpen,
+  onClose,
+  campaignData,
+  campaignAddress,
+  onSuccess
 }) {
   const { t } = useTranslation();
+  const { data: walletClient } = useWalletClient();
   const [reopenForm, setReopenForm] = useState({
     goal: "",
     sharePrice: "",
@@ -37,11 +52,11 @@ export default function ReopenCampaignDialog({
     if (!reopenForm.goal || parseFloat(reopenForm.goal) <= 0) {
       return t('dialog.reopen.validation.goalPositive');
     }
-    
+
     if (!reopenForm.sharePrice || parseFloat(reopenForm.sharePrice) <= 0) {
       return t('dialog.reopen.validation.pricePositive');
     }
-    
+
     if (parseFloat(reopenForm.sharePrice) < parseFloat(campaignData?.nftPrice || 0)) {
       return t('dialog.reopen.validation.priceLowerThanPrevious');
     }
@@ -60,7 +75,7 @@ export default function ReopenCampaignDialog({
     if (endDate.getTime() - now.getTime() < minDuration) {
       return t('dialog.reopen.validation.minDuration');
     }
-    
+
     return null;
   };
 
@@ -87,6 +102,11 @@ export default function ReopenCampaignDialog({
       return;
     }
 
+    if (!walletClient) {
+      setError(t('dialog.reopen.walletNotConnected', 'Portefeuille non connecté'));
+      return;
+    }
+
     setIsReopening(true);
     setError(null);
 
@@ -96,11 +116,13 @@ export default function ReopenCampaignDialog({
       const endDate = new Date(reopenForm.endDate);
       const duration = Math.floor((endDate.getTime() - Date.now()) / 1000);
 
+      const signer = walletClientToSigner(walletClient);
       await apiManager.startNewRound(
         campaignAddress,
         targetAmount,
         sharePrice,
-        duration
+        duration,
+        signer
       );
 
       // Réinitialiser le formulaire

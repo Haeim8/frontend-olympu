@@ -2,10 +2,24 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
+import { useWalletClient } from 'wagmi';
+import { ethers } from 'ethers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DollarSign, Share2, Repeat, Megaphone, ShieldCheck, Zap } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
+
+// Convertir WalletClient de wagmi en ethers Signer
+function walletClientToSigner(walletClient) {
+  const { account, chain, transport } = walletClient;
+  const network = {
+    chainId: chain.id,
+    name: chain.name,
+    ensAddress: chain.contracts?.ensRegistry?.address,
+  };
+  const provider = new ethers.providers.Web3Provider(transport, network);
+  return provider.getSigner(account.address);
+}
 
 export default function CampaignActions({
   campaignData,
@@ -16,15 +30,22 @@ export default function CampaignActions({
   onActionComplete
 }) {
   const { t } = useTranslation();
+  const { data: walletClient } = useWalletClient();
   const [isReleasingEscrow, setIsReleasingEscrow] = useState(false);
   const [escrowError, setEscrowError] = useState(null);
 
   const handleReleaseEscrow = async () => {
+    if (!walletClient) {
+      setEscrowError(t('campaignActions.walletNotConnected', 'Portefeuille non connecté'));
+      return;
+    }
+
     try {
       setIsReleasingEscrow(true);
       setEscrowError(null);
 
-      await apiManager.claimEscrow(campaignAddress);
+      const signer = walletClientToSigner(walletClient);
+      await apiManager.claimEscrow(campaignAddress, signer);
 
       if (onActionComplete) {
         onActionComplete('escrow_released');
@@ -92,8 +113,8 @@ export default function CampaignActions({
             {/* Release Escrow - Primary Action */}
             <Button
               className={`w-full font-bold py-6 rounded-xl shadow-lg border-0 transition-all duration-300 relative overflow-hidden group ${canReleaseEscrow()
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-[1.02] shadow-green-500/20'
-                  : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-[1.02] shadow-green-500/20'
+                : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10'
                 }`}
               onClick={handleReleaseEscrow}
               disabled={!canReleaseEscrow() || isReleasingEscrow}
@@ -152,21 +173,19 @@ export default function CampaignActions({
               </Button>
             </div>
 
-            {needsCertification() && (
-              <Button
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition-all duration-200 py-6 rounded-xl shadow-lg shadow-blue-500/20 group relative overflow-hidden"
-                onClick={onCertifyClick}
-              >
-                <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-                <div className="relative flex items-center justify-center">
-                  <ShieldCheck className="mr-2 h-5 w-5" />
-                  <span className="font-bold">{t('campaignActions.certify')}</span>
-                  <span className="ml-2 px-2 py-0.5 bg-white/20 text-xs rounded-full backdrop-blur-sm border border-white/10">
-                    {t('campaignActions.recommended')}
-                  </span>
-                </div>
-              </Button>
-            )}
+            {/* Certification désactivée pour le moment */}
+            <Button
+              className="w-full bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed opacity-50 py-6 rounded-xl"
+              disabled={true}
+            >
+              <div className="flex items-center justify-center">
+                <ShieldCheck className="mr-2 h-5 w-5" />
+                <span className="font-bold">{t('campaignActions.certify')}</span>
+                <span className="ml-2 px-2 py-0.5 bg-white/10 text-xs rounded-full">
+                  {t('campaignActions.comingSoon', 'Bientôt')}
+                </span>
+              </div>
+            </Button>
           </div>
 
           <div className="pt-4 border-t border-white/10">

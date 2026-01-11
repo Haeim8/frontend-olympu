@@ -28,7 +28,9 @@ const SocialIcon = ({ platform, className }) => {
     discord: MessageCircle,
     telegram: Send,
     medium: Edit3,
-    linkedin: Linkedin
+    linkedin: Linkedin,
+    farcaster: Users,
+    base: Globe
   };
 
   const Icon = icons[platform] || Globe;
@@ -43,7 +45,9 @@ const SocialInput = ({ platform, value, onChange, placeholder }) => {
     discord: { color: 'text-indigo-400' },
     telegram: { color: 'text-blue-400' },
     medium: { color: 'text-green-400' },
-    linkedin: { color: 'text-blue-500' }
+    linkedin: { color: 'text-blue-500' },
+    farcaster: { color: 'text-purple-400' },
+    base: { color: 'text-blue-500' }
   };
 
   const config = socialConfig[platform] || {};
@@ -251,6 +255,24 @@ export default function CampaignTeamSocials({
               value={formData.socials.medium}
               onChange={(e) => onInputChange(e, 'socials')}
               placeholder="medium.com/..."
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground ml-1">{t('campaignTeam.farcaster', 'Farcaster')}</Label>
+            <SocialInput
+              platform="farcaster"
+              value={formData.socials.farcaster}
+              onChange={(e) => onInputChange(e, 'socials')}
+              placeholder="warpcast.com/..."
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground ml-1">{t('campaignTeam.base', 'Base')}</Label>
+            <SocialInput
+              platform="base"
+              value={formData.socials.base}
+              onChange={(e) => onInputChange(e, 'socials')}
+              placeholder="base.org/..."
             />
           </div>
         </div>

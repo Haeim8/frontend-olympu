@@ -3,7 +3,6 @@
 import React from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { BarChart2, Wallet, Hash, Calendar, Target } from 'lucide-react';
 
 const CompanySharesNFTCard = ({
@@ -17,9 +16,8 @@ const CompanySharesNFTCard = ({
   backgroundColor,
   textColor,
   logoUrl,
-  niveauLivar,
-  investmentReturns,
-  isPreview = false // Nouveau prop pour différencier la prévisualisation
+  sector, // Secteur pour correspondre au NFT on-chain
+  isPreview = false
 }) => {
   const [previewUrl, setPreviewUrl] = React.useState(null);
 
@@ -32,29 +30,6 @@ const CompanySharesNFTCard = ({
       setPreviewUrl(logoUrl);
     }
   }, [logoUrl]);
-
-  const getLivarBadgeColor = () => {
-    switch (niveauLivar) {
-      case 'vert': return 'bg-green-500';
-      case 'orange': return 'bg-orange-500';
-      case 'rouge': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getRewardBadges = () => {
-    const badges = [];
-    if (investmentReturns?.dividends?.enabled) badges.push('Dividendes');
-    if (investmentReturns?.airdrops?.enabled) badges.push('Airdrops');
-    if (investmentReturns?.revenueSplit?.enabled) badges.push('Revenue Split');
-    if (investmentReturns?.customReward?.enabled) badges.push(investmentReturns.customReward.name);
-    return badges;
-  };
-
-  const badges = getRewardBadges();
-  const halfLength = Math.ceil(badges.length / 2);
-  const leftBadges = badges.slice(0, halfLength);
-  const rightBadges = badges.slice(halfLength);
 
   // Styles conditionnels basés sur isPreview
   const containerStyles = isPreview ? {
@@ -69,20 +44,10 @@ const CompanySharesNFTCard = ({
     padding: 0
   };
 
-  const badgeStyles = isPreview ? {
-    fontSize: '0.75rem',
-    padding: '0.25rem 0.5rem',
-    minWidth: '60px'
-  } : {
-    fontSize: '0.875rem',
-    padding: '0.5rem 1rem',
-    minWidth: '80px'
-  };
-
   return (
     <div className="inline-block" style={containerStyles}>
-      <Card 
-        style={{ 
+      <Card
+        style={{
           backgroundColor,
           color: textColor,
           height: '100%',
@@ -97,9 +62,9 @@ const CompanySharesNFTCard = ({
 
         <CardContent className="flex-grow p-4 flex flex-col justify-between">
           <div className="flex justify-center mb-4">
-            <div 
+            <div
               className="rounded-full flex items-center justify-center"
-              style={{ 
+              style={{
                 backgroundColor: textColor,
                 width: isPreview ? '4rem' : '6rem',
                 height: isPreview ? '4rem' : '6rem'
@@ -138,47 +103,18 @@ const CompanySharesNFTCard = ({
           </div>
         </CardContent>
 
+        {/* Footer simplifié - aligné sur le NFT on-chain */}
         <CardFooter className="p-4 flex flex-col items-center">
-        <Badge 
-  className={`text-xs text-white mb-4 ${getLivarBadgeColor()}`}
-  style={badgeStyles}
->
-  Livar
-</Badge>
-          
-          <div className="flex justify-between w-full gap-4">
-            <div className="flex flex-col gap-2">
-              {leftBadges.map((badge, index) => (
-                <Badge 
-                  key={`left-${index}`}
-                  className="flex justify-center"
-                  style={{
-                    ...badgeStyles,
-                    backgroundColor: `${textColor}20`,
-                    color: textColor,
-                    border: `1px solid ${textColor}40`
-                  }}
-                >
-                  {badge}
-                </Badge>
-              ))}
-            </div>
-            <div className="flex flex-col gap-2">
-              {rightBadges.map((badge, index) => (
-                <Badge 
-                  key={`right-${index}`}
-                  className="flex justify-center"
-                  style={{
-                    ...badgeStyles,
-                    backgroundColor: `${textColor}20`,
-                    color: textColor,
-                    border: `1px solid ${textColor}40`
-                  }}
-                >
-                  {badge}
-                </Badge>
-              ))}
-            </div>
+          <div
+            className="w-full rounded-lg p-4 text-center"
+            style={{ backgroundColor: `${textColor}10` }}
+          >
+            <p className={`${isPreview ? 'text-sm' : 'text-base'} font-medium mb-1`} style={{ color: textColor }}>
+              Sector: {sector || 'N/A'}
+            </p>
+            <p className={`${isPreview ? 'text-xs' : 'text-sm'} opacity-70`} style={{ color: textColor }}>
+              Powered by Livar Protocol
+            </p>
           </div>
         </CardFooter>
       </Card>
