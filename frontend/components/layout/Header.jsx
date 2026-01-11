@@ -47,14 +47,14 @@ export default function Header({
             <div className="relative w-9 h-9 flex-shrink-0">
               <Image
                 src="/logo.png"
-                alt="Livar"
+                alt=""
                 fill
                 className="object-contain"
                 priority
               />
             </div>
             <div className="hidden sm:flex flex-col">
-              <span className="font-bold text-lg text-white leading-none">Livar</span>
+              <span className="font-bold text-lg text-white leading-none"></span>
             </div>
           </div>
         </div>
