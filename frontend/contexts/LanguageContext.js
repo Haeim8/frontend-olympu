@@ -236,6 +236,14 @@ const translations = {
     'stats.raised': 'Volume (ETH)',
     'campaign.loading': 'Chargement de votre campagne...',
 
+    // Connect Prompt
+    'connect.welcome': 'Bienvenue sur Livar',
+    'connect.subtitle': 'Plateforme d\'investissement crypto sécurisée et transparente.',
+    'connect.login': 'Connexion',
+    'connect.description': 'Connectez votre portefeuille pour accéder au tableau de bord.',
+    'connect.terms': 'En vous connectant, vous acceptez nos conditions d\'utilisation et notre politique de confidentialité.',
+    'connect.poweredBy': 'Propulsé par Base & Coinbase Wallet',
+
     // Common
     loading: "Chargement...",
     error: "Erreur",
@@ -1570,6 +1578,14 @@ const translations = {
     'stats.finalized': 'Finalized',
     'stats.raised': 'Volume (ETH)',
     'campaign.loading': 'Loading your campaign...',
+
+    // Connect Prompt
+    'connect.welcome': 'Welcome to Livar',
+    'connect.subtitle': 'Secure and transparent crypto investment platform.',
+    'connect.login': 'Login',
+    'connect.description': 'Connect your wallet to access the dashboard.',
+    'connect.terms': 'By connecting, you accept our Terms of Service and Privacy Policy.',
+    'connect.poweredBy': 'Powered by Base & Coinbase Wallet',
 
     // Common
     loading: "Loading...",
@@ -2908,6 +2924,14 @@ const translations = {
     'stats.raised': 'Volumen (ETH)',
     'campaign.loading': 'Cargando tu campaña...',
 
+    // Connect Prompt
+    'connect.welcome': 'Bienvenido a Livar',
+    'connect.subtitle': 'Plataforma de inversión cripto segura y transparente.',
+    'connect.login': 'Iniciar sesión',
+    'connect.description': 'Conecta tu billetera para acceder al panel.',
+    'connect.terms': 'Al conectar, aceptas nuestros Términos de Servicio y Política de Privacidad.',
+    'connect.poweredBy': 'Impulsado por Base y Coinbase Wallet',
+
     // Common
     loading: "Cargando...",
     error: "Error",
@@ -3996,7 +4020,7 @@ const translations = {
 
 // Provider pour le contexte de langue
 export const LanguageProvider = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState('fr');
+  const [currentLanguage, setCurrentLanguage] = useState('en');
   const [isLoading, setIsLoading] = useState(true);
 
   // Charger la langue sauvegardée ou détecter la langue du navigateur

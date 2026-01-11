@@ -11,14 +11,14 @@ export const viewport = {
 };
 
 export const metadata = {
-  title: 'Livar - Financement Participatif DeFi',
-  description: 'Plateforme décentralisée de financement participatif pour les startups Web3',
+  title: 'Livar - onchain raises',
+  description: 'decentralized financing of the future ',
   icons: {
     icon: '/favicon.ico',
   },
   openGraph: {
     title: 'Livar: Onchain Raises',
-    description: 'Back tokenized campaigns and track growth with transparent Base analytics.',
+    description: 'decentralized financing of the future .',
     url: 'https://www.livarhub.xyz/app',
     siteName: 'Livar',
     images: [ogImage],
@@ -26,7 +26,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Livar: Onchain Raises',
-    description: 'Back tokenized campaigns and track growth with transparent Base analytics.',
+    description: 'decentralized financing of the future .',
     images: [ogImage.url],
   },
 };

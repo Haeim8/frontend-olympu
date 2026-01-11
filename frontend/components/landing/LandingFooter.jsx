@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Heart, Zap } from "lucide-react";
+import Image from "next/image";
 import { useTranslation } from '@/hooks/useLanguage';
 
 export function LandingFooter({ darkMode }) {
@@ -13,8 +14,13 @@ export function LandingFooter({ darkMode }) {
           {/* Logo et description */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-lime-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="w-6 h-6 text-white" />
+              <div className="relative w-10 h-10 flex-shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="Livar"
+                  fill
+                  className="object-contain"
+                />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
                 Livar

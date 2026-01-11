@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,14 +45,16 @@ export default function Header({
           {/* Logo Livar */}
           <div className="flex items-center gap-3">
             <div className="relative w-9 h-9 flex-shrink-0">
-              <div className="absolute inset-0 bg-[#c8ff00] rounded-lg opacity-20 blur-md" />
-              <div className="relative w-full h-full bg-[#c8ff00]/10 rounded-lg flex items-center justify-center border border-[#c8ff00]/30">
-                <Sparkles className="w-4 h-4 text-[#c8ff00]" />
-              </div>
+              <Image
+                src="/logo.png"
+                alt="Livar"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
             <div className="hidden sm:flex flex-col">
               <span className="font-bold text-lg text-white leading-none">Livar</span>
-              <span className="text-[9px] text-[#c8ff00] font-semibold uppercase tracking-widest">Finance</span>
             </div>
           </div>
         </div>

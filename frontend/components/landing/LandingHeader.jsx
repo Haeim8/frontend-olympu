@@ -36,7 +36,6 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             />
           </div>
           <span className="text-2xl font-bold bg-gradient-to-r from-lime-400 to-green-500 bg-clip-text text-transparent">
-            Livar
           </span>
         </motion.div>
 
