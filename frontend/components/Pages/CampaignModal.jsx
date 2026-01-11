@@ -404,6 +404,23 @@ export default function CampaignModal({
     setFormData(prev => ({ ...prev, acceptTerms: !prev.acceptTerms }));
   }, []);
 
+  // Reset complet du formulaire
+  const resetForm = useCallback(() => {
+    setFormData(INITIAL_FORM_DATA);
+    setCurrentStep(1);
+    setStatus('idle');
+    setTransactionHash('');
+    setCardImage(null);
+    setErrors({});
+    setIsSubmitting(false);
+    submitRef.current = false;
+    draftRestoredRef.current = false;
+    // Supprimer le brouillon du localStorage
+    if (address && typeof window !== 'undefined') {
+      window.localStorage.removeItem(getDraftKey(address));
+    }
+  }, [address, getDraftKey]);
+
   const handleNextStep = useCallback(async () => {
     if (!validateStep(currentStep)) return;
     if (currentStep === 4) {
@@ -606,7 +623,10 @@ export default function CampaignModal({
           )}
 
           <Button
-            onClick={() => setShowCreateCampaign(false)}
+            onClick={() => {
+              resetForm();
+              setShowCreateCampaign(false);
+            }}
             className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-6 text-lg rounded-xl shadow-lg shadow-primary/25"
           >
             {t('campaign.creation.viewCampaign', 'Voir ma campagne')}
