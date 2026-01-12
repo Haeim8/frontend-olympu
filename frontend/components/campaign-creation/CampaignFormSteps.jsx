@@ -8,10 +8,10 @@ const StepIndicator = ({ currentStep, totalSteps }) => {
   const { t } = useTranslation();
 
   const steps = [
-    { number: 1, title: t('campaignSteps.information', 'Information'), description: t('campaignSteps.informationDesc', 'Détails du projet') },
+    { number: 1, title: t('campaignSteps.information', 'Informations'), description: t('campaignSteps.informationDesc', 'Détails du projet') },
     { number: 2, title: t('campaignSteps.documents', 'Documents'), description: t('campaignSteps.documentsDesc', 'Whitepaper & Deck') },
     { number: 3, title: t('campaignSteps.team', 'Équipe'), description: t('campaignSteps.teamDesc', 'Membres clés') },
-    { number: 4, title: t('campaignSteps.nft', 'NFT Custom'), description: t('campaignSteps.nftDesc', 'Design de la carte') },
+    { number: 4, title: t('campaignSteps.nft', 'NFT'), description: t('campaignSteps.nftDesc', 'Design de la carte') },
     { number: 5, title: t('campaignSteps.verification', 'Vérification'), description: t('campaignSteps.verificationDesc', 'Revue finale') }
   ];
 

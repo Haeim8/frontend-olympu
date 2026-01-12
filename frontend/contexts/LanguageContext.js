@@ -939,6 +939,10 @@ const translations = {
     'campaignBasic.royaltyPercent': '{percent}% de royalties',
     'campaignBasic.royaltyReceiver': 'Adresse de réception des royalties',
 
+    // Campaign Creation - Modal
+    'campaign.create.title': 'Lancer une Campagne',
+    'campaign.create.subtitle': 'Transformez votre vision en réalité',
+
     // Campaign Creation - Steps
     'campaignSteps.information': 'Informations',
     'campaignSteps.informationDesc': 'Détails du projet',
@@ -2260,6 +2264,10 @@ const translations = {
     'campaignBasic.royaltyTooltip': '100 basis points = 1%. Fees on secondary transactions.',
     'campaignBasic.royaltyPercent': '{percent}% royalties',
     'campaignBasic.royaltyReceiver': 'Royalty receiver address',
+
+    // Campaign Creation - Modal
+    'campaign.create.title': 'Launch a Campaign',
+    'campaign.create.subtitle': 'Turn your vision into reality',
 
     // Campaign Creation - Steps
     'campaignSteps.information': 'Information',
@@ -3627,6 +3635,10 @@ const translations = {
     'campaignBasic.royaltyTooltip': '100 puntos básicos = 1%. Comisiones en transacciones secundarias.',
     'campaignBasic.royaltyPercent': '{percent}% de regalías',
     'campaignBasic.royaltyReceiver': 'Dirección de recepción de regalías',
+
+    // Campaign Creation - Modal
+    'campaign.create.title': 'Lanzar una Campaña',
+    'campaign.create.subtitle': 'Transforma tu visión en realidad',
 
     // Campaign Creation - Steps
     'campaignSteps.information': 'Información',
