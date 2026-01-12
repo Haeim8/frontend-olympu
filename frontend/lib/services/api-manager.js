@@ -139,7 +139,13 @@ class ApiManager {
     if (typeof window !== 'undefined' && window.ethereum) {
       return new ethers.providers.Web3Provider(window.ethereum);
     }
-    // Fallback: RPC public pour lire la blockchain sans wallet
+    return this.getReadOnlyProvider();
+  }
+
+  /**
+   * Forcer un provider RPC public pour la lecture seule (évite les erreurs de réseau wallet)
+   */
+  getReadOnlyProvider() {
     const rpcUrl = config.helpers.getPrimaryRPC();
     return new ethers.providers.JsonRpcProvider(rpcUrl);
   }
@@ -275,7 +281,7 @@ class ApiManager {
     try {
       await this.loadABIs();
 
-      const provider = this.getProvider();
+      const provider = this.getReadOnlyProvider(); // TOUJOURS utiliser l'RPC public pour la liste
       const divarAddress = this.contractAddresses.DivarProxy;
 
       if (!divarAddress) {
@@ -355,7 +361,7 @@ class ApiManager {
     try {
       await this.loadABIs();
 
-      const provider = this.getProvider();
+      const provider = this.getReadOnlyProvider(); // TOUJOURS utiliser l'RPC public pour la lecture des détails
       const campaignContract = new ethers.Contract(address, this.abis.Campaign, provider);
       const divarContract = new ethers.Contract(this.contractAddresses.DivarProxy, this.abis.DivarProxy, provider);
 
