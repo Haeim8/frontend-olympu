@@ -500,12 +500,12 @@ export default function CampaignModal({
       // 4. SEULEMENT MAINTENANT, uploader les documents (la campagne existe on-chain ET dans Supabase)
       const uploadedDocs = {};
 
-      // Mapping des catégories frontend → catégories Supabase (CHECK constraint)
+      // Utilisation des catégories directes attendues par le frontend
       const categoryMapping = {
         whitepaper: 'whitepaper',
-        pitchDeck: 'marketing',    // pitchDeck → marketing
-        legalDocuments: 'legal',   // legalDocuments → legal  
-        media: 'other'             // media → other
+        pitchDeck: 'pitchDeck',
+        legalDocuments: 'legalDocuments',
+        media: 'media'
       };
 
       for (const [type, files] of Object.entries(formData.documents)) {

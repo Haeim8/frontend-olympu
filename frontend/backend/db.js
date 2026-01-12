@@ -471,6 +471,114 @@ export const syncState = {
     }
 };
 
+// =============================================================================
+// FONCTIONS CRUD POUR LES ROUNDS
+// =============================================================================
+
+export const rounds = {
+    async getByCampaign(campaignAddress) {
+        const { data, error } = await getSupabase()
+            .from('campaign_rounds')
+            .select('*')
+            .eq('campaign_address', campaignAddress.toLowerCase())
+            .order('round_number', { ascending: true });
+
+        if (error) {
+            console.error('[Supabase] rounds.getByCampaign error:', error.message);
+            throw error;
+        }
+        return data || [];
+    },
+
+    async upsert(roundData) {
+        const {
+            campaign_address,
+            round_number,
+            share_price,
+            target_amount,
+            funds_raised,
+            shares_sold,
+            end_time,
+            is_active,
+            is_finalized
+        } = roundData;
+
+        const { data, error } = await getSupabase()
+            .from('campaign_rounds')
+            .upsert({
+                campaign_address: campaign_address.toLowerCase(),
+                round_number,
+                share_price,
+                target_amount,
+                funds_raised,
+                shares_sold,
+                end_time: end_time ? (isNaN(end_time) ? Math.floor(new Date(end_time).getTime() / 1000) : end_time) : 0,
+                is_active,
+                is_finalized,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'campaign_address,round_number' })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('[Supabase] rounds.upsert error:', error.message);
+            throw error;
+        }
+        return data;
+    }
+};
+
+// =============================================================================
+// FONCTIONS CRUD POUR LA FINANCE
+// =============================================================================
+
+export const finance = {
+    async getByCampaign(campaignAddress) {
+        const { data, error } = await getSupabase()
+            .from('campaign_finance')
+            .select('*')
+            .eq('campaign_address', campaignAddress.toLowerCase())
+            .single();
+
+        if (error && error.code !== 'PGRST116') {
+            console.error('[Supabase] finance.getByCampaign error:', error.message);
+            throw error;
+        }
+        return data || null;
+    },
+
+    async upsert(financeData) {
+        const {
+            campaign_address,
+            escrow_amount,
+            escrow_release_time,
+            is_escrow_released,
+            total_dividends_deposited,
+            dividends_per_share
+        } = financeData;
+
+        const { data, error } = await getSupabase()
+            .from('campaign_finance')
+            .upsert({
+                campaign_address: campaign_address.toLowerCase(),
+                escrow_amount,
+                escrow_release_time,
+                is_escrow_released,
+                total_dividends_deposited,
+                dividends_per_share,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'campaign_address' })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('[Supabase] finance.upsert error:', error.message);
+            throw error;
+        }
+        return data;
+    }
+};
+
 export default {
     query,
     getClient,
@@ -480,4 +588,6 @@ export default {
     promotions,
     documents,
     syncState,
+    rounds,
+    finance
 };

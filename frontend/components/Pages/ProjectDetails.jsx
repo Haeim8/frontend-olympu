@@ -12,8 +12,9 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import {
   X, Share2, Star, TrendingUp, Users, Clock, Target, Shield,
   ExternalLink, Copy, Check, FileText, History, Wallet,
-  Zap, Globe, Twitter, MessageCircle, Github, Info, Coins, CheckCircle
+  Zap, Globe, Twitter, MessageCircle, Github, Info, Coins, CheckCircle, Loader2
 } from 'lucide-react';
+import ShareSelector from '@/components/project/ShareSelector';
 
 const DEFAULT_PROJECT = {
   name: "",
@@ -49,6 +50,10 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
         .catch(console.error);
     }
   }, []);
+
+  const [isBuying, setIsBuying] = useState(false);
+  const [buyError, setBuyError] = useState(null);
+  const [buySuccess, setBuySuccess] = useState(false);
 
   useEffect(() => { setShowProjectDetails(!!selectedProject); }, [selectedProject]);
 
@@ -136,6 +141,32 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
   const handleClose = () => {
     setShowProjectDetails(false);
     onClose();
+  };
+
+  const handleBuyShares = async (count) => {
+    if (!project?.address || !userAddress) return;
+
+    setIsBuying(true);
+    setBuyError(null);
+    setBuySuccess(false);
+
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      const result = await apiManager.buyShares(project.address, count, signer);
+
+      if (result.success) {
+        setBuySuccess(true);
+        // Recharger les données pour mettre à jour Raised/Progress
+        loadProjectData();
+      }
+    } catch (err) {
+      console.error('[Buy] Erreur:', err);
+      setBuyError(err.reason || err.message || t('projectDetails.buyError'));
+    } finally {
+      setIsBuying(false);
+    }
   };
 
   return (
@@ -331,45 +362,41 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
 
             {/* INVEST */}
             {activeTab === 'invest' && (
-              <div className="max-w-sm mx-auto space-y-4">
-                {/* Price */}
-                <div className="text-center">
-                  <span className="text-xs text-neutral-500">{t('projectDetails.pricePerShare')}</span>
-                  <div className="text-3xl font-bold text-white mt-1">{sharePrice.toFixed(4)} <span className="text-neutral-500 text-lg">Ξ</span></div>
-                </div>
-
-                {/* Quantity */}
-                <div>
-                  <span className="text-xs text-neutral-500 block mb-2">{t('projectDetails.numberOfShares')}</span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setShareCount(Math.max(1, shareCount - 1))}
-                      className="w-12 h-12 rounded-xl bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-white text-lg font-bold">−</button>
-                    <input type="number" min="1" value={shareCount}
-                      onChange={(e) => setShareCount(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="flex-1 h-12 text-center text-xl font-bold bg-neutral-800 border-0 rounded-xl text-white" />
-                    <button onClick={() => setShareCount(shareCount + 1)}
-                      className="w-12 h-12 rounded-xl bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-white text-lg font-bold">+</button>
+              <div className="max-w-xl mx-auto space-y-4">
+                {buySuccess ? (
+                  <div className="text-center py-8 space-y-4">
+                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle className="w-10 h-10 text-green-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">{t('projectDetails.buySuccessTitle', 'Investissement réussi !')}</h3>
+                    <p className="text-neutral-400">{t('projectDetails.buySuccessDesc', 'Vos parts ont été enregistrées sur la blockchain.')}</p>
+                    <Button onClick={() => setBuySuccess(false)} variant="outline" className="border-neutral-700 text-neutral-400">
+                      {t('projectDetails.buyAgain', 'Acheter plus')}
+                    </Button>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <ShareSelector
+                      project={project}
+                      onBuyShares={handleBuyShares}
+                      isLoading={isLoading}
+                      buying={isBuying}
+                    />
 
-                {/* Total */}
-                <div className="p-4 rounded-xl bg-lime-500/10 border border-lime-500/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-neutral-400">{t('projectDetails.total')}</span>
-                    <span className="text-2xl font-bold text-white">{totalCost} Ξ</span>
-                  </div>
-                </div>
+                    {buyError && (
+                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs text-center">
+                        {buyError}
+                      </div>
+                    )}
 
-                {/* Buy Button - disabled if not active */}
-                <Button
-                  className="w-full py-4 rounded-xl bg-lime-500 hover:bg-lime-600 text-black font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!isLive || !userAddress}
-                >
-                  <Wallet className="w-5 h-5 mr-2" />{t('projectDetails.investNow')}
-                </Button>
-
-                {!userAddress && <p className="text-xs text-center text-neutral-500">{t('projectDetails.connectWallet')}</p>}
-                {!isLive && <p className="text-xs text-center text-red-400">{t('projectDetails.campaignNotActive')}</p>}
+                    {!userAddress && (
+                      <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm text-center">
+                        <Info className="w-4 h-4 inline mr-2" />
+                        {t('projectDetails.connectWallet')}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 

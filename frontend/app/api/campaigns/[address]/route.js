@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { campaigns as dbCampaigns } from '@/backend/db';
+import { campaigns as dbCampaigns, rounds as dbRounds, finance as dbFinance } from '@/backend/db';
 import { campaignCache } from '@/backend/redis';
 
 export const runtime = 'nodejs';
@@ -28,10 +28,23 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 });
     }
 
-    // Mettre en cache
-    await campaignCache.setOne(address, campaign);
+    // Récupérer les rounds et la finance
+    const [roundsList, financeData] = await Promise.all([
+      dbRounds.getByCampaign(address),
+      dbFinance.getByCampaign(address)
+    ]);
 
-    return NextResponse.json({ campaign });
+    // Enrichir l'objet campagne
+    const enrichedCampaign = {
+      ...campaign,
+      rounds: roundsList,
+      finance: financeData
+    };
+
+    // Mettre en cache
+    await campaignCache.setOne(address, enrichedCampaign);
+
+    return NextResponse.json({ campaign: enrichedCampaign });
   } catch (error) {
     console.error('[API] Error fetching campaign detail:', error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });

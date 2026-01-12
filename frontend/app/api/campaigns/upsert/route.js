@@ -14,6 +14,24 @@ export async function POST(request) {
 
         const campaign = await dbCampaigns.upsert(data);
 
+        // Sauvegarder le round actuel si présent
+        if (data.current_round_data) {
+            const { rounds: dbRounds } = await import('@/backend/db');
+            await dbRounds.upsert({
+                campaign_address: data.address,
+                ...data.current_round_data
+            });
+        }
+
+        // Sauvegarder la finance si présente
+        if (data.finance_data) {
+            const { finance: dbFinance } = await import('@/backend/db');
+            await dbFinance.upsert({
+                campaign_address: data.address,
+                ...data.finance_data
+            });
+        }
+
         // Invalider le cache
         await campaignCache.invalidate(data.address.toLowerCase());
         await campaignCache.invalidateAll();
