@@ -653,72 +653,45 @@ export default function CampaignModal({
 
   return (
     <Dialog open={showCreateCampaign} onOpenChange={setShowCreateCampaign}>
-      <DialogContent className={`
-        glass-card border-border overflow-hidden flex flex-col
-        /* Desktop: Modal centré classique */
-        md:max-w-5xl md:h-[90vh] md:rounded-2xl md:gap-0
-        /* Mobile/Tablette: Bottom sheet */
-        fixed bottom-0 left-0 right-0 md:top-auto md:bottom-auto
-        rounded-t-2xl md:rounded-none
-        max-h-[85vh] md:max-h-none
-        h-auto md:h-auto
-        md:translate-x-[-50%] md:left-1/2
-        translate-y-0 md:translate-y-0
-        animate-in slide-in-from-bottom-0 md:slide-in-from-center duration-300
-      `}>
-        {/* Header Fixed - Desktop Only Close Button */}
-        <div className="hidden md:flex items-center justify-between p-6 border-b border-border/50 bg-background/50 backdrop-blur-xl z-20 sticky top-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-              <Sparkles className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <DialogTitle className="text-2xl font-bold text-foreground">
-                {t('campaign.create.title', 'Lancer une Campagne')}
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                {t('campaign.create.subtitle', 'Transformez votre vision en réalité.')}
-              </p>
-            </div>
-          </div>
-        </div>
+      <DialogContent className="max-w-5xl h-[90vh] p-0 gap-0 glass-card border-border overflow-hidden flex flex-col">
 
-        {/* Mobile Header with Drag Handle & Close */}
-        <div className="md:hidden flex flex-col items-center pt-4 pb-2 px-6 border-b border-border/30 bg-background/80 backdrop-blur-xl sticky top-0 z-20">
-          {/* Drag Handle */}
-          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full mb-3" />
-          
-          {/* Mobile Header Content */}
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                <Sparkles className="w-5 h-5 text-primary" />
+        {/* Header Fixed */}
+        <div className="p-6 border-b border-border/50 bg-background/50 backdrop-blur-xl z-20 sticky top-0">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
+                <Sparkles className="w-6 h-6 text-primary" />
               </div>
-              <DialogTitle className="text-lg font-bold text-foreground">
-                {t('campaign.create.title', 'Nouvelle Campagne')}
-              </DialogTitle>
+              <div>
+                <DialogTitle className="text-2xl font-bold text-foreground">
+                  {t('campaign.create.title', 'Lancer une Campagne')}
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  {t('campaign.create.subtitle', 'Transformez votre vision en réalité.')}
+                </p>
+              </div>
             </div>
+            {/* Close button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowCreateCampaign(false)}
-              className="h-8 w-8 rounded-full bg-muted/50 hover:bg-muted"
+              className="h-8 w-8 rounded-full bg-muted/50 hover:bg-muted absolute right-4 top-1/2 -translate-y-1/2"
             >
               <X className="w-4 h-4" />
             </Button>
           </div>
+
+          {status !== 'success' && status !== 'loading' && (
+            <div className="hidden lg:block">
+              <StepIndicator currentStep={currentStep} totalSteps={5} />
+            </div>
+          )}
         </div>
 
-        {/* Mobile Step Indicator - More Compact */}
-        {status !== 'success' && status !== 'loading' && (
-          <div className="md:hidden px-4 py-2 border-b border-border/30 bg-background/30">
-            <StepIndicator currentStep={currentStep} totalSteps={5} />
-          </div>
-        )}
-
         {/* Scrollable Content */}
-        <ScrollArea className="flex-1 bg-background/30 md:overflow-auto">
-          <div className="p-4 md:p-10 max-w-4xl mx-auto">
+        <ScrollArea className="flex-1 bg-background/30">
+          <div className="p-6 md:p-10 max-w-4xl mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
@@ -735,7 +708,7 @@ export default function CampaignModal({
 
         {/* Footer Fixed */}
         {status !== 'success' && status !== 'loading' && (
-          <div className="p-4 md:p-6 border-t border-border/50 bg-background/80 backdrop-blur-xl z-20 flex justify-between items-center safe-area-pb">
+          <div className="p-6 border-t border-border/50 bg-background/50 backdrop-blur-xl z-20 flex justify-between items-center">
             <Button
               variant="ghost"
               onClick={handlePreviousStep}
@@ -743,8 +716,7 @@ export default function CampaignModal({
               className="hover:bg-muted text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">{t('previous', 'Précédent')}</span>
-              <span className="sm:hidden">{t('previous', 'Préc.')}</span>
+              {t('previous', 'Précédent')}
             </Button>
 
             {currentStep < 5 ? (
@@ -752,29 +724,17 @@ export default function CampaignModal({
                 onClick={handleNextStep}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20"
               >
-                <span className="hidden sm:inline">{t('next', 'Suivant')}</span>
-                <span className="sm:hidden">{t('next', 'Suiv.')}</span>
+                {t('next', 'Suivant')}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             ) : (
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white font-bold px-6 md:px-8 shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white font-bold px-8 shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    <span className="hidden sm:inline">{t('campaign.submitting', 'Création...')}</span>
-                    <span className="sm:hidden">...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    <span className="hidden sm:inline">{t('campaign.submit', 'Lancer')}</span>
-                    <span className="sm:hidden">{t('campaign.submit', 'Créer')}</span>
-                  </>
-                )}
+                {isSubmitting ? t('campaign.submitting', 'Création en cours...') : t('campaign.submit', 'Lancer la Campagne')}
+                {isSubmitting ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
               </Button>
             )}
           </div>
