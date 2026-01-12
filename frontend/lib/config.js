@@ -49,7 +49,7 @@ const ACTIVE_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'baseSepolia';
 // =============================================================================
 
 const getContractAddresses = () => ({
-    DivarProxy: process.env.NEXT_PUBLIC_DIVAR_PROXY_ADDRESS || '0xaB0999Eae920849a41A55eA080d0a4a210156817',
+    DivarProxy: process.env.NEXT_PUBLIC_DIVAR_PROXY_ADDRESS || null,
     CampaignKeeper: process.env.NEXT_PUBLIC_CAMPAIGN_KEEPER_ADDRESS || null,
     PriceConsumerV3: process.env.NEXT_PUBLIC_PRICE_CONSUMER_ADDRESS || null,
     RecPromotionManager: process.env.NEXT_PUBLIC_REC_PROMOTION_MANAGER_ADDRESS || null,

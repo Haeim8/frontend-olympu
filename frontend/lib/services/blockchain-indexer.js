@@ -36,12 +36,11 @@ const CAMPAIGN_ABI = [
 
 class BlockchainIndexer {
     constructor() {
-        const rpcUrl = 'https://sepolia.base.org';
-        console.log('[Indexer] Initialisation avec ethers.providers.JsonRpcProvider');
+        const rpcUrl = config.helpers.getPrimaryRPC();
+        console.log(`[Indexer] Initialisation avec RPC: ${rpcUrl}`);
 
-        // Utiliser le provider standard d'ethers pour la compatibilité Contract
         this.provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-        this.divarAddress = '0xaB0999Eae920849a41A55eA080d0a4a210156817';
+        this.divarAddress = config.contracts.DivarProxy;
         this.isIndexing = false;
     }
 
@@ -98,7 +97,8 @@ class BlockchainIndexer {
     async syncNewCampaigns() {
         try {
             // Récupérer le dernier block synchronisé
-            const lastSyncState = await syncState.get('campaigns') || { last_block: 36103143 }; // Mis à jour pour éviter trop d'historique au début
+            const startBlock = parseInt(process.env.DIVAR_START_BLOCK || '0');
+            const lastSyncState = await syncState.get('campaigns') || { last_block: startBlock };
             const currentBlock = await this.provider.getBlockNumber();
             let fromBlock = lastSyncState.last_block + 1;
 

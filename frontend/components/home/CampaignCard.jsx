@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useLanguage';
-import { apiManager } from '@/lib/services/api-manager';
 import { 
   Eye, 
   ArrowRight, 
@@ -23,33 +22,11 @@ import {
 export default function CampaignCard({ 
   project, 
   onViewDetails, 
-  onPreloadHover 
+  onPreloadHover,
+  promotion 
 }) {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
-  const [promotion, setPromotion] = useState(null);
-
-  // Charger les données de promotion
-  useEffect(() => {
-    const checkPromotion = async () => {
-      if (!project.address) return;
-      
-      try {
-        const promotionData = await apiManager.isCampaignBoosted(
-          project.address, 
-          project.currentRound || 1
-        );
-        
-        if (promotionData.isBoosted || promotionData.isBosted) { // typo dans le service
-          setPromotion(promotionData);
-        }
-      } catch (error) {
-        console.warn(t('campaign.card.promotionError'), error);
-      }
-    };
-
-    checkPromotion();
-  }, [project.address, project.currentRound, t]);
 
   const progressPercentage = ((parseFloat(project.raised) / parseFloat(project.goal)) * 100) || 0;
   const isNearCompletion = progressPercentage >= 80;

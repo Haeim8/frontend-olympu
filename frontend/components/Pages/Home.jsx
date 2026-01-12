@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiManager } from '@/lib/services/api-manager';
 import { useTranslation } from '@/hooks/useLanguage';
 
 import HomeHeader from '@/components/home/HomeHeader';
@@ -177,26 +176,8 @@ export default function Home({ toggleFavorite, isFavorite }) {
   }, []);
 
   const fetchOnchainCampaigns = useCallback(async () => {
-    const results = [];
-    try {
-      const addresses = await apiManager.getAllCampaigns(false);
-      for (const addr of addresses) {
-        try {
-          const data = await apiManager.getCampaignData(addr, false);
-          if (data) {
-            const normalized = normalizeCampaign(data);
-            if (normalized) {
-              results.push(normalized);
-            }
-          }
-        } catch (chainError) {
-          console.warn('Fallback chain fetch failed for', addr, chainError);
-        }
-      }
-    } catch (error) {
-      console.warn('Erreur fallback getAllCampaigns:', error);
-    }
-    return results;
+    // No longer needed - using Supabase only
+    return [];
   }, []);
 
   const loadCampaigns = useCallback(async () => {
@@ -209,42 +190,26 @@ export default function Home({ toggleFavorite, isFavorite }) {
     };
 
     try {
-      // 1️⃣ CHARGER LES CAMPAGNES DE LA DB UNIQUEMENT (instantané)
-      const campaigns = await apiManager.getAllCampaigns({});
+      // Charger depuis Supabase via l'API (rapide)
+      const res = await fetch('/api/campaigns');
+      const data = await res.json();
+      const campaigns = data.campaigns || [];
       const normalized = campaigns.map(normalizeCampaign).filter(Boolean);
 
-      // 2️⃣ AFFICHER IMMÉDIATEMENT LES DONNÉES DE LA DB
       if (normalized.length > 0) {
         applyCampaigns(normalized);
-        setIsLoading(false); // Arrêter le loading MAINTENANT
-      }
-
-      // Mode Web3 : lecture directe blockchain, pas de sync nécessaire
-      console.log('✅ Lecture blockchain directe');
-
-      // Si aucune campagne DB, fallback onchain
-      if (normalized.length === 0) {
-        const onchainCampaigns = await fetchOnchainCampaigns();
-        if (onchainCampaigns.length > 0) {
-          applyCampaigns(onchainCampaigns);
-        } else {
-          applyCampaigns([]);
-        }
+      } else {
+        applyCampaigns([]);
       }
     } catch (err) {
       console.error('Error fetching campaigns:', err);
-      const fallback = await fetchOnchainCampaigns();
-      if (fallback.length > 0) {
-        applyCampaigns(fallback);
-      } else {
-        setProjects([]);
-        calculateStats([]);
-        setError(t('campaigns.error.generic', 'Impossible de charger les campagnes. Veuillez réessayer plus tard.'));
-      }
+      setProjects([]);
+      calculateStats([]);
+      setError(t('campaigns.error.generic', 'Impossible de charger les campagnes.'));
     } finally {
       setIsLoading(false);
     }
-  }, [calculateStats, t, fetchOnchainCampaigns]);
+  }, [calculateStats, t]);
 
   useEffect(() => {
     loadCampaigns();
@@ -261,13 +226,12 @@ export default function Home({ toggleFavorite, isFavorite }) {
 
   const handleCampaignCreated = useCallback(async (newCampaignAddress) => {
     setShowCreateCampaign(false);
-    apiManager.invalidateCache('api_campaign');
-    apiManager.invalidateCache('campaign');
     if (newCampaignAddress) {
       try {
-        const data = await apiManager.getCampaignData(newCampaignAddress, false);
-        if (data) {
-          const normalized = normalizeCampaign(data);
+        const res = await fetch(`/api/campaigns/${newCampaignAddress}`);
+        const data = await res.json();
+        if (data.campaign) {
+          const normalized = normalizeCampaign(data.campaign);
           if (normalized) {
             setProjects((prev) => {
               const lower = newCampaignAddress.toLowerCase();
@@ -279,8 +243,8 @@ export default function Home({ toggleFavorite, isFavorite }) {
             return;
           }
         }
-      } catch (chainError) {
-        console.warn('Impossible de récupérer la campagne nouvellement créée:', chainError);
+      } catch (error) {
+        console.warn('Impossible de récupérer la campagne nouvellement créée:', error);
       }
     }
     loadCampaigns();
@@ -299,13 +263,13 @@ export default function Home({ toggleFavorite, isFavorite }) {
   }, []);
 
   const handleRefresh = useCallback(() => {
-    apiManager.invalidateCache('api_campaign');
-    apiManager.invalidateCache('campaign');
     loadCampaigns();
   }, [loadCampaigns]);
 
   const handlePreloadHover = useCallback((campaignId) => {
-    apiManager.preloadCampaignDetails(campaignId);
+    if (campaignId) {
+      fetch(`/api/campaigns/${campaignId}`).catch(() => {});
+    }
   }, []);
 
   const totalVisible = filteredProjects.length;
@@ -369,7 +333,6 @@ export default function Home({ toggleFavorite, isFavorite }) {
             <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
               <p>Total campaigns: {projects.length}</p>
               <p>Filtered campaigns: {filteredProjects.length}</p>
-              <p>Cache stats: {JSON.stringify(apiManager.getCacheStats?.() ?? {}, null, 2)}</p>
               <p>Active filters: {JSON.stringify(filters, null, 2)}</p>
             </div>
           </div>

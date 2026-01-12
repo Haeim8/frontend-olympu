@@ -61,15 +61,18 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
     if (!project?.id) return;
     try {
       setIsLoading(true);
-      const [projectDetails, txData] = await Promise.all([
-        apiManager.getCampaignData(project.id, false),
+      const [projectRes, txRes] = await Promise.all([
+        fetch(`/api/campaigns/${project.id}`),
         fetch(`/api/campaigns/${project.id}/transactions`).then(r => r.json()).catch(() => ({ transactions: [] }))
       ]);
-      if (projectDetails) {
-        setProjectData(projectDetails);
-        // Metadata comes from blockchain or Supabase
+      
+      const projectJson = await projectRes.json();
+      const txData = txRes || { transactions: [] };
+      
+      if (projectJson.campaign) {
+        setProjectData(projectJson.campaign);
       }
-      if (txData?.transactions) setTransactions(txData.transactions);
+      if (txData.transactions) setTransactions(txData.transactions);
     } catch (err) { console.error('Error:', err); }
     finally { setIsLoading(false); }
   }, [project?.id]);

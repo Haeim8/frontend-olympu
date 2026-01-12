@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { apiManager } from '@/lib/services/api-manager';
 
 import CampaignHeader from '@/components/campaign/CampaignHeader';
 import DividendDistribution from '@/components/campaign/finance/DividendDistribution';
@@ -66,16 +65,33 @@ export default function Campaign() {
         setIsLoading(true);
         setError(null);
 
-        const campaigns = await apiManager.getAllCampaigns({ creator: address });
+        // Fetch user's campaigns
+        const listRes = await fetch(`/api/campaigns?creator=${address}`);
+        const listData = await listRes.json();
+        const campaigns = listData.campaigns || [];
+        
         if (cancelled) return;
 
         if (Array.isArray(campaigns) && campaigns.length > 0) {
           const firstCampaign = campaigns[0];
-          setCampaignAddress(firstCampaign.address);
+          const campaignAddr = firstCampaign.address;
+          setCampaignAddress(campaignAddr);
+
+          // Use list data first (fast), then fetch full details with rounds/finance
           const summaryData = enrichCampaignData(firstCampaign);
           if (summaryData) {
             setCampaignData(summaryData);
           }
+
+          // Fetch full details in background
+          fetch(`/api/campaigns/${campaignAddr}`)
+            .then(res => res.json())
+            .then(data => {
+              if (!cancelled && data.campaign) {
+                setCampaignData(enrichCampaignData(data.campaign));
+              }
+            })
+            .catch(() => {}); // Silently fail, we already have data
         } else {
           setCampaignAddress(null);
           setCampaignData(null);
@@ -98,71 +114,42 @@ export default function Campaign() {
     return () => { cancelled = true; };
   }, [address, t]);
 
-  useEffect(() => {
-    if (!campaignAddress) return;
-    let cancelled = false;
-
-    const loadCampaignData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const data = await apiManager.getCampaignData(campaignAddress);
-        if (cancelled) return;
-
-        if (data) {
-          setCampaignData(enrichCampaignData(data));
-        } else {
-          setError(t('campaign.loadDataError', 'Données de campagne introuvables.'));
-        }
-      } catch (err) {
-        if (cancelled) return;
-        console.error('Erreur chargement campagne:', err);
-        setError(t('campaign.dataLoadingError', 'Erreur lors du chargement des détails.'));
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadCampaignData();
-    return () => { cancelled = true; };
-  }, [campaignAddress, t]);
-
   const handlePreloadHover = useCallback((identifier) => {
     if (identifier && identifier !== campaignAddress) {
-      apiManager.getCampaignData(identifier);
+      fetch(`/api/campaigns/${identifier}`).catch(() => {});
     }
   }, [campaignAddress]);
 
-  const handleDistributionComplete = useCallback(() => {
+  const handleDistributionComplete = useCallback(async () => {
     if (!campaignAddress) return;
-    apiManager.invalidateCampaign(campaignAddress);
-    apiManager.getCampaignData(campaignAddress, false).then((data) => {
-      setCampaignData(enrichCampaignData(data));
-    });
+    const res = await fetch(`/api/campaigns/${campaignAddress}`);
+    const data = await res.json();
+    if (data.campaign) {
+      setCampaignData(enrichCampaignData(data.campaign));
+    }
   }, [campaignAddress]);
 
-  const handleActionComplete = useCallback((actionType) => {
+  const handleActionComplete = useCallback(async (actionType) => {
     if (!campaignAddress) return;
 
     switch (actionType) {
       case 'escrow_released':
       case 'campaign_reopened':
-        apiManager.invalidateCampaign(campaignAddress);
-        apiManager.getCampaignData(campaignAddress, false).then((data) => {
-          setCampaignData(enrichCampaignData(data));
-        });
+        const res = await fetch(`/api/campaigns/${campaignAddress}`);
+        const data = await res.json();
+        if (data.campaign) {
+          setCampaignData(enrichCampaignData(data.campaign));
+        }
         break;
       default:
-        apiManager.invalidateCampaign(campaignAddress);
+        break;
     }
   }, [campaignAddress]);
 
   const handleDocumentUpdate = useCallback(() => {
+    // Trigger a refresh of the campaign data
     if (!campaignAddress) return;
-    apiManager.cache.invalidate(`campaign_documents_${campaignAddress}`);
+    fetch(`/api/campaigns/${campaignAddress}`).catch(() => {});
   }, [campaignAddress]);
 
   const handleSocialUpdate = useCallback((socialData) => {

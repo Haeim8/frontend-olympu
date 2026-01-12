@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from 'react';
-import { apiManager } from '@/lib/services/api-manager';
 
 const EMPTY_STATS = {
   users: 0,
@@ -19,45 +18,28 @@ export function useLandingStats() {
     setError(null);
 
     try {
-      const addresses = await apiManager.getAllCampaigns();
-
-      if (!Array.isArray(addresses) || addresses.length === 0) {
-        setStats(EMPTY_STATS);
-        setLoading(false);
-        return;
-      }
-
-      const summaries = await Promise.all(
-        addresses.map(async (address) => {
-          try {
-            return await apiManager.getCampaignSummary(address, { useCache: true });
-          } catch (summaryError) {
-            console.warn('Landing stats - summary error:', summaryError);
-            return null;
-          }
-        })
-      );
+      const res = await fetch('/api/campaigns');
+      const data = await res.json();
+      const campaigns = data.campaigns || [];
 
       let totalRaised = 0;
       let totalInvestors = 0;
 
-      summaries.forEach((summary) => {
-        if (!summary) return;
-
-        const raisedValue = parseFloat(summary.raised ?? summary.fundsRaised ?? summary.totalRaised ?? '0');
+      campaigns.forEach((campaign) => {
+        const raisedValue = parseFloat(campaign.raised ?? '0');
         if (!Number.isNaN(raisedValue)) {
           totalRaised += raisedValue;
         }
 
-        const investorCount = Number(summary.investors ?? summary.investorCount ?? 0);
-        if (Number.isFinite(investorCount)) {
-          totalInvestors += investorCount;
+        const sharesSold = parseFloat(campaign.shares_sold ?? campaign.sharesSold ?? '0');
+        if (Number.isFinite(sharesSold)) {
+          totalInvestors += Math.floor(sharesSold / 10);
         }
       });
 
       setStats({
         users: totalInvestors,
-        campaigns: addresses.length,
+        campaigns: campaigns.length,
         totalRaised,
       });
     } catch (err) {

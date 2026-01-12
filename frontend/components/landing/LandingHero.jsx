@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronRight, Activity, ArrowUpRight } from "lucide-react";
 import { useTranslation } from '@/hooks/useLanguage';
-import { apiManager } from '@/lib/services/api-manager';
 
 export function LandingHero({
   darkMode,
@@ -22,7 +21,9 @@ export function LandingHero({
   useEffect(() => {
     const fetchRealData = async () => {
       try {
-        const campaigns = await apiManager.getAllCampaigns({});
+        const res = await fetch('/api/campaigns');
+        const data = await res.json();
+        const campaigns = data.campaigns || [];
         // Format for terminal view
         const formatted = campaigns.slice(0, 5).map(c => {
           // Calculer le temps restant

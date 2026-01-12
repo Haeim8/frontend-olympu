@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { campaigns as dbCampaigns } from '@/backend/db';
-import { campaignCache } from '@/backend/redis';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,24 +9,22 @@ export async function GET(request) {
   const status = searchParams.get('status');
   const category = searchParams.get('category');
   const creator = searchParams.get('creator');
+  const refresh = searchParams.get('refresh') === 'true';
 
   try {
-    // Récupérer depuis PostgreSQL/Supabase (cache)
-    const campaignList = await dbCampaigns.getAll({ status, category });
+    let campaignList = await dbCampaigns.getAll({ status, category });
 
-    // Filtrage supplémentaire par créateur si présent
-    let results = campaignList;
     if (creator) {
-      results = results.filter(c => c.creator?.toLowerCase() === creator.toLowerCase());
+      campaignList = campaignList.filter(c => c.creator?.toLowerCase() === creator.toLowerCase());
     }
 
-    console.log(`[API] ✅ ${results.length} campagnes depuis cache`);
+    console.log(`[API] ✅ ${campaignList.length} campagnes depuis Supabase (cache)`);
 
     return NextResponse.json(
-      { campaigns: results },
+      { campaigns: campaignList },
       {
         headers: {
-          'Cache-Control': 's-maxage=10, stale-while-revalidate=30',
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
         },
       },
     );

@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Star, TrendingUp, Zap, ExternalLink } from "lucide-react";
-import { apiManager } from '@/lib/services/api-manager';
 
 import { useTranslation } from '@/hooks/useLanguage';
 
@@ -44,8 +43,17 @@ export function PromotedCampaignsCarousel({ onViewCampaign }) {
   // Charger les campagnes promues
   const loadPromotedCampaigns = useCallback(async () => {
     try {
-      // Charger les promotions actives
-      const activePromotions = await apiManager.getActivePromotions();
+      // Charger les promotions actives depuis l'API
+      const [promotionsRes, campaignsRes] = await Promise.all([
+        fetch('/api/promotions'),
+        fetch('/api/campaigns')
+      ]);
+
+      const promotionsData = await promotionsRes.json();
+      const campaignsData = await campaignsRes.json();
+
+      const activePromotions = promotionsData.promotions || [];
+      const campaigns = campaignsData.campaigns || [];
 
       if (!activePromotions || activePromotions.length === 0) {
         setCampaigns([]);
@@ -53,46 +61,41 @@ export function PromotedCampaignsCarousel({ onViewCampaign }) {
         return;
       }
 
-      // Charger TOUTES les campagnes en parallèle (non bloquant)
-      const campaignPromises = activePromotions.map(async (promotion) => {
-        try {
-          const campaignData = await apiManager.getCampaignData(promotion.campaign_address, true);
-
-          if (!campaignData) return null;
-
-          const progress = ((parseFloat(campaignData.raised || 0) / parseFloat(campaignData.goal || 1)) * 100) || 0;
-
-          return {
-            address: promotion.campaign_address,
-            name: campaignData.name || 'Campaign',
-            description: campaignData.description || campaignData.shortDescription || '',
-            logo: campaignData.logo || '🚀',
-            category: campaignData.category || 'Startup',
-            goal: campaignData.goal || '0',
-            raised: campaignData.raised || '0',
-            progress: Math.min(progress, 100),
-            investors: campaignData.investors || 0,
-            isActive: campaignData.isActive,
-            promotion: {
-              type: promotion.boost_type || 'featured',
-              priority: promotion.priority || 0,
-              endsAt: promotion.end_timestamp,
-            },
-          };
-        } catch (error) {
-          console.warn(`Erreur chargement campagne ${promotion.campaign_address}:`, error);
-          return null;
-        }
+      // Mapper les promotions avec les données de campagnes
+      const campaignsDataMap = {};
+      campaigns.forEach(c => {
+        campaignsDataMap[c.address?.toLowerCase()] = c;
       });
 
-      // Attendre toutes les campagnes en parallèle
-      const results = await Promise.all(campaignPromises);
-      const campaignsData = results.filter(Boolean);
+      const campaignsDataResult = activePromotions.map(promotion => {
+        const campaign = campaignsDataMap[promotion.campaign_address?.toLowerCase()];
+        if (!campaign) return null;
+
+        const progress = ((parseFloat(campaign.raised || 0) / parseFloat(campaign.goal || 1)) * 100) || 0;
+
+        return {
+          address: promotion.campaign_address,
+          name: campaign.name || 'Campaign',
+          description: campaign.description || '',
+          logo: campaign.logo || '🚀',
+          category: campaign.category || 'Startup',
+          goal: campaign.goal || '0',
+          raised: campaign.raised || '0',
+          progress: Math.min(progress, 100),
+          investors: campaign.investors || 0,
+          isActive: campaign.is_active,
+          promotion: {
+            type: promotion.boost_type || 'featured',
+            priority: promotion.priority || 0,
+            endsAt: promotion.end_timestamp,
+          },
+        };
+      }).filter(Boolean);
 
       // Trier par priorité de promotion
-      campaignsData.sort((a, b) => (b.promotion.priority || 0) - (a.promotion.priority || 0));
+      campaignsDataResult.sort((a, b) => (b.promotion.priority || 0) - (a.promotion.priority || 0));
 
-      setCampaigns(campaignsData);
+      setCampaigns(campaignsDataResult);
       setIsLoading(false);
     } catch (error) {
       console.error('Erreur chargement campagnes promues:', error);

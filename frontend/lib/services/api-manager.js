@@ -5,7 +5,7 @@
  *
  * Gestionnaire centralisé des appels API et blockchain.
  * Compatible avec le navigateur (Client-side safe).
- * BLOCKCHAIN = SOURCE DE VÉRITÉ. Supabase = cache synchronisé.
+ * BLOCKCHAIN = SOURCE DE VÉRITÉ. Supabase = cache synchronisé (par indexeur).
  * =============================================================================
  */
 
@@ -15,10 +15,6 @@ import DivarProxyABI from '../../ABI/DivarProxyABI.json';
 import CampaignABI from '../../ABI/CampaignABI.json';
 import { clientCache } from './client-cache.js';
 
-// =============================================================================
-// UTILITAIRES
-// =============================================================================
-
 const toStringSafe = (value, fallback = '0') => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'string') return value;
@@ -26,25 +22,17 @@ const toStringSafe = (value, fallback = '0') => {
   return fallback;
 };
 
-// Formater comme DexScreener: 0.0₅8453
 const formatSmallNumber = (value) => {
   if (!value || value === '0' || value === 0) return '0';
-
   const num = parseFloat(value);
-
-  // Valeurs normales
   if (num >= 0.01) return num.toFixed(4);
   if (num >= 0.0001) return num.toFixed(6);
-
-  // Format notation scientifique
   const str = num.toExponential();
   const [coefficient, exponent] = str.split('e');
   const exp = Math.abs(parseInt(exponent));
-
   const coef = parseFloat(coefficient).toFixed(4).replace(/\.?0+$/, '').replace('0.', '');
   const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
   const expStr = (exp - 1).toString().split('').map(d => subscripts[parseInt(d)]).join('');
-
   return `0.0${expStr}${coef}`;
 };
 
@@ -61,7 +49,6 @@ const parseBool = (value, fallback) => {
 
 const normalizeCampaignSummary = (summary) => {
   if (!summary) return null;
-
   const sharePrice = toStringSafe(summary.sharePrice ?? summary.share_price ?? '0');
   const goal = toStringSafe(summary.goal ?? '0');
   const raised = toStringSafe(summary.raised ?? '0');
@@ -76,7 +63,6 @@ const normalizeCampaignSummary = (summary) => {
   const investors = Number.parseInt(summary.total_investors ?? summary.unique_investors ?? sharesSold, 10);
   const progress = goalNumber > 0 ? (raisedNumber / goalNumber) * 100 : 0;
 
-  // Parser les métadonnées pour récupérer Socials/Team/Sector
   let ipfs = summary.ipfs || {};
   if (summary.metadata_uri && (!summary.ipfs || Object.keys(summary.ipfs).length === 0)) {
     try {
@@ -116,10 +102,6 @@ const normalizeCampaignSummary = (summary) => {
   };
 };
 
-// =============================================================================
-// CLASSE API MANAGER
-// =============================================================================
-
 class ApiManager {
   constructor() {
     this.abis = {};
@@ -132,9 +114,6 @@ class ApiManager {
     this.isInitialized = true;
   }
 
-  /**
-   * Obtenir un provider - wallet si disponible, sinon RPC public
-   */
   getProvider() {
     if (typeof window !== 'undefined' && window.ethereum) {
       return new ethers.providers.Web3Provider(window.ethereum);
@@ -142,66 +121,46 @@ class ApiManager {
     return this.getReadOnlyProvider();
   }
 
-  /**
-   * Forcer un provider RPC public pour la lecture seule (évite les erreurs de réseau wallet)
-   */
   getReadOnlyProvider() {
     const rpcUrl = config.helpers.getPrimaryRPC();
     return new ethers.providers.JsonRpcProvider(rpcUrl);
   }
 
-  // Invalider le cache client
   invalidateCache(key) {
     if (!key) {
       console.log('[API Manager] Invalidation de tout le cache client');
       clientCache.clear();
       return;
     }
-
     if (key.includes('campaign') || key.includes('api_campaign')) {
       clientCache.clear();
     }
-
     console.log(`[API Manager] Cache client invalidé pour: ${key}`);
   }
 
-  // Placeholder pour le préchargement
-  preloadCampaignDetails() {
-    // Peut être implémenté plus tard si nécessaire
-  }
+  preloadCampaignDetails() {}
 
   async loadABIs() {
     if (Object.keys(this.abis).length > 0) return;
-
     this.abis = {
       DivarProxy: DivarProxyABI.abi,
       Campaign: CampaignABI.abi
     };
-
     console.log('[ApiManager] ABIs chargés');
   }
 
-  // =============================================================================
-  // SYNCHRONISATION BLOCKCHAIN → SUPABASE
-  // =============================================================================
-
-  /**
-   * @dev Investir dans une campagne (acheter des parts)
-   * @param {string} campaignAddress Adresse du contrat de campagne
-   * @param {number} shareCount Nombre de parts à acheter
-   * @param {object} signer Signer ethers.js
-   */
   async buyShares(campaignAddress, shareCount, signer) {
     console.log(`[ApiManager] Achat de ${shareCount} parts pour ${campaignAddress}...`);
     try {
-      const campaignContract = new ethers.Contract(campaignAddress, CampaignABI, signer);
+      await this.loadABIs();
+      const campaignContract = new ethers.Contract(campaignAddress, this.abis.Campaign, signer);
       const roundData = await campaignContract.rounds(await campaignContract.currentRound());
       const totalPrice = roundData.sharePrice.mul(shareCount);
 
       console.log(`[ApiManager] Envoi de la transaction: ${ethers.utils.formatEther(totalPrice)} ETH`);
       const tx = await campaignContract.buyShares(shareCount, {
         value: totalPrice,
-        gasLimit: 300000 // Sécurité
+        gasLimit: 300000
       });
 
       console.log(`[ApiManager] Transaction envoyée: ${tx.hash}. Attente de confirmation...`);
@@ -209,9 +168,6 @@ class ApiManager {
 
       if (receipt.status === 1) {
         console.log(`[ApiManager] Transaction confirmée !`);
-        // Déclencher une sync vers Supabase (optionnel car l'indexeur devrait le faire,
-        // mais bien pour l'immédiateté)
-        this.syncToSupabase(campaignAddress);
         return { success: true, txHash: tx.hash };
       } else {
         throw new Error("La transaction a échoué on-chain");
@@ -222,178 +178,87 @@ class ApiManager {
     }
   }
 
-  /**
-   * Synchroniser une campagne vers Supabase (fire and forget)
-   */
-  async syncToSupabase(campaignData) {
-    if (!campaignData?.address || !campaignData?.name) return;
-
-    // Générer un symbol par défaut si absent
-    const symbol = campaignData.symbol || campaignData.name.substring(0, 4).toUpperCase();
-
-    try {
-      await fetch('/api/campaigns/upsert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: campaignData.address,
-          creator: campaignData.creator,
-          name: campaignData.name,
-          symbol: symbol,
-          category: campaignData.category || 'Other',
-          logo: campaignData.logo || '',
-          goal: campaignData.goal || '0',
-          raised: campaignData.raised || '0',
-          share_price: campaignData.sharePrice || campaignData.share_price || '0',
-          shares_sold: campaignData.sharesSold || campaignData.shares_sold || '0',
-          total_shares: campaignData.totalShares || campaignData.total_shares || '0',
-          end_date: campaignData.endDate || campaignData.end_date,
-          status: campaignData.status || 'active',
-          is_active: campaignData.isActive ?? true,
-          is_finalized: campaignData.isFinalized ?? false,
-          current_round: campaignData.current_round || 1,
-          current_round_data: campaignData.current_round_data || {
-            round_number: campaignData.current_round || 1,
-            share_price: campaignData.sharePrice || campaignData.share_price || '0',
-            target_amount: campaignData.goal || '0',
-            funds_raised: campaignData.raised || '0',
-            shares_sold: campaignData.sharesSold || campaignData.shares_sold || '0',
-            end_time: campaignData.endDate || campaignData.end_date,
-            is_active: campaignData.isActive ?? true,
-            is_finalized: campaignData.isFinalized ?? false
-          }
-        })
-      });
-      console.log(`[ApiManager] Supabase sync: ${campaignData.address.slice(0, 8)}`);
-    } catch (error) {
-      console.warn(`[ApiManager] Supabase sync failed:`, error.message);
-    }
-  }
-
-  // =============================================================================
-  // LECTURE CAMPAGNES - BLOCKCHAIN D'ABORD, TOUJOURS
-  // =============================================================================
-
-  /**
-   * Récupérer toutes les campagnes - BLOCKCHAIN = SOURCE DE VÉRITÉ
-   */
   async getAllCampaigns(filters = {}) {
     try {
       await this.loadABIs();
 
-      const provider = this.getReadOnlyProvider(); // TOUJOURS utiliser l'RPC public pour la liste
       const divarAddress = this.contractAddresses.DivarProxy;
-
       if (!divarAddress) {
         console.error('[ApiManager] DivarProxy address not configured');
         return [];
       }
 
-      try {
-        const contract = new ethers.Contract(divarAddress, this.abis.DivarProxy, provider);
-        const addresses = await contract.getAllCampaigns();
+      const provider = this.getReadOnlyProvider();
+      const contract = new ethers.Contract(divarAddress, this.abis.DivarProxy, provider);
 
-        // Dédupliquer les adresses
-        const uniqueAddresses = [...new Set(addresses.map(a => a.toLowerCase()))];
-        console.log(`[ApiManager] ${uniqueAddresses.length} campagnes depuis blockchain`);
+      console.log('[ApiManager] Lecture depuis blockchain...');
+      const addresses = await contract.getAllCampaigns();
+      const uniqueAddresses = [...new Set(addresses.map(a => a.toLowerCase()))];
+      console.log(`[ApiManager] ${uniqueAddresses.length} campagnes depuis blockchain`);
 
-        // Récupérer les détails en parallèle
-        const campaignPromises = uniqueAddresses.map(address =>
-          this.getCampaignDataDirect(address).catch(() => null)
-        );
-
-        const results = await Promise.allSettled(campaignPromises);
-        const allCampaigns = results
-          .filter(result => result.status === 'fulfilled' && result.value)
-          .map(result => result.value);
-
-        // Dédupliquer par adresse
-        const seen = new Set();
-        const blockchainCampaigns = allCampaigns.filter(campaign => {
-          const addr = campaign.address?.toLowerCase();
-          if (seen.has(addr)) return false;
-          seen.add(addr);
-          return true;
-        });
-
-        console.log(`[ApiManager] ${blockchainCampaigns.length} campagnes valides`);
-
-        // Mettre en cache
-        if (!filters.creator) {
-          clientCache.setCampaigns(blockchainCampaigns);
+      const blockchainCampaigns = [];
+      for (const address of uniqueAddresses) {
+        const data = await this.getCampaignDataDirect(address);
+        if (data) {
+          blockchainCampaigns.push(data);
         }
-
-        // Filtrer par créateur si demandé
-        if (filters.creator) {
-          const creatorLower = filters.creator.toLowerCase();
-          const filtered = blockchainCampaigns.filter(c => c.creator?.toLowerCase() === creatorLower);
-          console.log(`[ApiManager] Filtré: ${filtered.length} campagnes pour ${creatorLower}`);
-          return filtered;
-        }
-
-        return blockchainCampaigns;
-
-      } catch (blockchainError) {
-        console.error('[ApiManager] Erreur blockchain:', blockchainError.message);
-
-        // Fallback: cache client
-        const cached = clientCache.getCampaigns(24 * 60 * 60 * 1000);
-        if (cached) {
-          console.log('[ApiManager] Fallback: cache client');
-          return cached;
-        }
-
-        return [];
       }
+
+      console.log(`[ApiManager] ${blockchainCampaigns.length} campagnes valides`);
+
+      if (!filters.creator) {
+        clientCache.setCampaigns(blockchainCampaigns);
+      }
+
+      if (filters.creator) {
+        const creatorLower = filters.creator.toLowerCase();
+        const filtered = blockchainCampaigns.filter(c => c.creator?.toLowerCase() === creatorLower);
+        return filtered;
+      }
+
+      return blockchainCampaigns;
 
     } catch (error) {
       console.error('[ApiManager] getAllCampaigns error:', error);
+      const cached = clientCache.getCampaigns(24 * 60 * 60 * 1000);
+      if (cached) {
+        return cached;
+      }
       return [];
     }
   }
 
-  /**
-   * Récupérer les détails d'une campagne DIRECTEMENT depuis la blockchain
-   */
   async getCampaignDataDirect(address) {
     if (!address || typeof address !== 'string') return null;
 
     try {
       await this.loadABIs();
 
-      const provider = this.getReadOnlyProvider(); // TOUJOURS utiliser l'RPC public pour la lecture des détails
+      const provider = this.getReadOnlyProvider();
       const campaignContract = new ethers.Contract(address, this.abis.Campaign, provider);
       const divarContract = new ethers.Contract(this.contractAddresses.DivarProxy, this.abis.DivarProxy, provider);
 
-      // Lire les infos depuis DivarProxy
       const info = await divarContract.getCampaignRegistry(address);
 
-      // Validation: ignorer les campagnes sans nom valide
       if (!info || !info.name || info.name.trim() === '') {
         console.log(`[ApiManager] Campagne ${address.slice(0, 8)} ignorée (pas de nom)`);
         return null;
       }
 
-      // Lire le round actuel et le symbol depuis le contrat Campaign
-      const [roundData, totalShares, symbol] = await Promise.all([
-        campaignContract.getCurrentRound(),
-        campaignContract.totalSharesIssued(),
-        campaignContract.symbol().catch(() => info.name.substring(0, 4).toUpperCase())
-      ]);
+      const roundData = await campaignContract.getCurrentRound();
+      const totalShares = await campaignContract.totalSharesIssued();
+      const symbol = await campaignContract.symbol().catch(() => info.name.substring(0, 4).toUpperCase());
 
       const sharePriceEth = ethers.utils.formatEther(roundData.sharePrice);
       const raisedEth = ethers.utils.formatEther(roundData.fundsRaised);
       const goalEth = ethers.utils.formatEther(roundData.targetAmount);
 
-      // Parser le metadata si c'est un JSON
       let parsedMetadata = {};
       try {
         if (info.metadata && typeof info.metadata === 'string' && info.metadata.startsWith('{')) {
           parsedMetadata = JSON.parse(info.metadata);
         }
-      } catch (e) {
-        // Silencieux
-      }
+      } catch (e) {}
 
       const normalized = normalizeCampaignSummary({
         address: address.toLowerCase(),
@@ -417,9 +282,6 @@ class ApiManager {
         current_round: roundData.roundNumber.toNumber()
       });
 
-      // SYNCHRONISER VERS SUPABASE (fire and forget)
-      this.syncToSupabase(normalized).catch(() => { });
-
       return normalized;
 
     } catch (error) {
@@ -428,41 +290,22 @@ class ApiManager {
     }
   }
 
-  /**
-   * Récupérer les détails d'une campagne - BLOCKCHAIN D'ABORD
-   */
   async getCampaignData(address, forceFresh = false) {
     if (!address || typeof address !== 'string') return null;
 
     try {
-      // 1. Cache client (sauf si forceFresh)
       if (!forceFresh) {
         const cached = clientCache.getCampaign(address);
         if (cached) {
-          console.log(`[ApiManager] Campagne ${address.slice(0, 8)} depuis cache`);
+          console.log(`[ApiManager] Campagne ${address.slice(0, 8)} depuis cache client`);
           return cached;
         }
       }
 
-      // 2. BLOCKCHAIN D'ABORD
       const blockchainData = await this.getCampaignDataDirect(address);
       if (blockchainData) {
         clientCache.setCampaign(address, blockchainData);
         return blockchainData;
-      }
-
-      // 3. Fallback Supabase si blockchain échoue
-      try {
-        const res = await fetch(`/api/campaigns/${address.toLowerCase()}`);
-        const data = await res.json();
-        if (data.campaign) {
-          const normalized = normalizeCampaignSummary(data.campaign);
-          clientCache.setCampaign(address, normalized);
-          console.log(`[ApiManager] Campagne ${address.slice(0, 8)} depuis Supabase (fallback)`);
-          return normalized;
-        }
-      } catch (supabaseError) {
-        console.warn(`[ApiManager] Supabase erreur:`, supabaseError.message);
       }
 
       return null;
@@ -473,16 +316,10 @@ class ApiManager {
     }
   }
 
-  /**
-   * Alias pour getCampaignData (compatibilité)
-   */
   async getCampaignSummary(address, options = {}) {
     return this.getCampaignData(address, options.forceFresh || false);
   }
 
-  /**
-   * Sauvegarder ou mettre à jour une campagne dans Supabase (via API)
-   */
   async upsertCampaign(campaignData) {
     try {
       const res = await fetch('/api/campaigns/upsert', {
@@ -497,9 +334,6 @@ class ApiManager {
     }
   }
 
-  /**
-   * Récupérer les transactions d'une campagne
-   */
   async getCampaignTransactions(address) {
     if (!address) return [];
 
@@ -522,9 +356,6 @@ class ApiManager {
     }
   }
 
-  /**
-   * Récupérer les promotions actives
-   */
   async getActivePromotions(includeExpired = false) {
     try {
       const cached = clientCache.getPromotions();
@@ -548,9 +379,6 @@ class ApiManager {
     }
   }
 
-  /**
-   * Récupérer les documents d'une campagne
-   */
   async getCampaignDocuments(address) {
     if (!address) return [];
     try {
@@ -563,9 +391,6 @@ class ApiManager {
     }
   }
 
-  /**
-   * Ajouter un document
-   */
   async addDocument(campaignAddress, url, name, category = 'other') {
     try {
       const res = await fetch('/api/documents', {
@@ -579,10 +404,6 @@ class ApiManager {
       throw error;
     }
   }
-
-  // =============================================================================
-  // INTERACTIONS BLOCKCHAIN (ÉCRITURE)
-  // =============================================================================
 
   async createCampaign(formData, signer) {
     await this.loadABIs();
@@ -666,10 +487,6 @@ class ApiManager {
     return { success: false, error: 'Campaign address not found in transaction receipt', txHash: tx.hash };
   }
 
-  // =============================================================================
-  // FONCTIONS UTILISATEUR
-  // =============================================================================
-
   async getUserInvestments(userAddress) {
     if (!userAddress) return [];
     try {
@@ -704,10 +521,6 @@ class ApiManager {
   getCacheStats() {
     return clientCache.getStats();
   }
-
-  // =============================================================================
-  // FONCTIONS CAMPAGNE (BLOCKCHAIN)
-  // =============================================================================
 
   async getCampaignInvestors(campaignAddress) {
     if (!campaignAddress) return [];

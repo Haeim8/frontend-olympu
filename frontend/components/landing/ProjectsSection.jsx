@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { ExternalLink, Users, Clock, CheckCircle, Zap, Star, Diamond, Wallet, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
-import { apiManager } from '@/lib/services/api-manager';
 
 import { useTranslation } from '@/hooks/useLanguage';
 
@@ -26,63 +25,56 @@ const getGradient = (address) => {
 
 export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject }) {
   const { t } = useTranslation();
-  const [address, setAddress] = useState(null);
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const autoPlayRef = useRef(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      window.ethereum.request({ method: 'eth_accounts' })
-        .then(accounts => {
-          if (accounts.length > 0) setAddress(accounts[0]);
-        })
-        .catch(console.error);
-    }
-  }, []);
-
   const loadProjects = useCallback(async () => {
     try {
       setIsLoading(true);
-      const campaignAddresses = await apiManager.getAllCampaigns();
-      const activePromotions = await apiManager.getActivePromotions();
-      const projectsData = [];
+      
+      const [campaignsRes, promotionsRes] = await Promise.all([
+        fetch('/api/campaigns'),
+        fetch('/api/promotions')
+      ]);
+      
+      const campaignsData = await campaignsRes.json();
+      const promotionsData = await promotionsRes.json();
+      
+      const campaigns = campaignsData.campaigns || [];
+      const activePromotions = promotionsData.promotions || [];
+      
+      const projectsData = campaigns.slice(0, 20).map(campaign => {
+        const promotion = activePromotions.find(p =>
+          p.campaign_address?.toLowerCase() === campaign.address?.toLowerCase()
+        );
 
-      for (const campaignAddress of campaignAddresses.slice(0, 20)) {
-        try {
-          const campaignData = await apiManager.getCampaignData(campaignAddress);
-          if (!campaignData) continue;
+        const raised = parseFloat(campaign.raised || 0);
+        const goal = parseFloat(campaign.goal || 1);
+        const progress = (goal > 0 ? (raised / goal) * 100 : 0);
+        
+        let status = 'active';
+        if (progress >= 100) status = 'funded';
+        else if (progress >= 80) status = 'nearly_funded';
 
-          const promotion = activePromotions.find(p =>
-            p.campaign_address?.toLowerCase() === campaignAddress.toLowerCase()
-          );
-
-          const progress = ((parseFloat(campaignData.raised || 0) / parseFloat(campaignData.goal || 1)) * 100) || 0;
-          let status = 'active';
-          if (progress >= 100) status = 'funded';
-          else if (progress >= 80) status = 'nearly_funded';
-
-          projectsData.push({
-            address: campaignAddress,
-            title: campaignData.name || 'Unknown Venture',
-            description: campaignData.description || '',
-            raised: parseFloat(campaignData.raised || 0).toFixed(2),
-            target: parseFloat(campaignData.goal || 0).toFixed(2),
-            backers: campaignData.investorCount || 0,
-            timeLeft: campaignData.isActive ? t('campaign.status.ongoing') : t('campaign.status.completed'),
-            status: status,
-            image: campaignData.logo, // Raw logo URL
-            tags: [campaignData.category || 'DeFi'],
-            progress: Math.min(progress, 100),
-            isActive: campaignData.isActive,
-            isCertified: campaignData.isCertified || false, // Assuming this prop exists or defaulting
-            promotion: promotion
-          });
-        } catch (error) {
-          console.warn(`Project fetch error ${campaignAddress}:`, error);
-        }
-      }
+        return {
+          address: campaign.address,
+          title: campaign.name || 'Unknown Venture',
+          description: campaign.description || '',
+          raised: raised.toFixed(2),
+          target: goal.toFixed(2),
+          backers: campaign.shares_sold ? Math.floor(campaign.shares_sold / 10) : 0,
+          timeLeft: campaign.is_active ? t('campaign.status.ongoing') : t('campaign.status.completed'),
+          status: status,
+          image: campaign.logo,
+          tags: [campaign.category || 'DeFi'],
+          progress: Math.min(progress, 100),
+          isActive: campaign.is_active,
+          isCertified: false,
+          promotion: promotion
+        };
+      });
 
       projectsData.sort((a, b) => {
         if (a.promotion && !b.promotion) return -1;
@@ -90,7 +82,7 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
         return b.backers - a.backers;
       });
 
-      setProjects(projectsData.slice(0, 6)); // Show up to 6
+      setProjects(projectsData.slice(0, 6));
     } catch (error) {
       console.error('Projects load error:', error);
     } finally {
@@ -110,10 +102,6 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
   }, [projects.length]);
 
   const handleProjectClick = (project) => {
-    if (isLandingPage && !address) {
-      // Logic to trigger wallet connect usually goes here, but for now we just allow view if desired
-      // connectWallet();
-    }
     if (onViewProject) onViewProject(project);
   };
 

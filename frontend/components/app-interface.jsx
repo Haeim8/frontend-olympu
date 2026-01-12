@@ -11,7 +11,6 @@ import Favorites from './Pages/Favorites';
 import Campaign from './Pages/Campaign';
 import ConnectPrompt from './app/ConnectPrompt';
 import { useDisconnect, useAccount } from 'wagmi';
-import { apiManager } from '@/lib/services/api-manager';
 import { useFavoritesAndInvestments } from '@/hooks/useFavoritesAndInvestments';
 
 export default function AppInterface() {
@@ -43,7 +42,7 @@ export default function AppInterface() {
     getTrackedCampaigns,
   } = useFavoritesAndInvestments();
 
-  // Chargement intelligent des campagnes avec API Manager
+  // Chargement intelligent des campagnes avec cache
   const loadCampaignsData = useCallback(async () => {
     if (!address) {
       setProjects([]);
@@ -52,19 +51,28 @@ export default function AppInterface() {
       return;
     }
 
+    // Si déjà chargé et pas de changement, ne pas recharger
+    if (projects.length > 0 && !isLoadingCampaigns) {
+      const normalizedAddress = address?.toLowerCase?.() ?? '';
+      const hasUserCampaign = projects.some(c => c.creator?.toLowerCase?.() === normalizedAddress);
+      if (hasUserCampaign) {
+        return; // Données déjà en cache
+      }
+    }
+
     setIsLoadingCampaigns(true);
     setError(null);
 
     try {
-      const allCampaigns = await apiManager.getAllCampaigns();
+      const res = await fetch('/api/campaigns');
+      const data = await res.json();
+      const campaigns = data.campaigns || [];
 
-      // getAllCampaigns retourne déjà les données complètes, pas besoin de reboucler
-      const campaignsData = allCampaigns.map(campaign => ({
+      const campaignsData = campaigns.map(campaign => ({
         ...campaign,
-        id: campaign.address // Ajouter l'id pour les favoris
+        id: campaign.address
       }));
 
-      // Filtrer les campagnes de l'utilisateur
       const normalizedAddress = address?.toLowerCase?.() ?? '';
       const userOwnedCampaigns = campaignsData.filter(
         (campaign) => normalizedAddress && campaign.creator?.toLowerCase?.() === normalizedAddress
@@ -73,16 +81,12 @@ export default function AppInterface() {
       console.log(`[AppInterface] Wallet: ${normalizedAddress}`);
       console.log(`[AppInterface] Mes campagnes: ${userOwnedCampaigns.length}`, userOwnedCampaigns.map(c => c.address));
 
-      // Stocker les campagnes utilisateur pour déterminer hasCampaign
       setProjects(campaignsData);
       setHasCampaign(userOwnedCampaigns.length > 0);
 
-      // Si l'utilisateur n'a pas de campagne et est sur la page campaign, rediriger
       if (userOwnedCampaigns.length === 0 && activePage === 'campaign') {
         setActivePage('home');
       }
-
-      // Pas de préchargement pour le moment (API simplifiée)
 
     } catch (err) {
       console.error('Erreur lors du chargement des campagnes:', err);
@@ -92,7 +96,7 @@ export default function AppInterface() {
     } finally {
       setIsLoadingCampaigns(false);
     }
-  }, [address, activePage]);
+  }, [address, activePage, projects.length, isLoadingCampaigns]);
 
   useEffect(() => {
     loadCampaignsData();
@@ -100,8 +104,6 @@ export default function AppInterface() {
 
   // Gestionnaires d'événements optimisés
   const handleDisconnect = useCallback(() => {
-    // Nettoyer le cache lors de la déconnexion
-    apiManager.clearCache();
     disconnect();
     router.push('/');
   }, [disconnect, router]);
@@ -174,7 +176,6 @@ export default function AppInterface() {
           {/* Debug info en développement */}
           {process.env.NODE_ENV === 'development' && (
             <div className="fixed bottom-4 right-4 p-2 bg-card/80 backdrop-blur-md border border-white/10 text-xs rounded-lg max-w-xs shadow-lg z-50">
-              <div>Cache Stats: {JSON.stringify(apiManager.getCacheStats?.() ?? {}, null, 2)}</div>
               <div>Projects: {projects.length}</div>
               <div>Has Campaign: {hasCampaign.toString()}</div>
               <div>Active Page: {activePage}</div>
