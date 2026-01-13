@@ -16,6 +16,9 @@ export const metadata = {
   icons: {
     icon: '/favicon.ico',
   },
+  other: {
+    'base:app_id': '6965aa9863c956eb9fe7346c',
+  },
   openGraph: {
     title: 'Livar: Onchain Raises',
     description: 'decentralized financing of the future .',

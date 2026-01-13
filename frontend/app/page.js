@@ -1,7 +1,6 @@
 //frontend/app/page.js
 'use client';
 
-import Head from 'next/head';
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import Home from '@/components/landing';
@@ -14,11 +13,7 @@ export default function Page() {
 
 
   return (
-    <>
-      <Head>
-        <meta name="base:app_id" content="6965aa9863c956eb9fe7346c" />
-      </Head>
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {(showInterface || address) ? (
         <AppInterface />
       ) : (
@@ -26,7 +21,6 @@ export default function Page() {
           onAccessInterface={() => setShowInterface(true)}
         />
       )}
-      </div>
-    </>
+    </div>
   );
 }
