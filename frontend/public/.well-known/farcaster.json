@@ -1,30 +1,30 @@
 {
-  accountAssociation: {
-    header: ,
-    payload: ,
-    signature: 
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
   },
-  miniapp: {
+  "miniapp": {
     "version": "1",
-    name: livar,
-    homeUrl: https://www.livarhub.xyz/,
-    iconUrl: https://www.livarhub.xyz/logo.png,
-    splashImageUrl: https://www.livarhub.xyz/splash.png,
-    splashBackgroundColor: #000000,
-    subtitle: Investissement décentralisé,
-    description: Plateforme DeFi de financement participatif sur Base. Investissez dans des projets blockchain de manière transparente et sécurisée avec distribution automatique de dividendes.,
-    screenshotUrls: [
-      https://www.livarhub.xyz/screenshot1.png,
-      https://www.livarhub.xyz/screenshot2.png,
-      https://www.livarhub.xyz/screenshot3.png
+    "name": "livar",
+    "homeUrl": "https://www.livarhub.xyz/",
+    "iconUrl": "https://www.livarhub.xyz/logo.png",
+    "splashImageUrl": "https://www.livarhub.xyz/splash.png",
+    "splashBackgroundColor": "#000000",
+    "subtitle": "Investissement décentralisé",
+    "description": "Plateforme DeFi de financement participatif sur Base. Investissez dans des projets blockchain de manière transparente et sécurisée avec distribution automatique de dividendes.",
+    "screenshotUrls": [
+      "https://www.livarhub.xyz/screenshot1.png",
+      "https://www.livarhub.xyz/screenshot2.png",
+      "https://www.livarhub.xyz/screenshot3.png"
     ],
-    primaryCategory: finance,
-    tags: [defi, crowdfunding, investing, base, crypto, finance],
-    heroImageUrl: https://www.livarhub.xyz/og.png,
-    tagline: Investissez dans le futur DeFi,
-    ogTitle: livar - Investissement Décentralisé,
-    ogDescription: Plateforme DeFi de financement participatif sur Base,
-    ogImageUrl: https://www.livarhub.xyz/og.png,
-    noindex: false
+    "primaryCategory": "finance",
+    "tags": ["defi", "crowdfunding", "investing", "base", "crypto", "finance"],
+    "heroImageUrl": "https://www.livarhub.xyz/og.png",
+    "tagline": "Investissez dans le futur DeFi",
+    "ogTitle": "livar - Investissement Décentralisé",
+    "ogDescription": "Plateforme DeFi de financement participatif sur Base",
+    "ogImageUrl": "https://www.livarhub.xyz/og.png",
+    "noindex": false
   }
 }
