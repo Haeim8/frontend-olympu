@@ -14,13 +14,19 @@ const translations = {
     // Navigation
     home: "Accueil",
     market: "Marché",
-    wallet: "Portefeuille",
+    wallet: "Investissement",
     analytics: "Analytiques",
     discussions: "Discussions",
     news: "Actualités",
     community: "Communauté",
     favorites: "Favoris",
-    campaign: "Ma Campagne",
+    campaign: "Gestion",
+
+    // Nav keys for sidebar
+    'nav.market': "Marché",
+    'nav.investment': "Investissement",
+    'nav.favorites': "Favoris",
+    'nav.management': "Gestion",
 
     // Header & Wallet
     connectWallet: "Connect Wallet",
@@ -1364,13 +1370,19 @@ const translations = {
     // Navigation
     home: "Home",
     market: "Market",
-    wallet: "Wallet",
+    wallet: "Investment",
     analytics: "Analytics",
     discussions: "Discussions",
     news: "News",
     community: "Community",
     favorites: "Favorites",
-    campaign: "My Campaign",
+    campaign: "Management",
+
+    // Nav keys for sidebar
+    'nav.market': "Market",
+    'nav.investment': "Investment",
+    'nav.favorites': "Favorites",
+    'nav.management': "Management",
 
     // Header & Wallet
     connectWallet: "Connect Wallet",
@@ -2709,13 +2721,19 @@ const translations = {
     // Navigation
     home: "Inicio",
     market: "Mercado",
-    wallet: "Cartera",
+    wallet: "Inversión",
     analytics: "Analíticas",
     discussions: "Discusiones",
     news: "Noticias",
     community: "Comunidad",
     favorites: "Favoritos",
-    campaign: "Mi Campaña",
+    campaign: "Gestión",
+
+    // Nav keys for sidebar
+    'nav.market': "Mercado",
+    'nav.investment': "Inversión",
+    'nav.favorites': "Favoritos",
+    'nav.management': "Gestión",
 
     // Campaign Page
     'campaign.noCampaignFound': 'No se encontró campaña para esta dirección',

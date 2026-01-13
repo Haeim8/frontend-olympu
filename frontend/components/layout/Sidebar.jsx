@@ -29,10 +29,10 @@ export default function Sidebar({
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, title: t('nav.dashboard', 'Tableau de bord'), id: 'home' },
-    { icon: Wallet, title: t('nav.wallet', 'Portefeuille'), id: 'wallet' },
+    { icon: LayoutDashboard, title: t('nav.market', 'Marché'), id: 'home' },
+    { icon: Wallet, title: t('nav.investment', 'Investissement'), id: 'wallet' },
     { icon: Star, title: t('nav.favorites', 'Favoris'), id: 'favorites' },
-    ...(hasCampaign ? [{ icon: FileText, title: t('nav.campaign', 'Ma Campagne'), id: 'campaign' }] : []),
+    ...(hasCampaign ? [{ icon: FileText, title: t('nav.management', 'Gestion'), id: 'campaign' }] : []),
   ];
 
   return (

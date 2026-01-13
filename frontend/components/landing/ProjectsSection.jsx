@@ -178,7 +178,7 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
                             fill
                             className="object-cover rounded-lg"
                             unoptimized
-                            onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerText = '🏛️' }}
+                            onError={(e) => { e.target.style.display = 'none'; if (e.target.parentElement) e.target.parentElement.innerText = '🏛️' }}
                           />
                         )}
                       </div>
