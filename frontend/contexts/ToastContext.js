@@ -143,36 +143,31 @@ export const useToast = () => {
 // Toast Component
 function Toast({ toast, onClose }) {
     const icons = {
-        error: <AlertCircle className="w-5 h-5 text-red-500" />,
-        success: <CheckCircle className="w-5 h-5 text-green-500" />,
-        warning: <AlertTriangle className="w-5 h-5 text-yellow-500" />,
-        info: <Info className="w-5 h-5 text-blue-500" />
+        error: <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />,
+        success: <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />,
+        warning: <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />,
+        info: <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
     };
 
     const bgColors = {
-        error: 'bg-red-500/10 border-red-500/30',
-        success: 'bg-green-500/10 border-green-500/30',
-        warning: 'bg-yellow-500/10 border-yellow-500/30',
-        info: 'bg-blue-500/10 border-blue-500/30'
+        error: 'bg-neutral-900/95 border-red-500/40',
+        success: 'bg-neutral-900/95 border-green-500/40',
+        warning: 'bg-neutral-900/95 border-yellow-500/40',
+        info: 'bg-neutral-900/95 border-blue-500/40'
     };
 
     return (
         <div
-            className={`flex items-start gap-3 p-4 rounded-xl border backdrop-blur-xl ${bgColors[toast.type]} animate-in slide-in-from-right-5 duration-300`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg border backdrop-blur-sm shadow-lg ${bgColors[toast.type]} animate-in slide-in-from-right-5 duration-200`}
             role="alert"
         >
             {icons[toast.type]}
-            <div className="flex-1 min-w-0">
-                {toast.title && (
-                    <p className="font-semibold text-foreground text-sm">{toast.title}</p>
-                )}
-                <p className="text-sm text-foreground/80 break-words">{toast.message}</p>
-            </div>
+            <p className="text-xs text-white/90 line-clamp-2">{toast.message}</p>
             <button
                 onClick={() => onClose(toast.id)}
-                className="p-1 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+                className="p-0.5 rounded hover:bg-white/10 transition-colors flex-shrink-0 ml-1"
             >
-                <X className="w-4 h-4 text-foreground/60" />
+                <X className="w-3 h-3 text-white/50" />
             </button>
         </div>
     );
@@ -187,7 +182,7 @@ export function ToastProvider({ children }) {
         setToasts(prev => prev.filter(t => t.id !== id));
     }, []);
 
-    const showToast = useCallback(({ type = 'info', title, message, duration = 5000 }) => {
+    const showToast = useCallback(({ type = 'info', title, message, duration = 4000 }) => {
         const id = Date.now() + Math.random();
         const newToast = { id, type, title, message };
 
@@ -206,46 +201,33 @@ export function ToastProvider({ children }) {
         const lang = currentLanguage || 'en';
         const translation = errorTranslations[errorKey]?.[lang] || errorTranslations.DEFAULT[lang];
 
-        const titles = {
-            fr: 'Erreur',
-            en: 'Error',
-            es: 'Error'
-        };
-
         return showToast({
             type: 'error',
-            title: customTitle || titles[lang],
             message: translation
         });
     }, [currentLanguage, showToast]);
 
     const showSuccess = useCallback((message, title) => {
-        const titles = {
-            fr: 'Succès',
-            en: 'Success',
-            es: 'Éxito'
-        };
         return showToast({
             type: 'success',
-            title: title || titles[currentLanguage || 'en'],
             message
         });
-    }, [currentLanguage, showToast]);
+    }, [showToast]);
 
     const showWarning = useCallback((message, title) => {
-        return showToast({ type: 'warning', title, message });
+        return showToast({ type: 'warning', message });
     }, [showToast]);
 
     const showInfo = useCallback((message, title) => {
-        return showToast({ type: 'info', title, message });
+        return showToast({ type: 'info', message });
     }, [showToast]);
 
     return (
         <ToastContext.Provider value={{ showToast, showError, showSuccess, showWarning, showInfo }}>
             {children}
 
-            {/* Toast Container - Fixed position, responsive */}
-            <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:w-96 z-[9999] flex flex-col gap-2 pointer-events-none">
+            {/* Toast Container - Small, bottom-right */}
+            <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-1.5 max-w-[280px] pointer-events-none">
                 {toasts.map(toast => (
                     <div key={toast.id} className="pointer-events-auto">
                         <Toast toast={toast} onClose={removeToast} />
@@ -257,3 +239,4 @@ export function ToastProvider({ children }) {
 }
 
 export default ToastProvider;
+
