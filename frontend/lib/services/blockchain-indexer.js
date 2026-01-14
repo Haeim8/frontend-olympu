@@ -35,12 +35,41 @@ const CAMPAIGN_ABI = [
 
 class BlockchainIndexer {
     constructor() {
-        const rpcUrl = config.helpers.getPrimaryRPC();
-        console.log(`[Indexer] Initialisation avec RPC: ${rpcUrl}`);
-
-        this.provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+        this.rpcUrls = config.helpers.getAllRPCs();
+        this.provider = null;
         this.divarAddress = config.contracts.DivarProxy;
         this.isIndexing = false;
+        console.log(`[Indexer] Config RPCs: ${this.rpcUrls.length} endpoints`);
+    }
+
+    async getProvider() {
+        if (this.provider) return this.provider;
+
+        // Use public RPC with explicit network to skip auto-detection (fixes serverless issues)
+        const network = {
+            name: 'base-sepolia',
+            chainId: 84532
+        };
+
+        // Try configured RPCs first
+        for (const rpcUrl of this.rpcUrls) {
+            try {
+                console.log(`[Indexer] Trying RPC: ${rpcUrl.slice(0, 35)}...`);
+                const provider = new ethers.providers.JsonRpcProvider(rpcUrl, network);
+                // Quick test - just get block number instead of full network detection
+                await provider.getBlockNumber();
+                this.provider = provider;
+                console.log('[Indexer] ✅ Provider connected');
+                return this.provider;
+            } catch (e) {
+                console.warn(`[Indexer] RPC failed: ${e.message.slice(0, 40)}`);
+            }
+        }
+
+        // Fallback to public RPC
+        console.log('[Indexer] Fallback to public RPC...');
+        this.provider = new ethers.providers.JsonRpcProvider('https://sepolia.base.org', network);
+        return this.provider;
     }
 
     /**
@@ -98,7 +127,8 @@ class BlockchainIndexer {
             // Récupérer le dernier block synchronisé
             const startBlock = parseInt(process.env.DIVAR_START_BLOCK || '0');
             const lastSyncState = await syncState.get('campaigns') || { last_block: startBlock };
-            const currentBlock = await this.provider.getBlockNumber();
+            const provider = await this.getProvider();
+            const currentBlock = await provider.getBlockNumber();
             let fromBlock = lastSyncState.last_block + 1;
 
             if (fromBlock >= currentBlock) {
@@ -113,7 +143,7 @@ class BlockchainIndexer {
 
             const eventTopic = ethers.utils.id('CampaignCreated(address,address,string,uint256)');
 
-            const logs = await this.provider.getLogs({
+            const logs = await provider.getLogs({
                 address: this.divarAddress,
                 topics: [eventTopic],
                 fromBlock: '0x' + fromBlock.toString(16),
@@ -159,7 +189,8 @@ class BlockchainIndexer {
      * Récupérer les détails techniques d'une campagne via son contrat
      */
     async fetchCampaignDetails(address) {
-        const contract = new ethers.Contract(address, CAMPAIGN_ABI, this.provider);
+        const provider = await this.getProvider();
+        const contract = new ethers.Contract(address, CAMPAIGN_ABI, provider);
         try {
             const roundData = await contract.getCurrentRound();
             const totalShares = await contract.totalSharesIssued();
@@ -231,7 +262,8 @@ class BlockchainIndexer {
      */
     async syncCampaignRounds(campaignAddress) {
         try {
-            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, this.provider);
+            const provider = await this.getProvider();
+            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
             const currentRoundNumber = await contract.currentRound();
 
             // Récupérer les données existantes pour comparer
@@ -278,20 +310,33 @@ class BlockchainIndexer {
         try {
             const syncId = `tx:${campaignAddress.toLowerCase()}`;
             const lastSync = await syncState.get(syncId) || { last_block: 0 };
-            const currentBlock = await this.provider.getBlockNumber();
-            const fromBlock = Math.max(lastSync.last_block + 1, currentBlock - 1000); // Limité à 1000 blocs
+            const provider = await this.getProvider();
+            const currentBlock = await provider.getBlockNumber();
+            const fromBlock = lastSync.last_block > 0 ? lastSync.last_block + 1 : currentBlock - 50000; // First sync: last 50k blocks
 
             if (fromBlock >= currentBlock) return;
 
-            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, this.provider);
-            const events = await contract.queryFilter("SharesPurchased", fromBlock, currentBlock);
+            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
 
-            if (events.length === 0) {
+            // Scan in chunks of 1000 blocks (RPC limit)
+            let allEvents = [];
+            const CHUNK_SIZE = 1000;
+            for (let start = fromBlock; start < currentBlock; start += CHUNK_SIZE) {
+                const end = Math.min(start + CHUNK_SIZE - 1, currentBlock);
+                try {
+                    const events = await contract.queryFilter("SharesPurchased", start, end);
+                    allEvents = allEvents.concat(events);
+                } catch (err) {
+                    console.warn(`[Indexer] Chunk ${start}-${end} failed:`, err.message);
+                }
+            }
+
+            if (allEvents.length === 0) {
                 console.log(`[Indexer] ✅ Pas de nouvelles transactions pour ${campaignAddress.slice(0, 8)}`);
                 return;
             }
 
-            console.log(`[Indexer] 💸 ${events.length} nouvelles transactions pour ${campaignAddress.slice(0, 8)}`);
+            console.log(`[Indexer] 💸 ${allEvents.length} nouvelles transactions pour ${campaignAddress.slice(0, 8)}`);
 
             // Récupérer les détails du round actuel une seule fois
             let roundData = null;
@@ -304,7 +349,7 @@ class BlockchainIndexer {
 
             const sharePrice = roundData[1]; // sharePrice est le 2ème élément
 
-            for (const event of events) {
+            for (const event of allEvents) {
                 const { investor, shares, roundNumber } = event.args;
                 const amount = sharePrice.mul(shares);
 
@@ -348,7 +393,8 @@ class BlockchainIndexer {
 
     async syncCampaignFinance(campaignAddress) {
         try {
-            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, this.provider);
+            const provider = await this.getProvider();
+            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
             // Lecture des données financières si exposées par le contrat
             // Pour l'instant, on prépare le terrain pour Escrow et Dividendes
         } catch (error) {
