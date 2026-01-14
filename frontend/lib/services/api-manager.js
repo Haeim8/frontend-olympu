@@ -408,10 +408,15 @@ class ApiManager {
   async createCampaign(formData, signer) {
     await this.loadABIs();
 
+    // Vérifier que le wallet est sur le bon réseau
+    const signerChainId = await signer.getChainId();
+    const expectedChainId = config.network.chainId; // 84532 pour Base Sepolia
+
+    if (signerChainId !== expectedChainId) {
+      throw new Error(`Mauvais réseau ! Connectez-vous à ${config.network.name} (chainId: ${expectedChainId}). Actuellement sur chainId: ${signerChainId}`);
+    }
+
     const divarAddress = this.contractAddresses.DivarProxy;
-    console.log('[DEBUG VERCEL] DivarProxy address:', divarAddress);
-    console.log('[DEBUG VERCEL] All contracts:', JSON.stringify(this.contractAddresses));
-    console.log('[DEBUG VERCEL] Chain ID from signer:', await signer.getChainId());
     if (!divarAddress) throw new Error('DivarProxy address not configured');
 
     const contract = new ethers.Contract(divarAddress, this.abis.DivarProxy, signer);
