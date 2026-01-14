@@ -8,9 +8,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const errorTranslations = {
     // ethers.js error codes
     CALL_EXCEPTION: {
-        fr: "Erreur d'appel au contrat. Vérifiez que vous êtes sur le bon réseau.",
-        en: "Contract call failed. Please check you're on the correct network.",
-        es: "Error de llamada al contrato. Verifique que está en la red correcta."
+        fr: "Votre wallet n'est pas sur Base Sepolia. Changez de réseau.",
+        en: "Your wallet is not on Base Sepolia. Please switch network.",
+        es: "Su billetera no está en Base Sepolia. Cambie de red."
     },
     ACTION_REJECTED: {
         fr: "Transaction annulée par l'utilisateur.",
