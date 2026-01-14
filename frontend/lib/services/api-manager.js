@@ -182,7 +182,7 @@ class ApiManager {
       console.log(`[ApiManager] Envoi de la transaction: ${ethers.utils.formatEther(totalPrice)} ETH`);
       const tx = await campaignContract.buyShares(shareCount, {
         value: totalPrice,
-        gasLimit: 300000
+        gasLimit: 1500000  // NFT minting requires more gas
       });
 
       console.log(`[ApiManager] Transaction envoyée: ${tx.hash}. Attente de confirmation...`);
