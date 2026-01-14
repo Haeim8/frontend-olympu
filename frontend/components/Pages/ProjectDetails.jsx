@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { ethers } from 'ethers';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,10 +66,10 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
         fetch(`/api/campaigns/${project.id}`),
         fetch(`/api/campaigns/${project.id}/transactions`).then(r => r.json()).catch(() => ({ transactions: [] }))
       ]);
-      
+
       const projectJson = await projectRes.json();
       const txData = txRes || { transactions: [] };
-      
+
       if (projectJson.campaign) {
         setProjectData(projectJson.campaign);
       }
