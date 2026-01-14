@@ -151,7 +151,32 @@ class ApiManager {
     try {
       await this.loadABIs();
       const campaignContract = new ethers.Contract(campaignAddress, this.abis.Campaign, signer);
-      const roundData = await campaignContract.rounds(await campaignContract.currentRound());
+
+      // Get current round info
+      const currentRoundNum = await campaignContract.currentRound();
+      const roundData = await campaignContract.rounds(currentRoundNum);
+
+      console.log(`[ApiManager] Round ${currentRoundNum.toString()}:`, {
+        sharePrice: ethers.utils.formatEther(roundData.sharePrice),
+        isActive: roundData.isActive,
+        isFinalized: roundData.isFinalized,
+        endTime: new Date(roundData.endTime.toNumber() * 1000).toISOString()
+      });
+
+      // Pre-checks
+      if (!roundData.isActive) {
+        throw new Error('Le round actuel n\'est pas actif. La campagne n\'accepte pas d\'investissements.');
+      }
+
+      if (roundData.isFinalized) {
+        throw new Error('Le round actuel est finalisé. Attendez un nouveau round.');
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      if (roundData.endTime.toNumber() < now) {
+        throw new Error('Le round actuel a expiré. La date limite est dépassée.');
+      }
+
       const totalPrice = roundData.sharePrice.mul(shareCount);
 
       console.log(`[ApiManager] Envoi de la transaction: ${ethers.utils.formatEther(totalPrice)} ETH`);
