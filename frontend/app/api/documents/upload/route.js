@@ -128,7 +128,7 @@ export async function POST(request) {
             .from('campaign_documents')
             .insert({
                 campaign_address: campaignAddress.toLowerCase(),
-                ipfs_hash: publicUrl, // Réutiliser ce champ pour l'URL
+                url: publicUrl,
                 name: file.name,
                 category: category,
                 is_public: true,

@@ -142,7 +142,6 @@ export const campaigns = {
             is_active,
             is_finalized,
             end_date,
-            metadata_uri,
             category,
             logo,
             current_round,
@@ -150,6 +149,15 @@ export const campaigns = {
             nft_text_color,
             nft_logo_url,
             nft_sector,
+            // Social networks
+            twitter,
+            discord,
+            website,
+            github,
+            telegram,
+            farcaster,
+            medium,
+            base,
         } = campaignData;
 
         const { data, error } = await getSupabase()
@@ -169,7 +177,6 @@ export const campaigns = {
                 is_active,
                 is_finalized,
                 end_date,
-                metadata_uri,
                 category,
                 logo,
                 current_round,
@@ -177,6 +184,15 @@ export const campaigns = {
                 nft_text_color,
                 nft_logo_url,
                 nft_sector,
+                // Social networks
+                twitter,
+                discord,
+                website,
+                github,
+                telegram,
+                farcaster,
+                medium,
+                base,
                 updated_at: new Date().toISOString()
             }, { onConflict: 'address' })
             .select()
@@ -189,6 +205,7 @@ export const campaigns = {
 
         return data;
     },
+
 
     /**
      * Supprimer une campagne
@@ -413,13 +430,13 @@ export const documents = {
      * Ajouter un document
      */
     async insert(docData) {
-        const { campaign_address, ipfs_hash, name, category, is_public } = docData;
+        const { campaign_address, url, name, category, is_public } = docData;
 
         const { data, error } = await getSupabase()
             .from('campaign_documents')
             .insert({
                 campaign_address: campaign_address.toLowerCase(),
-                ipfs_hash,
+                url,
                 name,
                 category: category || 'other',
                 is_public: is_public ?? true,

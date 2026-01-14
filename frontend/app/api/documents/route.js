@@ -30,7 +30,7 @@ export async function POST(request) {
 
         const document = await dbDocuments.insert({
             campaign_address: campaignAddress.toLowerCase(),
-            ipfs_hash: url, // On garde le nom de colonne ipfs_hash pour la compatibilité schéma, mais on y met l'URL locale
+            url: url,
             name,
             category: category || 'other',
             is_public: true

@@ -37,7 +37,7 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
   const isFav = isFavorite ? isFavorite(project.address || project.id) : false;
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [projectData, setProjectData] = useState({ ipfs: null });
+  const [projectData, setProjectData] = useState({});
   const [activeTab, setActiveTab] = useState('overview');
   const [shareCount, setShareCount] = useState(1);
   const [copied, setCopied] = useState(false);
@@ -316,7 +316,7 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
                     <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">{t('projectDetails.documents', 'Documents')}</h3>
                     <div className="space-y-2">
                       {campaignDocuments.map((doc) => (
-                        <a key={doc.id} href={doc.url || doc.ipfs_hash} target="_blank" rel="noopener noreferrer"
+                        <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer"
                           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-sm">
                           <FileText className="w-4 h-4" />
                           <span className="flex-1">{doc.name}</span>
@@ -329,7 +329,7 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
                 )}
 
                 {/* Links */}
-                {(projectData.socials || projectData.ipfs?.socials) && (
+                {(projectData.twitter || projectData.discord || projectData.website || projectData.github || projectData.telegram || projectData.farcaster || projectData.medium || projectData.base) && (
                   <div>
                     <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">{t('projectDetails.links')}</h3>
                     <div className="flex flex-wrap gap-2">
@@ -338,8 +338,12 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
                         { key: 'twitter', icon: Twitter, label: 'Twitter' },
                         { key: 'discord', icon: MessageCircle, label: 'Discord' },
                         { key: 'github', icon: Github, label: 'GitHub' },
+                        { key: 'telegram', icon: MessageCircle, label: 'Telegram' },
+                        { key: 'farcaster', icon: Zap, label: 'Farcaster' },
+                        { key: 'medium', icon: FileText, label: 'Medium' },
+                        { key: 'base', icon: Zap, label: 'Base' },
                       ].map(({ key, icon: Icon, label }) => {
-                        const url = projectData.socials?.[key] || projectData.ipfs?.socials?.[key];
+                        const url = projectData[key];
                         if (!url) return null;
                         return (
                           <a key={key} href={url} target="_blank" rel="noopener noreferrer"

@@ -63,25 +63,22 @@ const normalizeCampaignSummary = (summary) => {
   const investors = Number.parseInt(summary.total_investors ?? summary.unique_investors ?? sharesSold, 10);
   const progress = goalNumber > 0 ? (raisedNumber / goalNumber) * 100 : 0;
 
-  let ipfs = summary.ipfs || {};
-  if (summary.metadata_uri && (!summary.ipfs || Object.keys(summary.ipfs).length === 0)) {
-    try {
-      if (summary.metadata_uri.startsWith('{')) {
-        ipfs = JSON.parse(summary.metadata_uri);
-      }
-    } catch (e) {
-      console.warn('[ApiManager] Erreur parsing metadata_uri:', e.message);
-    }
-  }
-
   return {
     ...summary,
     address: summary.address,
     id: summary.address,
     name: summary.name,
     symbol: summary.symbol,
-    description: summary.description || ipfs.description || '',
-    ipfs,
+    description: summary.description || '',
+    // Social links from direct columns
+    twitter: summary.twitter || null,
+    discord: summary.discord || null,
+    website: summary.website || null,
+    github: summary.github || null,
+    telegram: summary.telegram || null,
+    farcaster: summary.farcaster || null,
+    medium: summary.medium || null,
+    base: summary.base || null,
     goal,
     raised,
     sharePrice,
@@ -477,12 +474,16 @@ class ApiManager {
         is_finalized: false,
         current_round: 1,
         description: formData.description || '',
-        metadata_uri: JSON.stringify({
-          socials: formData.socials || {},
-          team: formData.teamMembers || [],
-          royaltyFee: formData.royaltyFee || '0',
-          royaltyReceiver: formData.royaltyReceiver || ''
-        }),
+        // Social links as direct columns
+        twitter: formData.socials?.twitter || null,
+        discord: formData.socials?.discord || null,
+        website: formData.socials?.website || null,
+        github: formData.socials?.github || null,
+        telegram: formData.socials?.telegram || null,
+        farcaster: formData.socials?.farcaster || null,
+        medium: formData.socials?.medium || null,
+        base: formData.socials?.base || null,
+        // NFT customization
         logo,
         nft_background_color: nftBackgroundColor,
         nft_text_color: nftTextColor,

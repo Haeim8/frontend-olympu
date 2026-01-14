@@ -9,23 +9,15 @@ import { useTranslation } from '@/hooks/useLanguage';
 
 export default function NFTPreviewCard({ projectData, project }) {
   const { t } = useTranslation();
-  const ipfs = projectData?.ipfs;
-  const nftCustomization = ipfs?.nftCustomization || {};
 
   const name = project?.name || 'Campaign NFT';
-  const symbol = project?.symbol || ipfs?.symbol || '';
+  const symbol = project?.symbol || '';
 
-  // Gérer les différents formats d'image (string ou objet)
-  let imageUrl = '';
-  if (nftCustomization.logo) {
-    imageUrl = typeof nftCustomization.logo === 'string' ? nftCustomization.logo : nftCustomization.logo?.url || '';
-  } else if (ipfs?.documents?.media?.[0]) {
-    const media = ipfs.documents.media[0];
-    imageUrl = typeof media === 'string' ? media : media?.url || '';
-  }
+  // Use logo from direct projectData columns
+  let imageUrl = projectData?.logo || projectData?.nft_logo_url || '';
 
-  const backgroundColor = nftCustomization.backgroundColor || '#0f172a';
-  const textColor = nftCustomization.textColor || '#84cc16';
+  const backgroundColor = projectData?.nft_background_color || '#0f172a';
+  const textColor = projectData?.nft_text_color || '#84cc16';
 
   // Convertir hex en style
   const bgStyle = backgroundColor?.startsWith?.('#') ? backgroundColor : `#${backgroundColor}`;

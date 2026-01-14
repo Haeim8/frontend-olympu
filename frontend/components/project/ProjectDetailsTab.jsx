@@ -220,7 +220,6 @@ export default function ProjectDetailsTab({ projectData }) {
   const [viewerDocument, setViewerDocument] = useState(null);
 
   console.log('[ProjectDetailsTab] projectData:', projectData);
-  console.log('[ProjectDetailsTab] ipfs:', projectData?.ipfs);
   console.log('[ProjectDetailsTab] description:', projectData?.description);
 
   // Charger les documents depuis Supabase
@@ -282,7 +281,8 @@ export default function ProjectDetailsTab({ projectData }) {
     );
   }
 
-  const { ipfs } = projectData;
+  // Use direct columns from projectData
+  const hasSocials = projectData.twitter || projectData.discord || projectData.website || projectData.github || projectData.telegram || projectData.farcaster || projectData.medium || projectData.base;
 
   return (
     <ScrollArea className="h-[calc(95vh-200px)]">
@@ -301,14 +301,14 @@ export default function ProjectDetailsTab({ projectData }) {
             </div>
             <div className="prose dark:prose-invert max-w-none">
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-base whitespace-pre-wrap">
-                {ipfs?.description || projectData.description || t('projectDetailsTab.noDescription')}
+                {projectData.description || t('projectDetailsTab.noDescription')}
               </p>
             </div>
           </CardContent>
         </Card>
 
         {/* Secteur */}
-        {ipfs?.sector && (
+        {projectData.category && (
           <Card className="border-2 border-lime-200 dark:border-lime-800 bg-gradient-to-r from-lime-50 to-green-50 dark:from-lime-900/20 dark:to-green-900/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -321,7 +321,7 @@ export default function ProjectDetailsTab({ projectData }) {
                       {t('projectOverview.stats.sector') || 'Secteur d\'activité'}
                     </h3>
                     <Badge className="mt-1 bg-lime-500 text-white text-base px-4 py-1.5">
-                      {ipfs.sector}
+                      {projectData.category}
                     </Badge>
                   </div>
                 </div>
@@ -443,63 +443,10 @@ export default function ProjectDetailsTab({ projectData }) {
           </CardContent>
         </Card>
 
-        {/* Équipe */}
-        {ipfs?.teamMembers && ipfs.teamMembers.length > 0 && (
-          <Card className="border-2 border-gray-200 dark:border-neutral-800 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-lime-100 dark:bg-lime-900/20 rounded-lg">
-                  <Users className="h-5 w-5 text-lime-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {t('projectDetailsTab.teamMembers')}
-                </h3>
-                <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
-                  {t('projectDetailsTab.teamMembersCount', { count: ipfs.teamMembers.length })}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {ipfs.teamMembers.map((member, index) => (
-                  <Card key={index} className="border border-gray-200 dark:border-neutral-800 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-lg transition-all duration-300">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 bg-lime-100 dark:bg-lime-900/20 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Users className="h-6 w-6 text-lime-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-gray-900 dark:text-white truncate">
-                            {member.name || t('projectDetailsTab.memberNameNotSpecified')}
-                          </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                            {member.role || t('projectDetailsTab.memberRoleNotSpecified')}
-                          </p>
-                          {member.socials && (Object.keys(member.socials).length > 0) && (
-                            <div className="flex gap-2 mt-2">
-                              {member.socials.twitter && (
-                                <a href={getSocialUrl('twitter', member.socials.twitter)} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:text-lime-700 transition-colors">
-                                  <Twitter className="h-4 w-4" />
-                                </a>
-                              )}
-                              {member.socials.linkedin && (
-                                <a href={getSocialUrl('linkedin', member.socials.linkedin)} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:text-lime-700 transition-colors">
-                                  <Users className="h-4 w-4" />
-                                </a>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Team section removed - use direct DB columns if needed */}
 
         {/* Réseaux sociaux */}
-        {ipfs?.socials && Object.values(ipfs.socials).some(social => social) && (
+        {hasSocials && (
           <Card className="border-2 border-lime-200 dark:border-lime-800 bg-gradient-to-r from-lime-50 to-green-50 dark:from-lime-900/20 dark:to-green-900/20">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -507,46 +454,46 @@ export default function ProjectDetailsTab({ projectData }) {
                 {t('projectDetailsTab.socialLinks')}
               </h3>
               <div className="flex flex-wrap gap-3">
-                {ipfs.socials.website && (
-                  <a href={getSocialUrl('website', ipfs.socials.website)} target="_blank" rel="noopener noreferrer"
+                {projectData.website && (
+                  <a href={getSocialUrl('website', projectData.website)} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <Globe className="h-4 w-4 text-lime-600" />
                     <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.website')}</span>
                   </a>
                 )}
-                {ipfs.socials.twitter && (
-                  <a href={getSocialUrl('twitter', ipfs.socials.twitter)} target="_blank" rel="noopener noreferrer"
+                {projectData.twitter && (
+                  <a href={getSocialUrl('twitter', projectData.twitter)} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <Twitter className="h-4 w-4 text-lime-600" />
-                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.twitter')}</span>
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">Twitter</span>
                   </a>
                 )}
-                {ipfs.socials.github && (
-                  <a href={getSocialUrl('github', ipfs.socials.github)} target="_blank" rel="noopener noreferrer"
+                {projectData.github && (
+                  <a href={getSocialUrl('github', projectData.github)} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <Github className="h-4 w-4 text-lime-600" />
-                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.github')}</span>
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">GitHub</span>
                   </a>
                 )}
-                {ipfs.socials.discord && (
-                  <a href={getSocialUrl('discord', ipfs.socials.discord)} target="_blank" rel="noopener noreferrer"
+                {projectData.discord && (
+                  <a href={getSocialUrl('discord', projectData.discord)} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <MessageCircle className="h-4 w-4 text-lime-600" />
-                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.discord')}</span>
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">Discord</span>
                   </a>
                 )}
-                {ipfs.socials.telegram && (
-                  <a href={getSocialUrl('telegram', ipfs.socials.telegram)} target="_blank" rel="noopener noreferrer"
+                {projectData.telegram && (
+                  <a href={getSocialUrl('telegram', projectData.telegram)} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <Send className="h-4 w-4 text-lime-600" />
-                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.telegram')}</span>
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">Telegram</span>
                   </a>
                 )}
-                {ipfs.socials.medium && (
-                  <a href={getSocialUrl('medium', ipfs.socials.medium)} target="_blank" rel="noopener noreferrer"
+                {projectData.medium && (
+                  <a href={getSocialUrl('medium', projectData.medium)} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-lime-200 dark:border-lime-800 rounded-lg hover:bg-lime-50 dark:hover:bg-lime-900/20 transition-all shadow-sm hover:shadow">
                     <FileText className="h-4 w-4 text-lime-600" />
-                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">{t('projectDetailsTab.medium')}</span>
+                    <span className="text-sm font-medium text-lime-700 dark:text-lime-300">Medium</span>
                   </a>
                 )}
               </div>

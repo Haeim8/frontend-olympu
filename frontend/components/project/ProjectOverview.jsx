@@ -46,7 +46,7 @@ export default function ProjectOverview({ project, projectData }) {
 
   if (!project || !stats) return null;
 
-  const ipfs = projectData?.ipfs;
+  // Use direct columns from projectData
 
   return (
     <div className="space-y-6">
@@ -153,7 +153,7 @@ export default function ProjectOverview({ project, projectData }) {
       </Card>
 
       {/* Description */}
-      {(ipfs?.description || project.description) && (
+      {(projectData?.description || project.description) && (
         <Card className="border border-gray-200 dark:border-neutral-800">
           <CardContent className="p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -161,14 +161,14 @@ export default function ProjectOverview({ project, projectData }) {
               {t('projectDetailsTab.projectDescription')}
             </h3>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-              {ipfs?.description || project.description}
+              {projectData?.description || project.description}
             </p>
           </CardContent>
         </Card>
       )}
 
       {/* Secteur */}
-      {ipfs?.sector && (
+      {projectData?.category && (
         <Card className="border border-gray-200 dark:border-neutral-800">
           <CardContent className="p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
@@ -176,42 +176,13 @@ export default function ProjectOverview({ project, projectData }) {
               {t('projectOverview.stats.sectorLabel') || 'Secteur d\'activité'}
             </h3>
             <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 text-base px-4 py-2">
-              {ipfs.sector}
+              {projectData.category}
             </Badge>
           </CardContent>
         </Card>
       )}
 
-      {/* Équipe */}
-      {ipfs?.teamMembers && ipfs.teamMembers.length > 0 && (
-        <Card className="border border-gray-200 dark:border-neutral-800">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5 text-lime-600" />
-              {t('projectDetailsTab.teamMembers')} ({ipfs.teamMembers.length})
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ipfs.teamMembers.map((member, index) => (
-                <div key={index} className="bg-gray-50 dark:bg-neutral-900 rounded-lg p-4 border border-gray-200 dark:border-neutral-800">
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 bg-lime-100 dark:bg-lime-900/20 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Users className="h-6 w-6 text-lime-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 dark:text-white truncate">
-                        {member.name || t('projectDetailsTab.memberNameNotSpecified')}
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {member.role || t('projectDetailsTab.memberRoleNotSpecified')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Team section removed - use direct DB columns if needed */}
     </div>
   );
 }

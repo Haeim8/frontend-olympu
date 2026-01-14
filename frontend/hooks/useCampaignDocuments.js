@@ -29,17 +29,15 @@ export function useCampaignDocuments(campaignAddress) {
 
       const data = await response.json();
 
-      // Les documents viennent de Supabase maintenant
-      // Structure: { id, campaign_address, ipfs_hash (URL), name, category, is_public, created_at }
+      // Documents from Supabase - url column contains the Supabase storage URL
       const formattedDocs = (data.documents || []).map(doc => ({
         id: doc.id,
         name: doc.name,
-        url: doc.ipfs_hash, // C'est maintenant l'URL Supabase
+        url: doc.url,
         category: doc.category,
         isPublic: doc.is_public,
         createdAt: doc.created_at,
-        // Détecter le type de fichier depuis l'URL ou le nom
-        type: detectFileType(doc.name, doc.ipfs_hash)
+        type: detectFileType(doc.name, doc.url)
       }));
 
       setDocuments(formattedDocs);

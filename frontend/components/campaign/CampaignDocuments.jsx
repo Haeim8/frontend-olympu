@@ -433,7 +433,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(doc.url || `https://ipfs.io/ipfs/${doc.hash}`, '_blank')}
+                      onClick={() => window.open(doc.url, '_blank')}
                       className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       <Eye className="h-4 w-4" />
@@ -443,7 +443,7 @@ export default function CampaignDocuments({ campaignAddress, campaignData, onDoc
                       size="sm"
                       onClick={() => {
                         const link = document.createElement('a');
-                        link.href = doc.url || `https://ipfs.io/ipfs/${doc.hash}`;
+                        link.href = doc.url;
                         link.download = doc.name;
                         link.click();
                       }}
