@@ -105,8 +105,12 @@ const normalizeCampaignSummary = (summary) => {
 class ApiManager {
   constructor() {
     this.abis = {};
-    this.contractAddresses = config.contracts;
     this.isInitialized = false;
+  }
+
+  // Getter dynamique - les adresses sont lues à chaque appel (pas au build)
+  get contractAddresses() {
+    return config.contracts;
   }
 
   async initWeb3() {
