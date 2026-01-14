@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { transactions as dbTransactions } from '@/backend/db';
-import { transactionCache } from '@/backend/redis';
 
 export const runtime = 'nodejs';
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
 export async function GET(request, { params }) {
   const rawAddress = params?.address;
@@ -34,23 +33,8 @@ export async function GET(request, { params }) {
   }
 
   try {
-    // Vérifier le cache Redis (uniquement si pas d'offset pour simplifier)
-    if (offset === 0) {
-      const cached = await transactionCache.get(address);
-      if (cached) {
-        console.log('[API] Cache hit: transactions', address);
-        return NextResponse.json({ transactions: cached.slice(0, limit) });
-      }
-    }
-
-    // Récupérer depuis PostgreSQL
+    // Récupérer depuis Supabase
     const txList = await dbTransactions.getByCampaign(address, { limit, offset });
-
-    // Mettre en cache (si c'est la première page)
-    if (offset === 0 && txList.length > 0) {
-      await transactionCache.set(address, txList);
-    }
-
     return NextResponse.json({ transactions: txList });
   } catch (error) {
     console.error('[API] Error fetching transactions:', error);

@@ -138,7 +138,7 @@ class ApiManager {
     console.log(`[API Manager] Cache client invalidé pour: ${key}`);
   }
 
-  preloadCampaignDetails() {}
+  preloadCampaignDetails() { }
 
   async loadABIs() {
     if (Object.keys(this.abis).length > 0) return;
@@ -258,7 +258,7 @@ class ApiManager {
         if (info.metadata && typeof info.metadata === 'string' && info.metadata.startsWith('{')) {
           parsedMetadata = JSON.parse(info.metadata);
         }
-      } catch (e) {}
+      } catch (e) { }
 
       const normalized = normalizeCampaignSummary({
         address: address.toLowerCase(),
@@ -430,11 +430,13 @@ class ApiManager {
     const category = formData.sector || 'Other';
     const metadata = formData.metadataUri || formData.description || '';
     const royaltyFee = formData.royaltyFee ? parseInt(formData.royaltyFee) : 0;
-    const logo = formData.logoUrl || '';
+    // Logo is uploaded AFTER deployment and saved to Supabase (not on-chain)
+    const logo = '';
 
     const nftBackgroundColor = formData.nftCustomization?.backgroundColor || '#ffffff';
     const nftTextColor = formData.nftCustomization?.textColor || '#000000';
-    const nftLogoUrl = formData.nftCustomization?.logoUrl || logo;
+    // nftLogoUrl sera mis à jour après upload du logo
+    const nftLogoUrl = '';
     const nftSector = category;
 
     const creationFee = await contract.getCampaignCreationFeeETH();

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { campaigns as dbCampaigns, rounds as dbRounds, finance as dbFinance } from '@/backend/db';
-import { campaignCache } from '@/backend/redis';
 
 export const runtime = 'nodejs';
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export async function GET(request, { params }) {
   const rawAddress = params?.address;
@@ -14,14 +13,7 @@ export async function GET(request, { params }) {
   const address = rawAddress.toLowerCase();
 
   try {
-    // Vérifier le cache Redis
-    const cached = await campaignCache.getOne(address);
-    if (cached) {
-      console.log('[API] Cache hit:', address);
-      return NextResponse.json({ campaign: cached });
-    }
-
-    // Récupérer depuis PostgreSQL
+    // Récupérer depuis Supabase
     const campaign = await dbCampaigns.getByAddress(address);
 
     if (!campaign) {
@@ -40,9 +32,6 @@ export async function GET(request, { params }) {
       rounds: roundsList,
       finance: financeData
     };
-
-    // Mettre en cache
-    await campaignCache.setOne(address, enrichedCampaign);
 
     return NextResponse.json({ campaign: enrichedCampaign });
   } catch (error) {

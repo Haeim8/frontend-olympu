@@ -14,7 +14,6 @@
 import { ethers } from 'ethers';
 import config from '../config.js';
 import { campaigns, transactions, syncState, promotions, rounds, finance } from '../../backend/db.js';
-import { campaignCache, transactionCache, promotionCache } from '../../backend/redis.js';
 
 // ABIs minimales pour l'indexation
 const DIVAR_PROXY_ABI = [
@@ -146,7 +145,6 @@ class BlockchainIndexer {
                         end_date: details.end_date || null
                     });
                 }
-                await campaignCache.invalidateAll();
             }
 
             // Mettre à jour l'état de synchronisation avec le block atteint
@@ -326,10 +324,6 @@ class BlockchainIndexer {
 
                 console.log(`[Indexer] 💸 Tx ${event.transactionHash.slice(0, 8)} : ${numShares} shares`);
             }
-
-            // Invalider les caches
-            await transactionCache.invalidate(campaignAddress);
-            await campaignCache.invalidate(campaignAddress);
 
             // Mettre à jour l'état de synchronisation
             await syncState.upsert(syncId, currentBlock);

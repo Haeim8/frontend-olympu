@@ -506,17 +506,8 @@ export default function CampaignModal({
                 compressionRatio: uploadResult.compressionRatio
               });
 
-              // 5. Enregistrer le document dans la DB avec la vraie adresse
-              await fetch('/api/documents', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  campaignAddress: realCampaignAddress,
-                  url: uploadResult.url,
-                  name: file.name,
-                  category: dbCategory
-                })
-              });
+              // Document already inserted by /api/documents/upload (lines 127-138)
+              // No need to call /api/documents again
 
               console.log(`[Upload] ${file.name}: ${uploadResult.compressionRatio} compression`);
             } else {
@@ -527,6 +518,35 @@ export default function CampaignModal({
             console.error(`[Upload] Erreur pour ${file.name}:`, uploadError);
             // On continue même si un document échoue
           }
+        }
+      }
+
+      // 5. Upload logo if present (APRÈS déploiement, comme les documents)
+      let uploadedLogoUrl = '';
+      if (formData.nftCustomization?.logo && formData.nftCustomization.logo instanceof File) {
+        try {
+          const logoFd = new FormData();
+          logoFd.append('file', formData.nftCustomization.logo);
+          logoFd.append('category', 'logo');
+          logoFd.append('campaignAddress', realCampaignAddress);
+
+          const logoRes = await fetch('/api/documents/upload', { method: 'POST', body: logoFd });
+          const logoResult = await logoRes.json();
+
+          if (logoResult.success) {
+            uploadedLogoUrl = logoResult.url;
+            console.log(`[Upload] Logo uploaded: ${uploadedLogoUrl}`);
+
+            // Mettre à jour la campagne avec l'URL du logo
+            await apiManager.upsertCampaign({
+              address: realCampaignAddress,
+              logo: uploadedLogoUrl,
+              nft_logo_url: uploadedLogoUrl
+            });
+          }
+        } catch (logoError) {
+          console.error('[Upload] Logo upload failed:', logoError);
+          // Continue même si logo échoue
         }
       }
 
