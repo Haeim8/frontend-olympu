@@ -17,14 +17,15 @@ export function getSupabase() {
     if (supabase) return supabase;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    // Use SERVICE_KEY for server-side to bypass RLS
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        throw new Error('[Supabase] Variables manquantes: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_ANON_KEY');
+        throw new Error('[Supabase] Variables manquantes: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_KEY');
     }
 
     supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('[Supabase] Client initialisé');
+    console.log('[Supabase] Client initialisé (service key)');
     return supabase;
 }
 

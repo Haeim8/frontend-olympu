@@ -709,6 +709,10 @@ const translations = {
     'projectDetails.noTransactions': 'Aucune transaction',
     'projectDetails.share': 'part',
     'projectDetails.recent': 'Récent',
+    'projectDetails.buySuccessTitle': 'Succès !',
+    'projectDetails.buySuccessMessage': 'Achat effectué.',
+    'projectDetails.buyMore': 'Acheter plus',
+    'projectDetails.team': 'Équipe',
 
     // Project Overview
     'projectOverview.stats.keyInfo': 'Informations clés',
@@ -2043,6 +2047,10 @@ const translations = {
     'projectDetails.noTransactions': 'No transactions',
     'projectDetails.share': 'share',
     'projectDetails.recent': 'Recent',
+    'projectDetails.buySuccessTitle': 'Success!',
+    'projectDetails.buySuccessMessage': 'Purchase completed.',
+    'projectDetails.buyMore': 'Buy more',
+    'projectDetails.team': 'Team',
 
     // Project Overview
     'projectOverview.stats.keyInfo': 'Key Information',
@@ -3403,6 +3411,10 @@ const translations = {
     'projectDetails.noTransactions': 'Sin transacciones',
     'projectDetails.share': 'acción',
     'projectDetails.recent': 'Reciente',
+    'projectDetails.buySuccessTitle': '¡Éxito!',
+    'projectDetails.buySuccessMessage': 'Compra realizada.',
+    'projectDetails.buyMore': 'Comprar más',
+    'projectDetails.team': 'Equipo',
     'projectDetails.stats.goal': 'Objetivo',
     'projectDetails.stats.raised': 'Recaudado',
     'projectDetails.stats.investors': 'Inversores',

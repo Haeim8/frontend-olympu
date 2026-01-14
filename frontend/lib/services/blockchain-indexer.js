@@ -305,24 +305,24 @@ class BlockchainIndexer {
             const sharePrice = roundData[1]; // sharePrice est le 2ème élément
 
             for (const event of events) {
-                const { investor, numShares, roundNumber } = event.args;
-                const amount = sharePrice.mul(numShares);
+                const { investor, shares, roundNumber } = event.args;
+                const amount = sharePrice.mul(shares);
 
                 await transactions.insert({
                     tx_hash: event.transactionHash,
                     campaign_address: campaignAddress.toLowerCase(),
                     investor: investor.toLowerCase(),
                     amount: amount.toString(),
-                    shares: Number(numShares || shares),
+                    shares: Number(shares),
                     round_number: Number(roundNumber),
                     type: 'purchase',
                     block_number: Number(event.blockNumber),
                     timestamp: new Date(),
-                    commission: "0", // À calculer si besoin
+                    commission: "0",
                     net_amount: amount.toString()
                 });
 
-                console.log(`[Indexer] 💸 Tx ${event.transactionHash.slice(0, 8)} : ${numShares} shares`);
+                console.log(`[Indexer] 💸 Tx ${event.transactionHash.slice(0, 8)} : ${shares} shares`);
             }
 
             // Mettre à jour l'état de synchronisation

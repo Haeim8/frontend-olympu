@@ -190,6 +190,31 @@ class ApiManager {
 
       if (receipt.status === 1) {
         console.log(`[ApiManager] Transaction confirmée !`);
+
+        // Save transaction to database
+        try {
+          const investorAddress = await signer.getAddress();
+          await fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tx_hash: tx.hash,
+              campaign_address: campaignAddress.toLowerCase(),
+              investor: investorAddress.toLowerCase(),
+              amount: ethers.utils.formatEther(totalPrice),
+              shares: shareCount.toString(),
+              round_number: currentRoundNum.toNumber(),
+              type: 'purchase',  // Must match constraint: purchase, refund, dividend, commission
+              block_number: receipt.blockNumber,
+              timestamp: new Date().toISOString()
+            })
+          });
+          console.log('[ApiManager] Transaction saved to database');
+        } catch (saveError) {
+          console.error('[ApiManager] Failed to save transaction:', saveError);
+          // Don't throw - the blockchain tx was successful
+        }
+
         return { success: true, txHash: tx.hash };
       } else {
         throw new Error("La transaction a échoué on-chain");

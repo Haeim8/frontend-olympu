@@ -459,26 +459,75 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
                     <p className="text-neutral-500 text-sm">{t('projectDetails.noTransactions')}</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {transactions.slice(0, 10).map((tx, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-neutral-800/50 border border-neutral-700">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-lime-500/20 flex items-center justify-center">
-                            <Zap className="w-4 h-4 text-lime-400" />
+                  <div className="overflow-x-auto">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-6 gap-2 text-xs font-medium text-neutral-500 uppercase tracking-wider border-b border-neutral-800 pb-2 mb-2 min-w-[500px]">
+                      <div>DATE</div>
+                      <div>TYPE</div>
+                      <div className="text-right">USD</div>
+                      <div className="text-right">SHARES</div>
+                      <div className="text-right">MAKER</div>
+                      <div className="text-right">TXN</div>
+                    </div>
+
+                    {/* Table Rows */}
+                    <div className="space-y-1 min-w-[500px]">
+                      {transactions.slice(0, 20).map((tx, i) => {
+                        // Calculate time ago
+                        const now = Date.now();
+                        const txTime = tx.timestamp ? new Date(tx.timestamp * 1000 || tx.timestamp).getTime() : now;
+                        const diff = Math.floor((now - txTime) / 1000);
+                        let timeAgo = 'now';
+                        if (diff > 86400) timeAgo = `${Math.floor(diff / 86400)}d`;
+                        else if (diff > 3600) timeAgo = `${Math.floor(diff / 3600)}h`;
+                        else if (diff > 60) timeAgo = `${Math.floor(diff / 60)}m`;
+                        else if (diff > 0) timeAgo = `${diff}s`;
+
+                        // Type styling
+                        const isBuy = tx.type === 'purchase' || tx.type === 'buy';
+                        const typeColor = isBuy ? 'text-green-400' : 'text-red-400';
+                        const typeLabel = isBuy ? 'Buy' : 'Refund';
+
+                        // ETH to USD conversion (rough estimate ~3000 USD/ETH)
+                        const ethValue = parseFloat(tx.value || tx.eth_value || tx.amount || 0);
+                        const usdValue = (ethValue * 3000).toFixed(2);
+
+                        // Shares
+                        const shares = tx.shares || tx.amount || 1;
+
+                        // Maker address
+                        const maker = tx.buyer || tx.investor || '';
+                        const makerShort = maker ? `${maker.slice(0, 4)}...${maker.slice(-4)}` : '—';
+
+                        // TX hash
+                        const txHash = tx.tx_hash || tx.hash || '';
+                        const baseScanUrl = `https://sepolia.basescan.org/tx/${txHash}`;
+
+                        return (
+                          <div key={txHash || i} className="grid grid-cols-6 gap-2 items-center py-2 text-sm hover:bg-neutral-800/50 rounded transition-colors">
+                            <div className="text-neutral-400">{timeAgo}</div>
+                            <div className={`font-medium ${typeColor}`}>{typeLabel}</div>
+                            <div className="text-right text-white font-medium">${usdValue}</div>
+                            <div className="text-right text-neutral-300">{shares}</div>
+                            <div className="text-right">
+                              <span className="text-neutral-400 font-mono text-xs">{makerShort}</span>
+                            </div>
+                            <div className="text-right">
+                              {txHash ? (
+                                <a
+                                  href={baseScanUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-lime-400 hover:text-lime-300 transition-colors"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              ) : '—'}
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-white">
-                              {tx.shares || tx.amount || 1} {t('projectDetails.share')}{(tx.shares || tx.amount || 1) > 1 ? 's' : ''}
-                            </p>
-                            <p className="text-xs text-neutral-500 font-mono">{tx.buyer?.slice(0, 6)}...{tx.buyer?.slice(-4)}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-white">{tx.value || tx.eth_value || '0'} Ξ</p>
-                          <p className="text-xs text-neutral-500">{tx.timestamp ? new Date(tx.timestamp).toLocaleDateString() : t('projectDetails.recent')}</p>
-                        </div>
-                      </div>
-                    ))}
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
