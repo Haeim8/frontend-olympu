@@ -40,12 +40,8 @@ class BlockchainIndexer {
         console.log(`[Indexer] Initialisation avec RPC: ${rpcUrl}`);
 
         this.provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+        this.divarAddress = config.contracts.DivarProxy;
         this.isIndexing = false;
-    }
-
-    // Getter dynamique - l'adresse est lue à chaque appel (pas au build)
-    get divarAddress() {
-        return config.contracts.DivarProxy;
     }
 
     /**

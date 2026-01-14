@@ -105,12 +105,8 @@ const normalizeCampaignSummary = (summary) => {
 class ApiManager {
   constructor() {
     this.abis = {};
+    this.contractAddresses = config.contracts;
     this.isInitialized = false;
-  }
-
-  // Getter dynamique - les adresses sont lues à chaque appel (pas au build)
-  get contractAddresses() {
-    return config.contracts;
   }
 
   async initWeb3() {
@@ -413,6 +409,9 @@ class ApiManager {
     await this.loadABIs();
 
     const divarAddress = this.contractAddresses.DivarProxy;
+    console.log('[DEBUG VERCEL] DivarProxy address:', divarAddress);
+    console.log('[DEBUG VERCEL] All contracts:', JSON.stringify(this.contractAddresses));
+    console.log('[DEBUG VERCEL] Chain ID from signer:', await signer.getChainId());
     if (!divarAddress) throw new Error('DivarProxy address not configured');
 
     const contract = new ethers.Contract(divarAddress, this.abis.DivarProxy, signer);
