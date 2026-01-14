@@ -455,6 +455,69 @@ export const documents = {
 };
 
 // =============================================================================
+// TEAM MEMBERS
+// =============================================================================
+
+export const teamMembers = {
+    /**
+     * Get team members for a campaign
+     */
+    async getByCampaign(campaignAddress) {
+        const { data, error } = await getSupabase()
+            .from('campaign_team_members')
+            .select('*')
+            .eq('campaign_address', campaignAddress.toLowerCase())
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error('[Supabase] teamMembers.getByCampaign error:', error.message);
+            return [];
+        }
+
+        return data || [];
+    },
+
+    /**
+     * Save team members for a campaign (replaces all existing)
+     */
+    async saveByCampaign(campaignAddress, members) {
+        const address = campaignAddress.toLowerCase();
+
+        // Delete existing members
+        await getSupabase()
+            .from('campaign_team_members')
+            .delete()
+            .eq('campaign_address', address);
+
+        // Insert new members
+        if (!members || members.length === 0) return [];
+
+        const rows = members.map(m => ({
+            campaign_address: address,
+            name: m.name || '',
+            role: m.role || '',
+            twitter: m.socials?.twitter || m.twitter || null,
+            linkedin: m.socials?.linkedin || m.linkedin || null,
+            github: m.socials?.github || m.github || null
+        })).filter(m => m.name); // Only insert if name exists
+
+        if (rows.length === 0) return [];
+
+        const { data, error } = await getSupabase()
+            .from('campaign_team_members')
+            .insert(rows)
+            .select();
+
+        if (error) {
+            console.error('[Supabase] teamMembers.saveByCampaign error:', error.message);
+            throw error;
+        }
+
+        return data || [];
+    }
+};
+
+// =============================================================================
 // ÉTAT DE SYNCHRONISATION
 // =============================================================================
 

@@ -9,6 +9,7 @@ import { apiManager } from '@/lib/services/api-manager';
 import { useTranslation } from '@/hooks/useLanguage';
 import { useToast } from '@/contexts/ToastContext';
 import { useCampaignDocuments } from '@/hooks/useCampaignDocuments';
+import { useCampaignTeam } from '@/hooks/useCampaignTeam';
 import { motion } from 'framer-motion';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import {
@@ -45,6 +46,9 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
 
   // Charger les documents depuis Supabase
   const { documents: campaignDocuments } = useCampaignDocuments(project?.id || project?.address);
+
+  // Charger les team members depuis Supabase
+  const { teamMembers } = useCampaignTeam(project?.id || project?.address);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.ethereum) {
@@ -352,6 +356,42 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
                           </a>
                         );
                       })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Team Members */}
+                {teamMembers && teamMembers.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">{t('projectDetails.team', 'Équipe')}</h3>
+                    <div className="space-y-2">
+                      {teamMembers.map((member, idx) => (
+                        <div key={member.id || idx} className="p-3 rounded-lg bg-neutral-800/50 border border-neutral-700">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-sm font-medium text-neutral-200">{member.name}</span>
+                              {member.role && <span className="text-xs text-neutral-400 ml-2">- {member.role}</span>}
+                            </div>
+                            <div className="flex gap-2">
+                              {member.twitter && (
+                                <a href={member.twitter.startsWith('http') ? member.twitter : `https://twitter.com/${member.twitter}`} target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-lime-400">
+                                  <Twitter className="w-4 h-4" />
+                                </a>
+                              )}
+                              {member.linkedin && (
+                                <a href={member.linkedin.startsWith('http') ? member.linkedin : `https://linkedin.com/in/${member.linkedin}`} target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-lime-400">
+                                  <Users className="w-4 h-4" />
+                                </a>
+                              )}
+                              {member.github && (
+                                <a href={member.github.startsWith('http') ? member.github : `https://github.com/${member.github}`} target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-lime-400">
+                                  <Github className="w-4 h-4" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

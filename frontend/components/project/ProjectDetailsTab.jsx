@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from '@/hooks/useLanguage';
 import { useCampaignDocuments, groupDocumentsByCategory } from '@/hooks/useCampaignDocuments';
+import { useCampaignTeam } from '@/hooks/useCampaignTeam';
 import DocumentViewer from './DocumentViewer';
 import {
   FileText,
@@ -226,7 +227,11 @@ export default function ProjectDetailsTab({ projectData }) {
   const { documents: supabaseDocuments, loading: docsLoading } = useCampaignDocuments(projectData?.address || projectData?.id);
   const documentsByCategory = groupDocumentsByCategory(supabaseDocuments);
 
+  // Charger les team members depuis Supabase
+  const { teamMembers, loading: teamLoading } = useCampaignTeam(projectData?.address || projectData?.id);
+
   console.log('[ProjectDetailsTab] documents:', supabaseDocuments);
+  console.log('[ProjectDetailsTab] teamMembers:', teamMembers);
 
   const handlePreview = (document) => {
     setViewerDocument(document);
@@ -443,7 +448,65 @@ export default function ProjectDetailsTab({ projectData }) {
           </CardContent>
         </Card>
 
-        {/* Team section removed - use direct DB columns if needed */}
+        {/* Équipe */}
+        {teamMembers && teamMembers.length > 0 && (
+          <Card className="border-2 border-gray-200 dark:border-neutral-800 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-lime-100 dark:bg-lime-900/20 rounded-lg">
+                  <Users className="h-5 w-5 text-lime-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('projectDetailsTab.teamMembers')}
+                </h3>
+                <Badge className="bg-lime-100 dark:bg-lime-900/20 text-lime-700 dark:text-lime-300 border border-lime-200 dark:border-lime-800">
+                  {teamMembers.length}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {teamMembers.map((member, index) => (
+                  <Card key={member.id || index} className="border border-gray-200 dark:border-neutral-800 hover:border-lime-300 dark:hover:border-lime-700 hover:shadow-lg transition-all duration-300">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 bg-lime-100 dark:bg-lime-900/20 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Users className="h-6 w-6 text-lime-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                            {member.name || t('projectDetailsTab.memberNameNotSpecified')}
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            {member.role || t('projectDetailsTab.memberRoleNotSpecified')}
+                          </p>
+                          {(member.twitter || member.linkedin || member.github) && (
+                            <div className="flex gap-2 mt-2">
+                              {member.twitter && (
+                                <a href={getSocialUrl('twitter', member.twitter)} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:text-lime-700 transition-colors">
+                                  <Twitter className="h-4 w-4" />
+                                </a>
+                              )}
+                              {member.linkedin && (
+                                <a href={getSocialUrl('linkedin', member.linkedin)} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:text-lime-700 transition-colors">
+                                  <Users className="h-4 w-4" />
+                                </a>
+                              )}
+                              {member.github && (
+                                <a href={getSocialUrl('github', member.github)} target="_blank" rel="noopener noreferrer" className="text-lime-600 hover:text-lime-700 transition-colors">
+                                  <Github className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Réseaux sociaux */}
         {hasSocials && (

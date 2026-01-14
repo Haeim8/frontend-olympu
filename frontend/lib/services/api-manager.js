@@ -491,6 +491,22 @@ class ApiManager {
         nft_sector: nftSector
       });
 
+      // Save team members if provided
+      if (formData.teamMembers && formData.teamMembers.length > 0) {
+        try {
+          await fetch('/api/team', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              campaignAddress: campaignAddress.toLowerCase(),
+              members: formData.teamMembers
+            })
+          });
+        } catch (teamErr) {
+          console.error('[ApiManager] Error saving team members:', teamErr);
+        }
+      }
+
       clientCache.clear();
       return { success: true, address: campaignAddress, txHash: tx.hash };
     }
