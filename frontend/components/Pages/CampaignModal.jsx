@@ -5,8 +5,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, ArrowLeft, ArrowRight, Loader2, Sparkles, X } from 'lucide-react';
-import { useAccount } from 'wagmi';
+import { useAccount, useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
+
+// Convertir WalletClient de wagmi en ethers Signer
+function walletClientToSigner(walletClient) {
+  const { account, chain, transport } = walletClient;
+  const network = {
+    chainId: chain.id,
+    name: chain.name,
+    ensAddress: chain.contracts?.ensRegistry?.address,
+  };
+  const provider = new ethers.providers.Web3Provider(transport, network);
+  return provider.getSigner(account.address);
+}
 import html2canvas from 'html2canvas';
 import { apiManager } from '@/lib/services/api-manager';
 import { useTranslation } from '@/hooks/useLanguage';
@@ -19,22 +31,6 @@ import CampaignDocuments from '@/components/campaign-creation/CampaignDocuments'
 import CampaignTeamSocials from '@/components/campaign-creation/CampaignTeamSocials';
 import CampaignNFTPreview from '@/components/campaign-creation/CampaignNFTPreview';
 import CampaignReview from '@/components/campaign-creation/CampaignReview';
-
-const REQUIRED_CHAIN = {
-  id: 84532,
-  hex: '0x14a34',
-  params: {
-    chainId: '0x14a34',
-    chainName: 'Base Sepolia',
-    nativeCurrency: {
-      name: 'Ether',
-      symbol: 'ETH',
-      decimals: 18,
-    },
-    rpcUrls: ['https://sepolia.base.org'],
-    blockExplorerUrls: ['https://sepolia.basescan.org'],
-  },
-};
 
 const INITIAL_FORM_DATA = {
   creatorAddress: '',
@@ -92,8 +88,8 @@ export default function CampaignModal({
   const submitRef = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { address, connector } = useAccount();
-  const [writeLoading, setWriteLoading] = useState(false);
+  const { address } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const draftRestoredRef = useRef(false);
 
   // Helper pour les brouillons (inchangé sur le fond, mais peut être optimisé)
@@ -317,28 +313,6 @@ export default function CampaignModal({
     return Object.keys(newErrors).length === 0;
   }, [formData, t]);
 
-  const resolveExternalProvider = useCallback(async () => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      return window.ethereum;
-    }
-    throw new Error('No wallet provider found');
-  }, []);
-
-  const ensureCorrectChain = useCallback(async (web3Provider) => {
-    const network = await web3Provider.getNetwork();
-    if (network.chainId === REQUIRED_CHAIN.id) return;
-
-    try {
-      await web3Provider.send('wallet_switchEthereumChain', [{ chainId: REQUIRED_CHAIN.hex }]);
-    } catch (switchError) {
-      if (switchError?.code === 4902 || switchError?.data?.originalError?.code === 4902) {
-        await web3Provider.send('wallet_addEthereumChain', [REQUIRED_CHAIN.params]);
-        return;
-      }
-      throw new Error('Veuillez changer de réseau vers Base Sepolia');
-    }
-  }, []);
-
   // Handlers
   const handleInputChange = useCallback((e, nestedField = null) => {
     const { name, value } = e.target;
@@ -464,10 +438,9 @@ export default function CampaignModal({
     setStatus('loading');
 
     try {
-      // 1. Initialiser le provider et le signer
-      if (!window.ethereum) throw new Error("Fournisseur Ethereum introuvable");
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = await provider.getSigner();
+      // 1. Initialiser le signer via wagmi (compatible prod)
+      if (!walletClient) throw new Error("Wallet non connecté");
+      const signer = walletClientToSigner(walletClient);
 
       // 2. Préparer les données pour le contrat (SANS uploader les documents)
       const dataToSubmit = {
@@ -574,7 +547,7 @@ export default function CampaignModal({
         setIsSubmitting(false);
       }
     }
-  }, [validateStep, address, formData, onCampaignCreated, t, isSubmitting, status]);
+  }, [validateStep, address, formData, onCampaignCreated, t, isSubmitting, status, walletClient]);
 
 
   // RENDERERS
