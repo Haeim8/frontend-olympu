@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
+import { useToast } from '@/contexts/ToastContext';
 import { useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ function walletClientToSigner(walletClient) {
 
 export default function DividendDistribution({ campaignData, campaignAddress, onDistributionComplete }) {
   const { t } = useTranslation();
+  const { showError, showSuccess } = useToast();
   const { data: walletClient } = useWalletClient();
   const [distributeForm, setDistributeForm] = useState({
     amount: "",
@@ -80,10 +82,10 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
       }
 
       // Success notification
-      alert(t('dividends.distributionSuccess'));
+      showSuccess(t('dividends.distributionSuccess'));
 
     } catch (error) {
-      console.error("Erreur lors de la distribution:", error);
+      showError(error);
       setError(error.message || t('dividends.distributionError'));
     } finally {
       setIsDistributing(false);

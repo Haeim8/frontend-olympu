@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useLanguage';
+import { useToast } from '@/contexts/ToastContext';
 import { useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
 import { Megaphone, Target, Calendar, DollarSign, Users, TrendingUp, Zap } from 'lucide-react';
@@ -42,6 +43,7 @@ export default function PromoteCampaignDialog({
   onSuccess
 }) {
   const { t } = useTranslation();
+  const { showError, showSuccess } = useToast();
   const { data: walletClient } = useWalletClient();
   const [promotionForm, setPromotionForm] = useState({
     type: 'boost',
@@ -153,10 +155,10 @@ export default function PromoteCampaignDialog({
       }
 
       onClose();
-      alert(t('promote.success', { package: selectedPackage?.name }));
+      showSuccess(t('promote.success', { package: selectedPackage?.name }));
 
     } catch (error) {
-      console.error("Erreur lors de la promotion:", error);
+      showError(error);
       setError(error.message || t('promote.error'));
     } finally {
       setIsPromoting(false);

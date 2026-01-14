@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from '@/hooks/useLanguage';
+import { useToast } from '@/contexts/ToastContext';
 import { useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
 import { Calendar, DollarSign, Repeat, AlertTriangle, Info } from 'lucide-react';
@@ -33,6 +34,7 @@ export default function ReopenCampaignDialog({
   onSuccess
 }) {
   const { t } = useTranslation();
+  const { showError, showSuccess } = useToast();
   const { data: walletClient } = useWalletClient();
   const [reopenForm, setReopenForm] = useState({
     goal: "",
@@ -138,10 +140,10 @@ export default function ReopenCampaignDialog({
       }
 
       onClose();
-      alert(t('dialog.reopen.success'));
+      showSuccess(t('dialog.reopen.success'));
 
     } catch (error) {
-      console.error("Erreur lors de la réouverture:", error);
+      showError(error);
       setError(error.message || t('dialog.reopen.error'));
     } finally {
       setIsReopening(false);

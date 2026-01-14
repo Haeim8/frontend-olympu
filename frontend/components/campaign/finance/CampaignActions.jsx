@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
+import { useToast } from '@/contexts/ToastContext';
 import { useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ export default function CampaignActions({
   onActionComplete
 }) {
   const { t } = useTranslation();
+  const { showError, showSuccess } = useToast();
   const { data: walletClient } = useWalletClient();
   const [isReleasingEscrow, setIsReleasingEscrow] = useState(false);
   const [escrowError, setEscrowError] = useState(null);
@@ -51,12 +53,11 @@ export default function CampaignActions({
         onActionComplete('escrow_released');
       }
 
-      alert(t('campaignActions.escrowSuccess'));
+      showSuccess(t('campaignActions.escrowSuccess'));
 
     } catch (error) {
-      console.error("Erreur lors de la libération de l'escrow:", error);
+      showError(error);
       setEscrowError(error.message || t('campaignActions.escrowError'));
-      alert(error.message);
     } finally {
       setIsReleasingEscrow(false);
     }

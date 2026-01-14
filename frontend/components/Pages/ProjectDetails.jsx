@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiManager } from '@/lib/services/api-manager';
 import { useTranslation } from '@/hooks/useLanguage';
+import { useToast } from '@/contexts/ToastContext';
 import { useCampaignDocuments } from '@/hooks/useCampaignDocuments';
 import { motion } from 'framer-motion';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -30,6 +31,7 @@ const DEFAULT_PROJECT = {
 
 export default function ProjectDetails({ selectedProject, onClose, toggleFavorite, isFavorite }) {
   const { t } = useTranslation();
+  const { showError, showSuccess } = useToast();
   const project = { ...DEFAULT_PROJECT, ...selectedProject };
   const [showProjectDetails, setShowProjectDetails] = useState(true);
   const isFav = isFavorite ? isFavorite(project.address || project.id) : false;
@@ -166,7 +168,7 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
         loadProjectData();
       }
     } catch (err) {
-      console.error('[Buy] Erreur:', err);
+      showError(err);
       setBuyError(err.reason || err.message || t('projectDetails.buyError'));
     } finally {
       setIsBuying(false);
