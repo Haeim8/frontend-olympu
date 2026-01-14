@@ -4103,7 +4103,7 @@ export const LanguageProvider = ({ children }) => {
           if (translations[langCode]) {
             setCurrentLanguage(langCode);
           } else {
-            setCurrentLanguage('fr'); // Langue par défaut
+            setCurrentLanguage('en'); // Default to English
           }
         }
 

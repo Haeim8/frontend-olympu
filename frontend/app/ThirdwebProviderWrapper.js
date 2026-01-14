@@ -11,11 +11,13 @@ import {
   getDefaultConfig,
 } from '@rainbow-me/rainbowkit';
 import { useTheme } from 'next-themes';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '00000000000000000000000000000000';
 
 export default function ThirdwebProviderWrapper({ children }) {
   const { theme } = useTheme();
+  const { currentLanguage } = useLanguage();
   const [wagmiConfig, setWagmiConfig] = useState(null);
   const [queryClient] = useState(
     () =>
@@ -46,23 +48,39 @@ export default function ThirdwebProviderWrapper({ children }) {
 
   const rainbowTheme = useMemo(
     () =>
-      (theme === 'dark'
-        ? darkTheme({
-            accentColor: '#84cc16',
-            accentColorForeground: 'white',
-            borderRadius: 'medium',
-            fontStack: 'system',
-            overlayBlur: 'small',
-          })
-        : lightTheme({
-            accentColor: '#84cc16',
-            accentColorForeground: 'white',
-            borderRadius: 'medium',
-            fontStack: 'system',
-            overlayBlur: 'small',
-          })),
+    (theme === 'dark'
+      ? darkTheme({
+        accentColor: '#84cc16',
+        accentColorForeground: 'white',
+        borderRadius: 'medium',
+        fontStack: 'system',
+        overlayBlur: 'small',
+      })
+      : lightTheme({
+        accentColor: '#84cc16',
+        accentColorForeground: 'white',
+        borderRadius: 'medium',
+        fontStack: 'system',
+        overlayBlur: 'small',
+      })),
     [theme]
   );
+
+  // Map language codes to RainbowKit supported locales
+  const rainbowLocale = useMemo(() => {
+    const localeMap = {
+      fr: 'fr',
+      en: 'en',
+      es: 'es',
+      de: 'de',
+      pt: 'pt',
+      zh: 'zh',
+      ja: 'ja',
+      ko: 'ko',
+      ar: 'ar',
+    };
+    return localeMap[currentLanguage] || 'en';
+  }, [currentLanguage]);
 
   if (!wagmiConfig) {
     return null;
@@ -71,10 +89,11 @@ export default function ThirdwebProviderWrapper({ children }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={rainbowTheme} locale="fr">
+        <RainbowKitProvider theme={rainbowTheme} locale={rainbowLocale}>
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
 }
+
