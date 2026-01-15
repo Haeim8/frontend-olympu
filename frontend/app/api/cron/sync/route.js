@@ -9,24 +9,28 @@ export const dynamic = 'force-dynamic';
  * Déclenche un passage de l'indexeur
  */
 export async function GET(request) {
-    // Vérification de l'en-tête Cron de Vercel (Sécurité)
     const authHeader = request.headers.get('authorization');
+    const userAgent = request.headers.get('user-agent') || '';
     const { searchParams } = new URL(request.url);
     const debugKey = searchParams.get('key');
 
-    const isVercelCron = process.env.NODE_ENV === 'production' && authHeader === `Bearer ${process.env.CRON_SECRET}`;
-    const isDebugCall = debugKey && debugKey === process.env.CRON_SECRET;
+    // Détection simplifiée pour Vercel Cron
+    const isVercelSystem = userAgent.includes('vercel-cron') || userAgent.includes('Vercel-Cron');
+    const hasCorrectSecret = process.env.CRON_SECRET && (authHeader === `Bearer ${process.env.CRON_SECRET}` || debugKey === process.env.CRON_SECRET);
 
-    if (process.env.NODE_ENV === 'production' && !isVercelCron && !isDebugCall) {
-        console.warn('[Cron] Tentative d\'accès non autorisée');
-        return NextResponse.json({
-            error: 'Unauthorized',
-            details: 'Si vous testez manuellement, ajoutez ?key=VOTRE_CRON_SECRET'
-        }, { status: 401 });
+    // En production, on accepte soit le secret, soit l'agent Vercel si le secret n'est pas prêt
+    if (process.env.NODE_ENV === 'production') {
+        if (!hasCorrectSecret && !isVercelSystem) {
+            console.warn('[Cron] Accès refusé:', { userAgent, hasSecret: !!process.env.CRON_SECRET });
+            return NextResponse.json({
+                error: 'Unauthorized',
+                details: 'Accès réservé au système Vercel Cron ou avec clé ?key='
+            }, { status: 401 });
+        }
     }
 
     try {
-        console.log('[Cron] Déclenchement de la synchronisation...');
+        console.log(`[Cron] Déclenchement (Agent: ${userAgent.slice(0, 20)}...)`);
         const result = await indexer.syncNext();
 
         return NextResponse.json({

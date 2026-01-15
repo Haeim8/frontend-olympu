@@ -136,8 +136,10 @@ class BlockchainIndexer {
                 return;
             }
 
-            const MAX_RANGE = 999; // 999 + 1 (inclusive) = 1000 blocs max pour Coinbase
+            const MAX_RANGE = 2500; // Plus large pour rattraper le retard
             const toBlock = Math.min(fromBlock + MAX_RANGE, currentBlock);
+
+            if (fromBlock > toBlock) return;
 
             console.log(`[Indexer] 🆕 Scan ${fromBlock} -> ${toBlock} (${toBlock - fromBlock + 1} blocs)`);
 
@@ -336,14 +338,16 @@ class BlockchainIndexer {
 
             // Scan in chunks of 1000 blocks (RPC limit)
             let allEvents = [];
-            const CHUNK_SIZE = 1000;
+            const CHUNK_SIZE = 2500; // Augmenté pour le mode Cron
             for (let start = fromBlock; start < currentBlock; start += CHUNK_SIZE) {
                 const end = Math.min(start + CHUNK_SIZE - 1, currentBlock);
                 try {
+                    console.log(`[Indexer] 🔎 Scan TXs ${campaignAddress.slice(0, 8)}: ${start} -> ${end}`);
                     const events = await contract.queryFilter("SharesPurchased", start, end);
                     allEvents = allEvents.concat(events);
                 } catch (err) {
-                    console.warn(`[Indexer] Chunk ${start}-${end} failed:`, err.message);
+                    console.warn(`[Indexer] Chunk ${start}-${end} failed for ${campaignAddress.slice(0, 8)}:`, err.message);
+                    break; // Arrêter ce tour pour cette campagne si ça échoue (timeout probable)
                 }
             }
 
