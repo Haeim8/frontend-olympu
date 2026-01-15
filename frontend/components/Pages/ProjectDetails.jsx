@@ -66,12 +66,13 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
   useEffect(() => { setShowProjectDetails(!!selectedProject); }, [selectedProject]);
 
   const loadProjectData = useCallback(async () => {
-    if (!project?.id) return;
+    const id = project?.address || project?.id;
+    if (!id) return;
     try {
       setIsLoading(true);
       const [projectRes, txRes] = await Promise.all([
-        fetch(`/api/campaigns/${project.id}`),
-        fetch(`/api/campaigns/${project.id}/transactions`).then(r => r.json()).catch(() => ({ transactions: [] }))
+        fetch(`/api/campaigns/${id}`),
+        fetch(`/api/campaigns/${id}/transactions`).then(r => r.json()).catch(() => ({ transactions: [] }))
       ]);
 
       const projectJson = await projectRes.json();
@@ -81,11 +82,17 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
         setProjectData(projectJson.campaign);
       }
       if (txData.transactions) setTransactions(txData.transactions);
-    } catch (err) { console.error('Error:', err); }
-    finally { setIsLoading(false); }
-  }, [project?.id]);
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [project?.address, project?.id]);
 
-  useEffect(() => { if (project?.id) loadProjectData(); }, [project?.id, loadProjectData]);
+  useEffect(() => {
+    const id = project?.address || project?.id;
+    if (id) loadProjectData();
+  }, [project?.address, project?.id, loadProjectData]);
 
   // Calculs basés sur les vraies données
   const progress = (parseFloat(project.raised) / parseFloat(project.goal)) * 100 || 0;

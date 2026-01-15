@@ -18,6 +18,7 @@ export function getSupabase() {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     // Use SERVICE_KEY for server-side to bypass RLS
+    const hasServiceKey = !!process.env.SUPABASE_SERVICE_KEY;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
@@ -25,7 +26,7 @@ export function getSupabase() {
     }
 
     supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('[Supabase] Client initialisé (service key)');
+    console.log(`[Supabase] Client initialisé (mode: ${hasServiceKey ? 'SERVICE_KEY' : 'ANON_KEY'})`);
     return supabase;
 }
 

@@ -158,9 +158,9 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
   const filteredAndSortedTransactions = React.useMemo(() => {
     let filtered = transactions.filter(tx => {
       const matchesSearch =
-        tx.investor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tx.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tx.id.toString().includes(searchTerm);
+        (tx.investor || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (tx.type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (tx.tx_hash || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesFilter = filterType === 'all' || tx.type === filterType;
       return matchesSearch && matchesFilter;
     });
@@ -177,7 +177,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
         break;
       case 'block':
       default:
-        filtered.sort((a, b) => b.id - a.id);
+        filtered.sort((a, b) => (b.block_number || 0) - (a.block_number || 0));
     }
 
     return filtered;
@@ -210,9 +210,9 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
       ...filteredAndSortedTransactions.map(tx => [
         tx.type,
         tx.investor,
-        tx.nftCount,
-        tx.value,
-        tx.id
+        tx.shares,
+        tx.amount,
+        tx.block_number
       ].join(','))
     ].join('\n');
 
@@ -411,7 +411,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
               <tbody>
                 {filteredAndSortedTransactions.map((transaction, index) => (
                   <TransactionRow
-                    key={`${transaction.id}-${transaction.investor}-${index}`}
+                    key={`${transaction.tx_hash || index}-${index}`}
                     transaction={transaction}
                     index={index}
                     t={t}
