@@ -346,19 +346,31 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
                     <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-2">{t('projectDetails.links')}</h3>
                     <div className="flex flex-wrap gap-2">
                       {[
-                        { key: 'website', icon: Globe, label: t('projectDetails.social.website') },
-                        { key: 'twitter', icon: Twitter, label: 'Twitter' },
-                        { key: 'discord', icon: MessageCircle, label: 'Discord' },
-                        { key: 'github', icon: Github, label: 'GitHub' },
-                        { key: 'telegram', icon: MessageCircle, label: 'Telegram' },
-                        { key: 'farcaster', icon: Zap, label: 'Farcaster' },
-                        { key: 'medium', icon: FileText, label: 'Medium' },
-                        { key: 'base', icon: Zap, label: 'Base' },
-                      ].map(({ key, icon: Icon, label }) => {
-                        const url = projectData[key];
-                        if (!url) return null;
+                        { key: 'website', icon: Globe, label: t('projectDetails.social.website'), prefix: '' },
+                        { key: 'twitter', icon: Twitter, label: 'Twitter', prefix: 'https://twitter.com/' },
+                        { key: 'discord', icon: MessageCircle, label: 'Discord', prefix: 'https://discord.gg/' },
+                        { key: 'github', icon: Github, label: 'GitHub', prefix: 'https://github.com/' },
+                        { key: 'telegram', icon: MessageCircle, label: 'Telegram', prefix: 'https://t.me/' },
+                        { key: 'farcaster', icon: Zap, label: 'Farcaster', prefix: 'https://warpcast.com/' },
+                        { key: 'medium', icon: FileText, label: 'Medium', prefix: 'https://medium.com/@' },
+                        { key: 'base', icon: Zap, label: 'Base', prefix: 'https://base.org/' },
+                      ].map(({ key, icon: Icon, label, prefix }) => {
+                        const rawValue = projectData[key];
+                        if (!rawValue) return null;
+
+                        // Construire l'URL complète
+                        let fullUrl = rawValue;
+                        if (!rawValue.startsWith('http://') && !rawValue.startsWith('https://')) {
+                          // Si c'est juste un handle/nom, ajouter le préfixe approprié
+                          if (key === 'website') {
+                            fullUrl = `https://${rawValue}`;
+                          } else {
+                            fullUrl = `${prefix}${rawValue}`;
+                          }
+                        }
+
                         return (
-                          <a key={key} href={url} target="_blank" rel="noopener noreferrer"
+                          <a key={key} href={fullUrl} target="_blank" rel="noopener noreferrer"
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-sm">
                             <Icon className="w-4 h-4" />{label}<ExternalLink className="w-3 h-3" />
                           </a>
