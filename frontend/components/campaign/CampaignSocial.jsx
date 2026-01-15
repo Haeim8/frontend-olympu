@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,19 +30,33 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Initialiser avec les données de la campagne
   const [socialLinks, setSocialLinks] = useState({
-    twitter: '',
-    github: '',
-    discord: '',
-    telegram: '',
-    medium: '',
-    website: '',
-    farcaster: '',
-    base: ''
+    twitter: campaignData?.twitter || '',
+    github: campaignData?.github || '',
+    discord: campaignData?.discord || '',
+    telegram: campaignData?.telegram || '',
+    medium: campaignData?.medium || '',
+    website: campaignData?.website || '',
+    farcaster: campaignData?.farcaster || '',
+    base: campaignData?.base || ''
   });
 
-  // Note: Les métriques sociales (followers, engagement) ne sont pas disponibles
-  // car nous n'avons pas accès aux vrais APIs des réseaux sociaux
+  // Synchroniser quand campaignData change
+  useEffect(() => {
+    if (campaignData) {
+      setSocialLinks({
+        twitter: campaignData.twitter || '',
+        github: campaignData.github || '',
+        discord: campaignData.discord || '',
+        telegram: campaignData.telegram || '',
+        medium: campaignData.medium || '',
+        website: campaignData.website || '',
+        farcaster: campaignData.farcaster || '',
+        base: campaignData.base || ''
+      });
+    }
+  }, [campaignData]);
 
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -56,16 +70,34 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
   const handleUpdateSocialLinks = async () => {
     setIsUpdating(true);
     try {
-      if (onSocialUpdate) {
-        onSocialUpdate(socialLinks);
-      }
-      setTimeout(() => {
-        setShowEditDialog(false);
-        setIsUpdating(false);
-      }, 1000);
+      // Appeler l'API pour sauvegarder les liens
+      const response = await fetch('/api/campaigns/upsert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: campaignAddress,
+          twitter: socialLinks.twitter,
+          discord: socialLinks.discord,
+          github: socialLinks.github,
+          telegram: socialLinks.telegram,
+          farcaster: socialLinks.farcaster,
+          medium: socialLinks.medium,
+          base: socialLinks.base,
+          website: socialLinks.website
+        })
+      });
 
+      if (response.ok) {
+        if (onSocialUpdate) {
+          onSocialUpdate(socialLinks);
+        }
+        setShowEditDialog(false);
+      } else {
+        console.error('Erreur sauvegarde liens sociaux');
+      }
     } catch (error) {
       console.error('Erreur mise à jour liens sociaux:', error);
+    } finally {
       setIsUpdating(false);
     }
   };
@@ -94,6 +126,30 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
     } catch (err) {
       console.error('Erreur copie:', err);
     }
+  };
+
+  // Construire l'URL complète à partir du handle/nom
+  const buildFullUrl = (platformId, value) => {
+    if (!value) return '#';
+
+    // Si c'est déjà une URL complète, la retourner
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    // Sinon, construire l'URL selon la plateforme
+    const prefixes = {
+      twitter: 'https://twitter.com/',
+      discord: 'https://discord.gg/',
+      github: 'https://github.com/',
+      telegram: 'https://t.me/',
+      farcaster: 'https://warpcast.com/',
+      medium: 'https://medium.com/@',
+      base: 'https://base.org/',
+      website: 'https://'
+    };
+
+    return `${prefixes[platformId] || ''}${value}`;
   };
 
   const socialPlatforms = [
@@ -333,27 +389,33 @@ export default function CampaignSocial({ campaignData, campaignAddress, onSocial
             {t('campaignSocial.joinCommunity', 'Rejoindre la communauté')}
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {socialPlatforms.map((platform) => (
-              <a
-                key={platform.id}
-                href={socialLinks[platform.id] || '#'}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (!socialLinks[platform.id]) {
-                    e.preventDefault();
-                    // Optional: Trigger toast or edit modal
-                  }
-                }}
-                className={`
-                  flex flex-col items-center justify-center p-3 gap-2 rounded-xl border border-dashed transition-all duration-300
-                  ${!socialLinks[platform.id] ? 'opacity-50 border-border grayscale hover:grayscale-0 hover:opacity-100' : `${platform.borderColor} bg-muted/20 ${platform.hoverBg} border-solid`}
-                `}
-              >
-                <div className={`${platform.color}`}>{platform.icon}</div>
-                <span className={`text-xs font-bold ${platform.color}`}>{platform.name}</span>
-              </a>
-            ))}
+            {socialPlatforms.map((platform) => {
+              const rawValue = socialLinks[platform.id];
+              const fullUrl = buildFullUrl(platform.id, rawValue);
+              const hasLink = !!rawValue;
+
+              return (
+                <a
+                  key={platform.id}
+                  href={fullUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => {
+                    if (!hasLink) {
+                      e.preventDefault();
+                      setShowEditDialog(true);
+                    }
+                  }}
+                  className={`
+                    flex flex-col items-center justify-center p-3 gap-2 rounded-xl border border-dashed transition-all duration-300
+                    ${!hasLink ? 'opacity-50 border-border grayscale hover:grayscale-0 hover:opacity-100 cursor-pointer' : `${platform.borderColor} bg-muted/20 ${platform.hoverBg} border-solid`}
+                  `}
+                >
+                  <div className={`${platform.color}`}>{platform.icon}</div>
+                  <span className={`text-xs font-bold ${platform.color}`}>{platform.name}</span>
+                </a>
+              );
+            })}
           </div>
         </div>
 

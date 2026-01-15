@@ -19,13 +19,20 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const loadInvestors = useCallback(async () => {
-    if (!campaignAddress) return;
+    console.log('[CampaignInvestors] loadInvestors called, address:', campaignAddress);
+
+    if (!campaignAddress) {
+      console.log('[CampaignInvestors] No campaign address, skipping');
+      return;
+    }
 
     try {
       setIsLoading(true);
       setError(null);
 
+      console.log('[CampaignInvestors] Fetching investors for:', campaignAddress);
       const investorData = await apiManager.getCampaignInvestors(campaignAddress);
+      console.log('[CampaignInvestors] Got investors:', investorData);
       setInvestors(investorData || []);
 
     } catch (err) {

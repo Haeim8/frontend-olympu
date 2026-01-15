@@ -1,18 +1,12 @@
 /**
  * API Route: /api/investors
- * Récupère les investisseurs d'une campagne depuis Supabase
+ * Récupère les investisseurs d'une campagne depuis les transactions Supabase
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/backend/db';
 import { NextResponse } from 'next/server';
 
-// Force dynamic rendering (uses request.url)
 export const dynamic = 'force-dynamic';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-);
 
 export async function GET(request) {
     try {
@@ -26,12 +20,16 @@ export async function GET(request) {
             );
         }
 
-        // Récupérer les investisseurs depuis la table campaign_investors
-        const { data: investors, error } = await supabase
-            .from('campaign_investors')
-            .select('*')
-            .eq('campaign_address', campaignAddress.toLowerCase())
-            .order('total_shares', { ascending: false });
+        const supabase = getSupabase();
+        const address = campaignAddress.toLowerCase();
+
+        // Récupérer toutes les transactions de type 'purchase' pour cette campagne
+        const { data: transactions, error } = await supabase
+            .from('campaign_transactions')
+            .select('investor, shares, amount, timestamp')
+            .eq('campaign_address', address)
+            .eq('type', 'purchase')
+            .order('timestamp', { ascending: false });
 
         if (error) {
             console.error('[API Investors] Erreur Supabase:', error);
@@ -41,15 +39,51 @@ export async function GET(request) {
             );
         }
 
-        // Normaliser les données pour le frontend
-        const normalizedInvestors = (investors || []).map(inv => ({
-            address: inv.investor_address,
-            nftCount: inv.total_shares || '0',
-            totalInvested: inv.total_invested || '0',
-            firstInvestment: inv.first_investment_date,
-            lastInvestment: inv.last_investment_date,
-            investmentCount: inv.investment_count || 0
-        }));
+        // Agréger par investisseur
+        const investorMap = new Map();
+
+        for (const tx of (transactions || [])) {
+            const investorAddr = tx.investor?.toLowerCase();
+            if (!investorAddr) continue;
+
+            if (!investorMap.has(investorAddr)) {
+                investorMap.set(investorAddr, {
+                    address: investorAddr,
+                    nftCount: 0,
+                    totalInvested: BigInt(0),
+                    firstInvestment: tx.timestamp,
+                    lastInvestment: tx.timestamp,
+                    investmentCount: 0
+                });
+            }
+
+            const investor = investorMap.get(investorAddr);
+            investor.nftCount += parseInt(tx.shares || 0);
+            investor.totalInvested += BigInt(tx.amount || 0);
+            investor.investmentCount += 1;
+
+            // Mettre à jour les dates
+            if (tx.timestamp < investor.firstInvestment) {
+                investor.firstInvestment = tx.timestamp;
+            }
+            if (tx.timestamp > investor.lastInvestment) {
+                investor.lastInvestment = tx.timestamp;
+            }
+        }
+
+        // Convertir en tableau et trier par nombre de parts
+        const normalizedInvestors = Array.from(investorMap.values())
+            .map(inv => ({
+                address: inv.address,
+                nftCount: inv.nftCount.toString(),
+                totalInvested: inv.totalInvested.toString(),
+                firstInvestment: inv.firstInvestment,
+                lastInvestment: inv.lastInvestment,
+                investmentCount: inv.investmentCount
+            }))
+            .sort((a, b) => parseInt(b.nftCount) - parseInt(a.nftCount));
+
+        console.log(`[API Investors] ${normalizedInvestors.length} investisseurs pour ${address.slice(0, 10)}...`);
 
         return NextResponse.json({
             success: true,
@@ -60,7 +94,7 @@ export async function GET(request) {
     } catch (error) {
         console.error('[API Investors] Erreur:', error);
         return NextResponse.json(
-            { error: 'Erreur serveur' },
+            { error: 'Erreur serveur', message: error.message },
             { status: 500 }
         );
     }

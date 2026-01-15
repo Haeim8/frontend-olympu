@@ -110,10 +110,10 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
                 <p className="text-sm text-muted-foreground font-medium">{t('campaignHeader.investors')}</p>
               </div>
               <p className="text-xl font-bold text-foreground">
-                {campaignData.investors}
+                {campaignData.unique_investors || campaignData.investors || campaignData.total_investors || 0}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {t('campaignHeader.nftsMax', { count: campaignData.nftTotal })}
+                {campaignData.shares_sold || campaignData.sharesSold || 0} {t('campaignHeader.sharesSold', 'parts vendues')}
               </p>
             </div>
 
