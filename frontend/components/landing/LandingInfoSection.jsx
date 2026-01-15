@@ -20,7 +20,7 @@ const numberFormatter = new Intl.NumberFormat(undefined, {
 });
 
 const raisedFormatter = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 1,
+  maximumFractionDigits: 6,
 });
 
 export function LandingInfoSection({ darkMode, stats, statsLoading }) {
@@ -40,7 +40,7 @@ export function LandingInfoSection({ darkMode, stats, statsLoading }) {
       {
         label: t('landing.cta.fundsRaised', 'Total Volume'),
         value: totalRaised,
-        formatter: (value) => `${raisedFormatter.format(Math.max(0, value))} Ξ`,
+        formatter: (value) => `${raisedFormatter.format(Math.max(0, value))} ETH`,
       },
       {
         label: t('landing.cta.projectsFunded', 'Ventures'),

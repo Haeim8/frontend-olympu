@@ -201,7 +201,7 @@ class ApiManager {
               tx_hash: tx.hash,
               campaign_address: campaignAddress.toLowerCase(),
               investor: investorAddress.toLowerCase(),
-              amount: ethers.utils.formatEther(totalPrice),
+              amount: totalPrice.toString(),
               shares: shareCount.toString(),
               round_number: currentRoundNum.toNumber(),
               type: 'purchase',  // Must match constraint: purchase, refund, dividend, commission

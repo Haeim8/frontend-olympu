@@ -10,7 +10,7 @@ const numberFormatter = new Intl.NumberFormat(undefined, {
 });
 
 const raisedFormatter = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 1,
+  maximumFractionDigits: 6,
 });
 
 export function BlockchainStats({ darkMode, stats, statsLoading }) {
@@ -63,7 +63,7 @@ export function BlockchainStats({ darkMode, stats, statsLoading }) {
             </div>
             <div className="text-sm text-gray-400 font-medium mb-1">{t('landing.stats.ethCollected')}</div>
             <div className="text-4xl font-bold text-white mb-2 tracking-tight">
-              {statsLoading ? '...' : `${raisedFormatter.format(Math.max(0, stats?.totalRaised || 0))} Ξ`}
+              {statsLoading ? '...' : `${raisedFormatter.format(Math.max(0, stats?.totalRaised || 0))} ETH`}
             </div>
             <div className="text-xs text-primary bg-primary/10 inline-block px-2 py-0.5 rounded border border-primary/20">
               {t('landing.stats.weeklyGrowth')}

@@ -29,11 +29,26 @@ export const formatSmallNumber = (value) => {
 };
 
 /**
+ * Detects if a value is in Wei (large integer) and converts to ETH.
+ * If already in ETH (small number/decimal), returns as is.
+ */
+export const formatWeiToEth = (value) => {
+    if (!value || value === '0' || value === 0) return 0;
+    const str = value.toString();
+    // If it's a very large number without a decimal point, it's Wei
+    if (str.length > 13 && !str.includes('.')) {
+        return parseFloat(str) / 1e18;
+    }
+    return parseFloat(str);
+};
+
+/**
  * Format ETH value with appropriate precision
  */
 export const formatEth = (value) => {
-    const formatted = formatSmallNumber(value);
-    return `${formatted} Ξ`;
+    const num = formatWeiToEth(value);
+    const formatted = formatSmallNumber(num);
+    return `${formatted} ETH`;
 };
 
 /**

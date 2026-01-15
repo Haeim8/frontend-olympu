@@ -4,6 +4,7 @@ import React from 'react';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { formatEth } from '@/lib/utils/formatNumber';
 import { Shield, Clock, TrendingUp, Users, Target } from "lucide-react";
 
 export default function CampaignHeader({ campaignData, isLoading, error }) {
@@ -86,7 +87,7 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
                 <p className="text-sm text-muted-foreground font-medium">{t('campaignHeader.raised')}</p>
               </div>
               <p className="text-xl font-bold text-foreground">
-                {parseFloat(campaignData.raised).toFixed(4)} <span className="text-sm font-normal text-muted-foreground">ETH</span>
+                {formatEth(campaignData.raised)}
               </p>
               <p className="text-xs text-primary mt-1 font-medium">
                 {progressPercentage.toFixed(1)}% {t('campaignHeader.ofGoal', { percent: '' })}
@@ -99,7 +100,7 @@ export default function CampaignHeader({ campaignData, isLoading, error }) {
                 <p className="text-sm text-muted-foreground font-medium">{t('campaignHeader.goal')}</p>
               </div>
               <p className="text-xl font-bold text-foreground">
-                {parseFloat(campaignData.goal).toFixed(4)} <span className="text-sm font-normal text-muted-foreground">ETH</span>
+                {formatEth(campaignData.goal)}
               </p>
             </div>
 

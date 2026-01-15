@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useLanguage';
+import { formatEth, formatWeiToEth } from '@/lib/utils/formatNumber';
 import {
   Award,
   Search,
@@ -61,7 +62,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{t('wallet.nft.investment', 'Investi')}</p>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-foreground text-sm">
-                {parseFloat(nft.amount).toFixed(3)} Ξ
+                {formatEth(nft.amount)}
               </span>
             </div>
           </div>
@@ -70,7 +71,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{t('wallet.nft.dividends', 'Reçus')}</p>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-green-500 text-sm">
-                +{nft.dividends || '0.00'} Ξ
+                +{formatEth(nft.dividends || '0')}
               </span>
             </div>
           </div>
@@ -291,7 +292,7 @@ export default function NFTHoldings({ nftHoldings, isLoading, onViewDetails }) {
                       <div className="text-right hidden sm:block">
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">{t('wallet.nft.investment', 'Valeur')}</p>
                         <p className="font-bold text-foreground tabular-nums">
-                          {parseFloat(nft.amount).toFixed(4)} ETH
+                          {formatEth(nft.amount)}
                         </p>
                       </div>
 

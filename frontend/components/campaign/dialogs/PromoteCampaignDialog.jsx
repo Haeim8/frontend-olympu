@@ -15,6 +15,7 @@ import { useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
 import { Megaphone, Target, Calendar, DollarSign, Users, TrendingUp, Zap } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
+import { formatEth } from '@/lib/utils/formatNumber';
 
 // Convertir WalletClient de wagmi en ethers Signer
 function walletClientToSigner(walletClient) {
@@ -193,7 +194,7 @@ export default function PromoteCampaignDialog({
             <div className="text-center p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
               <TrendingUp className="h-6 w-6 text-lime-500 mx-auto mb-1" />
               <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {campaignData?.raised || 0}
+                {formatEth(campaignData?.raised || 0)}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">{t('promote.stats.ethRaised')}</p>
             </div>
@@ -251,7 +252,7 @@ export default function PromoteCampaignDialog({
                         <div className="flex items-center justify-center gap-1 mb-3">
                           <DollarSign className={`h-5 w-5 ${colors.text}`} />
                           <span className={`text-2xl font-bold ${colors.text}`}>
-                            {pkg.price}
+                            {pkg.price.replace('~', '')}
                           </span>
                           <span className={`text-sm ${colors.text}`}>ETH</span>
                         </div>
@@ -315,7 +316,7 @@ export default function PromoteCampaignDialog({
                   </Label>
                   <div className="mt-1 p-3 bg-white dark:bg-neutral-800 rounded-lg border">
                     <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {selectedPackage.price} ETH
+                      {selectedPackage.price.replace('~', '')} ETH
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
                       {selectedPackage.duration}

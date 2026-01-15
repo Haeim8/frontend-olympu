@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DollarSign, Calculator, Info } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
+import { formatEth } from '@/lib/utils/formatNumber';
 
 // Convertir WalletClient de wagmi en ethers Signer
 function walletClientToSigner(walletClient) {
@@ -46,7 +47,7 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
   const calculateDividendPerNFT = () => {
     const amount = parseFloat(distributeForm.amount);
     if (isNaN(amount) || amount <= 0) return 0;
-    return (amount / (campaignData?.nftTotal || 1)).toFixed(6);
+    return (amount / (campaignData?.nftTotal || 1));
   };
 
   const calculateTotalRecipients = () => {
@@ -190,7 +191,7 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="bg-white/5 p-2 rounded-lg border border-white/5">
                     <span className="block text-xs text-gray-400 mb-0.5">{t('dividends.perNFT')}</span>
-                    <span className="text-lg font-bold text-secondary shadow-glow">{calculateDividendPerNFT()} ETH</span>
+                    <span className="text-lg font-bold text-secondary shadow-glow">{formatEth(calculateDividendPerNFT())}</span>
                   </div>
                   <div className="bg-white/5 p-2 rounded-lg border border-white/5">
                     <span className="block text-xs text-gray-400 mb-0.5">{t('dividends.totalRecipients')}</span>
@@ -199,7 +200,7 @@ export default function DividendDistribution({ campaignData, campaignAddress, on
                 </div>
                 <div className="pt-2 border-t border-white/10 flex justify-between items-center mt-2">
                   <span className="font-medium text-gray-400">{t('dividends.totalAmount')}: </span>
-                  <span className="text-lg font-bold text-white">{distributeForm.amount} ETH</span>
+                  <span className="text-lg font-bold text-white">{formatEth(distributeForm.amount)}</span>
                 </div>
               </AlertDescription>
             </Alert>

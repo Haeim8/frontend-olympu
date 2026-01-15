@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Search, Filter, ExternalLink, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
+import { formatEth, formatWeiToEth } from '@/lib/utils/formatNumber';
+
 
 export default function TransactionHistory({ campaignAddress, onPreloadHover }) {
   const { t } = useTranslation();
@@ -61,15 +63,15 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case 'recent':
-          return b.id - a.id;
+          return (parseInt(b.block_number) || 0) - (parseInt(a.block_number) || 0);
         case 'oldest':
-          return a.id - b.id;
+          return (parseInt(a.block_number) || 0) - (parseInt(b.block_number) || 0);
         case 'amount_high':
-          return parseFloat(b.value) - parseFloat(a.value);
+          return parseFloat(b.amount) - parseFloat(a.amount);
         case 'amount_low':
-          return parseFloat(a.value) - parseFloat(b.value);
+          return parseFloat(a.amount) - parseFloat(b.amount);
         default:
-          return b.id - a.id;
+          return (parseInt(b.block_number) || 0) - (parseInt(a.block_number) || 0);
       }
     });
   };
@@ -94,9 +96,9 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
     const txArray = Array.isArray(transactions) ? transactions : [];
 
     const totalTransactions = txArray.length;
-    const purchases = txArray.filter(tx => tx.type === t('transactionHistory.buy')).length;
-    const refunds = txArray.filter(tx => tx.type === t('transactionHistory.refund')).length;
-    const totalVolume = txArray.reduce((sum, tx) => sum + parseFloat(tx.value || 0), 0);
+    const purchases = txArray.filter(tx => tx.type === 'purchase' || tx.type === t('transactionHistory.buy')).length;
+    const refunds = txArray.filter(tx => tx.type === 'refund' || tx.type === t('transactionHistory.refund')).length;
+    const totalVolume = txArray.reduce((sum, tx) => sum + formatWeiToEth(tx.amount || 0), 0);
 
     return { totalTransactions, purchases, refunds, totalVolume };
   };
@@ -238,35 +240,35 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
                 ) : (
                   filteredAndSortedTransactions().map((tx, index) => (
                     <TableRow
-                      key={`${tx.id}-${index}`}
+                      key={`${tx.tx_hash || index}`}
                       className="hover:bg-muted/30 transition-colors border-border/30 group"
                       onMouseEnter={() => onPreloadHover && onPreloadHover(tx.investor)}
                     >
                       <TableCell className="pl-4">
                         <div className="flex items-center gap-3">
-                          {getTransactionIcon(tx.type)}
-                          {getTransactionBadge(tx.type)}
+                          {getTransactionIcon(tx.type === 'purchase' ? t('transactionHistory.buy') : tx.type)}
+                          {getTransactionBadge(tx.type === 'purchase' ? t('transactionHistory.buy') : tx.type)}
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-sm text-foreground opacity-80 group-hover:opacity-100 transition-opacity">
                         {formatAddress(tx.investor)}
                       </TableCell>
                       <TableCell className="text-right font-bold text-foreground">
-                        {tx.nftCount}
+                        {tx.shares}
                       </TableCell>
                       <TableCell className="text-right font-mono font-medium text-foreground">
-                        {parseFloat(tx.value).toFixed(6)}
+                        {formatEth(tx.amount)}
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground font-mono text-xs">
-                        #{tx.id}
+                        #{tx.block_number}
                       </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => window.open(`https://sepolia.basescan.org/tx/${tx.id}`, '_blank')}
+                          onClick={() => window.open(`https://sepolia.basescan.org/tx/${tx.tx_hash}`, '_blank')}
                           className="h-8 w-8 hover:bg-blue-500/20 hover:text-blue-400 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all"
-                          title="Voir sur Etherscan"
+                          title="Voir sur Basescan"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>

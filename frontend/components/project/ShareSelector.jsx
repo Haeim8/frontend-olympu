@@ -13,6 +13,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useLanguage';
+import { formatEth, formatWeiToEth } from '@/lib/utils/formatNumber';
 
 export default function ShareSelector({
   project,
@@ -28,8 +29,10 @@ export default function ShareSelector({
   const isCampaignEnded = new Date(project.endDate) < new Date();
   const isOutOfShares = parseFloat(project.raised) >= parseFloat(project.goal);
   const isDisabled = isCampaignEnded || isOutOfShares || buying || isLoading;
-  const totalPrice = nftCount * parseFloat(project.sharePrice);
-  const sharesRemaining = Math.floor((parseFloat(project.goal) - parseFloat(project.raised)) / parseFloat(project.sharePrice));
+
+  const unitPrice = formatWeiToEth(project.sharePrice);
+  const totalPrice = nftCount * unitPrice;
+  const sharesRemaining = Math.floor((formatWeiToEth(project.goal) - formatWeiToEth(project.raised)) / unitPrice);
 
   const handleBuyShares = () => {
     onBuyShares(nftCount);
@@ -65,7 +68,7 @@ export default function ShareSelector({
             <div className="text-right">
               <div className="text-xs text-gray-500 dark:text-gray-400">{t('shareSelector.unitPrice')}</div>
               <div className="text-xl font-bold text-lime-700 dark:text-lime-300">
-                {project.sharePrice} ETH
+                {formatEth(project.sharePrice)}
               </div>
             </div>
           </div>
@@ -117,7 +120,7 @@ export default function ShareSelector({
                 <div className="text-xs text-gray-500 dark:text-gray-400">{t('shareSelector.total')}</div>
                 <div className="text-2xl font-bold text-lime-700 dark:text-lime-300 flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  {totalPrice.toFixed(4)} ETH
+                  {formatEth(totalPrice)}
                 </div>
               </div>
 

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DollarSign, Share2, Repeat, Megaphone, ShieldCheck, Zap } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
+import { formatWeiToEth } from '@/lib/utils/formatNumber';
 
 // Convertir WalletClient de wagmi en ethers Signer
 function walletClientToSigner(walletClient) {
@@ -78,7 +79,7 @@ export default function CampaignActions({
 
   const canReleaseEscrow = () => {
     return campaignData?.status === "Finalisée" &&
-      parseFloat(campaignData?.raised || 0) >= parseFloat(campaignData?.goal || 0);
+      formatWeiToEth(campaignData?.raised || 0) >= formatWeiToEth(campaignData?.goal || 0);
   };
 
   const canReopenCampaign = () => {

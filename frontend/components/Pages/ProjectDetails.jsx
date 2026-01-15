@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/useLanguage';
 import { useToast } from '@/contexts/ToastContext';
 import { useCampaignDocuments } from '@/hooks/useCampaignDocuments';
 import { useCampaignTeam } from '@/hooks/useCampaignTeam';
+import { formatEth, formatWeiToEth } from '@/lib/utils/formatNumber';
 import { motion } from 'framer-motion';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import {
@@ -247,8 +248,8 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
         {/* STATS */}
         <div className="grid grid-cols-4 gap-2 px-4 sm:px-5 py-3 bg-neutral-900/50 border-b border-neutral-800">
           {[
-            { icon: Target, label: t('projectDetails.stats.goal'), value: `${parseFloat(project.goal).toFixed(2)} Ξ` },
-            { icon: TrendingUp, label: t('projectDetails.stats.raised'), value: `${parseFloat(project.raised).toFixed(2)} Ξ` },
+            { icon: Target, label: t('projectDetails.stats.goal'), value: formatEth(project.goal) },
+            { icon: TrendingUp, label: t('projectDetails.stats.raised'), value: formatEth(project.raised) },
             { icon: Users, label: t('projectDetails.stats.investors'), value: project.investors || project.sharesSold || transactions.length || 0 },
             { icon: Clock, label: t('projectDetails.stats.time'), value: formatTime() },
           ].map((s, i) => (
@@ -475,28 +476,29 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
                       {transactions.slice(0, 20).map((tx, i) => {
                         // Calculate time ago
                         const now = Date.now();
-                        const txTime = tx.timestamp ? new Date(tx.timestamp * 1000 || tx.timestamp).getTime() : now;
+                        const txTime = tx.timestamp ? new Date(tx.timestamp).getTime() : now;
                         const diff = Math.floor((now - txTime) / 1000);
                         let timeAgo = 'now';
                         if (diff > 86400) timeAgo = `${Math.floor(diff / 86400)}d`;
                         else if (diff > 3600) timeAgo = `${Math.floor(diff / 3600)}h`;
                         else if (diff > 60) timeAgo = `${Math.floor(diff / 60)}m`;
-                        else if (diff > 0) timeAgo = `${diff}s`;
+                        else if (diff < 0) timeAgo = '0s';
+                        else timeAgo = `${diff}s`;
 
                         // Type styling
                         const isBuy = tx.type === 'purchase' || tx.type === 'buy';
                         const typeColor = isBuy ? 'text-green-400' : 'text-red-400';
                         const typeLabel = isBuy ? 'Buy' : 'Refund';
 
-                        // ETH to USD conversion (rough estimate ~3000 USD/ETH)
-                        const ethValue = parseFloat(tx.value || tx.eth_value || tx.amount || 0);
-                        const usdValue = (ethValue * 3000).toFixed(2);
+                        // ETH to USD conversion (approximate current price)
+                        const ethValue = formatWeiToEth(tx.amount || tx.amount_wei || tx.value || 0);
+                        const usdValue = (ethValue * 3348).toFixed(2);
 
                         // Shares
-                        const shares = tx.shares || tx.amount || 1;
+                        const shares = tx.shares || 0;
 
                         // Maker address
-                        const maker = tx.buyer || tx.investor || '';
+                        const maker = tx.investor || tx.buyer || '';
                         const makerShort = maker ? `${maker.slice(0, 4)}...${maker.slice(-4)}` : '—';
 
                         // TX hash
@@ -507,7 +509,10 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
                           <div key={txHash || i} className="grid grid-cols-6 gap-2 items-center py-2 text-sm hover:bg-neutral-800/50 rounded transition-colors">
                             <div className="text-neutral-400">{timeAgo}</div>
                             <div className={`font-medium ${typeColor}`}>{typeLabel}</div>
-                            <div className="text-right text-white font-medium">${usdValue}</div>
+                            <div className="text-right text-white font-medium">
+                              <div className="text-white">{formatEth(tx.amount)}</div>
+                              <div className="text-neutral-500 text-[10px]">${usdValue} USD</div>
+                            </div>
                             <div className="text-right text-neutral-300">{shares}</div>
                             <div className="text-right">
                               <span className="text-neutral-400 font-mono text-xs">{makerShort}</span>

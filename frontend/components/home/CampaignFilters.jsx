@@ -259,7 +259,7 @@ export default function CampaignFilters({
               {/* Price Range */}
               <div>
                 <h3 className="text-sm font-bold text-foreground mb-4">
-                  {t('filters.priceRange', 'Fourchette de prix (Ξ)')}
+                  {t('filters.priceRange', 'Fourchette de prix (ETH)')}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

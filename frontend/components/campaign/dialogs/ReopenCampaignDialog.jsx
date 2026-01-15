@@ -13,6 +13,7 @@ import { useWalletClient } from 'wagmi';
 import { ethers } from 'ethers';
 import { Calendar, DollarSign, Repeat, AlertTriangle, Info } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
+import { formatEth, formatWeiToEth } from '@/lib/utils/formatNumber';
 
 // Convertir WalletClient de wagmi en ethers Signer
 function walletClientToSigner(walletClient) {
@@ -185,19 +186,19 @@ export default function ReopenCampaignDialog({
               <div>
                 <span className="text-lime-600 dark:text-lime-400">{t('dialog.reopen.goal')}:</span>
                 <p className="font-semibold text-lime-800 dark:text-lime-200">
-                  {campaignData?.goal || 0} ETH
+                  {formatEth(campaignData?.goal || 0)}
                 </p>
               </div>
               <div>
                 <span className="text-lime-600 dark:text-lime-400">{t('dialog.reopen.raised')}:</span>
                 <p className="font-semibold text-lime-800 dark:text-lime-200">
-                  {campaignData?.raised || 0} ETH
+                  {formatEth(campaignData?.raised || 0)}
                 </p>
               </div>
               <div>
                 <span className="text-lime-600 dark:text-lime-400">{t('dialog.reopen.nftPrice')}:</span>
                 <p className="font-semibold text-lime-800 dark:text-lime-200">
-                  {campaignData?.nftPrice || 0} ETH
+                  {formatEth(campaignData?.nftPrice || 0)}
                 </p>
               </div>
               <div>
@@ -250,7 +251,7 @@ export default function ReopenCampaignDialog({
                 <DollarSign className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {t('dialog.reopen.minimum')}: {campaignData?.nftPrice || 0} ETH ({t('dialog.reopen.previousPrice')})
+                {t('dialog.reopen.minimum')}: {formatEth(campaignData?.nftPrice || 0)} ({t('dialog.reopen.previousPrice')})
               </p>
             </div>
 

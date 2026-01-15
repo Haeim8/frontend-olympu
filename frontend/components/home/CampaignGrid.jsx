@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatSmallNumber } from '@/lib/utils/formatNumber';
+import { formatSmallNumber, formatEth, formatWeiToEth } from '@/lib/utils/formatNumber';
 import { useTranslation } from '@/hooks/useLanguage';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -124,7 +124,7 @@ function CampaignRow({ project, index, onViewDetails, promotion }) {
       {/* Price */}
       <td className="py-4 px-4 text-right hidden sm:table-cell">
         <div className="font-bold text-foreground font-mono tabular-nums">
-          {formatSmallNumber(project.sharePrice)} <span className="text-muted-foreground">Ξ</span>
+          {formatEth(project.sharePrice)}
         </div>
         <div className="text-[10px] uppercase font-semibold text-muted-foreground">{t('projectOverview.stats.perShare', 'par part')}</div>
       </td>
@@ -133,7 +133,7 @@ function CampaignRow({ project, index, onViewDetails, promotion }) {
       <td className="py-4 px-4 hidden md:table-cell">
         <div className="w-36">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="font-bold text-foreground tabular-nums">{formatSmallNumber(project.raised)} Ξ</span>
+            <span className="font-bold text-foreground tabular-nums">{formatEth(project.raised)}</span>
             <span className={`font-mono font-bold ${isComplete ? 'text-green-500' : 'text-primary'}`}>{progressPercentage.toFixed(0)}%</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">

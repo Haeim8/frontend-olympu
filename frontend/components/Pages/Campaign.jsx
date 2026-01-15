@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { useTranslation } from '@/hooks/useLanguage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatWeiToEth } from '@/lib/utils/formatNumber';
 
 import CampaignHeader from '@/components/campaign/CampaignHeader';
 import DividendDistribution from '@/components/campaign/finance/DividendDistribution';
@@ -21,9 +22,9 @@ import { Wallet, BarChart3, Users, FileText, Share2, AlertCircle, Loader2 } from
 const enrichCampaignData = (data) => {
   if (!data) return null;
 
-  const goalValue = parseFloat(data.goal ?? '0');
-  const sharePriceValue = parseFloat(data.sharePrice ?? data.nftPrice ?? '0');
-  const raisedValue = parseFloat(data.raised ?? '0');
+  const goalValue = formatWeiToEth(data.goal ?? '0');
+  const sharePriceValue = formatWeiToEth(data.sharePrice ?? data.nftPrice ?? '0');
+  const raisedValue = formatWeiToEth(data.raised ?? '0');
   const endDate = data.endDate ?? null;
   const endTimestamp = endDate ? new Date(endDate).getTime() : null;
 
@@ -69,7 +70,7 @@ export default function Campaign() {
         const listRes = await fetch(`/api/campaigns?creator=${address}`);
         const listData = await listRes.json();
         const campaigns = listData.campaigns || [];
-        
+
         if (cancelled) return;
 
         if (Array.isArray(campaigns) && campaigns.length > 0) {
@@ -91,7 +92,7 @@ export default function Campaign() {
                 setCampaignData(enrichCampaignData(data.campaign));
               }
             })
-            .catch(() => {}); // Silently fail, we already have data
+            .catch(() => { }); // Silently fail, we already have data
         } else {
           setCampaignAddress(null);
           setCampaignData(null);
@@ -116,7 +117,7 @@ export default function Campaign() {
 
   const handlePreloadHover = useCallback((identifier) => {
     if (identifier && identifier !== campaignAddress) {
-      fetch(`/api/campaigns/${identifier}`).catch(() => {});
+      fetch(`/api/campaigns/${identifier}`).catch(() => { });
     }
   }, [campaignAddress]);
 
@@ -149,7 +150,7 @@ export default function Campaign() {
   const handleDocumentUpdate = useCallback(() => {
     // Trigger a refresh of the campaign data
     if (!campaignAddress) return;
-    fetch(`/api/campaigns/${campaignAddress}`).catch(() => {});
+    fetch(`/api/campaigns/${campaignAddress}`).catch(() => { });
   }, [campaignAddress]);
 
   const handleSocialUpdate = useCallback((socialData) => {

@@ -106,8 +106,8 @@ class BlockchainIndexer {
         while (this.isIndexing) {
             try {
                 await this.syncNewCampaigns();
-                await this.syncAllTransactions();
-                await this.syncAllRounds();
+                await this.syncAllRounds(); // Priorité aux statuts et détails globaux
+                await this.syncAllTransactions(); // Les transactions peuvent être lentes/échouer sans bloquer le reste
                 await this.syncAllFinance();
                 await this.syncPromotions();
             } catch (error) {
@@ -136,7 +136,7 @@ class BlockchainIndexer {
                 return;
             }
 
-            const MAX_RANGE = 50000;
+            const MAX_RANGE = 999; // 999 + 1 (inclusive) = 1000 blocs max pour Coinbase
             const toBlock = Math.min(fromBlock + MAX_RANGE, currentBlock);
 
             console.log(`[Indexer] 🆕 Scan ${fromBlock} -> ${toBlock} (${toBlock - fromBlock + 1} blocs)`);
@@ -214,7 +214,9 @@ class BlockchainIndexer {
                 raised: fundsRaised.toString(),
                 share_price: sharePrice.toString(),
                 end_date: new Date(Number(endTime) * 1000),
-                status
+                status,
+                is_active: isActive,
+                is_finalized: isFinalized
             };
         } catch (error) {
             console.warn(`[Indexer] ⚠️ Impossible de lire les détails pour ${address}:`, error.message);
@@ -228,7 +230,7 @@ class BlockchainIndexer {
     async syncAllTransactions() {
         try {
             // Récupérer toutes les adresses de campagnes connues
-            const { data: allCampaigns } = await campaigns.getAll();
+            const allCampaigns = await campaigns.getAll();
             if (!allCampaigns || allCampaigns.length === 0) return;
 
             console.log(`[Indexer] 💳 Sync transactions pour ${allCampaigns.length} campagnes...`);
@@ -246,11 +248,25 @@ class BlockchainIndexer {
      */
     async syncAllRounds() {
         try {
-            const { data: allCampaigns } = await campaigns.getAll();
+            const allCampaigns = await campaigns.getAll();
             if (!allCampaigns || allCampaigns.length === 0) return;
 
             for (const campaign of allCampaigns) {
-                await this.syncCampaignRounds(campaign.address);
+                try {
+                    await this.syncCampaignRounds(campaign.address);
+
+                    // Mettre à jour les métriques globales de la campagne (status, raised, etc.)
+                    const details = await this.fetchCampaignDetails(campaign.address);
+                    if (details && Object.keys(details).length > 0) {
+                        await campaigns.upsert({
+                            ...campaign,
+                            ...details
+                        });
+                        console.log(`[Indexer] ✅ Statut mis à jour pour ${campaign.address.slice(0, 10)}... : ${details.status}`);
+                    }
+                } catch (campaignError) {
+                    console.error(`[Indexer] ❌ Erreur sync campagne ${campaign.address}:`, campaignError.message);
+                }
             }
         } catch (error) {
             console.error('[Indexer] ❌ Erreur syncAllRounds:', error.message);
@@ -267,7 +283,7 @@ class BlockchainIndexer {
             const currentRoundNumber = await contract.currentRound();
 
             // Récupérer les données existantes pour comparer
-            const { data: existingRounds } = await rounds.getByCampaign(campaignAddress);
+            const existingRounds = await rounds.getByCampaign(campaignAddress);
             const roundsMap = {};
             (existingRounds || []).forEach(r => roundsMap[r.round_number] = r);
 
@@ -361,8 +377,8 @@ class BlockchainIndexer {
                     shares: Number(shares),
                     round_number: Number(roundNumber),
                     type: 'purchase',
-                    block_number: Number(event.blockNumber),
-                    timestamp: new Date(),
+                    block_number: Number(event.blockNumber || 0),
+                    timestamp: event.blockTimestamp ? new Date(event.blockTimestamp * 1000) : new Date(),
                     commission: "0",
                     net_amount: amount.toString()
                 });
@@ -380,7 +396,7 @@ class BlockchainIndexer {
 
     async syncAllFinance() {
         try {
-            const { data: allCampaigns } = await campaigns.getAll();
+            const allCampaigns = await campaigns.getAll();
             if (!allCampaigns || allCampaigns.length === 0) return;
 
             for (const campaign of allCampaigns) {

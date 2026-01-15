@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useTranslation } from '@/hooks/useLanguage';
+import { formatEth, formatWeiToEth } from '@/lib/utils/formatNumber';
 import {
   History,
   ArrowUpRight,
@@ -20,8 +20,9 @@ import {
   Clock
 } from 'lucide-react';
 
+
 const TransactionRow = ({ transaction, index, t }) => {
-  
+
   const getTransactionIcon = (type) => {
     switch (type) {
       case 'Achat':
@@ -57,7 +58,7 @@ const TransactionRow = ({ transaction, index, t }) => {
   };
 
   return (
-    <tr 
+    <tr
       className="border-t border-gray-200 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-900 transition-all duration-200 group"
       style={{
         animationDelay: `${index * 100}ms`,
@@ -74,23 +75,23 @@ const TransactionRow = ({ transaction, index, t }) => {
             <div className="flex items-center gap-2">
               <p className="font-semibold text-gray-900 dark:text-gray-100">
                 {transaction.type === 'Achat' || transaction.type === 'Purchase' || transaction.type === 'Compra' ? t('projectTransactions.purchase') :
-                 transaction.type === 'Remboursement' || transaction.type === 'Refund' || transaction.type === 'Reembolso' ? t('projectTransactions.refund') :
-                 transaction.type}
+                  transaction.type === 'Remboursement' || transaction.type === 'Refund' || transaction.type === 'Reembolso' ? t('projectTransactions.refund') :
+                    transaction.type}
               </p>
               <Badge
                 variant="outline"
                 className={`text-xs ${getTransactionColor(transaction.type)}`}
               >
-                #{transaction.id}
+                #{transaction.block_number}
               </Badge>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {t('projectTransactions.block')} {transaction.id}
+              {t('projectTransactions.block')} {transaction.block_number}
             </p>
           </div>
         </div>
       </td>
-      
+
       <td className="py-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -109,34 +110,34 @@ const TransactionRow = ({ transaction, index, t }) => {
           </Button>
         </div>
       </td>
-      
+
       <td className="py-4 text-center">
         <div className="inline-flex items-center gap-1 px-3 py-1 bg-lime-50 dark:bg-lime-900/20 rounded-full">
           <TrendingUp className="h-3 w-3 text-lime-600" />
           <span className="font-semibold text-lime-700 dark:text-lime-300">
-            {transaction.nftCount}
+            {transaction.shares}
           </span>
         </div>
       </td>
-      
+
       <td className="py-4 text-right">
         <div className="space-y-1">
           <p className="font-bold text-lg text-gray-900 dark:text-gray-100">
-            {transaction.value} ETH
+            {formatEth(transaction.amount || 0)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            ≈ ${(parseFloat(transaction.value) * 2000).toFixed(2)} USD
+            ≈ ${(formatWeiToEth(transaction.amount || 0) * 3348).toFixed(2)} USD
           </p>
         </div>
       </td>
-      
+
       <td className="py-4 pr-6">
         <div className="flex items-center justify-end space-x-2">
           <Button
             variant="ghost"
             size="sm"
             className="h-8 px-3 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-lime-50 dark:hover:bg-lime-900/20"
-            onClick={() => window.open(`https://sepolia.basescan.org/tx/${transaction.id}`, '_blank')}
+            onClick={() => window.open(`https://sepolia.basescan.org/tx/${transaction.tx_hash}`, '_blank')}
           >
             <ExternalLink className="h-3 w-3 mr-1" />
             {t('projectTransactions.basescan')}
@@ -156,7 +157,7 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
   // Filtrage et tri des transactions
   const filteredAndSortedTransactions = React.useMemo(() => {
     let filtered = transactions.filter(tx => {
-      const matchesSearch = 
+      const matchesSearch =
         tx.investor.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.id.toString().includes(searchTerm);
@@ -191,8 +192,8 @@ export default function ProjectTransactions({ transactions = [], isLoading }) {
       totalTransactions: transactions.length,
       totalPurchases: purchases.length,
       totalRefunds: refunds.length,
-      totalVolume: transactions.reduce((sum, tx) => sum + parseFloat(tx.value), 0),
-      totalShares: transactions.reduce((sum, tx) => sum + parseInt(tx.nftCount), 0)
+      totalVolume: transactions.reduce((sum, tx) => sum + formatWeiToEth(tx.amount || 0), 0),
+      totalShares: transactions.reduce((sum, tx) => sum + parseInt(tx.shares || 0), 0)
     };
   }, [transactions]);
 

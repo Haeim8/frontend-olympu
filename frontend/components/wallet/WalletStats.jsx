@@ -11,6 +11,7 @@ import {
   Activity,
   ArrowUpRight
 } from 'lucide-react';
+import { formatEth } from '@/lib/utils/formatNumber';
 
 function StatCard({ title, value, icon: Icon, isLoading, index, colorClass }) {
   return (
@@ -60,7 +61,7 @@ export default function WalletStats({ walletInfo, isLoading }) {
     },
     {
       title: t('wallet.stats.invested', 'Total Investi'),
-      value: `${walletInfo.totalInvested} Ξ`,
+      value: formatEth(walletInfo.totalInvested),
       icon: Wallet,
       colorClass: 'text-blue-500'
     },
@@ -72,7 +73,7 @@ export default function WalletStats({ walletInfo, isLoading }) {
     },
     {
       title: t('wallet.stats.dividends', 'Dividendes Reçus'),
-      value: `${walletInfo.totalDividends} Ξ`,
+      value: formatEth(walletInfo.totalDividends),
       icon: Coins,
       colorClass: 'text-yellow-500'
     }
