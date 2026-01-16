@@ -281,7 +281,9 @@ class BlockchainIndexer {
             }
 
             // Mettre à jour l'état de synchronisation avec le block atteint
+            console.log(`[Indexer] 💾 Sauvegarde sync_state: campaigns -> ${toBlock}`);
             await syncState.upsert('campaigns', toBlock);
+            console.log(`[Indexer] ✅ sync_state mis à jour`);
 
         } catch (error) {
             console.error('[Indexer] ❌ Erreur sync nouvelles campagnes:', error.message);
