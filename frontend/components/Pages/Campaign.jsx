@@ -112,7 +112,10 @@ export default function Campaign() {
     };
 
     initializeCampaign();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [address, t]);
 
   const handlePreloadHover = useCallback((identifier) => {

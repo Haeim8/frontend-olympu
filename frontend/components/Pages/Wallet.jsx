@@ -128,7 +128,7 @@ export default function Wallet() {
     }
   }, [address, t]);
 
-  // Effet principal pour charger les données
+  // Effet principal pour charger les données au montage
   useEffect(() => {
     if (address) {
       loadWalletData();
