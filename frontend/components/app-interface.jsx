@@ -96,7 +96,8 @@ export default function AppInterface() {
     } finally {
       setIsLoadingCampaigns(false);
     }
-  }, [address, activePage, projects.length, isLoadingCampaigns]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
 
   useEffect(() => {
     loadCampaignsData();

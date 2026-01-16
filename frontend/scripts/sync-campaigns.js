@@ -7,11 +7,11 @@ import { ethers } from 'ethers';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ override: true });
 
 // Configuration
-const RPC_URL = 'https://sepolia.base.org';
-const DIVAR_PROXY_ADDRESS = '0xaB0999Eae920849a41A55eA080d0a4a210156817';
+const RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://mainnet.base.org';
+const DIVAR_PROXY_ADDRESS = process.env.NEXT_PUBLIC_DIVAR_PROXY_ADDRESS || '0xdDDaF00B9d4907610E4D36517a1D56Ab2c3ef92e';
 
 // ABI minimal pour lire les campagnes
 const DIVAR_PROXY_ABI = [

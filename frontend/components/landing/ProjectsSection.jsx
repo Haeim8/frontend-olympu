@@ -33,18 +33,18 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
   const loadProjects = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       const [campaignsRes, promotionsRes] = await Promise.all([
         fetch('/api/campaigns'),
         fetch('/api/promotions')
       ]);
-      
+
       const campaignsData = await campaignsRes.json();
       const promotionsData = await promotionsRes.json();
-      
+
       const campaigns = campaignsData.campaigns || [];
       const activePromotions = promotionsData.promotions || [];
-      
+
       const projectsData = campaigns.slice(0, 20).map(campaign => {
         const promotion = activePromotions.find(p =>
           p.campaign_address?.toLowerCase() === campaign.address?.toLowerCase()
@@ -53,7 +53,7 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
         const raised = parseFloat(campaign.raised || 0);
         const goal = parseFloat(campaign.goal || 1);
         const progress = (goal > 0 ? (raised / goal) * 100 : 0);
-        
+
         let status = 'active';
         if (progress >= 100) status = 'funded';
         else if (progress >= 80) status = 'nearly_funded';
@@ -85,12 +85,15 @@ export function ProjectsSection({ darkMode, isLandingPage = false, onViewProject
       setProjects(projectsData.slice(0, 6));
     } catch (error) {
       console.error('Projects load error:', error);
-    } finally {
       setIsLoading(false);
     }
-  }, [t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  useEffect(() => { loadProjects(); }, [loadProjects]);
+  useEffect(() => {
+    console.log('ProjectsSection mounted/updated');
+    loadProjects();
+  }, [loadProjects]);
 
   // Auto-scroll logic
   useEffect(() => {

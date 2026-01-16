@@ -5,11 +5,16 @@
  * Usage: cd frontend && node scripts/start-indexer.js
  */
 
-import 'dotenv/config';
-import indexer from '../lib/services/blockchain-indexer.js';
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
+
+console.log('DEBUG NETWORK:', process.env.NEXT_PUBLIC_NETWORK);
 
 console.log('--- LIVAR BLOCKCHAIN INDEXER ---');
 console.log('Initialisation du service...');
+
+// Import dynamique pour garantir que dotenv est chargé AVANT config.js
+const { default: indexer } = await import('../lib/services/blockchain-indexer.js');
 
 // Démarrage de l'indexeur
 indexer.start()

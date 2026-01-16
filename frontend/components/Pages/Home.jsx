@@ -207,9 +207,11 @@ export default function Home({ toggleFavorite, isFavorite }) {
       calculateStats([]);
       setError(t('campaigns.error.generic', 'Impossible de charger les campagnes.'));
     } finally {
+
       setIsLoading(false);
     }
-  }, [calculateStats, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     loadCampaigns();
@@ -268,7 +270,7 @@ export default function Home({ toggleFavorite, isFavorite }) {
 
   const handlePreloadHover = useCallback((campaignId) => {
     if (campaignId) {
-      fetch(`/api/campaigns/${campaignId}`).catch(() => {});
+      fetch(`/api/campaigns/${campaignId}`).catch(() => { });
     }
   }, []);
 
