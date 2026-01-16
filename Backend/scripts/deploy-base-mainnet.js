@@ -2,17 +2,17 @@ const { ethers, upgrades } = require("hardhat");
 const fs = require('fs');
 const path = require('path');
 
-// Configuration Base Sepolia
-const BASE_SEPOLIA_CONFIG = {
-    chainId: 84532,
-    name: "Base Sepolia",
-    explorer: "https://sepolia-explorer.base.org",
-    etherscanAPI: "https://api-sepolia.basescan.org/api"
+// Configuration Base Mainnet
+const BASE_MAINNET_CONFIG = {
+    chainId: 8453,
+    name: "Base Mainnet",
+    explorer: "https://basescan.org",
+    etherscanAPI: "https://api.basescan.org/api"
 };
 
-// Addresses Chainlink sur Base Sepolia
+// Addresses Chainlink sur Base Mainnet
 const CHAINLINK_FEEDS = {
-    ETH_USD: "0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1" // ETH/USD feed Base Sepolia
+    ETH_USD: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70" // ETH/USD feed Base Mainnet
 };
 
 async function deployContract(contractName, constructorArgs = [], description = "") {
@@ -40,8 +40,8 @@ async function deployContract(contractName, constructorArgs = [], description = 
         console.log(`   ✅ ${contractName}: ${contract.address}`);
 
         // Attendre quelques blocs pour la vérification
-        console.log(`   ⏳ Attente de 3 confirmations...`);
-        await contract.deployTransaction.wait(3);
+        console.log(`   ⏳ Attente de 5 confirmations...`);
+        await contract.deployTransaction.wait(5);
 
         return contract;
 
@@ -62,8 +62,8 @@ async function deployUpgradeableContract(contractName, initArgs = [], descriptio
         const contract = await upgrades.deployProxy(ContractFactory, initArgs, {
             initializer: 'initialize',
             kind: 'uups',
-            timeout: 300000,      // 5 minutes
-            pollingInterval: 5000 // Poll toutes les 5 secondes
+            timeout: 300000,
+            pollingInterval: 5000
         });
 
         console.log(`   🚀 Transaction: ${contract.deployTransaction.hash}`);
@@ -71,20 +71,17 @@ async function deployUpgradeableContract(contractName, initArgs = [], descriptio
 
         console.log(`   ✅ ${contractName} Proxy: ${contract.address}`);
 
-        // Attendre confirmations AVANT de récupérer l'implementation
         console.log(`   ⏳ Attente de 5 confirmations...`);
         await contract.deployTransaction.wait(5);
 
-        // Attendre 20 secondes supplémentaires pour Base Sepolia
-        console.log(`   ⏳ Attente réseau (20s)...`);
-        await new Promise(resolve => setTimeout(resolve, 20000));
+        console.log(`   ⏳ Attente réseau (30s)...`);
+        await new Promise(resolve => setTimeout(resolve, 30000));
 
-        // Maintenant récupérer l'adresse de l'implémentation
         try {
             const implementationAddress = await upgrades.erc1967.getImplementationAddress(contract.address);
             console.log(`   🔗 Implementation: ${implementationAddress}`);
         } catch (error) {
-            console.log(`   ⚠️ Implementation non détectée immédiatement (normal sur testnet)`);
+            console.log(`   ⚠️ Implementation non détectée immédiatement`);
         }
 
         return contract;
@@ -96,15 +93,17 @@ async function deployUpgradeableContract(contractName, initArgs = [], descriptio
 }
 
 async function main() {
-    console.log("🚀 DÉPLOIEMENT SYSTÈME LIVAR - BASE SEPOLIA");
+    console.log("🚀 DÉPLOIEMENT SYSTÈME LIVAR - BASE MAINNET");
+    console.log("=".repeat(60));
+    console.log("⚠️  ATTENTION: DÉPLOIEMENT EN PRODUCTION!");
     console.log("=".repeat(60));
 
     // Vérifications préliminaires
     const network = await ethers.provider.getNetwork();
     console.log(`📡 Réseau: ${network.name} (chainId: ${network.chainId})`);
 
-    if (network.chainId !== BASE_SEPOLIA_CONFIG.chainId) {
-        throw new Error(`❌ Mauvais réseau ! Attendu: ${BASE_SEPOLIA_CONFIG.chainId}, Reçu: ${network.chainId}`);
+    if (network.chainId !== BASE_MAINNET_CONFIG.chainId) {
+        throw new Error(`❌ Mauvais réseau! Attendu: ${BASE_MAINNET_CONFIG.chainId}, Reçu: ${network.chainId}`);
     }
 
     const [deployer] = await ethers.getSigners();
@@ -113,47 +112,29 @@ async function main() {
     const balance = await deployer.getBalance();
     console.log(`💰 Balance: ${ethers.utils.formatEther(balance)} ETH`);
 
-    if (balance.lt(ethers.utils.parseEther("0.01"))) {
-        console.log("⚠️ Balance faible ! Assure-toi d'avoir au moins 0.01 ETH");
+    if (balance.lt(ethers.utils.parseEther("0.005"))) {
+        throw new Error("❌ Balance insuffisante! Minimum 0.005 ETH requis pour mainnet Base (L2).");
     }
 
-    // Addresses de déploiement
+    // Confirmation manuelle pour mainnet
+    console.log("\n⚠️  CONFIRMATION MAINNET");
+    console.log("Tu es sur le point de déployer sur BASE MAINNET.");
+    console.log("Appuie sur Ctrl+C pour annuler ou attends 10 secondes pour continuer...");
+    await new Promise(resolve => setTimeout(resolve, 10000));
+
     const deploymentAddresses = {};
     const startTime = Date.now();
 
     try {
-        // 1. PriceConsumerV3 (avec adresse Chainlink Sepolia)
+        // 1. PriceConsumerV3 avec adresse Chainlink Mainnet
         const priceConsumer = await deployContract(
             "PriceConsumerV3",
             [CHAINLINK_FEEDS.ETH_USD],
-            "Oracle Chainlink ETH/USD pour Base Sepolia"
+            "Oracle Chainlink ETH/USD pour Base Mainnet"
         );
         deploymentAddresses.priceConsumer = priceConsumer.address;
 
-        // 2. DivarProxy (Upgradeable) - utilisation adresse temporaire  
-        console.log("   🔧 Déploiement temporaire avec adresse placeholder...");
-
-        // ATTENTION: DivarProxy.initialize(treasury, campaignKeeper, priceConsumer)
-        const divarProxy = await deployUpgradeableContract(
-            "DivarProxy",
-            [
-                deployer.address,     // _treasury
-                deployer.address,     // _campaignKeeper (temporaire - sera mis à jour)
-                priceConsumer.address // _priceConsumer
-            ],
-            "Contrat principal upgradeable de la plateforme"
-        );
-        deploymentAddresses.divarProxy = divarProxy.address;
-
-        // 3. CampaignKeeper
-        const campaignKeeper = await deployContract(
-            "CampaignKeeper",
-            [divarProxy.address],
-            "Système d'automation Chainlink Keeper"
-        );
-        deploymentAddresses.campaignKeeper = campaignKeeper.address;
-
-        // 4. NFTRenderer
+        // 2. NFTRenderer
         const nftRenderer = await deployContract(
             "NFTRenderer",
             [],
@@ -161,13 +142,34 @@ async function main() {
         );
         deploymentAddresses.nftRenderer = nftRenderer.address;
 
+        // 3. DivarProxy (Upgradeable)
+        const divarProxy = await deployUpgradeableContract(
+            "DivarProxy",
+            [
+                deployer.address,     // _treasury
+                deployer.address,     // _campaignKeeper (temporaire)
+                priceConsumer.address, // _priceConsumer
+                nftRenderer.address   // _nftRenderer
+            ],
+            "Contrat principal upgradeable de la plateforme"
+        );
+        deploymentAddresses.divarProxy = divarProxy.address;
+
+        // 4. CampaignKeeper
+        const campaignKeeper = await deployContract(
+            "CampaignKeeper",
+            [divarProxy.address],
+            "Système d'automation Chainlink Keeper"
+        );
+        deploymentAddresses.campaignKeeper = campaignKeeper.address;
+
         // 5. RecPromotionManager
         const recPromotionManager = await deployContract(
             "RecPromotionManager",
             [
-                deployer.address, // treasury
-                priceConsumer.address, // price consumer
-                divarProxy.address // divar proxy
+                divarProxy.address,    // recProxy
+                priceConsumer.address, // priceConsumer
+                deployer.address       // treasury
             ],
             "Gestionnaire de promotions et boosts"
         );
@@ -181,6 +183,10 @@ async function main() {
         await divarProxy.setCampaignKeeper(campaignKeeper.address);
         console.log(`   ✅ CampaignKeeper configuré: ${campaignKeeper.address}`);
 
+        // Configurer NFTRenderer
+        await divarProxy.setNFTRenderer(nftRenderer.address);
+        console.log(`   ✅ NFTRenderer configuré: ${nftRenderer.address}`);
+
         // Générer le bytecode Campaign pour DivarProxy
         console.log("   📝 Configuration bytecode Campaign...");
         const CampaignFactory = await ethers.getContractFactory("Campaign");
@@ -193,10 +199,10 @@ async function main() {
 
         // Résumé final
         console.log("\n" + "=".repeat(60));
-        console.log("🎉 DÉPLOIEMENT TERMINÉ AVEC SUCCÈS!");
+        console.log("🎉 DÉPLOIEMENT MAINNET TERMINÉ AVEC SUCCÈS!");
         console.log("=".repeat(60));
         console.log(`⏱️  Temps total: ${deploymentTime.toFixed(1)} secondes`);
-        console.log(`🌐 Réseau: ${BASE_SEPOLIA_CONFIG.name}`);
+        console.log(`🌐 Réseau: ${BASE_MAINNET_CONFIG.name}`);
         console.log(`👤 Déployé par: ${deployer.address}`);
 
         console.log("\n📋 ADDRESSES DES CONTRATS:");
@@ -204,19 +210,20 @@ async function main() {
             console.log(`   ${name}: ${address}`);
         });
 
-        console.log("\n🔗 LIENS UTILES:");
+        console.log("\n🔗 LIENS BASESCAN:");
         Object.entries(deploymentAddresses).forEach(([name, address]) => {
-            console.log(`   ${name}: ${BASE_SEPOLIA_CONFIG.explorer}/address/${address}`);
+            console.log(`   ${name}: ${BASE_MAINNET_CONFIG.explorer}/address/${address}`);
         });
 
         // Sauvegarder les addresses
         const deploymentData = {
-            network: BASE_SEPOLIA_CONFIG.name,
-            chainId: BASE_SEPOLIA_CONFIG.chainId,
+            network: BASE_MAINNET_CONFIG.name,
+            chainId: BASE_MAINNET_CONFIG.chainId,
             deploymentTime: new Date().toISOString(),
             deployer: deployer.address,
             contracts: deploymentAddresses,
-            explorer: BASE_SEPOLIA_CONFIG.explorer
+            chainlinkFeeds: CHAINLINK_FEEDS,
+            explorer: BASE_MAINNET_CONFIG.explorer
         };
 
         const deploymentsDir = path.join(__dirname, "..", "deployments");
@@ -224,23 +231,27 @@ async function main() {
             fs.mkdirSync(deploymentsDir);
         }
 
-        const filename = `base-sepolia-${Date.now()}.json`;
+        const filename = `base-mainnet-${Date.now()}.json`;
         const filepath = path.join(deploymentsDir, filename);
         fs.writeFileSync(filepath, JSON.stringify(deploymentData, null, 2));
 
+        // Sauvegarder aussi dans un fichier latest.json pour référence facile
+        const latestPath = path.join(deploymentsDir, "base-mainnet-latest.json");
+        fs.writeFileSync(latestPath, JSON.stringify(deploymentData, null, 2));
+
         console.log(`\n💾 Déploiement sauvegardé: ${filepath}`);
 
-        // Instructions suivantes
+        // Instructions de vérification
+        console.log("\n🔍 COMMANDES DE VÉRIFICATION:");
+        console.log(`npx hardhat verify ${deploymentAddresses.priceConsumer} "${CHAINLINK_FEEDS.ETH_USD}" --network base`);
+        console.log(`npx hardhat verify ${deploymentAddresses.nftRenderer} --network base`);
+        console.log(`npx hardhat verify ${deploymentAddresses.campaignKeeper} "${deploymentAddresses.divarProxy}" --network base`);
+
         console.log("\n🎯 PROCHAINES ÉTAPES:");
         console.log("1. ✅ Vérifier les contrats sur BaseScan");
-        console.log("2. 🧪 Tester les fonctionnalités de base");
-        console.log("3. 🎨 Créer l'interface frontend");
-        console.log("4. 📝 Préparer la documentation");
-        console.log("5. 🚀 Candidater aux programmes de financement Base");
-
-        console.log("\n💡 COMMANDES UTILES:");
-        console.log(`npx hardhat verify ${deploymentAddresses.priceConsumer} --network sepoliaBase`);
-        console.log(`npx hardhat verify ${deploymentAddresses.nftRenderer} --network sepoliaBase`);
+        console.log("2. 📝 Mettre à jour les adresses dans le frontend");
+        console.log("3. 🧪 Tester une campagne de test");
+        console.log("4. 🚀 Annoncer le lancement!");
 
         return deploymentAddresses;
 
@@ -256,33 +267,6 @@ async function main() {
         }
 
         throw error;
-    }
-}
-
-// Fonction pour vérifier les contrats après déploiement
-async function verifyContracts(addresses) {
-    console.log("\n🔍 VÉRIFICATION DES CONTRATS...");
-
-    try {
-        // PriceConsumer (avec argument Chainlink)
-        console.log("   📝 Vérification PriceConsumerV3...");
-        await run("verify:verify", {
-            address: addresses.priceConsumer,
-            constructorArguments: [CHAINLINK_FEEDS.ETH_USD]
-        });
-
-        // NFTRenderer (pas d'arguments de constructeur)
-        console.log("   📝 Vérification NFTRenderer...");
-        await run("verify:verify", {
-            address: addresses.nftRenderer,
-            constructorArguments: []
-        });
-
-        console.log("✅ Vérifications terminées!");
-
-    } catch (error) {
-        console.log("⚠️ Erreur lors de la vérification:", error.message);
-        console.log("💡 Tu peux vérifier manuellement avec les commandes affichées plus haut");
     }
 }
 

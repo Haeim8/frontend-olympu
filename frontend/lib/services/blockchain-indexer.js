@@ -39,8 +39,10 @@ class BlockchainIndexer {
         this.provider = null;
         this.divarAddress = config.contracts.DivarProxy;
         this.isIndexing = false;
-        this.rpcUrl = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL ||
-            'https://api.developer.coinbase.com/rpc/v1/base-sepolia/VswyEt-MN0Zf0Is7wHBPUWyJKSJRpUqP';
+        this.rpcUrl = process.env.NEXT_PUBLIC_BASE_RPC_URL ||
+            process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL ||
+            'https://mainnet.base.org';
+        this.chainId = process.env.NEXT_PUBLIC_NETWORK === 'base' ? 8453 : 84532;
         console.log(`[Indexer] Config RPCs: ${this.rpcUrls.length} endpoints`);
     }
 
@@ -72,18 +74,17 @@ class BlockchainIndexer {
     async getProvider() {
         // Pas de cache - créer un nouveau provider à chaque fois pour éviter les problèmes de connexion
         const network = {
-            name: 'base-sepolia',
-            chainId: 84532
+            name: process.env.NEXT_PUBLIC_NETWORK === 'base' ? 'base' : 'base-sepolia',
+            chainId: this.chainId || 8453
         };
 
-        // Utiliser directement le RPC Coinbase en priorité
-        const coinbaseRpc = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL ||
-            'https://api.developer.coinbase.com/rpc/v1/base-sepolia/VswyEt-MN0Zf0Is7wHBPUWyJKSJRpUqP';
-        console.log(`[Indexer] RPC URL: ${coinbaseRpc.slice(0, 50)}...`);
+        // Utiliser le RPC mainnet ou sepolia selon la config
+        const rpcUrl = this.rpcUrl;
+        console.log(`[Indexer] RPC URL: ${rpcUrl.slice(0, 50)}...`);
 
         // Test avec fetch natif puis créer le provider ethers
         try {
-            const testRes = await fetch(coinbaseRpc, {
+            const testRes = await fetch(rpcUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
@@ -92,7 +93,7 @@ class BlockchainIndexer {
             if (testData.result) {
                 const currentBlock = parseInt(testData.result, 16);
                 console.log(`[Indexer] Fetch OK: block ${currentBlock}`);
-                const provider = new ethers.providers.JsonRpcProvider(coinbaseRpc, network);
+                const provider = new ethers.providers.JsonRpcProvider(rpcUrl, network);
                 console.log('[Indexer] ✅ Provider created');
                 return { provider, currentBlock };
 
@@ -100,13 +101,13 @@ class BlockchainIndexer {
                 console.warn(`[Indexer] RPC error: ${JSON.stringify(testData.error)}`);
             }
         } catch (e) {
-            console.warn(`[Indexer] Coinbase RPC failed: ${e.message.slice(0, 60)}`);
+            console.warn(`[Indexer] RPC failed: ${e.message.slice(0, 60)}`);
         }
 
 
         // Fallback aux autres RPCs configurés
-        for (const rpcUrl of this.rpcUrls) {
-            if (rpcUrl === coinbaseRpc) continue; // Déjà essayé
+        for (const fallbackRpcUrl of this.rpcUrls) {
+            if (fallbackRpcUrl === rpcUrl) continue; // Déjà essayé
             try {
                 console.log(`[Indexer] Trying fallback RPC: ${rpcUrl.slice(0, 35)}...`);
                 const testRes = await fetch(rpcUrl, {

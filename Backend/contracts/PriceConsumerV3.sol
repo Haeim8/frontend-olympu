@@ -7,8 +7,15 @@ contract PriceConsumerV3 {
     uint256 private constant STALENESS_PERIOD = 3600;
     uint256 private constant ETH_DECIMALS = 18;
     
-    constructor() {
-        priceFeed = AggregatorV3Interface(0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1);
+    /**
+     * @dev Constructeur avec adresse du price feed configurable
+     * @param _priceFeed Adresse du Chainlink ETH/USD price feed
+     * Base Sepolia: 0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1
+     * Base Mainnet: 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70
+     */
+    constructor(address _priceFeed) {
+        require(_priceFeed != address(0), "Invalid price feed address");
+        priceFeed = AggregatorV3Interface(_priceFeed);
     }
     
     function getLatestPrice() public view returns (int) {

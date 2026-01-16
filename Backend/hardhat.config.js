@@ -1,5 +1,5 @@
 require("@nomiclabs/hardhat-ethers"); // Ethers v5 compatible
-require("@nomiclabs/hardhat-etherscan"); // Pour la vérification Etherscan
+require("@nomicfoundation/hardhat-verify"); // Pour la vérification Etherscan V2
 require("@openzeppelin/hardhat-upgrades");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
@@ -40,14 +40,22 @@ module.exports = {
       }
     },
     sepoliaBase: {
-      url: process.env.SEPOLIA_BASE_URL || "https://sepolia.base.org", 
+      url: process.env.SEPOLIA_BASE_URL || "https://sepolia.base.org",
       chainId: 84532,
       gasPrice: "auto", // Auto-détection du gas price réseau au lieu de 35 Gwei forcé
       accounts: [
         PRIVATE_KEY,
         PRIVATE_KEY_2,
-        PRIVATE_KEY_3,  
+        PRIVATE_KEY_3,
         PRIVATE_KEY_4
+      ].filter(key => key !== "0000000000000000000000000000000000000000000000000000000000000000")
+    },
+    base: {
+      url: process.env.BASE_MAINNET_URL || "https://mainnet.base.org",
+      chainId: 8453,
+      gasPrice: "auto",
+      accounts: [
+        PRIVATE_KEY
       ].filter(key => key !== "0000000000000000000000000000000000000000000000000000000000000000")
     }
   },
@@ -57,17 +65,31 @@ module.exports = {
     coinmarketcap: process.env.COINMARKETCAP_API_KEY
   },
   etherscan: {
-    apiKey: process.env.SEPOLIA_BASE_ETHERSCAN_API_KEY,
+    apiKey: {
+      base: process.env.ETHERSCAN_API_KEY || process.env.BASESCAN_API_KEY || process.env.SEPOLIA_BASE_ETHERSCAN_API_KEY,
+      sepoliaBase: process.env.SEPOLIA_BASE_ETHERSCAN_API_KEY
+    },
     customChains: [
       {
         network: "sepoliaBase",
         chainId: 84532,
         urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia-explorer.base.org"
+          apiURL: "https://api.etherscan.io/v2/api?chainid=84532",
+          browserURL: "https://sepolia.basescan.org"
+        }
+      },
+      {
+        network: "base",
+        chainId: 8453,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=8453",
+          browserURL: "https://basescan.org"
         }
       }
     ]
+  },
+  sourcify: {
+    enabled: true
   },
   typechain: {
     outDir: "typechain",

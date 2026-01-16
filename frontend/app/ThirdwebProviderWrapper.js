@@ -39,7 +39,7 @@ export default function ThirdwebProviderWrapper({ children }) {
     const config = getDefaultConfig({
       appName: 'Livar',
       projectId,
-      chains: [baseSepolia, base],
+      chains: [base], // Base Mainnet only
       ssr: false,
     });
 

@@ -1,4 +1,23 @@
 {
+  "base": {
+    "chainId": 8453,
+    "network": "Base Mainnet",
+    "contracts": {
+      "DivarProxy": "0xdDDaF00B9d4907610E4D36517a1D56Ab2c3ef92e",
+      "CampaignKeeper": "0x418A8D10ED01315617cACB7ae4D8a70561150022",
+      "RecPromotionManager": "0xD125E8df345f6bA4E7d4bC0a08286803b02f4c50",
+      "PriceConsumer": "0xbE8B117C0523B908A26A22d51F83d9fDe3b6195E",
+      "NFTRenderer": "0x139AF2A72C15485552CDC9a12B62d51F83FF3231"
+    },
+    "treasury": "0x839832BdBee84E2FD39044E86a775C7D4105eCC3",
+    "version": "1.0.0-mainnet",
+    "lastUpdate": "2026-01-16T07:30:00.000Z",
+    "features": {
+      "multiRoundRefunds": true,
+      "nftIntegration": true,
+      "promotionSystem": true
+    }
+  },
   "sepoliaBase": {
     "chainId": 84532,
     "network": "Base Sepolia",

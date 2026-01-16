@@ -42,6 +42,9 @@ const NETWORKS = {
     },
 };
 
+// Alias pour supporter NEXT_PUBLIC_NETWORK=base
+NETWORKS.base = NETWORKS.baseMainnet;
+
 const ACTIVE_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'baseSepolia';
 
 // =============================================================================

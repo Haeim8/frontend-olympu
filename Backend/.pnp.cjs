@@ -31,8 +31,8 @@ const RAW_RUNTIME_STATE =
           ["@chainlink/contracts", "npm:0.8.0"],\
           ["@nomicfoundation/hardhat-chai-matchers", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:1.0.6"],\
           ["@nomicfoundation/hardhat-network-helpers", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:1.1.2"],\
+          ["@nomicfoundation/hardhat-verify", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.0.0"],\
           ["@nomiclabs/hardhat-ethers", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.2.3"],\
-          ["@nomiclabs/hardhat-etherscan", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:3.1.8"],\
           ["@openzeppelin/contracts", "npm:4.9.6"],\
           ["@openzeppelin/contracts-upgradeable", "npm:4.9.6"],\
           ["@openzeppelin/hardhat-upgrades", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:1.28.0"],\
@@ -42,16 +42,19 @@ const RAW_RUNTIME_STATE =
           ["@types/chai", "npm:4.3.20"],\
           ["@types/mocha", "npm:10.0.10"],\
           ["backend", "workspace:."],\
+          ["cbor", "npm:10.0.11"],\
           ["chai", "npm:4.3.0"],\
           ["chai-as-promised", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:8.0.2"],\
           ["dotenv", "npm:16.6.1"],\
+          ["ethereumjs-util", "npm:7.1.5"],\
           ["ethers", "npm:5.8.0"],\
           ["hardhat", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.28.2"],\
           ["hardhat-gas-reporter", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.3.0"],\
           ["solidity-coverage", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:0.8.17"],\
           ["ts-node", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:10.9.2"],\
           ["typechain", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:8.3.2"],\
-          ["typescript", "patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"]\
+          ["typescript", "patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"],\
+          ["undici", "npm:7.18.2"]\
         ],\
         "linkType": "SOFT"\
       }]\
@@ -1134,6 +1137,37 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
+    ["@nomicfoundation/hardhat-verify", [\
+      ["npm:2.0.0", {\
+        "packageLocation": "../../../.yarn/berry/cache/@nomicfoundation-hardhat-verify-npm-2.0.0-24e168d083-10c0.zip/node_modules/@nomicfoundation/hardhat-verify/",\
+        "packageDependencies": [\
+          ["@nomicfoundation/hardhat-verify", "npm:2.0.0"]\
+        ],\
+        "linkType": "SOFT"\
+      }],\
+      ["virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.0.0", {\
+        "packageLocation": "./.yarn/__virtual__/@nomicfoundation-hardhat-verify-virtual-44937ceb46/4/.yarn/berry/cache/@nomicfoundation-hardhat-verify-npm-2.0.0-24e168d083-10c0.zip/node_modules/@nomicfoundation/hardhat-verify/",\
+        "packageDependencies": [\
+          ["@ethersproject/abi", "npm:5.8.0"],\
+          ["@ethersproject/address", "npm:5.8.0"],\
+          ["@nomicfoundation/hardhat-verify", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.0.0"],\
+          ["@types/hardhat", null],\
+          ["cbor", "npm:8.1.0"],\
+          ["chalk", "npm:2.4.2"],\
+          ["debug", "virtual:1f1a2e08aadf8ceefdc4b5951843c3d0ae0d0942965090f2b023350a5a3fcd74c17250db61e969cfc1a5101cc408456af7bf2e817a454042a52e4156aad3d4bd#npm:4.4.3"],\
+          ["hardhat", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.28.2"],\
+          ["lodash.clonedeep", "npm:4.5.0"],\
+          ["semver", "npm:6.3.1"],\
+          ["table", "npm:6.9.0"],\
+          ["undici", "npm:5.29.0"]\
+        ],\
+        "packagePeers": [\
+          "@types/hardhat",\
+          "hardhat"\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
     ["@nomicfoundation/slang", [\
       ["npm:0.18.3", {\
         "packageLocation": "../../../.yarn/berry/cache/@nomicfoundation-slang-npm-0.18.3-0dfc9ae107-10c0.zip/node_modules/@nomicfoundation/slang/",\
@@ -1249,38 +1283,6 @@ const RAW_RUNTIME_STATE =
         "linkType": "HARD"\
       }]\
     ]],\
-    ["@nomiclabs/hardhat-etherscan", [\
-      ["npm:3.1.8", {\
-        "packageLocation": "../../../.yarn/berry/cache/@nomiclabs-hardhat-etherscan-npm-3.1.8-7f71099bbe-10c0.zip/node_modules/@nomiclabs/hardhat-etherscan/",\
-        "packageDependencies": [\
-          ["@nomiclabs/hardhat-etherscan", "npm:3.1.8"]\
-        ],\
-        "linkType": "SOFT"\
-      }],\
-      ["virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:3.1.8", {\
-        "packageLocation": "./.yarn/__virtual__/@nomiclabs-hardhat-etherscan-virtual-4ceceea659/4/.yarn/berry/cache/@nomiclabs-hardhat-etherscan-npm-3.1.8-7f71099bbe-10c0.zip/node_modules/@nomiclabs/hardhat-etherscan/",\
-        "packageDependencies": [\
-          ["@ethersproject/abi", "npm:5.8.0"],\
-          ["@ethersproject/address", "npm:5.8.0"],\
-          ["@nomiclabs/hardhat-etherscan", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:3.1.8"],\
-          ["@types/hardhat", null],\
-          ["cbor", "npm:8.1.0"],\
-          ["chalk", "npm:2.4.2"],\
-          ["debug", "virtual:1f1a2e08aadf8ceefdc4b5951843c3d0ae0d0942965090f2b023350a5a3fcd74c17250db61e969cfc1a5101cc408456af7bf2e817a454042a52e4156aad3d4bd#npm:4.4.3"],\
-          ["fs-extra", "npm:7.0.1"],\
-          ["hardhat", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.28.2"],\
-          ["lodash", "npm:4.17.21"],\
-          ["semver", "npm:6.3.1"],\
-          ["table", "npm:6.9.0"],\
-          ["undici", "npm:5.29.0"]\
-        ],\
-        "packagePeers": [\
-          "@types/hardhat",\
-          "hardhat"\
-        ],\
-        "linkType": "HARD"\
-      }]\
-    ]],\
     ["@npmcli/agent", [\
       ["npm:4.0.0", {\
         "packageLocation": "../../../.yarn/berry/cache/@npmcli-agent-npm-4.0.0-502e5ae4f0-10c0.zip/node_modules/@npmcli/agent/",\
@@ -1381,7 +1383,7 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/__virtual__/@openzeppelin-hardhat-upgrades-virtual-7577971614/4/.yarn/berry/cache/@openzeppelin-hardhat-upgrades-npm-1.28.0-580f5d51dc-10c0.zip/node_modules/@openzeppelin/hardhat-upgrades/",\
         "packageDependencies": [\
           ["@nomiclabs/hardhat-ethers", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.2.3"],\
-          ["@nomiclabs/hardhat-etherscan", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:3.1.8"],\
+          ["@nomiclabs/hardhat-etherscan", null],\
           ["@nomiclabs/harhdat-etherscan", null],\
           ["@openzeppelin/defender-base-client", "npm:1.54.6"],\
           ["@openzeppelin/hardhat-upgrades", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:1.28.0"],\
@@ -2615,8 +2617,8 @@ const RAW_RUNTIME_STATE =
           ["@chainlink/contracts", "npm:0.8.0"],\
           ["@nomicfoundation/hardhat-chai-matchers", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:1.0.6"],\
           ["@nomicfoundation/hardhat-network-helpers", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:1.1.2"],\
+          ["@nomicfoundation/hardhat-verify", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.0.0"],\
           ["@nomiclabs/hardhat-ethers", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.2.3"],\
-          ["@nomiclabs/hardhat-etherscan", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:3.1.8"],\
           ["@openzeppelin/contracts", "npm:4.9.6"],\
           ["@openzeppelin/contracts-upgradeable", "npm:4.9.6"],\
           ["@openzeppelin/hardhat-upgrades", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:1.28.0"],\
@@ -2626,16 +2628,19 @@ const RAW_RUNTIME_STATE =
           ["@types/chai", "npm:4.3.20"],\
           ["@types/mocha", "npm:10.0.10"],\
           ["backend", "workspace:."],\
+          ["cbor", "npm:10.0.11"],\
           ["chai", "npm:4.3.0"],\
           ["chai-as-promised", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:8.0.2"],\
           ["dotenv", "npm:16.6.1"],\
+          ["ethereumjs-util", "npm:7.1.5"],\
           ["ethers", "npm:5.8.0"],\
           ["hardhat", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.28.2"],\
           ["hardhat-gas-reporter", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:2.3.0"],\
           ["solidity-coverage", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:0.8.17"],\
           ["ts-node", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:10.9.2"],\
           ["typechain", "virtual:f5126a6c59718fab632a5fe9c89dad727d14c0854924da0278c36945a50e100550614ee30506e48e5221c7c36dc5ebab4a104a63756e8b71f6e37453259fec8c#npm:8.3.2"],\
-          ["typescript", "patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"]\
+          ["typescript", "patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"],\
+          ["undici", "npm:7.18.2"]\
         ],\
         "linkType": "SOFT"\
       }]\
@@ -6678,6 +6683,15 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "../../../.yarn/berry/cache/lodash.camelcase-npm-4.3.0-bf268e3bf0-10c0.zip/node_modules/lodash.camelcase/",\
         "packageDependencies": [\
           ["lodash.camelcase", "npm:4.3.0"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["lodash.clonedeep", [\
+      ["npm:4.5.0", {\
+        "packageLocation": "../../../.yarn/berry/cache/lodash.clonedeep-npm-4.5.0-fbc3cda4e5-10c0.zip/node_modules/lodash.clonedeep/",\
+        "packageDependencies": [\
+          ["lodash.clonedeep", "npm:4.5.0"]\
         ],\
         "linkType": "HARD"\
       }]\
