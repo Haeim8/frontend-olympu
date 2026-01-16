@@ -223,9 +223,17 @@ class BlockchainIndexer {
         try {
             // Récupérer le dernier block synchronisé
             const startBlock = parseInt(process.env.DIVAR_START_BLOCK || '0');
-            const lastSyncState = await syncState.get('campaigns') || { last_block: startBlock };
+            const lastSyncState = await syncState.get('campaigns');
+
+            // DEBUG: Afficher les valeurs lues
+            console.log(`[Indexer] DEBUG startBlock env: ${startBlock}`);
+            console.log(`[Indexer] DEBUG sync_state DB:`, lastSyncState);
+
+            const effectiveLastBlock = lastSyncState?.last_block ?? startBlock;
             const { provider, currentBlock } = await this.getProvider();
-            let fromBlock = lastSyncState.last_block + 1;
+            let fromBlock = effectiveLastBlock + 1;
+
+            console.log(`[Indexer] DEBUG effectiveLastBlock: ${effectiveLastBlock}, fromBlock: ${fromBlock}`);
 
 
             if (fromBlock >= currentBlock) {
