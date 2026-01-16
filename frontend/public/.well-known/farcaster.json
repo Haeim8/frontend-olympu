@@ -7,9 +7,17 @@
   "frame": {
     "version": "1",
     "name": "Livar",
-    "iconUrl": "https://www.livarhub.xyz/favicon.ico",
+    "iconUrl": "https://www.livarhub.xyz/icon-1024.png",
     "splashImageUrl": "https://www.livarhub.xyz/og.png",
     "splashBackgroundColor": "#0a0a0a",
-    "homeUrl": "https://www.livarhub.xyz"
+    "homeUrl": "https://www.livarhub.xyz",
+    "primaryCategory": "finance",
+    "tags": [
+      "crowdfunding",
+      "defi",
+      "investing",
+      "blockchain",
+      "base"
+    ]
   }
 }
