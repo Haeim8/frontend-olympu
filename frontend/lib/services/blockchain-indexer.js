@@ -39,40 +39,99 @@ class BlockchainIndexer {
         this.provider = null;
         this.divarAddress = config.contracts.DivarProxy;
         this.isIndexing = false;
+        this.rpcUrl = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL ||
+            'https://api.developer.coinbase.com/rpc/v1/base-sepolia/VswyEt-MN0Zf0Is7wHBPUWyJKSJRpUqP';
         console.log(`[Indexer] Config RPCs: ${this.rpcUrls.length} endpoints`);
     }
 
-    async getProvider() {
-        if (this.provider) return this.provider;
+    /**
+     * Faire un appel RPC via fetch natif (fonctionne dans Next.js serverless)
+     */
+    async rpcCall(method, params = []) {
+        const res = await fetch(this.rpcUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message || 'RPC Error');
+        return data.result;
+    }
 
-        // Use public RPC with explicit network to skip auto-detection (fixes serverless issues)
+    /**
+     * Appeler une fonction de contrat via RPC (eth_call)
+     */
+    async contractCall(contractAddress, functionSelector) {
+        return this.rpcCall('eth_call', [
+            { to: contractAddress, data: functionSelector },
+            'latest'
+        ]);
+    }
+
+
+    async getProvider() {
+        // Pas de cache - créer un nouveau provider à chaque fois pour éviter les problèmes de connexion
         const network = {
             name: 'base-sepolia',
             chainId: 84532
         };
 
-        // Try configured RPCs first
+        // Utiliser directement le RPC Coinbase en priorité
+        const coinbaseRpc = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL ||
+            'https://api.developer.coinbase.com/rpc/v1/base-sepolia/VswyEt-MN0Zf0Is7wHBPUWyJKSJRpUqP';
+        console.log(`[Indexer] RPC URL: ${coinbaseRpc.slice(0, 50)}...`);
+
+        // Test avec fetch natif puis créer le provider ethers
+        try {
+            const testRes = await fetch(coinbaseRpc, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+            });
+            const testData = await testRes.json();
+            if (testData.result) {
+                const currentBlock = parseInt(testData.result, 16);
+                console.log(`[Indexer] Fetch OK: block ${currentBlock}`);
+                const provider = new ethers.providers.JsonRpcProvider(coinbaseRpc, network);
+                console.log('[Indexer] ✅ Provider created');
+                return { provider, currentBlock };
+
+            } else {
+                console.warn(`[Indexer] RPC error: ${JSON.stringify(testData.error)}`);
+            }
+        } catch (e) {
+            console.warn(`[Indexer] Coinbase RPC failed: ${e.message.slice(0, 60)}`);
+        }
+
+
+        // Fallback aux autres RPCs configurés
         for (const rpcUrl of this.rpcUrls) {
+            if (rpcUrl === coinbaseRpc) continue; // Déjà essayé
             try {
-                console.log(`[Indexer] Trying RPC: ${rpcUrl.slice(0, 35)}...`);
-                const provider = new ethers.providers.JsonRpcProvider(rpcUrl, network);
-                // Quick test - just get block number instead of full network detection
-                await provider.getBlockNumber();
-                this.provider = provider;
-                console.log('[Indexer] ✅ Provider connected');
-                return this.provider;
+                console.log(`[Indexer] Trying fallback RPC: ${rpcUrl.slice(0, 35)}...`);
+                const testRes = await fetch(rpcUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ method: 'eth_blockNumber', params: [], id: 1, jsonrpc: '2.0' })
+                });
+                const testData = await testRes.json();
+                if (testData.result) {
+                    const currentBlock = parseInt(testData.result, 16);
+                    const provider = new ethers.providers.JsonRpcProvider(rpcUrl, network);
+                    console.log(`[Indexer] ✅ Fallback connected: block ${currentBlock}`);
+                    return { provider, currentBlock };
+                }
             } catch (e) {
-                console.warn(`[Indexer] RPC failed: ${e.message.slice(0, 40)}`);
+                console.warn(`[Indexer] RPC failed: ${e.message.slice(0, 40)}`)
             }
         }
 
-        // Fallback to public RPC
-        console.log('[Indexer] Fallback to public RPC...');
-        this.provider = new ethers.providers.JsonRpcProvider('https://sepolia.base.org', network);
-        return this.provider;
+
+        throw new Error('Aucun RPC disponible');
     }
 
     /**
+
      * Démarrer l'indexation en mode continu (Boucle infinie)
      */
     async start() {
@@ -85,17 +144,35 @@ class BlockchainIndexer {
     }
 
     /**
-     * Effectuer un seul passage de synchronisation (Mode Serverless / Cron)
+      * Effectuer la synchronisation complète jusqu'à être à jour (Mode Serverless / Cron)
      */
     async syncNext() {
-        console.log('[Indexer] ⏱️ Exécution d\'un passage de synchronisation...');
+        console.log('[Indexer] ⏱️ Démarrage synchronisation...');
         try {
-            await this.syncNewCampaigns();
+            const { provider, currentBlock } = await this.getProvider();
+            console.log(`[Indexer] 📦 Block actuel: ${currentBlock}`);
+
+
+            // Boucler jusqu'à être à jour sur les campagnes
+            let campaignsSynced = false;
+            while (!campaignsSynced) {
+                const lastSync = await syncState.get('campaigns') || { last_block: parseInt(process.env.DIVAR_START_BLOCK || '0') };
+                if (lastSync.last_block >= currentBlock - 10) {
+                    campaignsSynced = true;
+                    console.log(`[Indexer] ✅ Campagnes à jour (block ${lastSync.last_block})`);
+                } else {
+                    await this.syncNewCampaigns();
+                }
+            }
+
+            // Sync transactions et rounds
             await this.syncAllTransactions();
             await this.syncAllRounds();
             await this.syncAllFinance();
             await this.syncPromotions();
-            return { success: true };
+
+            console.log(`[Indexer] ✅ Sync terminée - Block ${currentBlock}`);
+            return { success: true, block: currentBlock };
         } catch (error) {
             console.error('[Indexer] ❌ Erreur passage sync:', error.message);
             throw error;
@@ -127,16 +204,16 @@ class BlockchainIndexer {
             // Récupérer le dernier block synchronisé
             const startBlock = parseInt(process.env.DIVAR_START_BLOCK || '0');
             const lastSyncState = await syncState.get('campaigns') || { last_block: startBlock };
-            const provider = await this.getProvider();
-            const currentBlock = await provider.getBlockNumber();
+            const { provider, currentBlock } = await this.getProvider();
             let fromBlock = lastSyncState.last_block + 1;
+
 
             if (fromBlock >= currentBlock) {
                 console.log('[Indexer] ✅ À jour, pas de nouveau bloc');
                 return;
             }
 
-            const MAX_RANGE = 2500; // Plus large pour rattraper le retard
+            const MAX_RANGE = 999; // Limite RPC Coinbase = 1000 blocs max
             const toBlock = Math.min(fromBlock + MAX_RANGE, currentBlock);
 
             if (fromBlock > toBlock) return;
@@ -188,17 +265,33 @@ class BlockchainIndexer {
     }
 
     /**
-     * Récupérer les détails techniques d'une campagne via son contrat
+     * Récupérer les détails techniques d'une campagne via son contrat (via fetch natif)
      */
     async fetchCampaignDetails(address) {
-        const provider = await this.getProvider();
-        const contract = new ethers.Contract(address, CAMPAIGN_ABI, provider);
         try {
-            const roundData = await contract.getCurrentRound();
-            const totalShares = await contract.totalSharesIssued();
+            // Selectors de fonction (premiers 4 bytes du keccak256)
+            // getCurrentRound() = 0xa32bf597
+            // totalSharesIssued() = 0xfab2cb36
+            const getCurrentRoundSelector = '0xa32bf597';
+            const totalSharesIssuedSelector = '0xfab2cb36';
 
-            // Décomposer les données du round
-            const [roundNumber, sharePrice, targetAmount, fundsRaised, sharesSold, endTime, isActive, isFinalized] = roundData;
+            // Appeler getCurrentRound via eth_call
+            const roundResult = await this.contractCall(address, getCurrentRoundSelector);
+
+            // Décoder le résultat (8 x uint256 + 2 x bool = 8 x 32 bytes)
+            // roundNumber, sharePrice, targetAmount, fundsRaised, sharesSold, endTime, isActive, isFinalized
+            const roundNumber = parseInt(roundResult.slice(2, 66), 16);
+            const sharePrice = BigInt('0x' + roundResult.slice(66, 130)).toString();
+            const targetAmount = BigInt('0x' + roundResult.slice(130, 194)).toString();
+            const fundsRaised = BigInt('0x' + roundResult.slice(194, 258)).toString();
+            const sharesSold = parseInt(roundResult.slice(258, 322), 16);
+            const endTime = parseInt(roundResult.slice(322, 386), 16);
+            const isActive = parseInt(roundResult.slice(386, 450), 16) === 1;
+            const isFinalized = parseInt(roundResult.slice(450, 514), 16) === 1;
+
+            // Appeler totalSharesIssued
+            const totalSharesResult = await this.contractCall(address, totalSharesIssuedSelector);
+            const totalShares = parseInt(totalSharesResult, 16);
 
             // Déterminer le statut
             let status = 'active';
@@ -209,13 +302,13 @@ class BlockchainIndexer {
             }
 
             return {
-                current_round: Number(roundNumber),
-                total_shares: Number(totalShares),
-                shares_sold: Number(sharesSold),
-                goal: targetAmount.toString(),
-                raised: fundsRaised.toString(),
-                share_price: sharePrice.toString(),
-                end_date: new Date(Number(endTime) * 1000),
+                current_round: roundNumber,
+                total_shares: totalShares,
+                shares_sold: sharesSold,
+                goal: targetAmount,
+                raised: fundsRaised,
+                share_price: sharePrice,
+                end_date: new Date(endTime * 1000),
                 status,
                 is_active: isActive,
                 is_finalized: isFinalized
@@ -225,6 +318,7 @@ class BlockchainIndexer {
             return {};
         }
     }
+
 
     /**
      * Synchroniser les transactions pour toutes les campagnes connues
@@ -276,41 +370,55 @@ class BlockchainIndexer {
     }
 
     /**
-     * Synchroniser les rounds d'une campagne spécifique
+     * Synchroniser les rounds d'une campagne spécifique (via fetch natif)
      */
     async syncCampaignRounds(campaignAddress) {
         try {
-            const provider = await this.getProvider();
-            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
-            const currentRoundNumber = await contract.currentRound();
+            // Selector: currentRound() = 0x8a19c8bc
+            const currentRoundResult = await this.contractCall(campaignAddress, '0x8a19c8bc');
+            const currentRoundNumber = parseInt(currentRoundResult, 16);
+
+            if (currentRoundNumber === 0) return;
 
             // Récupérer les données existantes pour comparer
             const existingRounds = await rounds.getByCampaign(campaignAddress);
             const roundsMap = {};
             (existingRounds || []).forEach(r => roundsMap[r.round_number] = r);
 
-            for (let i = 1; i <= Number(currentRoundNumber); i++) {
-                const roundData = await contract.rounds(i);
+            for (let i = 1; i <= currentRoundNumber; i++) {
+                // Selector: rounds(uint256) = 0x8c65c81f + param encodé
+                const roundParam = i.toString(16).padStart(64, '0');
+                const roundResult = await this.contractCall(campaignAddress, '0x8c65c81f' + roundParam);
+
+                // Décoder le résultat du round
+                const roundNumber = parseInt(roundResult.slice(2, 66), 16);
+                const sharePrice = BigInt('0x' + roundResult.slice(66, 130)).toString();
+                const targetAmount = BigInt('0x' + roundResult.slice(130, 194)).toString();
+                const fundsRaised = BigInt('0x' + roundResult.slice(194, 258)).toString();
+                const sharesSold = parseInt(roundResult.slice(258, 322), 16);
+                const endTime = parseInt(roundResult.slice(322, 386), 16);
+                const isActive = parseInt(roundResult.slice(386, 450), 16) === 1;
+                const isFinalized = parseInt(roundResult.slice(450, 514), 16) === 1;
 
                 // OPTIMISATION : Ne sauvegarder que si c'est nouveau ou si ça a changé
                 const existing = roundsMap[i];
                 const hasChanged = !existing ||
-                    existing.funds_raised !== roundData.fundsRaised.toString() ||
-                    existing.shares_sold !== Number(roundData.sharesSold) ||
-                    existing.is_active !== roundData.isActive ||
-                    existing.is_finalized !== roundData.isFinalized;
+                    existing.funds_raised !== fundsRaised ||
+                    existing.shares_sold !== sharesSold ||
+                    existing.is_active !== isActive ||
+                    existing.is_finalized !== isFinalized;
 
                 if (hasChanged) {
                     await rounds.upsert({
                         campaign_address: campaignAddress.toLowerCase(),
-                        round_number: Number(roundData.roundNumber),
-                        share_price: roundData.sharePrice.toString(),
-                        target_amount: roundData.targetAmount.toString(),
-                        funds_raised: roundData.fundsRaised.toString(),
-                        shares_sold: Number(roundData.sharesSold),
-                        end_time: Math.floor(Number(roundData.endTime)),
-                        is_active: roundData.isActive,
-                        is_finalized: roundData.isFinalized
+                        round_number: roundNumber,
+                        share_price: sharePrice,
+                        target_amount: targetAmount,
+                        funds_raised: fundsRaised,
+                        shares_sold: sharesSold,
+                        end_time: endTime,
+                        is_active: isActive,
+                        is_finalized: isFinalized
                     });
                     console.log(`[Indexer] 🔄 Round ${i} mis à jour pour ${campaignAddress.slice(0, 8)}`);
                 }
@@ -320,74 +428,82 @@ class BlockchainIndexer {
         }
     }
 
+
     /**
-     * Synchroniser les transactions d'une campagne spécifique
+     * Synchroniser les transactions d'une campagne spécifique (via fetch natif)
      * OPTIMISÉ : Uniquement les nouvelles transactions
      */
     async syncCampaignTransactions(campaignAddress) {
         try {
             const syncId = `tx:${campaignAddress.toLowerCase()}`;
             const lastSync = await syncState.get(syncId) || { last_block: 0 };
-            const provider = await this.getProvider();
-            const currentBlock = await provider.getBlockNumber();
-            const fromBlock = lastSync.last_block > 0 ? lastSync.last_block + 1 : currentBlock - 50000; // First sync: last 50k blocks
+            const { currentBlock } = await this.getProvider();
+            const fromBlock = lastSync.last_block > 0 ? lastSync.last_block + 1 : currentBlock - 50000;
 
             if (fromBlock >= currentBlock) return;
 
-            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
+            // Topic pour SharesPurchased(address indexed investor, uint256 shares, uint256 roundNumber)
+            // keccak256("SharesPurchased(address,uint256,uint256)")
+            const sharesPurchasedTopic = '0x630b54f21d1c5ae41c4633ad96e8c15ce15665365eded6a38476ffa71c8ace6c';
 
-            // Scan in chunks of 1000 blocks (RPC limit)
-            let allEvents = [];
-            const CHUNK_SIZE = 2500; // Augmenté pour le mode Cron
-            for (let start = fromBlock; start < currentBlock; start += CHUNK_SIZE) {
+            // Scan in chunks of 999 blocks (RPC limit)
+            let allLogs = [];
+            const CHUNK_SIZE = 999;
+            for (let start = fromBlock; start <= currentBlock; start += CHUNK_SIZE) {
                 const end = Math.min(start + CHUNK_SIZE - 1, currentBlock);
                 try {
                     console.log(`[Indexer] 🔎 Scan TXs ${campaignAddress.slice(0, 8)}: ${start} -> ${end}`);
-                    const events = await contract.queryFilter("SharesPurchased", start, end);
-                    allEvents = allEvents.concat(events);
+                    const logs = await this.rpcCall('eth_getLogs', [{
+                        address: campaignAddress,
+                        topics: [sharesPurchasedTopic],
+                        fromBlock: '0x' + start.toString(16),
+                        toBlock: '0x' + end.toString(16)
+                    }]);
+                    if (logs && logs.length > 0) {
+                        allLogs = allLogs.concat(logs);
+                    }
                 } catch (err) {
                     console.warn(`[Indexer] Chunk ${start}-${end} failed for ${campaignAddress.slice(0, 8)}:`, err.message);
-                    break; // Arrêter ce tour pour cette campagne si ça échoue (timeout probable)
+                    break;
                 }
             }
 
-            if (allEvents.length === 0) {
+            if (allLogs.length === 0) {
                 console.log(`[Indexer] ✅ Pas de nouvelles transactions pour ${campaignAddress.slice(0, 8)}`);
+                await syncState.upsert(syncId, currentBlock);
                 return;
             }
 
-            console.log(`[Indexer] 💸 ${allEvents.length} nouvelles transactions pour ${campaignAddress.slice(0, 8)}`);
+            console.log(`[Indexer] 💸 ${allLogs.length} nouvelles transactions pour ${campaignAddress.slice(0, 8)}`);
 
-            // Récupérer les détails du round actuel une seule fois
-            let roundData = null;
-            try {
-                roundData = await contract.getCurrentRound();
-            } catch (error) {
-                console.warn(`[Indexer] Impossible de récupérer round data pour ${campaignAddress}:`, error.message);
-                return;
-            }
+            // Récupérer le sharePrice via contractCall
+            const roundResult = await this.contractCall(campaignAddress, '0xa32bf597'); // getCurrentRound()
+            const sharePrice = BigInt('0x' + roundResult.slice(66, 130));
 
-            const sharePrice = roundData[1]; // sharePrice est le 2ème élément
-
-            for (const event of allEvents) {
-                const { investor, shares, roundNumber } = event.args;
-                const amount = sharePrice.mul(shares);
+            for (const log of allLogs) {
+                // Décoder les données du log
+                // topics[1] = investor (indexed)
+                // data = shares (uint256) + roundNumber (uint256)
+                const investor = '0x' + log.topics[1].slice(26);
+                const shares = parseInt(log.data.slice(2, 66), 16);
+                const roundNumber = parseInt(log.data.slice(66, 130), 16);
+                const amount = (sharePrice * BigInt(shares)).toString();
 
                 await transactions.insert({
-                    tx_hash: event.transactionHash,
+                    tx_hash: log.transactionHash,
                     campaign_address: campaignAddress.toLowerCase(),
                     investor: investor.toLowerCase(),
-                    amount: amount.toString(),
-                    shares: Number(shares),
-                    round_number: Number(roundNumber),
+                    amount: amount,
+                    shares: shares,
+                    round_number: roundNumber,
                     type: 'purchase',
-                    block_number: Number(event.blockNumber || 0),
-                    timestamp: event.blockTimestamp ? new Date(event.blockTimestamp * 1000) : new Date(),
+                    block_number: parseInt(log.blockNumber, 16),
+                    timestamp: new Date(),
                     commission: "0",
-                    net_amount: amount.toString()
+                    net_amount: amount
                 });
 
-                console.log(`[Indexer] 💸 Tx ${event.transactionHash.slice(0, 8)} : ${shares} shares`);
+                console.log(`[Indexer] 💸 Tx ${log.transactionHash.slice(0, 10)} : ${shares} shares`);
             }
 
             // Mettre à jour l'état de synchronisation
@@ -398,29 +514,13 @@ class BlockchainIndexer {
         }
     }
 
+
+
     async syncAllFinance() {
-        try {
-            const allCampaigns = await campaigns.getAll();
-            if (!allCampaigns || allCampaigns.length === 0) return;
-
-            for (const campaign of allCampaigns) {
-                await this.syncCampaignFinance(campaign.address);
-            }
-        } catch (error) {
-            console.error('[Indexer] ❌ Erreur syncAllFinance:', error.message);
-        }
+        // Désactivé - pas encore implémenté
+        return;
     }
 
-    async syncCampaignFinance(campaignAddress) {
-        try {
-            const provider = await this.getProvider();
-            const contract = new ethers.Contract(campaignAddress, CAMPAIGN_ABI, provider);
-            // Lecture des données financières si exposées par le contrat
-            // Pour l'instant, on prépare le terrain pour Escrow et Dividendes
-        } catch (error) {
-            console.warn(`[Indexer] ⚠️ Erreur sync finance ${campaignAddress}:`, error.message);
-        }
-    }
 
     /**
      * Synchroniser les promotions depuis RecPromotionManager

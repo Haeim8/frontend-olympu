@@ -118,17 +118,15 @@ export async function POST(request) {
             throw uploadError;
         }
 
-        // Obtenir l'URL publique
-        const { data: { publicUrl } } = supabase.storage
-            .from('campaign-documents')
-            .getPublicUrl(filePath);
+        // Créer l'URL masquée (ne pas exposer Supabase)
+        const maskedUrl = `/api/files/${filePath}`;
 
-        // Enregistrer dans la base de données
+        // Enregistrer dans la base de données avec l'URL masquée
         const { data: docData, error: dbError } = await supabase
             .from('campaign_documents')
             .insert({
                 campaign_address: campaignAddress.toLowerCase(),
-                url: publicUrl,
+                url: maskedUrl,
                 name: file.name,
                 category: category,
                 is_public: true,
@@ -144,7 +142,7 @@ export async function POST(request) {
 
         return NextResponse.json({
             success: true,
-            url: publicUrl,
+            url: maskedUrl,
             name: file.name,
             category: category,
             originalSize: originalSize,
