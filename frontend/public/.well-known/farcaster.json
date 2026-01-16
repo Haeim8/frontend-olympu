@@ -26,6 +26,11 @@
     "ogTitle": "Livar Onchain Raises",
     "ogDescription": "Decentralized crowdfunding on Base. Invest in real projects with transparent blockchain transactions.",
     "ogImageUrl": "https://www.livarhub.xyz/og.png",
+    "screenshotUrls": [
+      "https://www.livarhub.xyz/screenshot-1.png",
+      "https://www.livarhub.xyz/screenshot-2.png",
+      "https://www.livarhub.xyz/screenshot-3.png"
+    ],
     "noindex": false
   }
 }
