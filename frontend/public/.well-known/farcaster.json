@@ -7,6 +7,9 @@
   "frame": {
     "version": "1",
     "name": "Livar",
+    "subtitle": "Onchain Crowdfunding Platform",
+    "description": "Invest in real projects on Base. Decentralized crowdfunding with transparent transactions and automated smart contracts.",
+    "tagline": "Invest in the future",
     "iconUrl": "https://www.livarhub.xyz/icon-1024.png",
     "splashImageUrl": "https://www.livarhub.xyz/og.png",
     "splashBackgroundColor": "#0a0a0a",
@@ -18,6 +21,11 @@
       "investing",
       "blockchain",
       "base"
-    ]
+    ],
+    "heroImageUrl": "https://www.livarhub.xyz/og.png",
+    "ogTitle": "Livar Onchain Raises",
+    "ogDescription": "Decentralized crowdfunding on Base. Invest in real projects with transparent blockchain transactions.",
+    "ogImageUrl": "https://www.livarhub.xyz/og.png",
+    "noindex": false
   }
 }
