@@ -145,34 +145,53 @@ class BlockchainIndexer {
 
     /**
       * Effectuer la synchronisation complète jusqu'à être à jour (Mode Serverless / Cron)
+      * TIMEOUT : 10 secondes max pour éviter le timeout Vercel
      */
     async syncNext() {
+        const startTime = Date.now();
+        const TIMEOUT_MS = 10000; // 10 secondes max
+        const MAX_CAMPAIGNS_PER_RUN = 5; // Limiter le nombre de campagnes traitées par run
+
         console.log('[Indexer] ⏱️ Démarrage synchronisation...');
         try {
             const { provider, currentBlock } = await this.getProvider();
             console.log(`[Indexer] 📦 Block actuel: ${currentBlock}`);
 
+            // Helper pour vérifier le timeout
+            const isTimeout = () => (Date.now() - startTime) > TIMEOUT_MS;
 
-            // Boucler jusqu'à être à jour sur les campagnes
-            let campaignsSynced = false;
-            while (!campaignsSynced) {
-                const lastSync = await syncState.get('campaigns') || { last_block: parseInt(process.env.DIVAR_START_BLOCK || '0') };
-                if (lastSync.last_block >= currentBlock - 10) {
-                    campaignsSynced = true;
-                    console.log(`[Indexer] ✅ Campagnes à jour (block ${lastSync.last_block})`);
-                } else {
-                    await this.syncNewCampaigns();
-                }
+            // Sync nouvelles campagnes (rapide)
+            await this.syncNewCampaigns();
+            if (isTimeout()) {
+                console.log('[Indexer] ⏰ Timeout - arrêt propre');
+                return { success: true, partial: true, reason: 'timeout' };
             }
 
-            // Sync transactions et rounds
-            await this.syncAllTransactions();
-            await this.syncAllRounds();
-            await this.syncAllFinance();
-            await this.syncPromotions();
+            // Sync rounds et stats (limité)
+            const allCampaigns = await campaigns.getAll();
+            let processed = 0;
+            for (const campaign of (allCampaigns || [])) {
+                if (isTimeout() || processed >= MAX_CAMPAIGNS_PER_RUN) break;
+                try {
+                    await this.syncCampaignRounds(campaign.address);
+                    const details = await this.fetchCampaignDetails(campaign.address);
+                    if (details && Object.keys(details).length > 0) {
+                        // Préserver les données existantes (nom, etc.) en fusionnant avec les nouvelles
+                        await campaigns.upsert({
+                            ...campaign,  // Préserver nom, description, etc.
+                            ...details    // Mettre à jour raised, shares_sold, status, etc.
+                        });
+                    }
+                    processed++;
+                } catch (e) {
+                    console.warn(`[Indexer] ⚠️ Erreur campagne ${campaign.address.slice(0, 8)}:`, e.message);
+                }
+            }
+            console.log(`[Indexer] ✅ ${processed}/${allCampaigns?.length || 0} campagnes traitées`);
 
             console.log(`[Indexer] ✅ Sync terminée - Block ${currentBlock}`);
-            return { success: true, block: currentBlock };
+            return { success: true, block: currentBlock, processed };
+
         } catch (error) {
             console.error('[Indexer] ❌ Erreur passage sync:', error.message);
             throw error;
@@ -270,16 +289,15 @@ class BlockchainIndexer {
     async fetchCampaignDetails(address) {
         try {
             // Selectors de fonction (premiers 4 bytes du keccak256)
-            // getCurrentRound() = 0xa32bf597
-            // totalSharesIssued() = 0xfab2cb36
             const getCurrentRoundSelector = '0xa32bf597';
             const totalSharesIssuedSelector = '0xfab2cb36';
+            const nameSelector = '0x06fdde03';
+            const symbolSelector = '0x95d89b41';
 
             // Appeler getCurrentRound via eth_call
             const roundResult = await this.contractCall(address, getCurrentRoundSelector);
 
             // Décoder le résultat (8 x uint256 + 2 x bool = 8 x 32 bytes)
-            // roundNumber, sharePrice, targetAmount, fundsRaised, sharesSold, endTime, isActive, isFinalized
             const roundNumber = parseInt(roundResult.slice(2, 66), 16);
             const sharePrice = BigInt('0x' + roundResult.slice(66, 130)).toString();
             const targetAmount = BigInt('0x' + roundResult.slice(130, 194)).toString();
@@ -293,6 +311,20 @@ class BlockchainIndexer {
             const totalSharesResult = await this.contractCall(address, totalSharesIssuedSelector);
             const totalShares = parseInt(totalSharesResult, 16);
 
+            // Récupérer le nom et symbol depuis le contrat
+            let name = null, symbol = null;
+            try {
+                const nameResult = await this.contractCall(address, nameSelector);
+                // Décoder le string (offset 32 bytes + length 32 bytes + data)
+                const nameLength = parseInt(nameResult.slice(66, 130), 16);
+                name = Buffer.from(nameResult.slice(130, 130 + nameLength * 2), 'hex').toString('utf8');
+            } catch (e) { /* ignore */ }
+            try {
+                const symbolResult = await this.contractCall(address, symbolSelector);
+                const symbolLength = parseInt(symbolResult.slice(66, 130), 16);
+                symbol = Buffer.from(symbolResult.slice(130, 130 + symbolLength * 2), 'hex').toString('utf8');
+            } catch (e) { /* ignore */ }
+
             // Déterminer le statut
             let status = 'active';
             if (isFinalized) {
@@ -302,6 +334,8 @@ class BlockchainIndexer {
             }
 
             return {
+                name: name || undefined,
+                symbol: symbol || undefined,
                 current_round: roundNumber,
                 total_shares: totalShares,
                 shares_sold: sharesSold,
@@ -313,6 +347,7 @@ class BlockchainIndexer {
                 is_active: isActive,
                 is_finalized: isFinalized
             };
+
         } catch (error) {
             console.warn(`[Indexer] ⚠️ Impossible de lire les détails pour ${address}:`, error.message);
             return {};
