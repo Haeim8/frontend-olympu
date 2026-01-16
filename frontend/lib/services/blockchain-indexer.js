@@ -224,16 +224,11 @@ class BlockchainIndexer {
             // Récupérer le dernier block synchronisé
             const startBlock = parseInt(process.env.DIVAR_START_BLOCK || '0');
             const lastSyncState = await syncState.get('campaigns');
-
-            // DEBUG: Afficher les valeurs lues
-            console.log(`[Indexer] DEBUG startBlock env: ${startBlock}`);
-            console.log(`[Indexer] DEBUG sync_state DB:`, lastSyncState);
-
-            const effectiveLastBlock = lastSyncState?.last_block ?? startBlock;
+            const dbLastBlock = lastSyncState?.last_block ?? 0;
+            // PROTECTION: Toujours utiliser le MAX pour ignorer les valeurs obsolètes de Vercel
+            const effectiveLastBlock = Math.max(dbLastBlock, startBlock);
             const { provider, currentBlock } = await this.getProvider();
             let fromBlock = effectiveLastBlock + 1;
-
-            console.log(`[Indexer] DEBUG effectiveLastBlock: ${effectiveLastBlock}, fromBlock: ${fromBlock}`);
 
 
             if (fromBlock >= currentBlock) {
