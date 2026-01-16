@@ -965,6 +965,42 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@farcaster/miniapp-core@npm:0.4.1":
+  version: 0.4.1
+  resolution: "@farcaster/miniapp-core@npm:0.4.1"
+  dependencies:
+    "@solana/web3.js": "npm:^1.98.2"
+    ox: "npm:^0.4.4"
+    zod: "npm:^3.25.0"
+  checksum: 10c0/15d5734e843c90c8b25ef1e5aa311e2e9a19ffa47c53e54632f43bf842f0f4de3e674c7bcc88e887d364565d422fa47d638d5840f2972bbf5442d5fc2848534d
+  languageName: node
+  linkType: hard
+
+"@farcaster/miniapp-sdk@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "@farcaster/miniapp-sdk@npm:0.2.1"
+  dependencies:
+    "@farcaster/miniapp-core": "npm:0.4.1"
+    "@farcaster/quick-auth": "npm:^0.0.6"
+    comlink: "npm:^4.4.2"
+    eventemitter3: "npm:^5.0.1"
+    ox: "npm:^0.4.4"
+  checksum: 10c0/81613b7612800791454e26ca501d7c900c94d4481f0112b28c7cf739375865c93a202e0b379a82e2bec7b0c17fb81dc55c2a489a5624526f9983eb9aaae759ea
+  languageName: node
+  linkType: hard
+
+"@farcaster/quick-auth@npm:^0.0.6":
+  version: 0.0.6
+  resolution: "@farcaster/quick-auth@npm:0.0.6"
+  dependencies:
+    jose: "npm:^5.2.3"
+    zod: "npm:^3.25.1"
+  peerDependencies:
+    typescript: 5.8.3
+  checksum: 10c0/b2875c9db16419a74e2ea3f2e919c5c5156bdda4cdf386838625aa6ec7412879b02b3fdd20aa28fe32adbcbfff8cb4e4004e36f5da6b9f9c5269bcc511e9ef4c
+  languageName: node
+  linkType: hard
+
 "@floating-ui/core@npm:^1.7.3":
   version: 1.7.3
   resolution: "@floating-ui/core@npm:1.7.3"
@@ -3762,7 +3798,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@solana/web3.js@npm:^1.98.1":
+"@solana/web3.js@npm:^1.98.1, @solana/web3.js@npm:^1.98.2":
   version: 1.98.4
   resolution: "@solana/web3.js@npm:1.98.4"
   dependencies:
@@ -5704,6 +5740,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"comlink@npm:^4.4.2":
+  version: 4.4.2
+  resolution: "comlink@npm:4.4.2"
+  checksum: 10c0/38aa1f455cf08e94aaa8fc494fd203cc0ef02ece6c21404b7931ce17567e8a72deacddab98aa5650cfd78332ff24c34610586f6fb27fd19dc77e753ed1980deb
+  languageName: node
+  linkType: hard
+
 "commander@npm:14.0.2, commander@npm:^14.0.0":
   version: 14.0.2
   resolution: "commander@npm:14.0.2"
@@ -7199,6 +7242,7 @@ __metadata:
   dependencies:
     "@chainlink/contracts": "npm:^1.2.0"
     "@eslint/js": "npm:^9.36.0"
+    "@farcaster/miniapp-sdk": "npm:^0.2.1"
     "@radix-ui/react-avatar": "npm:^1.1.0"
     "@radix-ui/react-checkbox": "npm:^1.1.1"
     "@radix-ui/react-dialog": "npm:^1.1.1"
@@ -8325,6 +8369,13 @@ __metadata:
   bin:
     jiti: bin/jiti.js
   checksum: 10c0/77b61989c758ff32407cdae8ddc77f85e18e1a13fc4977110dbd2e05fc761842f5f71bce684d9a01316e1c4263971315a111385759951080bbfe17cbb5de8f7a
+  languageName: node
+  linkType: hard
+
+"jose@npm:^5.2.3":
+  version: 5.10.0
+  resolution: "jose@npm:5.10.0"
+  checksum: 10c0/e20d9fc58d7e402f2e5f04e824b8897d5579aae60e64cb88ebdea1395311c24537bf4892f7de413fab1acf11e922797fb1b42269bc8fc65089a3749265ccb7b0
   languageName: node
   linkType: hard
 
@@ -9500,6 +9551,26 @@ __metadata:
     typescript:
       optional: true
   checksum: 10c0/02a7ea9795eaac0a7a672e983094f62ae6f19b7d0c786e6d7ef4584683faf535b5b133e42452dd3abb77115382e16b2cb5c0f629d5a0f2b80832c47756e0ecd1
+  languageName: node
+  linkType: hard
+
+"ox@npm:^0.4.4":
+  version: 0.4.4
+  resolution: "ox@npm:0.4.4"
+  dependencies:
+    "@adraffy/ens-normalize": "npm:^1.10.1"
+    "@noble/curves": "npm:^1.6.0"
+    "@noble/hashes": "npm:^1.5.0"
+    "@scure/bip32": "npm:^1.5.0"
+    "@scure/bip39": "npm:^1.4.0"
+    abitype: "npm:^1.0.6"
+    eventemitter3: "npm:5.0.1"
+  peerDependencies:
+    typescript: ">=5.4.0"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/ce1539ec41c97f6d8386ea8f0cdd85d4af025d3b7a6762607aa1a6545f550ca637abba8c9be4b26f6bf2136f16ccd579454e6976ee06ddde7225ac8fcfd4254d
   languageName: node
   linkType: hard
 
@@ -12567,7 +12638,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.20.2, zod@npm:^3.24.4":
+"zod@npm:^3.20.2, zod@npm:^3.24.4, zod@npm:^3.25.0, zod@npm:^3.25.1":
   version: 3.25.76
   resolution: "zod@npm:3.25.76"
   checksum: 10c0/5718ec35e3c40b600316c5b4c5e4976f7fee68151bc8f8d90ec18a469be9571f072e1bbaace10f1e85cf8892ea12d90821b200e980ab46916a6166a4260a983c
