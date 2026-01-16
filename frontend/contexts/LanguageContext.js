@@ -236,7 +236,7 @@ const translations = {
     activity: "Activité",
 
     // Dashboard
-    'dashboard.title': 'Tableau de bord',
+    'dashboard.title': 'Marché',
     'dashboard.liveMarket': 'Marché Live',
     'dashboard.subtitle': 'Gérez vos investissements et suivez le marché en temps réel.',
     'stats.total_projects': 'Projets',
@@ -1596,7 +1596,7 @@ const translations = {
     activity: "Activity",
 
     // Dashboard
-    'dashboard.title': 'Dashboard',
+    'dashboard.title': 'Market',
     'dashboard.liveMarket': 'Live Market',
     'dashboard.subtitle': 'Manage your investments and track the market in real time.',
     'stats.total_projects': 'Projects',
@@ -2051,6 +2051,14 @@ const translations = {
     'projectDetails.buySuccessMessage': 'Purchase completed.',
     'projectDetails.buyMore': 'Buy more',
     'projectDetails.team': 'Team',
+    'projectDetails.stats.goal': 'Goal',
+    'projectDetails.stats.raised': 'Raised',
+    'projectDetails.stats.investors': 'Investors',
+    'projectDetails.stats.time': 'Time',
+    'projectDetails.time.ended': 'Ended',
+    'projectDetails.time.notSpecified': 'Not specified',
+    'projectDetails.time.days': 'd',
+    'projectDetails.time.hours': 'h',
 
     // Project Overview
     'projectOverview.stats.keyInfo': 'Key Information',
@@ -2974,7 +2982,7 @@ const translations = {
     activity: "Actividad",
 
     // Dashboard
-    'dashboard.title': 'Panel de Control',
+    'dashboard.title': 'Mercado',
     'dashboard.liveMarket': 'Mercado en Vivo',
     'dashboard.subtitle': 'Gestiona tus inversiones y sigue el mercado en tiempo real.',
     'stats.total_projects': 'Proyectos',

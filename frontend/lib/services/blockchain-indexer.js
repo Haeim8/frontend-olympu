@@ -239,14 +239,15 @@ class BlockchainIndexer {
 
             console.log(`[Indexer] 🆕 Scan ${fromBlock} -> ${toBlock} (${toBlock - fromBlock + 1} blocs)`);
 
-            const eventTopic = ethers.utils.id('CampaignCreated(address,address,string,uint256)');
+            // Topic pour CampaignCreated(address,address,string,uint256)
+            const eventTopic = '0x011e52f88446cffe402f824c74be32fb23411b1333a3d5df3b2b25c94d065026';
 
-            const logs = await provider.getLogs({
+            const logs = await this.rpcCall('eth_getLogs', [{
                 address: this.divarAddress,
                 topics: [eventTopic],
                 fromBlock: '0x' + fromBlock.toString(16),
                 toBlock: '0x' + toBlock.toString(16)
-            });
+            }]);
 
             if (logs.length > 0) {
                 console.log(`[Indexer] ✨ ${logs.length} nouvelles campagnes trouvées`);
