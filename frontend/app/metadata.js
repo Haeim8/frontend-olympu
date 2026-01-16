@@ -18,6 +18,12 @@ export const metadata = {
   },
   other: {
     'base:app_id': '6965aa9863c956eb9fe7346c',
+    // Farcaster Mini Apps / Frames
+    'fc:frame': 'vNext',
+    'fc:frame:image': 'https://www.livarhub.xyz/og.png',
+    'fc:frame:button:1': 'Découvrir les campagnes',
+    'fc:frame:button:1:action': 'link',
+    'fc:frame:button:1:target': 'https://www.livarhub.xyz',
   },
   openGraph: {
     title: 'Livar: Onchain Raises',
@@ -33,3 +39,4 @@ export const metadata = {
     images: [ogImage.url],
   },
 };
+
