@@ -77,13 +77,51 @@ export default function CampaignActions({
     }
   };
 
+  // Vérifier si l'escrow peut être libéré (campagne finalisée + temps écoulé)
   const canReleaseEscrow = () => {
-    return campaignData?.status === "Finalisée" &&
-      formatWeiToEth(campaignData?.raised || 0) >= formatWeiToEth(campaignData?.goal || 0);
+    const isFinalized = campaignData?.status === "Finalisée" ||
+      campaignData?.status === "finalized" ||
+      campaignData?.is_finalized;
+    const hasRaisedFunds = parseFloat(formatWeiToEth(campaignData?.raised || 0)) > 0;
+
+    // Calculer escrowReleaseTime : API ou end_date + 60h
+    let escrowReleaseTime = campaignData?.escrow?.releaseTime || campaignData?.escrowReleaseTime;
+    if (!escrowReleaseTime && campaignData?.end_date) {
+      const endDate = new Date(campaignData.end_date).getTime();
+      escrowReleaseTime = (endDate / 1000) + (60 * 60 * 60); // 60 heures
+    }
+
+    const escrowReady = escrowReleaseTime ? Date.now() >= escrowReleaseTime * 1000 : false;
+
+    return isFinalized && hasRaisedFunds && escrowReady;
   };
 
+  // Calculer le temps restant avant libération escrow (60h après finalisation)
+  const getEscrowCountdown = () => {
+    let escrowReleaseTime = campaignData?.escrow?.releaseTime || campaignData?.escrowReleaseTime;
+
+    // Si pas de releaseTime, calculer à partir de end_date + 60h
+    if (!escrowReleaseTime && campaignData?.end_date) {
+      const endDate = new Date(campaignData.end_date).getTime();
+      escrowReleaseTime = (endDate / 1000) + (60 * 60 * 60); // 60 heures en secondes
+    }
+
+    if (!escrowReleaseTime) return null;
+
+    const remaining = (escrowReleaseTime * 1000) - Date.now();
+    if (remaining <= 0) return null;
+
+    const hours = Math.floor(remaining / 3600000);
+    const minutes = Math.floor((remaining % 3600000) / 60000);
+    return `${hours}h ${minutes}min`;
+  };
+
+  const escrowCountdown = getEscrowCountdown();
+
   const canReopenCampaign = () => {
-    return campaignData?.status === "Finalisée";
+    return campaignData?.status === "Finalisée" ||
+      campaignData?.status === "finalized" ||
+      campaignData?.is_finalized;
   };
 
   const needsCertification = () => {
@@ -136,7 +174,10 @@ export default function CampaignActions({
                     </span>
                     {!canReleaseEscrow() && (
                       <span className="ml-2 text-xs opacity-60 font-normal">
-                        ({t('campaignActions.goalNotReached')})
+                        {escrowCountdown
+                          ? `(${t('campaignActions.escrowCountdown', { time: escrowCountdown }, `Disponible dans ${escrowCountdown}`)})`
+                          : `(${t('campaignActions.notReady', 'Non disponible')})`
+                        }
                       </span>
                     )}
                   </>

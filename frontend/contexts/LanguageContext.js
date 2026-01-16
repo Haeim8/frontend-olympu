@@ -2617,8 +2617,8 @@ const translations = {
     'wallet.nft.trySearch': 'Try modifying your search',
     'wallet.nft.startInvesting': 'You have no assets yet. Explore campaigns to start.',
     'wallet.nft.roi_progress': 'ROI Progress',
-    'wallet.nft.shares_count': '{{count}} shares',
-    'wallet.nft.token': 'Token #{{id}}',
+    'wallet.nft.shares_count': '{count} shares',
+    'wallet.nft.token': 'Token #{id}',
 
     // Wallet Transaction History
     'wallet.transaction.title': 'Transaction History',
@@ -3160,8 +3160,8 @@ const translations = {
     'wallet.nft.noNFTs': 'Billetera vacía',
     'wallet.nftDetails.details': 'Detalles',
     'wallet.nft.roi_progress': 'Progreso ROI',
-    'wallet.nft.shares_count': '{{count}} participaciones',
-    'wallet.nft.token': 'Ficha #{{id}}',
+    'wallet.nft.shares_count': '{count} participaciones',
+    'wallet.nft.token': 'Ficha #{id}',
 
     // Wallet NFT
     'wallet.nft.title': 'Sus NFTs',

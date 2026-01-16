@@ -30,7 +30,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
     });
   };
 
-  const progressPercentage = nft.dividends ?
+  const progressPercentage = (nft.dividends && parseFloat(nft.amount) > 0) ?
     (parseFloat(nft.dividends) / parseFloat(nft.amount)) * 100 : 0;
 
   return (

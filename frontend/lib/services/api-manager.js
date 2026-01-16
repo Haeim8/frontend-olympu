@@ -583,7 +583,12 @@ class ApiManager {
         return parseFloat(value).toFixed(4);
       }
       const numValue = BigInt(value.toString());
-      const ethValue = Number(numValue) / 1e18;
+      const numFloat = Number(numValue);
+
+      // Heuristique : si la valeur est < 1e12, c'est probablement en gwei (1e9)
+      // sinon c'est en wei (1e18)
+      const divisor = numFloat < 1e12 ? 1e9 : 1e18;
+      const ethValue = numFloat / divisor;
       return ethValue.toFixed(4);
     } catch {
       return '0';
