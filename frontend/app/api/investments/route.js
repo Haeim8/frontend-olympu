@@ -4,6 +4,9 @@ import { getSupabase } from '@/backend/db';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Block de démarrage pour Base Mainnet - les transactions avant ce block sont de Sepolia
+const MAINNET_START_BLOCK = parseInt(process.env.DIVAR_START_BLOCK || '40000000', 10);
+
 /**
  * GET /api/investments?address=0x...
  * Recupere les investissements d'un utilisateur (ses transactions d'achat)
@@ -19,11 +22,13 @@ export async function GET(request) {
     try {
         const supabase = getSupabase();
 
-        // Récupérer les transactions de l'investisseur
+        // Récupérer les transactions de l'investisseur - FILTRER par block_number pour exclure Sepolia
+        // Les blocks Mainnet Base sont > 40 millions, Sepolia beaucoup moins
         const { data: transactions, error: txError } = await supabase
             .from('campaign_transactions')
             .select('*')
             .eq('investor', investorAddress.toLowerCase())
+            .gte('block_number', MAINNET_START_BLOCK) // Filtrer seulement les transactions mainnet
             .order('timestamp', { ascending: false });
 
         if (txError) {
