@@ -19,6 +19,7 @@ import {
   Eye,
   Clock
 } from 'lucide-react';
+import config from '@/lib/config';
 
 
 const TransactionRow = ({ transaction, index, t }) => {
@@ -137,7 +138,7 @@ const TransactionRow = ({ transaction, index, t }) => {
             variant="ghost"
             size="sm"
             className="h-8 px-3 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-lime-50 dark:hover:bg-lime-900/20"
-            onClick={() => window.open(`https://sepolia.basescan.org/tx/${transaction.tx_hash}`, '_blank')}
+            onClick={() => window.open(config.helpers.getExplorerTxUrl(transaction.tx_hash), '_blank')}
           >
             <ExternalLink className="h-3 w-3 mr-1" />
             {t('projectTransactions.basescan')}

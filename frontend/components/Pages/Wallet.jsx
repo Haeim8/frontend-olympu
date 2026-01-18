@@ -15,6 +15,7 @@ import TransactionHistory from '@/components/wallet/TransactionHistory';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Wifi, WifiOff } from 'lucide-react';
+import config from '@/lib/config';
 
 export default function Wallet() {
   const { address } = useAccount();
@@ -291,7 +292,7 @@ export default function Wallet() {
                 <div className="flex justify-end space-x-3 pt-4 border-t border-border/50">
                   <Button
                     variant="outline"
-                    onClick={() => window.open(`https://sepolia.basescan.org/address/${selectedNFT.txHash}`, '_blank')}
+                    onClick={() => window.open(config.helpers.getExplorerAddressUrl(selectedNFT.txHash), '_blank')}
                     className="border-border hover:bg-muted text-muted-foreground hover:text-foreground rounded-xl"
                   >
                     {t('wallet.nftDetails.viewOnBasescan', 'Voir sur Basescan')}

@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from '@/hooks/useLanguage';
-import { 
+import {
   History,
   Search,
   Filter,
@@ -18,6 +18,7 @@ import {
   Download,
   Eye
 } from 'lucide-react';
+import config from '@/lib/config';
 
 const TransactionRow = ({ transaction, index }) => {
   const { t } = useTranslation();
@@ -108,7 +109,7 @@ const TransactionRow = ({ transaction, index }) => {
             variant="ghost"
             size="sm"
             className="h-8 px-2"
-            onClick={() => window.open(`https://sepolia.basescan.org/address/${transaction.txHash}`, '_blank')}
+            onClick={() => window.open(config.helpers.getExplorerAddressUrl(transaction.txHash), '_blank')}
           >
             <ExternalLink className="h-3 w-3 mr-1" />
             {t('wallet.transaction.view')}

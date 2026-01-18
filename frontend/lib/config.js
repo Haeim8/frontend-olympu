@@ -45,7 +45,7 @@ const NETWORKS = {
 // Alias pour supporter NEXT_PUBLIC_NETWORK=base
 NETWORKS.base = NETWORKS.baseMainnet;
 
-const ACTIVE_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'baseSepolia';
+const ACTIVE_NETWORK = process.env.NEXT_PUBLIC_NETWORK || 'baseMainnet';
 
 // =============================================================================
 // ADRESSES DES CONTRATS (depuis .env)
@@ -106,7 +106,7 @@ const config = {
     activeNetwork: ACTIVE_NETWORK,
 
     get network() {
-        return NETWORKS[ACTIVE_NETWORK] || NETWORKS.baseSepolia;
+        return NETWORKS[ACTIVE_NETWORK] || NETWORKS.baseMainnet;
     },
 
     networks: NETWORKS,
@@ -128,23 +128,23 @@ const config = {
     helpers: {
         getPrimaryRPC() {
             const network = NETWORKS[ACTIVE_NETWORK];
-            return network?.rpcUrls?.[0] || 'https://sepolia.base.org';
+            return network?.rpcUrls?.[0] || 'https://mainnet.base.org';
         },
 
         getAllRPCs() {
             const network = NETWORKS[ACTIVE_NETWORK];
-            return network?.rpcUrls || ['https://sepolia.base.org'];
+            return network?.rpcUrls || ['https://mainnet.base.org'];
         },
 
         getExplorerTxUrl(txHash) {
             const network = NETWORKS[ACTIVE_NETWORK];
-            const baseUrl = network?.blockExplorerUrls?.[0] || 'https://sepolia.basescan.org';
+            const baseUrl = network?.blockExplorerUrls?.[0] || 'https://basescan.org';
             return `${baseUrl}/tx/${txHash}`;
         },
 
         getExplorerAddressUrl(address) {
             const network = NETWORKS[ACTIVE_NETWORK];
-            const baseUrl = network?.blockExplorerUrls?.[0] || 'https://sepolia.basescan.org';
+            const baseUrl = network?.blockExplorerUrls?.[0] || 'https://basescan.org';
             return `${baseUrl}/address/${address}`;
         },
     },

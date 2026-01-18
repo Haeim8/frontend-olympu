@@ -1,15 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
-import { WagmiProvider } from 'wagmi';
+import { WagmiProvider, createConfig, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { base, baseSepolia } from 'wagmi/chains';
+import { base } from 'wagmi/chains';
 import {
   RainbowKitProvider,
   darkTheme,
   lightTheme,
-  getDefaultConfig,
+  connectorsForWallets,
 } from '@rainbow-me/rainbowkit';
+import {
+  coinbaseWallet,
+  metaMaskWallet,
+  rainbowWallet,
+  walletConnectWallet,
+} from '@rainbow-me/rainbowkit/wallets';
+import { farcasterFrame } from '@farcaster/miniapp-wagmi-connector';
 import { useTheme } from 'next-themes';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -36,10 +43,35 @@ export default function ThirdwebProviderWrapper({ children }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const config = getDefaultConfig({
-      appName: 'Livar',
-      projectId,
-      chains: [base], // Base Mainnet only
+    // Configurer les wallets avec RainbowKit
+    const connectors = connectorsForWallets(
+      [
+        {
+          groupName: 'Recommandé',
+          wallets: [
+            coinbaseWallet,
+            metaMaskWallet,
+            rainbowWallet,
+            walletConnectWallet,
+          ],
+        },
+      ],
+      {
+        appName: 'Livar',
+        projectId,
+      }
+    );
+
+    // Créer la config avec le connecteur Farcaster
+    const config = createConfig({
+      chains: [base],
+      connectors: [
+        farcasterFrame(), // Connecteur Farcaster pour Warpcast
+        ...connectors,
+      ],
+      transports: {
+        [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL || 'https://mainnet.base.org'),
+      },
       ssr: false,
     });
 

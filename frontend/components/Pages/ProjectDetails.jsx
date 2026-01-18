@@ -19,6 +19,7 @@ import {
   Zap, Globe, Twitter, MessageCircle, Github, Info, Coins, CheckCircle, Loader2
 } from 'lucide-react';
 import ShareSelector from '@/components/project/ShareSelector';
+import config from '@/lib/config';
 
 const DEFAULT_PROJECT = {
   name: "",
@@ -522,7 +523,7 @@ export default function ProjectDetails({ selectedProject, onClose, toggleFavorit
 
                         // TX hash
                         const txHash = tx.tx_hash || tx.hash || '';
-                        const baseScanUrl = `https://sepolia.basescan.org/tx/${txHash}`;
+                        const baseScanUrl = config.helpers.getExplorerTxUrl(txHash);
 
                         return (
                           <div key={txHash || i} className="grid grid-cols-6 gap-2 items-center py-2 text-sm hover:bg-neutral-800/50 rounded transition-colors">

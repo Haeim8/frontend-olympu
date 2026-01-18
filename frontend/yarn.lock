@@ -965,6 +965,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@farcaster/frame-sdk@npm:^0.1.12":
+  version: 0.1.12
+  resolution: "@farcaster/frame-sdk@npm:0.1.12"
+  dependencies:
+    "@farcaster/miniapp-sdk": "npm:0.2.1"
+    "@farcaster/quick-auth": "npm:0.0.8"
+    comlink: "npm:^4.4.2"
+    eventemitter3: "npm:^5.0.1"
+    ox: "npm:^0.4.4"
+  checksum: 10c0/a199d66d9eeb7c9c96aacc109ed327b7146051e55c5a661ec16f2e148bb89d7d41170e3c97fb1d342a614b2e8e30f2201af897aedd2beb727c62630a17376295
+  languageName: node
+  linkType: hard
+
+"@farcaster/frame-wagmi-connector@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@farcaster/frame-wagmi-connector@npm:1.0.0"
+  peerDependencies:
+    "@farcaster/frame-sdk": ^0.1.0
+    "@wagmi/core": ^2.14.1
+    viem: ^2.21.55
+  checksum: 10c0/8dff880d0bd2099c3173a712c9a9395a82219bedcee6438889723c7d3f8e3f214a99efc23554a3c4a795686b53b2ac21375e85d835dd39596b2df4725ecd887e
+  languageName: node
+  linkType: hard
+
 "@farcaster/miniapp-core@npm:0.4.1":
   version: 0.4.1
   resolution: "@farcaster/miniapp-core@npm:0.4.1"
@@ -976,7 +1000,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@farcaster/miniapp-sdk@npm:^0.2.1":
+"@farcaster/miniapp-sdk@npm:0.2.1, @farcaster/miniapp-sdk@npm:^0.2.1":
   version: 0.2.1
   resolution: "@farcaster/miniapp-sdk@npm:0.2.1"
   dependencies:
@@ -986,6 +1010,29 @@ __metadata:
     eventemitter3: "npm:^5.0.1"
     ox: "npm:^0.4.4"
   checksum: 10c0/81613b7612800791454e26ca501d7c900c94d4481f0112b28c7cf739375865c93a202e0b379a82e2bec7b0c17fb81dc55c2a489a5624526f9983eb9aaae759ea
+  languageName: node
+  linkType: hard
+
+"@farcaster/miniapp-wagmi-connector@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@farcaster/miniapp-wagmi-connector@npm:1.1.0"
+  peerDependencies:
+    "@farcaster/miniapp-sdk": ^0.2.0
+    "@wagmi/core": ^2.14.1
+    viem: ^2.21.55
+  checksum: 10c0/46c61a991f3429ec2c2e08f92b4e6002613619b2abeed669ede4629b173a52d0b1c1a0919190e0a9a9082201e8cebf08971689189e64fa96f88f677f7fb04729
+  languageName: node
+  linkType: hard
+
+"@farcaster/quick-auth@npm:0.0.8":
+  version: 0.0.8
+  resolution: "@farcaster/quick-auth@npm:0.0.8"
+  dependencies:
+    jose: "npm:^5.8.0"
+    zod: "npm:^3.25.1"
+  peerDependencies:
+    typescript: 5.8.3
+  checksum: 10c0/c811d515644454dc710bc11f9e7af8cd5c4802dccf12f68803d37789df0176c66a19895d022d9cc3d7581e06c35513a8636e4d83b6e3a7d533b834d26f9c41cd
   languageName: node
   linkType: hard
 
@@ -7242,7 +7289,10 @@ __metadata:
   dependencies:
     "@chainlink/contracts": "npm:^1.2.0"
     "@eslint/js": "npm:^9.36.0"
+    "@farcaster/frame-sdk": "npm:^0.1.12"
+    "@farcaster/frame-wagmi-connector": "npm:^1.0.0"
     "@farcaster/miniapp-sdk": "npm:^0.2.1"
+    "@farcaster/miniapp-wagmi-connector": "npm:^1.1.0"
     "@radix-ui/react-avatar": "npm:^1.1.0"
     "@radix-ui/react-checkbox": "npm:^1.1.1"
     "@radix-ui/react-dialog": "npm:^1.1.1"
@@ -8372,7 +8422,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:^5.2.3":
+"jose@npm:^5.2.3, jose@npm:^5.8.0":
   version: 5.10.0
   resolution: "jose@npm:5.10.0"
   checksum: 10c0/e20d9fc58d7e402f2e5f04e824b8897d5579aae60e64cb88ebdea1395311c24537bf4892f7de413fab1acf11e922797fb1b42269bc8fc65089a3749265ccb7b0

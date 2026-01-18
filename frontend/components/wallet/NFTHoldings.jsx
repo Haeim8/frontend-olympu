@@ -18,6 +18,7 @@ import {
   Grid3x3,
   List
 } from 'lucide-react';
+import config from '@/lib/config';
 
 const NFTCard = ({ nft, onViewDetails }) => {
   const { t } = useTranslation();
@@ -114,7 +115,7 @@ const NFTCard = ({ nft, onViewDetails }) => {
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg"
-            onClick={() => window.open(`https://sepolia.basescan.org/address/${nft.txHash}`, '_blank')}
+            onClick={() => window.open(config.helpers.getExplorerAddressUrl(nft.txHash), '_blank')}
           >
             <ExternalLink className="h-3 w-3" />
           </Button>

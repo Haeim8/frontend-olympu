@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Users, Search, ExternalLink, Crown, Trophy, Award, TrendingUp } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
+import config from '@/lib/config';
 
 export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
   const { t } = useTranslation();
@@ -234,7 +235,7 @@ export default function CampaignInvestors({ campaignAddress, onPreloadHover }) {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => window.open(`https://sepolia.basescan.org/address/${investor.address}`, '_blank')}
+                            onClick={() => window.open(config.helpers.getExplorerAddressUrl(investor.address), '_blank')}
                             className="h-8 w-8 hover:bg-primary/20 hover:text-primary text-muted-foreground opacity-0 group-hover:opacity-100 transition-all font"
                             title="View on Explorer"
                           >

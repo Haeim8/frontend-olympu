@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Search, Filter, ExternalLink, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { apiManager } from '@/lib/services/api-manager';
 import { formatEth, formatWeiToEth } from '@/lib/utils/formatNumber';
+import config from '@/lib/config';
 
 
 export default function TransactionHistory({ campaignAddress, onPreloadHover }) {
@@ -266,7 +267,7 @@ export default function TransactionHistory({ campaignAddress, onPreloadHover }) 
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => window.open(`https://sepolia.basescan.org/tx/${tx.tx_hash}`, '_blank')}
+                          onClick={() => window.open(config.helpers.getExplorerTxUrl(tx.tx_hash), '_blank')}
                           className="h-8 w-8 hover:bg-blue-500/20 hover:text-blue-400 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all"
                           title="Voir sur Basescan"
                         >
