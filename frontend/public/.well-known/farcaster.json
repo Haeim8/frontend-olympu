@@ -18,7 +18,7 @@
       "platform": "base"
     }
   ],
-  "frame": {
+  "miniapp": {
     "version": "1",
     "name": "Livar",
     "subtitle": "Onchain Crowdfunding Platform",
