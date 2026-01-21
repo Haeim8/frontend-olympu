@@ -25,8 +25,22 @@ export function getSupabase() {
         throw new Error('[Supabase] Variables manquantes: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_KEY');
     }
 
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log(`[Supabase] Client initialisé (mode: ${hasServiceKey ? 'SERVICE_KEY' : 'ANON_KEY'})`);
+    // Désactiver le cache Vercel pour toutes les requêtes
+    const customFetch = (url, options = {}) => {
+        const headers = new Headers(options.headers);
+        headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        headers.set('Pragma', 'no-cache');
+        return fetch(url, {
+            ...options,
+            cache: 'no-store',
+            headers
+        });
+    };
+
+    supabase = createClient(supabaseUrl, supabaseKey, {
+        global: { fetch: customFetch }
+    });
+    console.log(`[Supabase] Client initialisé (mode: ${hasServiceKey ? 'SERVICE_KEY' : 'ANON_KEY'}, cache: disabled)`);
     return supabase;
 }
 
