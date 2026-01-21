@@ -540,18 +540,40 @@ export const syncState = {
     },
 
     async upsert(id, lastBlock) {
-        const { error } = await getSupabase()
+        const supabase = getSupabase();
+
+        // UPDATE first
+        const { data: updateData, error: updateError } = await supabase
             .from('sync_state')
-            .upsert({
-                id,
+            .update({
                 last_block: lastBlock,
                 updated_at: new Date().toISOString()
-            }, { onConflict: 'id' });
+            })
+            .eq('id', id)
+            .select();
 
-        if (error) {
-            console.error('[Supabase] syncState.upsert error:', error.message);
-            throw error;
+        if (updateError) {
+            console.error('[Supabase] syncState UPDATE error:', updateError.message);
+            throw updateError;
         }
+
+        // If no rows updated, INSERT
+        if (!updateData || updateData.length === 0) {
+            const { error: insertError } = await supabase
+                .from('sync_state')
+                .insert({
+                    id,
+                    last_block: lastBlock,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (insertError) {
+                console.error('[Supabase] syncState INSERT error:', insertError.message);
+                throw insertError;
+            }
+        }
+
+        console.log(`[Supabase] syncState updated: ${id} -> ${lastBlock}`);
     }
 };
 
