@@ -542,7 +542,20 @@ export const syncState = {
     async upsert(id, lastBlock) {
         const supabase = getSupabase();
 
-        // UPDATE first
+        // D'abord lire la valeur actuelle pour éviter de reculer
+        const { data: current } = await supabase
+            .from('sync_state')
+            .select('last_block')
+            .eq('id', id)
+            .single();
+
+        // Ne PAS écraser si la DB a une valeur plus haute
+        if (current && current.last_block >= lastBlock) {
+            console.log(`[Supabase] syncState SKIP: DB=${current.last_block} >= new=${lastBlock}`);
+            return;
+        }
+
+        // UPDATE seulement si lastBlock > valeur actuelle
         const { data: updateData, error: updateError } = await supabase
             .from('sync_state')
             .update({
