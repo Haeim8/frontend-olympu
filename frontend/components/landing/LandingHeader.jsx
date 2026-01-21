@@ -74,7 +74,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
         {/* Social links */}
         <div className="hidden md:flex items-center space-x-3">
           <motion.a
-            href="https://x.com/FinibusApp"
+            href="https://x.com/0xlivar"
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 hover:bg-lime-500/10 transition-all duration-300"
@@ -85,7 +85,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             <span className="sr-only">{t('social.twitter')}</span>
           </motion.a>
           <motion.a
-            href="https://discord.com"
+            href="https://warpcast.com/livarhub"
             target="_blank"
             rel="noopener noreferrer"
             className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400 hover:bg-lime-500/10 transition-all duration-300"
@@ -93,7 +93,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             whileTap={{ scale: 0.95 }}
           >
             <MessageCircle size={16} />
-            <span className="sr-only">{t('social.discord')}</span>
+            <span className="sr-only">Farcaster</span>
           </motion.a>
         </div>
 
@@ -164,7 +164,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
             {/* Mobile Social Links */}
             <div className="flex items-center space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <a
-                href="https://x.com/FinibusApp"
+                href="https://x.com/0xlivar"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400"
@@ -172,7 +172,7 @@ export function LandingHeader({ darkMode, toggleDarkMode }) {
                 <Twitter size={16} />
               </a>
               <a
-                href="https://discord.com"
+                href="https://warpcast.com/livarhub"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-white/10 dark:bg-gray-800/20 text-emerald-700 dark:text-lime-300 hover:text-emerald-500 dark:hover:text-lime-400"

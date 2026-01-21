@@ -47,11 +47,7 @@ export function LandingHero({
             status: c.isActive && timeRemaining > 0 ? 'ACTIVE' : 'CLOSED'
           };
         });
-        setTerminalData(formatted.length > 0 ? formatted : [
-          { name: "Livar Demo", vol: "0.00 ETH", timeRemaining: "7j", status: "ACTIVE" },
-          { name: "Green Bonds", vol: "0.00 ETH", timeRemaining: "14j", status: "ACTIVE" },
-          { name: "Tech Ventures", vol: "0.00 ETH", timeRemaining: "3j", status: "ACTIVE" },
-        ]);
+        setTerminalData(formatted);
       } catch (e) {
         console.error("Terminal data fetch error", e);
       } finally {
@@ -106,6 +102,7 @@ export function LandingHero({
             <Button
               variant="outline"
               className="h-14 px-8 rounded-full border-white/20 bg-transparent text-white hover:bg-white/5 font-medium text-lg w-full sm:w-auto"
+              onClick={() => window.open('https://basescan.org/address/0x839832BdBee84E2FD39044E86a775C7D4105eCC3', '_blank')}
             >
               {t('landing.hero.viewDocumentation')}
             </Button>
@@ -118,7 +115,7 @@ export function LandingHero({
             </div>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              Base Sepolia
+              Base
             </div>
           </div>
         </motion.div>
