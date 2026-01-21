@@ -4,7 +4,6 @@ import indexer from '@/lib/services/blockchain-indexer.js';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
-export const revalidate = 0;
 
 /**
  * Route API pour Vercel Cron

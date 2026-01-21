@@ -28,15 +28,12 @@ export function getSupabase() {
     // Désactiver le cache Vercel pour toutes les requêtes
     const customFetch = (url, options = {}) => {
         const headers = new Headers(options.headers);
-        headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+        headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
         headers.set('Pragma', 'no-cache');
-        headers.set('Expires', '0');
-        headers.set('X-No-Cache', Date.now().toString());
 
         return fetch(url, {
             ...options,
             cache: 'no-store',
-            next: { revalidate: 0 },
             headers
         });
     };
