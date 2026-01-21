@@ -225,10 +225,12 @@ class BlockchainIndexer {
             const startBlock = parseInt(process.env.DIVAR_START_BLOCK || '0');
             const lastSyncState = await syncState.get('campaigns');
             const dbLastBlock = lastSyncState?.last_block ?? 0;
+            console.log(`[Indexer] 📊 DB last_block: ${dbLastBlock}, startBlock: ${startBlock}`);
             // PROTECTION: Toujours utiliser le MAX pour ignorer les valeurs obsolètes de Vercel
             const effectiveLastBlock = Math.max(dbLastBlock, startBlock);
             const { provider, currentBlock } = await this.getProvider();
             let fromBlock = effectiveLastBlock + 1;
+            console.log(`[Indexer] 📊 fromBlock: ${fromBlock}, currentBlock: ${currentBlock}`);
 
 
             if (fromBlock >= currentBlock) {
@@ -253,7 +255,9 @@ class BlockchainIndexer {
                 toBlock: '0x' + toBlock.toString(16)
             }]);
 
-            if (logs.length > 0) {
+            console.log(`[Indexer] 📋 Logs reçus: ${logs ? logs.length : 'null'}`);
+
+            if (logs && logs.length > 0) {
                 console.log(`[Indexer] ✨ ${logs.length} nouvelles campagnes trouvées`);
                 for (const log of logs) {
                     const campaignAddress = '0x' + log.topics[1].slice(26);
