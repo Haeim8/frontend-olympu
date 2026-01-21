@@ -586,7 +586,7 @@ const translations = {
     'landing.hero.titlePart2': 'l\'Investissement Direct.',
     'landing.hero.subtitle': 'Une plateforme de qualité institutionnelle pour la levée de fonds décentralisée. Connectez votre portefeuille pour accéder à des campagnes à haut rendement, des analyses en temps réel et une distribution automatisée des dividendes.',
     'landing.hero.startInvesting': 'Commencer à Investir',
-    'landing.hero.viewDocumentation': 'Voir la Documentation',
+    'landing.hero.viewDocumentation': 'Contrat',
     'landing.hero.audited': 'Audité',
     'landing.hero.kycCompliant': 'Conforme KYC',
     'landing.hero.zkProofs': 'Preuves Zero-Knowledge',
@@ -1943,7 +1943,7 @@ const translations = {
     'landing.hero.titlePart2': 'Direct Investing.',
     'landing.hero.subtitle': 'An institutional-grade platform for decentralized fundraising. Connect your wallet to access high-yield campaigns, real-time analytics, and automated dividend distribution.',
     'landing.hero.startInvesting': 'Start Investing',
-    'landing.hero.viewDocumentation': 'View Documentation',
+    'landing.hero.viewDocumentation': 'Contract',
     'landing.hero.audited': 'Audited',
     'landing.hero.kycCompliant': 'KYC Compliant',
     'landing.hero.zkProofs': 'Zero-Knowledge Proofs',
@@ -3317,7 +3317,7 @@ const translations = {
     'landing.hero.titlePart2': 'la Inversión Directa.',
     'landing.hero.subtitle': 'Una plataforma de grado institucional para la recaudación de fondos descentralizada. Conecte su billetera para acceder a campañas de alto rendimiento, análisis en tiempo real y distribución automatizada de dividendos.',
     'landing.hero.startInvesting': 'Empezar a Invertir',
-    'landing.hero.viewDocumentation': 'Ver Documentación',
+    'landing.hero.viewDocumentation': 'Contrato',
     'landing.hero.audited': 'Auditado',
     'landing.hero.kycCompliant': 'Cumple con KYC',
     'landing.hero.zkProofs': 'Pruebas de conocimiento cero',
@@ -4130,7 +4130,7 @@ export const LanguageProvider = ({ children }) => {
         setIsLoading(false);
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la langue:', error);
-        setCurrentLanguage('fr');
+        setCurrentLanguage('en');
         setIsLoading(false);
       }
     };
