@@ -18,12 +18,21 @@ export const metadata = {
   },
   other: {
     'base:app_id': '6965aa9863c956eb9fe7346c',
-    // Farcaster Mini Apps / Frames
-    'fc:frame': 'vNext',
-    'fc:frame:image': 'https://www.livarhub.xyz/og.png',
-    'fc:frame:button:1': 'Découvrir les campagnes',
-    'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': 'https://www.livarhub.xyz',
+    // Farcaster Mini App Embed - NEW FORMAT (not fc:frame)
+    'fc:miniapp': JSON.stringify({
+      version: '1',
+      imageUrl: 'https://www.livarhub.xyz/og.png',
+      button: {
+        title: 'Open Livar',
+        action: {
+          type: 'launch_miniapp',
+          url: 'https://www.livarhub.xyz',
+          name: 'Livar',
+          splashImageUrl: 'https://www.livarhub.xyz/og.png',
+          splashBackgroundColor: '#0a0a0a'
+        }
+      }
+    }),
   },
   openGraph: {
     title: 'Livar: Onchain Raises',
